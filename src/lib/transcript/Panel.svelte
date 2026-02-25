@@ -1,6 +1,6 @@
 <!-- src/lib/transcript/Panel.svelte -->
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import type { Annotation, IIIFMediaViewerRef } from '../sync/types';
 	import type { Snippet } from 'svelte';
 	import { SyncController } from '../sync/SyncController.svelte';
@@ -181,12 +181,15 @@
 
 	// Fire onActiveAnnotationChange when active annotation changes
 	$effect(() => {
-		if (onActiveAnnotationChange) {
-			const active = activeAnnotationId
-				? annotations.find((a) => a.id === activeAnnotationId) ?? null
-				: null;
-			onActiveAnnotationChange(active);
-		}
+		const id = activeAnnotationId;
+		untrack(() => {
+			if (onActiveAnnotationChange) {
+				const active = id
+					? annotations.find((a) => a.id === id) ?? null
+					: null;
+				onActiveAnnotationChange(active);
+			}
+		});
 	});
 
 	// Click handler for annotations

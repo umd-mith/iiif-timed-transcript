@@ -23,7 +23,7 @@
 		playIcon?: Snippet;
 		/** Custom pause icon snippet */
 		pauseIcon?: Snippet;
-		/** Custom skip icon snippet — receives skip amount in seconds */
+		/** Custom skip icon snippet — receives skip amount in seconds (negative = rewind, positive = forward) */
 		skipIcon?: Snippet<[{ seconds: number }]>;
 
 		// Reactive state props (optional - fallback to playerRef methods)

@@ -252,6 +252,53 @@ describe('Transcript.Panel - Fullscreen Mode', () => {
 	});
 });
 
+describe('Transcript.Panel - onActiveAnnotationChange callback', () => {
+	const mockAnnotations: Annotation[] = [
+		{ id: 'a1', startTime: 0, endTime: 5, text: 'First segment' },
+		{ id: 'a2', startTime: 5, endTime: 10, text: 'Second segment' }
+	];
+
+	let target: HTMLElement;
+
+	beforeEach(() => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		if (document.body.contains(target)) {
+			document.body.removeChild(target);
+		}
+	});
+
+	it('calls onActiveAnnotationChange with null when no annotation is active', () => {
+		const onChange = vi.fn();
+		mount(Panel, {
+			target,
+			props: {
+				annotations: mockAnnotations,
+				viewer: null,
+				onActiveAnnotationChange: onChange
+			}
+		});
+		flushSync();
+
+		// With no viewer/sync, no annotation is active → callback fires with null
+		expect(onChange).toHaveBeenCalledWith(null);
+	});
+
+	it('does not throw when onActiveAnnotationChange is not provided', () => {
+		expect(() => {
+			mount(Panel, {
+				target,
+				props: { annotations: mockAnnotations, viewer: null }
+			});
+			flushSync();
+		}).not.toThrow();
+	});
+});
+
 describe('Transcript.Panel - onSegmentClick callback', () => {
 	const mockAnnotations: Annotation[] = [
 		{ id: 'a1', startTime: 0, endTime: 5, text: 'First segment' },

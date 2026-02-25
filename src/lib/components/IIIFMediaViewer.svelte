@@ -28,7 +28,7 @@
 		canvasIndex?: number;
 		/** Whether to show native browser controls. Defaults to true. */
 		controls?: boolean;
-		/** Time in seconds to seek to once the player is ready. Applied once on initial load. */
+		/** Time in seconds to seek to once the player is ready. Applied once per component lifetime (does not re-apply on manifest URL changes). */
 		initialSeekTime?: number;
 		onError?: (error: Error) => void;
 		onLoad?: () => void;
