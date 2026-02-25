@@ -114,3 +114,35 @@ export {
   timeToScrollProgress,
   scrollProgressToTime,
 } from "./sync/annotationUtils";
+
+// ============================================================================
+// Transcript Components (LDA-1967)
+// ============================================================================
+
+/**
+ * TranscriptPanel - Main orchestrator component for transcript display and sync.
+ *
+ * @example
+ * ```svelte
+ * <script>
+ *   import { TranscriptPanel } from '@umd-mith/svelte-iiif-transcript-player';
+ * </script>
+ *
+ * <TranscriptPanel {annotations} {viewer} enableSearch />
+ * ```
+ */
+export { default as TranscriptPanel } from "./transcript/Panel.svelte";
+
+/**
+ * TranscriptSearch - Standalone search component for transcript filtering.
+ */
+export { default as TranscriptSearch } from "./transcript/Search.svelte";
+
+/**
+ * TranscriptSegment - Reference implementation for individual transcript segments.
+ */
+export { default as TranscriptSegment } from "./transcript/Segment.svelte";
+
+// Export transcript utilities
+export { formatTimestamp, getAnnotationById } from "./transcript/utils";
+export { keyboardNav, type KeyboardNavOptions } from "./transcript/keyboardNav";
