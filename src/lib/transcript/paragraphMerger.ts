@@ -13,7 +13,7 @@ export interface MergedParagraph {
 	endTime: number;
 	/** Joined text from all segments */
 	text: string;
-	/** Speaker label if all segments share the same speaker */
+	/** Speaker label if all segments share the same speaker. Undefined when no speakers map is provided, when segments have no labels, or when a paragraph contains segments from multiple speakers. */
 	speaker?: string;
 }
 
@@ -162,7 +162,7 @@ function buildParagraph(
 		segmentIds: new Set(segments.map((s) => s.id)),
 		startTime: first.startTime,
 		endTime: last.endTime,
-		text: segments.map((s) => s.text).join(' ')
+		text: segments.map((s) => s.text.trim()).join(' ')
 	};
 	if (speaker !== undefined) {
 		paragraph.speaker = speaker;

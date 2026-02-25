@@ -22,6 +22,10 @@ The `Annotation` type includes an optional `metadata` field (`Record<string, unk
 ### Speaker labels
 
 ```svelte
+<script>
+  import { TranscriptPanel } from '@umd-mith/svelte-iiif-transcript-player';
+</script>
+
 <TranscriptPanel {annotations} {viewer}>
   {#snippet segment({ annotation, isActive, onClick })}
     <div data-annotation-id={annotation.id} onclick={onClick}>
