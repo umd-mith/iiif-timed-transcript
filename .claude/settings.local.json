@@ -4,7 +4,13 @@
       "Bash(~/.config/claude-code/skills/linear-api/scripts/get-issue.sh:*)",
       "Bash(~/.config/claude-code/skills/linear-api/scripts/get-comments.sh:*)",
       "Skill(superpowers:executing-plans)",
-      "Read(//Users/trevormunoz/Code/iiif-media-parsers/**)"
+      "Read(//Users/trevormunoz/Code/iiif-media-parsers/**)",
+      "Read(//Users/trevormunoz/Code/lakeland-archive/packages/iiif-utils/src/**)",
+      "Bash(wc:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm lint:*)"
     ],
     "deny": [],
     "ask": []

@@ -6,6 +6,16 @@ settings:
 
 importers:
   .:
+    dependencies:
+      "@umd-mith/iiif-media-parsers":
+        specifier: ^0.3.0
+        version: 0.3.0
+      quick-lru:
+        specifier: ^7.3.0
+        version: 7.3.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       "@changesets/cli":
         specifier: ^2.29.8
@@ -1173,6 +1183,13 @@ packages:
         integrity: sha512-KiROIzYdEV85YygXw6BI/Dx4fnBlFQu6Mq4QE4MOH9fFnhohw6wX/OAvDY2/C+ut0I3RSPKenvZJIVYqJNkhEw==,
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
+
+  "@umd-mith/iiif-media-parsers@0.3.0":
+    resolution:
+      {
+        integrity: sha512-myvPxrp+naV5GDTtepa5rWzsPe63K0ZJ1YwJ5aEAUGJNYOrmo6VbRGYmaCesRc/rNeJyUJkTYMabzusDwcF0LA==,
+      }
+    engines: { node: ">=20.0.0" }
 
   "@vitest/browser-playwright@4.0.18":
     resolution:
@@ -2618,6 +2635,13 @@ packages:
         integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==,
       }
 
+  quick-lru@7.3.0:
+    resolution:
+      {
+        integrity: sha512-k9lSsjl36EJdK7I06v7APZCbyGT2vMTsYSRX1Q2nbYmnkBqgUhRkAuzH08Ciotteu/PLJmIF2+tti7o3C/ts2g==,
+      }
+    engines: { node: ">=18" }
+
   read-yaml-file@1.1.0:
     resolution:
       {
@@ -3151,6 +3175,12 @@ packages:
     resolution:
       {
         integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==,
+      }
+
+  zod@4.3.6:
+    resolution:
+      {
+        integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==,
       }
 
 snapshots:
@@ -3840,6 +3870,8 @@ snapshots:
     dependencies:
       "@typescript-eslint/types": 8.56.1
       eslint-visitor-keys: 5.0.1
+
+  "@umd-mith/iiif-media-parsers@0.3.0": {}
 
   "@vitest/browser-playwright@4.0.18(playwright@1.58.2)(vite@7.3.1(@types/node@12.20.55)(jiti@2.6.1))(vitest@4.0.18)":
     dependencies:
@@ -4614,6 +4646,8 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
+  quick-lru@7.3.0: {}
+
   read-yaml-file@1.1.0:
     dependencies:
       graceful-fs: 4.2.11
@@ -4926,3 +4960,5 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   zimmerframe@1.1.4: {}
+
+  zod@4.3.6: {}
