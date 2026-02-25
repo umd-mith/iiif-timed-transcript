@@ -4,12 +4,31 @@
 	import type { Annotation } from '../sync/types';
 
 	interface Props {
+		/** Array of annotations to search through */
 		annotations: Annotation[];
+		/**
+		 * Placeholder text for search input.
+		 * @default "Search transcript..."
+		 */
 		placeholder?: string;
+		/**
+		 * Debounce delay for search input in milliseconds.
+		 * @default 150
+		 */
 		debounceMs?: number;
+		/** Callback fired when search matches change (debounced) */
 		onmatchchange?: (matches: Annotation[]) => void;
+		/** Callback fired when user navigates to different match (prev/next buttons) */
 		onnavigatematch?: (index: number) => void;
+		/**
+		 * Current match index for highlighting (0-based).
+		 * @default -1
+		 */
 		currentMatchIndex?: number;
+		/**
+		 * Total number of matches (for displaying "X / Y").
+		 * @default 0
+		 */
 		totalMatches?: number;
 	}
 

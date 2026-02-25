@@ -9,31 +9,80 @@
 
 	interface Props {
 		// Required
+		/** Array of transcript annotations with timing and text */
 		annotations: Annotation[];
+		/**
+		 * Viewer instance for bidirectional sync.
+		 * Pass null for static transcript (no sync).
+		 */
 		viewer: IIIFMediaViewerRef | null;
 
 		// Sync configuration
+		/**
+		 * Scroll event throttling in milliseconds.
+		 * Higher = less responsive but smoother scrolling.
+		 * @default 150
+		 */
 		syncDebounceMs?: number;
+		/**
+		 * Wait time after operations before next action (prevents jitter).
+		 * @default 100
+		 */
 		syncSettleMs?: number;
+		/**
+		 * Duration in ms to lock priority after user interaction (prevents feedback loops).
+		 * After clicking segment or scrolling, opposite sync direction is blocked for this duration.
+		 * @default 1000
+		 */
 		syncPriorityLockDuration?: number;
 
 		// Features
+		/**
+		 * Show search input and match navigation UI.
+		 * @default false
+		 */
 		enableSearch?: boolean;
+		/**
+		 * Show fullscreen toggle button (coming in Part 4).
+		 * @default false
+		 */
 		enableFullscreen?: boolean;
 
 		// UI configuration
+		/**
+		 * Search input debounce in milliseconds.
+		 * @default 150
+		 */
 		searchDebounceMs?: number;
+		/**
+		 * Placeholder text for search input.
+		 * @default "Search transcript..."
+		 */
 		searchPlaceholder?: string;
 
 		// Accessibility
+		/**
+		 * ARIA label for transcript container region.
+		 * @default "Media transcript"
+		 */
 		ariaLabel?: string;
+		/**
+		 * Enable screen reader announcements for active segment changes.
+		 * @default true
+		 */
 		announceActiveSegment?: boolean;
 
 		// Snippets
+		/**
+		 * Custom segment rendering snippet.
+		 * IMPORTANT: Must include data-annotation-id={annotation.id} and onclick={onClick}.
+		 */
 		segment?: Snippet<
 			[{ annotation: Annotation; isActive: boolean; onClick: () => void }]
 		>;
+		/** Custom toolbar rendering snippet (replaces search UI) */
 		toolbar?: Snippet;
+		/** Custom empty state rendering snippet */
 		empty?: Snippet;
 	}
 

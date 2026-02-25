@@ -4,8 +4,17 @@
 	import { formatTimestamp } from './utils';
 
 	interface Props {
+		/** Transcript annotation with timing and text */
 		annotation: Annotation;
+		/**
+		 * Whether this segment is currently active (playing).
+		 * @default false
+		 */
 		isActive?: boolean;
+		/**
+		 * Click handler (typically wired to viewer.seekTo).
+		 * @default undefined
+		 */
 		onclick?: () => void;
 	}
 
