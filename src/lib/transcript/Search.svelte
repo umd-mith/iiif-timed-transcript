@@ -94,7 +94,7 @@
 	<input type="search" bind:value={query} {placeholder} aria-label="Search transcript" />
 
 	{#if totalMatches > 0}
-		<div class="match-counter">
+		<div class="match-counter" aria-live="polite" aria-atomic="true">
 			{currentMatchIndex + 1} / {totalMatches}
 		</div>
 

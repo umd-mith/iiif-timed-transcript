@@ -233,6 +233,16 @@
 			{/each}
 		</div>
 	{/if}
+
+	<!-- Screen reader announcements for active segment -->
+	{#if announceActiveSegment && activeAnnotationId}
+		{@const activeAnnotation = annotations.find((a) => a.id === activeAnnotationId)}
+		{#if activeAnnotation}
+			<div aria-live="polite" aria-atomic="true" class="sr-only">
+				{activeAnnotation.text}
+			</div>
+		{/if}
+	{/if}
 </div>
 
 <style>
@@ -267,5 +277,18 @@
 		border-radius: 4px;
 		font-size: 0.875rem;
 		color: #666;
+	}
+
+	/* Screen reader only content */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
 	}
 </style>

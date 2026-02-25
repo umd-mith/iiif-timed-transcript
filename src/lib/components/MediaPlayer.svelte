@@ -12,6 +12,7 @@
 		autoplay = false,
 		controls = true,
 		crossOrigin = 'anonymous',
+		captionTrack,
 		onTimeUpdate,
 		onDurationChange: _onDurationChange,
 		onPlay: _onPlay,
@@ -28,6 +29,8 @@
 		autoplay?: boolean;
 		controls?: boolean;
 		crossOrigin?: 'anonymous' | 'use-credentials';
+		/** Optional caption/subtitle track for WCAG 1.2.2 compliance */
+		captionTrack?: { src: string; srclang: string; label: string; kind?: 'captions' | 'subtitles' };
 		onTimeUpdate?: (currentTime: number) => void;
 		onDurationChange?: (duration: number) => void;
 		onPlay?: () => void;
@@ -155,7 +158,15 @@
 		onplay={() => onPlayStateChange?.(true)}
 		onpause={() => onPlayStateChange?.(false)}
 	>
-		<track kind="captions" />
+		{#if captionTrack}
+			<track
+				kind={captionTrack.kind ?? 'captions'}
+				src={captionTrack.src}
+				srclang={captionTrack.srclang}
+				label={captionTrack.label}
+				default
+			/>
+		{/if}
 	</audio>
 {:else}
 	<video
@@ -174,6 +185,14 @@
 		onplay={() => onPlayStateChange?.(true)}
 		onpause={() => onPlayStateChange?.(false)}
 	>
-		<track kind="captions" />
+		{#if captionTrack}
+			<track
+				kind={captionTrack.kind ?? 'captions'}
+				src={captionTrack.src}
+				srclang={captionTrack.srclang}
+				label={captionTrack.label}
+				default
+			/>
+		{/if}
 	</video>
 {/if}
