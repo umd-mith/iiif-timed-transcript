@@ -134,14 +134,16 @@ export class SyncController {
 			return;
 		}
 
-		// Video timeupdate: Poll getCurrentTime() and send to machine
-		// We can't access the raw video element, so we poll the viewer's getCurrentTime()
+		// Video timeupdate: Poll getCurrentTime() every 100ms (10 FPS update rate)
+		// Polling is necessary because IIIFMediaViewerRef doesn't expose the raw video element
+		// or timeupdate events. The viewer interface only provides getCurrentTime() method.
+		// Alternative: If viewer API adds ontimeupdate callback, we could switch to event-based sync.
 		const timeupdateInterval = setInterval(() => {
 			if (this.viewer && this.actor) {
 				const currentTime = this.viewer.getCurrentTime();
 				this.actor.send({ type: 'VIDEO_TIME_UPDATE', currentTime });
 			}
-		}, 100); // Poll every 100ms (10 FPS update rate)
+		}, 100);
 
 		this.cleanupHandlers.push(() => clearInterval(timeupdateInterval));
 
@@ -229,8 +231,14 @@ export class SyncController {
 	/**
 	 * Cleanup and destroy the controller.
 	 * Stops the actor and clears references.
+	 * Safe to call multiple times (idempotent).
 	 */
 	destroy(): void {
+		// Idempotent: safe to call multiple times
+		if (!this.isInitialized && !this.actor) {
+			return;
+		}
+
 		// Clean up event listeners
 		this.cleanupHandlers.forEach((cleanup) => cleanup());
 		this.cleanupHandlers = [];

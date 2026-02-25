@@ -1,5 +1,6 @@
 <!-- src/lib/transcript/Search.svelte -->
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import type { Annotation } from '../sync/types';
 
 	interface Props {
@@ -49,6 +50,11 @@
 		return () => {
 			if (debounceTimeout) clearTimeout(debounceTimeout);
 		};
+	});
+
+	// Cleanup on component destroy
+	onDestroy(() => {
+		if (debounceTimeout) clearTimeout(debounceTimeout);
 	});
 
 	// Navigation
