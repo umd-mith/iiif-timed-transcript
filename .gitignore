@@ -2,3 +2,9 @@ node_modules/
 dist/
 .svelte-kit/
 coverage/
+
+# Vitest browser mode screenshots
+**/__screenshots__/
+
+# Claude Code local settings
+.claude/settings.local.json
