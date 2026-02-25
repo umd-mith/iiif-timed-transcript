@@ -1,4 +1,4 @@
-import { mount, unmount as svelteUnmount } from 'svelte';
+import { mount, unmount as svelteUnmount, createRawSnippet } from 'svelte';
 import { test, describe, expect, vi, beforeEach, afterEach } from 'vitest';
 import AudioPlayerControls from './AudioPlayerControls.svelte';
 import { tick } from 'svelte';
@@ -499,6 +499,95 @@ describe('AudioPlayerControls', () => {
 
 			const speedButton = container.querySelector('[data-audio-button="speed"]');
 			expect(speedButton?.textContent).toContain('1.5x');
+		});
+	});
+
+	describe('Icon Snippets', () => {
+		test('renders custom playIcon when provided and paused', () => {
+			const playIcon = createRawSnippet(() => ({
+				render: () => '<span data-testid="custom-play">▶</span>'
+			}));
+
+			component = mount(AudioPlayerControls, {
+				target: container,
+				props: {
+					playerRef: mockPlayerRef,
+					isPlaying: false,
+					playIcon
+				}
+			});
+
+			const customIcon = container.querySelector('[data-testid="custom-play"]');
+			expect(customIcon).toBeTruthy();
+			expect(customIcon?.textContent).toBe('▶');
+		});
+
+		test('renders custom pauseIcon when provided and playing', () => {
+			const pauseIcon = createRawSnippet(() => ({
+				render: () => '<span data-testid="custom-pause">⏸</span>'
+			}));
+
+			component = mount(AudioPlayerControls, {
+				target: container,
+				props: {
+					playerRef: mockPlayerRef,
+					isPlaying: true,
+					pauseIcon
+				}
+			});
+
+			const customIcon = container.querySelector('[data-testid="custom-pause"]');
+			expect(customIcon).toBeTruthy();
+			expect(customIcon?.textContent).toBe('⏸');
+		});
+
+		test('falls back to text when no icon snippets provided', () => {
+			component = mount(AudioPlayerControls, {
+				target: container,
+				props: {
+					playerRef: mockPlayerRef,
+					isPlaying: false
+				}
+			});
+
+			const playPauseButton = container.querySelector('[data-audio-button="play-pause"]');
+			expect(playPauseButton?.textContent).toBe('Play');
+		});
+
+		test('renders custom skipIcon with seconds parameter', () => {
+			const skipIcon = createRawSnippet((params: () => { seconds: number }) => ({
+				render: () => {
+					const { seconds } = params();
+					return `<span data-testid="custom-skip">Skip ${seconds}s</span>`;
+				}
+			}));
+
+			component = mount(AudioPlayerControls, {
+				target: container,
+				props: {
+					playerRef: mockPlayerRef,
+					skipAmounts: [10, 30],
+					skipIcon
+				}
+			});
+
+			const skipIcons = container.querySelectorAll('[data-testid="custom-skip"]');
+			expect(skipIcons.length).toBe(2);
+			expect(skipIcons[0]?.textContent).toBe('Skip 10s');
+			expect(skipIcons[1]?.textContent).toBe('Skip 30s');
+		});
+
+		test('falls back to text for skip buttons when no skipIcon', () => {
+			component = mount(AudioPlayerControls, {
+				target: container,
+				props: {
+					playerRef: mockPlayerRef,
+					skipAmounts: [10]
+				}
+			});
+
+			const skipButton = container.querySelector('[data-audio-button="skip"]');
+			expect(skipButton?.textContent).toContain('10s');
 		});
 	});
 });

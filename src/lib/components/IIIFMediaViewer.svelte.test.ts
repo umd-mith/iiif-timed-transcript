@@ -394,6 +394,101 @@ describe('IIIFMediaViewer - Canvas Selection', () => {
 	});
 });
 
+describe('IIIFMediaViewer - initialSeekTime', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	test('accepts initialSeekTime prop and exposes it via public API', async () => {
+		const manifest = createAudioManifest();
+		mockFetchSuccess(manifest);
+
+		const target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const component = mount(IIIFMediaViewer, {
+			target,
+			props: {
+				iiifManifestUrl: 'https://example.com/manifest.json',
+				initialSeekTime: 45
+			}
+		});
+		flushSync();
+
+		await tick();
+		await tick();
+
+		// Component should accept the prop without errors and expose seekTo
+		expect(typeof component.seekTo).toBe('function');
+
+		document.body.removeChild(target);
+	});
+
+	test('does not seek when initialSeekTime is undefined', async () => {
+		const manifest = createAudioManifest();
+		mockFetchSuccess(manifest);
+
+		const target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const component = mount(IIIFMediaViewer, {
+			target,
+			props: {
+				iiifManifestUrl: 'https://example.com/manifest.json'
+			}
+		});
+		flushSync();
+
+		await tick();
+		await tick();
+
+		const seekSpy = vi.spyOn(component, 'seekTo');
+
+		const audioElement = target.querySelector('audio') as HTMLAudioElement;
+		expect(audioElement).toBeTruthy();
+		audioElement.dispatchEvent(new Event('canplay'));
+		await tick();
+
+		expect(seekSpy).not.toHaveBeenCalled();
+
+		document.body.removeChild(target);
+	});
+
+	test('does not seek when initialSeekTime is 0', async () => {
+		const manifest = createAudioManifest();
+		mockFetchSuccess(manifest);
+
+		const target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const component = mount(IIIFMediaViewer, {
+			target,
+			props: {
+				iiifManifestUrl: 'https://example.com/manifest.json',
+				initialSeekTime: 0
+			}
+		});
+		flushSync();
+
+		await tick();
+		await tick();
+
+		const seekSpy = vi.spyOn(component, 'seekTo');
+
+		const audioElement = target.querySelector('audio') as HTMLAudioElement;
+		audioElement.dispatchEvent(new Event('canplay'));
+		await tick();
+
+		expect(seekSpy).not.toHaveBeenCalled();
+
+		document.body.removeChild(target);
+	});
+});
+
 describe('IIIFMediaViewer - Public API', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();

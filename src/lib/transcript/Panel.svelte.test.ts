@@ -251,3 +251,83 @@ describe('Transcript.Panel - Fullscreen Mode', () => {
 		expect(toolbar).not.toBeNull();
 	});
 });
+
+describe('Transcript.Panel - onSegmentClick callback', () => {
+	const mockAnnotations: Annotation[] = [
+		{ id: 'a1', startTime: 0, endTime: 5, text: 'First segment' },
+		{ id: 'a2', startTime: 5, endTime: 10, text: 'Second segment' }
+	];
+
+	const mockViewer: IIIFMediaViewerRef = {
+		seekTo: vi.fn(),
+		getCurrentTime: () => 0,
+		getDuration: () => 100,
+		play: vi.fn(),
+		pause: vi.fn(),
+		isReady: () => true
+	};
+
+	let target: HTMLElement;
+
+	beforeEach(() => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		if (document.body.contains(target)) {
+			document.body.removeChild(target);
+		}
+	});
+
+	it('calls onSegmentClick with annotation and event on click', () => {
+		const onSegmentClick = vi.fn();
+		mount(Panel, {
+			target,
+			props: { annotations: mockAnnotations, viewer: mockViewer, onSegmentClick }
+		});
+		flushSync();
+
+		const segment = target.querySelector('[data-annotation-id="a1"]') as HTMLElement;
+		segment.click();
+
+		expect(onSegmentClick).toHaveBeenCalledWith(
+			mockAnnotations[0],
+			expect.objectContaining({ preventDefault: expect.any(Function) })
+		);
+		// Default seek still happens when preventDefault not called
+		expect(mockViewer.seekTo).toHaveBeenCalledWith(0);
+	});
+
+	it('suppresses seek when preventDefault is called', () => {
+		const onSegmentClick = vi.fn((_annotation: Annotation, event: { preventDefault: () => void }) => {
+			event.preventDefault();
+		});
+		mount(Panel, {
+			target,
+			props: { annotations: mockAnnotations, viewer: mockViewer, onSegmentClick }
+		});
+		flushSync();
+
+		const segment = target.querySelector('[data-annotation-id="a1"]') as HTMLElement;
+		segment.click();
+
+		expect(onSegmentClick).toHaveBeenCalled();
+		expect(mockViewer.seekTo).not.toHaveBeenCalled();
+	});
+
+	it('still seeks when onSegmentClick does not call preventDefault', () => {
+		const onSegmentClick = vi.fn();
+		mount(Panel, {
+			target,
+			props: { annotations: mockAnnotations, viewer: mockViewer, onSegmentClick }
+		});
+		flushSync();
+
+		const segment = target.querySelector('[data-annotation-id="a2"]') as HTMLElement;
+		segment.click();
+
+		expect(mockViewer.seekTo).toHaveBeenCalledWith(5);
+	});
+});

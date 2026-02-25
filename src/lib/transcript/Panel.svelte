@@ -72,6 +72,18 @@
 		 */
 		announceActiveSegment?: boolean;
 
+		// Callbacks
+		/**
+		 * Called when the active (currently playing) annotation changes.
+		 * Receives the full Annotation object, or null when no annotation is active.
+		 */
+		onActiveAnnotationChange?: (annotation: Annotation | null) => void;
+		/**
+		 * Called when a transcript segment is clicked, before the default seek behavior.
+		 * Call `event.preventDefault()` to suppress the default seek-to-start behavior.
+		 */
+		onSegmentClick?: (annotation: Annotation, event: { preventDefault: () => void }) => void;
+
 		// Snippets
 		/**
 		 * Custom segment rendering snippet.
@@ -98,6 +110,8 @@
 		searchPlaceholder = 'Search transcript...',
 		ariaLabel = 'Media transcript',
 		announceActiveSegment = true,
+		onActiveAnnotationChange,
+		onSegmentClick,
 		segment,
 		toolbar,
 		empty
@@ -165,8 +179,25 @@
 		};
 	});
 
+	// Fire onActiveAnnotationChange when active annotation changes
+	$effect(() => {
+		if (onActiveAnnotationChange) {
+			const active = activeAnnotationId
+				? annotations.find((a) => a.id === activeAnnotationId) ?? null
+				: null;
+			onActiveAnnotationChange(active);
+		}
+	});
+
 	// Click handler for annotations
 	function handleAnnotationClick(annotation: Annotation) {
+		if (onSegmentClick) {
+			let prevented = false;
+			onSegmentClick(annotation, {
+				preventDefault: () => { prevented = true; }
+			});
+			if (prevented) return;
+		}
 		if (viewer) {
 			viewer.seekTo(annotation.startTime);
 		}

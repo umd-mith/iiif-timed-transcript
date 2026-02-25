@@ -162,3 +162,7 @@ export { default as TranscriptSegment } from "./transcript/Segment.svelte";
 // Export transcript utilities
 export { formatTimestamp, getAnnotationById } from "./transcript/utils";
 export { keyboardNav, type KeyboardNavOptions } from "./transcript/keyboardNav";
+
+// Paragraph merging utility
+export { mergeIntoParagraphs } from "./transcript/paragraphMerger";
+export type { MergedParagraph, MergeConfig } from "./transcript/paragraphMerger";
