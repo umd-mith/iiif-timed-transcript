@@ -1,6 +1,12 @@
 // Public API — exports added as components are extracted in LDA-1964 through LDA-1968
 
 // ============================================================================
+// Components (LDA-1965)
+// ============================================================================
+export { default as MediaPlayer } from "./components/MediaPlayer.svelte";
+export { default as IIIFMediaViewer } from "./components/IIIFMediaViewer.svelte";
+
+// ============================================================================
 // IIIF Utilities (LDA-1964)
 // ============================================================================
 
