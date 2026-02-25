@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(~/.config/claude-code/skills/linear-api/scripts/get-issue.sh:*)",
+      "Bash(~/.config/claude-code/skills/linear-api/scripts/get-comments.sh:*)",
+      "Skill(superpowers:executing-plans)",
+      "Read(//Users/trevormunoz/Code/iiif-media-parsers/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
