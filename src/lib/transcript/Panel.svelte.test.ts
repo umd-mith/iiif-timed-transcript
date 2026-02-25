@@ -88,3 +88,71 @@ describe('Transcript.Panel - Structure & Props', () => {
 		expect(segment2).not.toBeNull();
 	});
 });
+
+describe('Transcript.Panel - SyncController Integration', () => {
+	const mockAnnotations: Annotation[] = [
+		{ id: 'a1', startTime: 0, endTime: 5, text: 'First segment' },
+		{ id: 'a2', startTime: 5, endTime: 10, text: 'Second segment' }
+	];
+
+	const mockViewer: IIIFMediaViewerRef = {
+		seekTo: vi.fn(),
+		getCurrentTime: () => 0,
+		getDuration: () => 100,
+		play: vi.fn(),
+		pause: vi.fn(),
+		isReady: () => true
+	};
+
+	let target: HTMLElement;
+
+	beforeEach(() => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		if (document.body.contains(target)) {
+			document.body.removeChild(target);
+		}
+	});
+
+	it('calls viewer.seekTo when segment clicked', () => {
+		mount(Panel, { target, props: { annotations: mockAnnotations, viewer: mockViewer } });
+		flushSync();
+
+		const segment1 = target.querySelector('[data-annotation-id="a1"]') as HTMLElement;
+		segment1.click();
+
+		expect(mockViewer.seekTo).toHaveBeenCalledWith(0);
+	});
+
+	it('does not call seekTo when viewer is null', () => {
+		mount(Panel, { target, props: { annotations: mockAnnotations, viewer: null } });
+		flushSync();
+
+		const segment1 = target.querySelector('[data-annotation-id="a1"]') as HTMLElement;
+		segment1.click();
+
+		// No error thrown, just no-op
+		expect(mockViewer.seekTo).not.toHaveBeenCalled();
+	});
+
+	it('respects sync configuration props', () => {
+		// This test verifies props are accepted; actual sync behavior tested via SyncController unit tests
+		mount(Panel, {
+			target,
+			props: {
+				annotations: mockAnnotations,
+				viewer: mockViewer,
+				syncDebounceMs: 200,
+				syncSettleMs: 150,
+				syncPriorityLockDuration: 2000
+			}
+		});
+		flushSync();
+
+		expect(target.querySelector('.transcript-panel')).not.toBeNull();
+	});
+});

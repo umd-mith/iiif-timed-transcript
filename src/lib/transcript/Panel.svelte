@@ -1,7 +1,9 @@
 <!-- src/lib/transcript/Panel.svelte -->
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import type { Annotation, IIIFMediaViewerRef } from '../sync/types';
 	import type { Snippet } from 'svelte';
+	import { SyncController } from '../sync/SyncController.svelte';
 	import Segment from './Segment.svelte';
 
 	interface Props {
@@ -9,7 +11,7 @@
 		annotations: Annotation[];
 		viewer: IIIFMediaViewerRef | null;
 
-		// Sync configuration (will be used in Part 2)
+		// Sync configuration
 		syncDebounceMs?: number;
 		syncSettleMs?: number;
 		syncPriorityLockDuration?: number;
@@ -51,8 +53,46 @@
 		empty
 	}: Props = $props();
 
-	// State for active annotation (will be connected to SyncController in Part 2)
-	let activeAnnotationId = $state<string | null>(null);
+	// Refs
+	let scrollContainer: HTMLElement | null = $state(null);
+
+	// SyncController instance
+	let syncController: SyncController | null = null;
+
+	// Derived active annotation ID from SyncController
+	let activeAnnotationId = $derived(
+		syncController && syncController.activeAnnotations.length > 0
+			? syncController.activeAnnotations[0].id
+			: null
+	);
+
+	// Initialize SyncController when viewer and scrollContainer are available
+	$effect(() => {
+		// Cleanup existing controller if reinitializing
+		if (syncController) {
+			syncController.destroy();
+			syncController = null;
+		}
+
+		// Only initialize if we have viewer and scrollContainer
+		if (viewer && scrollContainer && annotations.length > 0) {
+			syncController = new SyncController({
+				debounceMs: syncDebounceMs,
+				settleMs: syncSettleMs,
+				priorityLockDuration: syncPriorityLockDuration
+			});
+
+			syncController.initialize(viewer, scrollContainer, annotations);
+		}
+
+		// Cleanup on unmount or when dependencies change
+		return () => {
+			if (syncController) {
+				syncController.destroy();
+				syncController = null;
+			}
+		};
+	});
 
 	// Click handler for annotations
 	function handleAnnotationClick(annotation: Annotation) {
@@ -60,6 +100,13 @@
 			viewer.seekTo(annotation.startTime);
 		}
 	}
+
+	// Cleanup on component destroy
+	onDestroy(() => {
+		if (syncController) {
+			syncController.destroy();
+		}
+	});
 </script>
 
 <div class="transcript-panel" role="region" aria-label={ariaLabel}>
@@ -90,7 +137,7 @@
 		{/if}
 
 		<!-- Transcript segments -->
-		<div class="segments-container">
+		<div class="segments-container" bind:this={scrollContainer}>
 			{#each annotations as annotation (annotation.id)}
 				{#if segment}
 					{@render segment({
