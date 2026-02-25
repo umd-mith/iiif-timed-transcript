@@ -1,0 +1,90 @@
+// src/lib/transcript/Panel.svelte.test.ts
+import { mount } from 'svelte';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { flushSync } from 'svelte';
+import Panel from './Panel.svelte';
+import type { Annotation, IIIFMediaViewerRef } from '../sync/types';
+
+describe('Transcript.Panel - Structure & Props', () => {
+	const mockAnnotations: Annotation[] = [
+		{ id: 'a1', startTime: 0, endTime: 5, text: 'First segment' },
+		{ id: 'a2', startTime: 5, endTime: 10, text: 'Second segment' }
+	];
+
+	const mockViewer: IIIFMediaViewerRef = {
+		seekTo: vi.fn(),
+		getCurrentTime: () => 0,
+		getDuration: () => 100,
+		play: vi.fn(),
+		pause: vi.fn(),
+		isReady: () => true
+	};
+
+	let target: HTMLElement;
+
+	beforeEach(() => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+	});
+
+	afterEach(() => {
+		if (document.body.contains(target)) {
+			document.body.removeChild(target);
+		}
+	});
+
+	it('renders all annotations', () => {
+		mount(Panel, { target, props: { annotations: mockAnnotations, viewer: mockViewer } });
+		flushSync();
+
+		expect(target.textContent).toContain('First segment');
+		expect(target.textContent).toContain('Second segment');
+	});
+
+	it('renders with null viewer (no sync)', () => {
+		mount(Panel, { target, props: { annotations: mockAnnotations, viewer: null } });
+		flushSync();
+
+		expect(target.textContent).toContain('First segment');
+	});
+
+	it('renders empty state when no annotations', () => {
+		mount(Panel, { target, props: { annotations: [], viewer: null } });
+		flushSync();
+
+		expect(target.textContent).toContain('No transcript available.');
+	});
+
+	it('applies aria-label to container', () => {
+		mount(Panel, {
+			target,
+			props: {
+				annotations: mockAnnotations,
+				viewer: null,
+				ariaLabel: 'Custom transcript label'
+			}
+		});
+		flushSync();
+
+		const container = target.querySelector('[role="region"]');
+		expect(container?.getAttribute('aria-label')).toBe('Custom transcript label');
+	});
+
+	it('uses default aria-label when not provided', () => {
+		mount(Panel, { target, props: { annotations: mockAnnotations, viewer: null } });
+		flushSync();
+
+		const container = target.querySelector('[role="region"]');
+		expect(container?.getAttribute('aria-label')).toBe('Media transcript');
+	});
+
+	it('includes data-annotation-id on segments', () => {
+		mount(Panel, { target, props: { annotations: mockAnnotations, viewer: null } });
+		flushSync();
+
+		const segment1 = target.querySelector('[data-annotation-id="a1"]');
+		const segment2 = target.querySelector('[data-annotation-id="a2"]');
+		expect(segment1).not.toBeNull();
+		expect(segment2).not.toBeNull();
+	});
+});
