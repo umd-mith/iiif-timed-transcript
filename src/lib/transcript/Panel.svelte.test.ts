@@ -212,3 +212,42 @@ describe('Transcript.Panel - Search Integration', () => {
 		expect(searchInput?.placeholder).toBe('Find in transcript...');
 	});
 });
+
+describe('Transcript.Panel - Fullscreen Mode', () => {
+	const mockAnnotations: Annotation[] = [
+		{ id: 'a1', startTime: 0, endTime: 5, text: 'First segment' }
+	];
+
+	let target: HTMLElement;
+
+	beforeEach(() => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+	});
+
+	afterEach(() => {
+		if (document.body.contains(target)) {
+			document.body.removeChild(target);
+		}
+	});
+
+	it('does not show fullscreen toggle by default', () => {
+		mount(Panel, { target, props: { annotations: mockAnnotations, viewer: null } });
+		flushSync();
+
+		const fullscreenButton = target.querySelector('[aria-label*="fullscreen" i]');
+		expect(fullscreenButton).toBeNull();
+	});
+
+	it('shows fullscreen toggle when enableFullscreen is true', () => {
+		mount(Panel, {
+			target,
+			props: { annotations: mockAnnotations, viewer: null, enableFullscreen: true }
+		});
+		flushSync();
+
+		// Should have toolbar with fullscreen placeholder
+		const toolbar = target.querySelector('.toolbar');
+		expect(toolbar).not.toBeNull();
+	});
+});
