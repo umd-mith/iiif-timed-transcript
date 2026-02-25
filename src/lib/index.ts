@@ -6,6 +6,22 @@
 export { default as MediaPlayer } from "./components/MediaPlayer.svelte";
 export { default as IIIFMediaViewer } from "./components/IIIFMediaViewer.svelte";
 
+/**
+ * AudioPlayerControls - Unstyled audio control bar with feature toggles (LDA-1966).
+ *
+ * @example
+ * ```svelte
+ * <script>
+ *   import { AudioPlayerControls, IIIFMediaViewer } from '@umd-mith/svelte-iiif-transcript-player';
+ *   let viewer;
+ * </script>
+ *
+ * <IIIFMediaViewer bind:this={viewer} {manifestUrl} />
+ * <AudioPlayerControls playerRef={viewer} skipAmounts={[10, 30]} />
+ * ```
+ */
+export { default as AudioPlayerControls } from "./components/AudioPlayerControls.svelte";
+
 // ============================================================================
 // IIIF Utilities (LDA-1964)
 // ============================================================================
