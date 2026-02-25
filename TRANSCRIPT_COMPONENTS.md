@@ -590,6 +590,146 @@ If you control the annotation source (typical for IIIF use cases), sanitization 
 
 ---
 
+## Edge Cases & Data Validation
+
+### Handling Invalid or Malformed Data
+
+The components expect well-formed annotations. Here's how the library handles edge cases:
+
+#### Empty or Null Data
+
+```typescript
+// Empty annotations array
+<TranscriptPanel annotations={[]} {viewer} />
+// Result: Shows empty state snippet (default: "No transcript available")
+
+// Null/undefined viewer (static mode)
+<TranscriptPanel {annotations} viewer={null} />
+// Result: Transcript renders, no sync behavior
+```
+
+#### Unsorted Annotations
+
+**Behavior:** Components use binary search for performance. Unsorted annotations cause incorrect active segment detection.
+
+```typescript
+// ❌ WRONG: Random order
+const annotations = [
+  { id: 'c', startTime: 10, endTime: 15, text: 'Third' },
+  { id: 'a', startTime: 0, endTime: 5, text: 'First' },
+  { id: 'b', startTime: 5, endTime: 10, text: 'Second' }
+];
+
+// ✅ CORRECT: Sort before passing
+const sortedAnnotations = [...annotations].sort((a, b) => a.startTime - b.startTime);
+<TranscriptPanel annotations={sortedAnnotations} {viewer} />
+```
+
+#### Duplicate IDs
+
+**Behavior:** DOM queries return first match only. Duplicates are inaccessible.
+
+```typescript
+// ❌ WRONG: Same ID used twice
+const annotations = [
+  { id: 'seg-1', startTime: 0, endTime: 5, text: 'A' },
+  { id: 'seg-1', startTime: 5, endTime: 10, text: 'B' } // Unreachable!
+];
+
+// ✅ CORRECT: Ensure unique IDs
+const annotations = rawData.map((item, idx) => ({
+  ...item,
+  id: item.id || `auto-${idx}` // Generate if missing
+}));
+```
+
+#### Invalid Time Values
+
+**Behavior:** Components clamp negative times to 0, ignore NaN/Infinity, skip annotations where `endTime <= startTime`.
+
+```typescript
+// ❌ PROBLEMATIC: Invalid times
+const annotations = [
+  { id: 'neg', startTime: -10, endTime: 5, text: '...' },    // Clamped to 0
+  { id: 'nan', startTime: NaN, endTime: 10, text: '...' },   // Skipped
+  { id: 'inv', startTime: 10, endTime: 5, text: '...' }      // Skipped (end < start)
+];
+
+// ✅ CORRECT: Validate before passing
+function isValidAnnotation(ann: Annotation): boolean {
+  return (
+    typeof ann.id === 'string' &&
+    Number.isFinite(ann.startTime) &&
+    Number.isFinite(ann.endTime) &&
+    ann.startTime >= 0 &&
+    ann.endTime > ann.startTime
+  );
+}
+
+const validAnnotations = rawAnnotations.filter(isValidAnnotation);
+<TranscriptPanel annotations={validAnnotations} {viewer} />
+```
+
+#### Overlapping Annotations
+
+**Behavior:** When multiple annotations cover the same time, **earliest-starting annotation wins**. If tied, first in array is active.
+
+```typescript
+// Overlapping case
+const annotations = [
+  { id: 'a', startTime: 0, endTime: 10, text: 'Background music' },
+  { id: 'b', startTime: 5, endTime: 8, text: 'Speaker 1' }
+];
+
+// At time=6s: annotation 'a' is active (started earlier)
+```
+
+If you need multi-track support (e.g., speaker + sound effects), use separate `<TranscriptPanel>` instances.
+
+#### Missing Required Properties
+
+**Behavior:** TypeScript prevents this at compile time. At runtime:
+- Missing `id`: Element not found, sync broken
+- Missing `startTime`/`endTime`: Treated as 0, likely skipped
+- Missing `text`: Renders empty segment
+
+**Best practice:** Use a schema validator (Zod, Yup) for runtime data:
+
+```typescript
+import { z } from 'zod';
+
+const AnnotationSchema = z.object({
+  id: z.string().min(1),
+  startTime: z.number().min(0),
+  endTime: z.number(),
+  text: z.string()
+}).refine(ann => ann.endTime > ann.startTime, {
+  message: 'endTime must be greater than startTime'
+});
+
+// Validate before use
+const validated = rawAnnotations
+  .map(ann => AnnotationSchema.safeParse(ann))
+  .filter(result => result.success)
+  .map(result => result.data);
+```
+
+#### Annotations with Gaps
+
+**Behavior:** Gaps in timeline are expected. When video time is between annotations, no segment is active.
+
+```typescript
+// Annotations with 5-second gap
+const annotations = [
+  { id: 'a', startTime: 0, endTime: 5, text: 'Hello' },
+  { id: 'b', startTime: 10, endTime: 15, text: 'World' } // Gap: 5-10s
+];
+
+// At time=7s: No active segment (expected behavior)
+```
+
+---
+
 ## Examples
 
 ### Example 1: Minimal (Default Rendering)
@@ -644,7 +784,9 @@ If you control the annotation source (typical for IIIF use cases), sanitization 
 
 ## TypeScript Support
 
-Full TypeScript definitions are included:
+Full TypeScript definitions are included. The library exports all necessary types for type-safe usage.
+
+### Basic Type Usage
 
 ```typescript
 import type {
@@ -652,4 +794,257 @@ import type {
   IIIFMediaViewerRef,
   SyncConfig
 } from '@umd-mith/svelte-iiif-transcript-player';
+
+// Type-safe annotation array
+const annotations: Annotation[] = [
+  { id: 'seg-1', startTime: 0, endTime: 5, text: 'Hello' },
+  { id: 'seg-2', startTime: 5, endTime: 10, text: 'World' }
+];
+
+// Type-safe viewer reference
+let viewer: IIIFMediaViewerRef | null = null;
 ```
+
+### Component Props Types
+
+All components export their props types:
+
+```typescript
+import type { Props as TranscriptPanelProps } from '@umd-mith/svelte-iiif-transcript-player/transcript/Panel.svelte';
+import type { Props as SearchProps } from '@umd-mith/svelte-iiif-transcript-player/transcript/Search.svelte';
+
+// Use in wrappers or higher-order components
+interface MyWrapperProps extends Partial<TranscriptPanelProps> {
+  title: string;
+  theme: 'light' | 'dark';
+}
+```
+
+### Type-Safe Data Fetching
+
+```typescript
+import type { Annotation } from '@umd-mith/svelte-iiif-transcript-player';
+
+// Fetch annotations from API
+async function fetchTranscript(videoId: string): Promise<Annotation[]> {
+  const response = await fetch(`/api/transcripts/${videoId}`);
+  const data = await response.json();
+
+  // Type assertion with validation
+  return data.map((item: unknown): Annotation => {
+    if (
+      typeof item === 'object' &&
+      item !== null &&
+      'id' in item &&
+      'startTime' in item &&
+      'endTime' in item &&
+      'text' in item
+    ) {
+      return item as Annotation;
+    }
+    throw new Error('Invalid annotation format');
+  });
+}
+```
+
+### Custom Segment Props with TypeScript
+
+When extending the annotation type for custom metadata:
+
+```typescript
+import type { Annotation } from '@umd-mith/svelte-iiif-transcript-player';
+
+// Extend base annotation type
+interface ExtendedAnnotation extends Annotation {
+  speaker?: string;
+  confidence?: number;
+  metadata?: Record<string, unknown>;
+}
+
+// Type-safe in component
+<script lang="ts">
+  import { TranscriptPanel } from '@umd-mith/svelte-iiif-transcript-player';
+  import type { IIIFMediaViewerRef } from '@umd-mith/svelte-iiif-transcript-player';
+
+  let viewer: IIIFMediaViewerRef | null = null;
+  const annotations: ExtendedAnnotation[] = [
+    {
+      id: 'seg-1',
+      startTime: 0,
+      endTime: 5,
+      text: 'Hello',
+      speaker: 'Alice',
+      confidence: 0.95
+    }
+  ];
+</script>
+
+<TranscriptPanel {annotations} {viewer}>
+  {#snippet segment({ annotation, isActive, onClick })}
+    <button
+      data-annotation-id={annotation.id}
+      onclick={onClick}
+    >
+      {#if annotation.speaker}
+        <strong>{annotation.speaker}:</strong>
+      {/if}
+      {annotation.text}
+      {#if annotation.confidence && annotation.confidence < 0.8}
+        <span class="low-confidence">(?)</span>
+      {/if}
+    </button>
+  {/snippet}
+</TranscriptPanel>
+```
+
+### Type Guards for Runtime Safety
+
+```typescript
+import type { Annotation } from '@umd-mith/svelte-iiif-transcript-player';
+
+function isAnnotation(value: unknown): value is Annotation {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    typeof value.id === 'string' &&
+    'startTime' in value &&
+    typeof value.startTime === 'number' &&
+    'endTime' in value &&
+    typeof value.endTime === 'number' &&
+    'text' in value &&
+    typeof value.text === 'string'
+  );
+}
+
+// Use type guard
+const rawData: unknown[] = await fetchFromAPI();
+const validAnnotations = rawData.filter(isAnnotation);
+// validAnnotations is now typed as Annotation[]
+```
+
+---
+
+## Browser Compatibility
+
+The library is designed for modern browsers and requires the following features:
+
+### Minimum Browser Versions
+
+| Browser | Minimum Version | Notes |
+|---------|----------------|-------|
+| **Chrome** | 92+ | Full support including media sync |
+| **Edge** | 92+ | Chromium-based versions only |
+| **Firefox** | 90+ | Full support |
+| **Safari** | 15.4+ | Requires iOS 15.4+ for mobile |
+| **Opera** | 78+ | Chromium-based versions |
+
+### Required JavaScript Features
+
+The library uses modern JavaScript features without polyfills:
+
+- **ES2022 Syntax**
+  - `Array.prototype.at()` – Used in sync algorithms for reverse lookups
+  - `Object.hasOwn()` – Used for property checks
+  - Top-level `await` in modules
+
+- **ES2021+**
+  - Logical assignment operators (`??=`, `||=`)
+  - Numeric separators
+
+- **Svelte 5 Runtime**
+  - Requires runes support (`$state`, `$derived`, `$effect`)
+  - Snippets for customization
+
+### Feature Detection
+
+If you need to support older browsers, check for required features:
+
+```typescript
+function isBrowserSupported(): boolean {
+  return (
+    // Check Array.at() support
+    typeof Array.prototype.at === 'function' &&
+    // Check for modern event handling
+    typeof AbortController === 'function' &&
+    // Check for requestAnimationFrame (sync smoothness)
+    typeof requestAnimationFrame === 'function'
+  );
+}
+
+// Conditional rendering
+{#if isBrowserSupported()}
+  <TranscriptPanel {annotations} {viewer} />
+{:else}
+  <p>Your browser does not support this transcript player. Please upgrade to a modern browser.</p>
+{/if}
+```
+
+### Known Limitations
+
+#### Safari < 15.4
+- Missing `Array.at()` support – causes runtime errors in sync calculations
+- **Workaround:** Include core-js polyfill:
+  ```bash
+  npm install core-js
+  ```
+  ```typescript
+  import 'core-js/actual/array/at';
+  ```
+
+#### Internet Explorer 11
+- **Not supported** – IE11 lacks ES6+ features and Svelte 5 is not compatible
+- No workarounds available – users must upgrade to modern browser
+
+#### Mobile Browsers
+- **iOS Safari 15.4+** required (iOS 15.3 and below lack `Array.at()`)
+- **Android Chrome 92+** recommended
+- Touch events fully supported for segment selection
+- Mobile viewport considerations: Use `height: 100dvh` for dynamic viewport units
+
+### Media Format Compatibility
+
+The transcript components sync with media playback. Ensure your IIIF manifest serves compatible formats:
+
+| Format | Chrome/Edge | Firefox | Safari |
+|--------|-------------|---------|--------|
+| **MP4 (H.264)** | ✅ | ✅ | ✅ |
+| **WebM (VP9)** | ✅ | ✅ | ❌ |
+| **MP3** | ✅ | ✅ | ✅ |
+| **AAC** | ✅ | ✅ | ✅ |
+
+**Best practice:** Provide MP4 with H.264 codec for maximum compatibility.
+
+### Accessibility Features
+
+All accessibility features are supported in modern browsers:
+
+- **ARIA live regions** – Announces active segment to screen readers
+- **Keyboard navigation** – Arrow keys, Enter, focus management
+- **High contrast mode** – Respects OS preferences via data attributes
+- **Reduced motion** – Honors `prefers-reduced-motion` (disable auto-scroll via CSS)
+
+### Testing Your Setup
+
+```typescript
+// Check if critical features are available
+console.assert(typeof Array.prototype.at === 'function', 'Array.at() required');
+console.assert(typeof requestAnimationFrame === 'function', 'RAF required for sync');
+
+// Test media format support
+const video = document.createElement('video');
+const canPlayMP4 = video.canPlayType('video/mp4; codecs="avc1.42E01E"');
+console.log('MP4 support:', canPlayMP4); // "probably" or "maybe" = supported
+```
+
+---
+
+## License
+
+MIT © Maryland Institute for Technology in the Humanities
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome at the [GitHub repository](https://github.com/umd-mith/svelte-iiif-transcript-player).
