@@ -87,3 +87,30 @@ export {
   type CacheMetrics,
   type CacheLogger,
 } from "./iiif/cache";
+
+// ============================================================================
+// Bidirectional Sync (LDA-1968)
+// ============================================================================
+
+// SyncController class
+export { SyncController } from "./sync/SyncController.svelte";
+
+// Types
+export type {
+  SyncConfig,
+  Annotation,
+  IIIFMediaViewerRef,
+  SyncContext,
+  SyncEvent,
+  SyncPriority,
+} from "./sync/types";
+
+// Configuration
+export { DEFAULT_SYNC_CONFIG } from "./sync/config";
+
+// Utility functions
+export {
+  getActiveAnnotation,
+  timeToScrollProgress,
+  scrollProgressToTime,
+} from "./sync/annotationUtils";
