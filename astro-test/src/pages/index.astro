@@ -1,0 +1,26 @@
+---
+import IIIFTranscriptDemo from '../components/IIIFTranscriptDemo.svelte';
+
+// IIIF Cookbook Recipe 0219: Video with WebVTT captions
+const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json';
+const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.vtt';
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>IIIF Transcript Player - Astro Integration Test (LDA-1970)</title>
+	</head>
+	<body>
+		<!-- Svelte island with client:load hydration -->
+		<IIIFTranscriptDemo
+			client:load
+			{manifestUrl}
+			{vttUrl}
+		/>
+	</body>
+</html>

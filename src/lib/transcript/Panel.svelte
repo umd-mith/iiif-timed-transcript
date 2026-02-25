@@ -1,6 +1,6 @@
 <!-- src/lib/transcript/Panel.svelte -->
 <script lang="ts">
-	import { onDestroy, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import type { Annotation, IIIFMediaViewerRef } from '../sync/types';
 	import type { Snippet } from 'svelte';
 	import { SyncController } from '../sync/SyncController.svelte';
@@ -122,14 +122,17 @@
 	let scrollContainer: HTMLElement | null = $state(null);
 
 	// SyncController instance
-	let syncController: SyncController | null = null;
+	// Must be $state so derived values recompute when controller properties change (lakeland LDA-1572)
+	let syncController: SyncController | null = $state(null);
 
 	// Derived active annotation ID from SyncController
-	let activeAnnotationId = $derived(
-		syncController && syncController.activeAnnotations.length > 0
-			? syncController.activeAnnotations[0].id
-			: null
-	);
+	// Use $derived.by() to ensure reactivity when controller changes (from lakeland LDA-1572)
+	let activeAnnotationId = $derived.by(() => {
+		if (!syncController || syncController.activeAnnotations.length === 0) {
+			return null;
+		}
+		return syncController.activeAnnotations[0].id;
+	});
 
 	// Search state
 	let searchMatches = $state<Annotation[]>([]);
@@ -152,31 +155,40 @@
 		}
 	}
 
-	// Initialize SyncController when viewer and scrollContainer are available
+	// Initialize and reinitialize SyncController when dependencies change (LDA-1572)
+	// Uses $effect cleanup pattern to properly destroy old controller before creating new one
 	$effect(() => {
-		// Cleanup existing controller if reinitializing
-		if (syncController) {
-			syncController.destroy();
-			syncController = null;
+		// Capture reactive dependencies
+		const vRef = viewer;
+		const container = scrollContainer;
+		const anns = annotations;
+
+		// Early return if requirements not met
+		if (!vRef || !container || anns.length === 0) {
+			return;
 		}
 
-		// Only initialize if we have viewer and scrollContainer
-		if (viewer && scrollContainer && annotations.length > 0) {
-			syncController = new SyncController({
-				debounceMs: syncDebounceMs,
-				settleMs: syncSettleMs,
-				priorityLockDuration: syncPriorityLockDuration
-			});
+		// Create new controller with current annotations
+		const ctrl = new SyncController({
+			debounceMs: syncDebounceMs,
+			settleMs: syncSettleMs,
+			priorityLockDuration: syncPriorityLockDuration
+		});
 
-			syncController.initialize(viewer, scrollContainer, annotations);
+		try {
+			ctrl.initialize(vRef, container, anns);
+		} catch (error) {
+			console.error('[Panel] SyncController initialization failed:', error);
 		}
 
-		// Cleanup on unmount or when dependencies change
+		// Update the component-level reference (untrack to avoid infinite loop)
+		untrack(() => {
+			syncController = ctrl;
+		});
+
+		// Cleanup: destroy controller when dependencies change or component unmounts
 		return () => {
-			if (syncController) {
-				syncController.destroy();
-				syncController = null;
-			}
+			ctrl.destroy();
 		};
 	});
 
@@ -206,13 +218,6 @@
 			viewer.seekTo(annotation.startTime);
 		}
 	}
-
-	// Cleanup on component destroy
-	onDestroy(() => {
-		if (syncController) {
-			syncController.destroy();
-		}
-	});
 </script>
 
 <div class="transcript-panel" role="region" aria-label={ariaLabel}>

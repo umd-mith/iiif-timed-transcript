@@ -79,7 +79,9 @@ function annotationChanged({ context, event }: { context: SyncContext; event: Sy
 		? context.annotations.findIndex((ann) => ann.id === activeAnnotation.id)
 		: -1;
 
-	return currentIndex !== context.annotationIndex;
+	// Only trigger transition if there IS an active annotation and it changed
+	// Prevents scroll-to-top bug when entering gaps in transcript coverage
+	return currentIndex !== context.annotationIndex && currentIndex !== -1;
 }
 
 /**
@@ -285,16 +287,14 @@ export const syncMachine = setup({
 				src: 'scrollController',
 				input: ({ context }) => {
 					const activeAnnotation = getActiveAnnotation(context.currentTime, context.annotations);
-					// Fall back to first annotation if no active annotation found
-					const targetAnnotation = activeAnnotation || context.annotations[0];
 
-					if (!targetAnnotation) {
-						throw new Error('No annotations available for scroll sync');
+					if (!activeAnnotation) {
+						throw new Error('No active annotation for scroll sync');
 					}
 
 					return {
 						scrollContainer: context.scrollContainer!,
-						targetAnnotation
+						targetAnnotation: activeAnnotation
 					};
 				},
 				onDone: 'ready'
