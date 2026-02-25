@@ -1,6 +1,6 @@
 <!-- src/lib/transcript/Panel.svelte -->
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import type { Annotation, IIIFMediaViewerRef } from '../sync/types';
 	import type { Snippet } from 'svelte';
 	import { SyncController } from '../sync/SyncController.svelte';
@@ -72,6 +72,19 @@
 		 */
 		announceActiveSegment?: boolean;
 
+		// Callbacks
+		/**
+		 * Called when the active (currently playing) annotation changes.
+		 * Receives the full Annotation object, or null when no annotation is active.
+		 */
+		onActiveAnnotationChange?: (annotation: Annotation | null) => void;
+		/**
+		 * Called when a transcript segment is clicked, before the default seek behavior.
+		 * Call `event.preventDefault()` synchronously to suppress the default seek.
+		 * Async prevention (calling preventDefault inside an await) will not work.
+		 */
+		onSegmentClick?: (annotation: Annotation, event: { preventDefault: () => void }) => void;
+
 		// Snippets
 		/**
 		 * Custom segment rendering snippet.
@@ -98,6 +111,8 @@
 		searchPlaceholder = 'Search transcript...',
 		ariaLabel = 'Media transcript',
 		announceActiveSegment = true,
+		onActiveAnnotationChange,
+		onSegmentClick,
 		segment,
 		toolbar,
 		empty
@@ -165,8 +180,28 @@
 		};
 	});
 
+	// Fire onActiveAnnotationChange when active annotation changes
+	$effect(() => {
+		const id = activeAnnotationId;
+		untrack(() => {
+			if (onActiveAnnotationChange) {
+				const active = id
+					? annotations.find((a) => a.id === id) ?? null
+					: null;
+				onActiveAnnotationChange(active);
+			}
+		});
+	});
+
 	// Click handler for annotations
 	function handleAnnotationClick(annotation: Annotation) {
+		if (onSegmentClick) {
+			let prevented = false;
+			onSegmentClick(annotation, {
+				preventDefault: () => { prevented = true; }
+			});
+			if (prevented) return;
+		}
 		if (viewer) {
 			viewer.seekTo(annotation.startTime);
 		}

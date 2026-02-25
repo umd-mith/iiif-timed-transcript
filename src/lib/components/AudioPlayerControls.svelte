@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { IIIFMediaViewerRef } from '../sync/types';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		/** Reference to MediaPlayer or IIIFMediaViewer */
@@ -16,6 +17,14 @@
 		skipAmounts?: number[];
 		/** Speed picker options */
 		speedOptions?: number[];
+
+		// Icon snippets (optional - fall back to text labels)
+		/** Custom play icon snippet. Provide both playIcon and pauseIcon for consistent visuals. */
+		playIcon?: Snippet;
+		/** Custom pause icon snippet. Provide both playIcon and pauseIcon for consistent visuals. */
+		pauseIcon?: Snippet;
+		/** Custom skip icon snippet — receives the skip amount in seconds from skipAmounts */
+		skipIcon?: Snippet<[{ seconds: number }]>;
 
 		// Reactive state props (optional - fallback to playerRef methods)
 		/** Current playback time - pass from parent for reactivity */
@@ -34,6 +43,9 @@
 		enableSpeed = true,
 		skipAmounts = [5, 15, 30],
 		speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 2],
+		playIcon,
+		pauseIcon,
+		skipIcon,
 		currentTime: currentTimeProp,
 		duration: durationProp,
 		isPlaying: isPlayingProp,
@@ -183,7 +195,11 @@
 					onclick={() => handleSkip(amount)}
 					disabled={isDisabled}
 				>
-					{Math.abs(amount)}s
+					{#if skipIcon}
+						{@render skipIcon({ seconds: amount })}
+					{:else}
+						{Math.abs(amount)}s
+					{/if}
 				</button>
 			{/each}
 		{/if}
@@ -195,7 +211,13 @@
 			onclick={handlePlayPause}
 			disabled={isDisabled}
 		>
-			{isPlaying ? 'Pause' : 'Play'}
+			{#if isPlaying && pauseIcon}
+				{@render pauseIcon()}
+			{:else if !isPlaying && playIcon}
+				{@render playIcon()}
+			{:else}
+				{isPlaying ? 'Pause' : 'Play'}
+			{/if}
 		</button>
 
 		{#if enableSpeed}

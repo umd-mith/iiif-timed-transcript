@@ -68,6 +68,49 @@ export interface SyncConfig {
 /**
  * Annotation data structure.
  * Represents a timed annotation in the transcript.
+ *
+ * The `metadata` field supports arbitrary key-value pairs for consumer-specific
+ * data. Common patterns include:
+ *
+ * @example Speaker labels
+ * ```ts
+ * const annotation: Annotation = {
+ *   id: 'seg-1',
+ *   startTime: 0,
+ *   endTime: 5.2,
+ *   text: 'Can you tell us about your childhood?',
+ *   metadata: { speaker: 'Interviewer' }
+ * };
+ * ```
+ *
+ * @example Review/QA flags
+ * ```ts
+ * const annotation: Annotation = {
+ *   id: 'seg-42',
+ *   startTime: 120,
+ *   endTime: 128.5,
+ *   text: '[inaudible] the community center',
+ *   metadata: {
+ *     reviewStatus: 'needs-review',
+ *     confidence: 0.45,
+ *     flaggedBy: 'auto-qa'
+ *   }
+ * };
+ * ```
+ *
+ * @example Custom display hints
+ * ```ts
+ * const annotation: Annotation = {
+ *   id: 'seg-10',
+ *   startTime: 30,
+ *   endTime: 38,
+ *   text: 'We called it the Lakeland Community.',
+ *   metadata: {
+ *     entityRefs: ['lakeland-community'],
+ *     highlight: true
+ *   }
+ * };
+ * ```
  */
 export interface Annotation {
 	/** Unique identifier for the annotation */
@@ -78,7 +121,10 @@ export interface Annotation {
 	endTime: number;
 	/** Text content of the annotation */
 	text: string;
-	/** Optional metadata */
+	/**
+	 * Optional metadata for consumer-specific data.
+	 * Access in custom segment snippets via `annotation.metadata?.speaker`, etc.
+	 */
 	metadata?: Record<string, unknown>;
 }
 

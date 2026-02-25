@@ -13,6 +13,7 @@
 		iiifManifestUrl,
 		canvasIndex = 0,
 		controls = true,
+		initialSeekTime,
 		onError,
 		onLoad,
 		onReady,
@@ -27,6 +28,8 @@
 		canvasIndex?: number;
 		/** Whether to show native browser controls. Defaults to true. */
 		controls?: boolean;
+		/** Time in seconds to seek to once the player is ready (must be > 0; 0 is ignored since media starts at the beginning). Applied once per component lifetime. */
+		initialSeekTime?: number;
 		onError?: (error: Error) => void;
 		onLoad?: () => void;
 		onReady?: () => void;
@@ -50,6 +53,7 @@
 	let mediaUrl = $state('');
 	let mediaType = $state<'audio' | 'video'>('audio');
 	let dimensions = $state<{ width?: number; height?: number }>({});
+	let hasAppliedInitialSeek = false;
 
 	async function loadManifest() {
 		try {
@@ -119,9 +123,22 @@
 		}
 	}
 
+	function applyInitialSeek() {
+		if (
+			!hasAppliedInitialSeek &&
+			initialSeekTime != null &&
+			initialSeekTime > 0 &&
+			playerRef
+		) {
+			hasAppliedInitialSeek = true;
+			seekTo(initialSeekTime);
+		}
+	}
+
 	function handleMediaLoad() {
 		isLoading = false;
 		onLoad?.();
+		applyInitialSeek();
 	}
 
 	function handleMediaError(error: { code: number; message: string; userMessage: string }) {
