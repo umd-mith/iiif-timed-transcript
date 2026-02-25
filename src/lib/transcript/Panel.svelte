@@ -5,6 +5,7 @@
 	import type { Snippet } from 'svelte';
 	import { SyncController } from '../sync/SyncController.svelte';
 	import Segment from './Segment.svelte';
+	import Search from './Search.svelte';
 
 	interface Props {
 		// Required
@@ -66,6 +67,27 @@
 			: null
 	);
 
+	// Search state
+	let searchMatches = $state<Annotation[]>([]);
+	let currentMatchIndex = $state(-1);
+
+	// Search handlers
+	function handleMatchChange(matches: Annotation[]) {
+		searchMatches = matches;
+		currentMatchIndex = matches.length > 0 ? 0 : -1;
+	}
+
+	function handleNavigateMatch(index: number) {
+		currentMatchIndex = index;
+		// Scroll to the matched annotation
+		if (searchMatches[index]) {
+			const matchedAnnotation = searchMatches[index];
+			if (viewer) {
+				viewer.seekTo(matchedAnnotation.startTime);
+			}
+		}
+	}
+
 	// Initialize SyncController when viewer and scrollContainer are available
 	$effect(() => {
 		// Cleanup existing controller if reinitializing
@@ -125,8 +147,15 @@
 			{:else}
 				<div class="toolbar">
 					{#if enableSearch}
-						<!-- Search will be integrated in Part 3 -->
-						<div class="search-placeholder">Search (coming in Part 3)</div>
+						<Search
+							{annotations}
+							placeholder={searchPlaceholder}
+							debounceMs={searchDebounceMs}
+							onmatchchange={handleMatchChange}
+							onnavigatematch={handleNavigateMatch}
+							{currentMatchIndex}
+							totalMatches={searchMatches.length}
+						/>
 					{/if}
 					{#if enableFullscreen}
 						<!-- Fullscreen will be integrated in Part 4 -->
@@ -182,8 +211,7 @@
 		flex: 1;
 	}
 
-	/* Placeholders for upcoming features */
-	.search-placeholder,
+	/* Placeholder for fullscreen (Part 4) */
 	.fullscreen-placeholder {
 		padding: 0.25rem 0.5rem;
 		background: #f0f0f0;

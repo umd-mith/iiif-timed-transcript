@@ -156,3 +156,59 @@ describe('Transcript.Panel - SyncController Integration', () => {
 		expect(target.querySelector('.transcript-panel')).not.toBeNull();
 	});
 });
+
+describe('Transcript.Panel - Search Integration', () => {
+	const mockAnnotations: Annotation[] = [
+		{ id: 'a1', startTime: 0, endTime: 5, text: 'Hello world' },
+		{ id: 'a2', startTime: 5, endTime: 10, text: 'Goodbye world' },
+		{ id: 'a3', startTime: 10, endTime: 15, text: 'Testing search' }
+	];
+
+	let target: HTMLElement;
+
+	beforeEach(() => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+	});
+
+	afterEach(() => {
+		if (document.body.contains(target)) {
+			document.body.removeChild(target);
+		}
+	});
+
+	it('does not show search by default', () => {
+		mount(Panel, { target, props: { annotations: mockAnnotations, viewer: null } });
+		flushSync();
+
+		const searchInput = target.querySelector('input[type="search"]');
+		expect(searchInput).toBeNull();
+	});
+
+	it('shows search when enableSearch is true', () => {
+		mount(Panel, {
+			target,
+			props: { annotations: mockAnnotations, viewer: null, enableSearch: true }
+		});
+		flushSync();
+
+		const searchInput = target.querySelector('input[type="search"]');
+		expect(searchInput).not.toBeNull();
+	});
+
+	it('uses custom search placeholder', () => {
+		mount(Panel, {
+			target,
+			props: {
+				annotations: mockAnnotations,
+				viewer: null,
+				enableSearch: true,
+				searchPlaceholder: 'Find in transcript...'
+			}
+		});
+		flushSync();
+
+		const searchInput = target.querySelector('input[type="search"]') as HTMLInputElement;
+		expect(searchInput?.placeholder).toBe('Find in transcript...');
+	});
+});
