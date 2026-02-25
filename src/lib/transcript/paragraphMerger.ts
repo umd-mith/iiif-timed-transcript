@@ -1,20 +1,20 @@
 import type { Annotation } from '../sync/types';
 
 export interface MergedParagraph {
-	/** Stable identifier for this paragraph (e.g., "para-0") */
-	id: string;
+	/** Positional identifier within a single merge result (e.g., "para-0"). Not stable across different inputs — IDs shift if annotations are filtered and re-merged. */
+	readonly id: string;
 	/** Original segments that compose this paragraph, in order */
-	segments: Annotation[];
+	readonly segments: readonly Annotation[];
 	/** Pre-computed segment IDs for O(1) active/highlight checks */
-	segmentIds: Set<string>;
+	readonly segmentIds: ReadonlySet<string>;
 	/** Start time of the first segment (seconds) */
-	startTime: number;
+	readonly startTime: number;
 	/** End time of the last segment (seconds) */
-	endTime: number;
+	readonly endTime: number;
 	/** Joined text from all segments */
-	text: string;
+	readonly text: string;
 	/** Speaker label if all segments share the same speaker. Undefined when no speakers map is provided, when segments have no labels, or when a paragraph contains segments from multiple speakers. */
-	speaker?: string;
+	readonly speaker?: string;
 }
 
 export interface MergeConfig {
@@ -98,9 +98,18 @@ interface ResolvedConfig {
 }
 
 function resolveConfig(config: MergeConfig = {}): ResolvedConfig {
+	const target = config.targetWordCount ?? DEFAULTS.targetWordCount;
+	const max = config.maxWordCount ?? DEFAULTS.maxWordCount;
+
+	if (max < target) {
+		throw new Error(
+			`MergeConfig: maxWordCount (${max}) must be >= targetWordCount (${target})`
+		);
+	}
+
 	return {
-		target: config.targetWordCount ?? DEFAULTS.targetWordCount,
-		max: config.maxWordCount ?? DEFAULTS.maxWordCount,
+		target,
+		max,
 		gapThreshold: config.gapThreshold ?? DEFAULTS.gapThreshold,
 		speakers: config.speakers
 	};
@@ -156,7 +165,7 @@ function buildParagraph(
 	const first = segments[0]!;
 	const last = segments.at(-1)!;
 
-	const paragraph: MergedParagraph = {
+	const base = {
 		id: `para-${index}`,
 		segments,
 		segmentIds: new Set(segments.map((s) => s.id)),
@@ -164,10 +173,8 @@ function buildParagraph(
 		endTime: last.endTime,
 		text: segments.map((s) => s.text.trim()).join(' ')
 	};
-	if (speaker !== undefined) {
-		paragraph.speaker = speaker;
-	}
-	return paragraph;
+
+	return speaker !== undefined ? { ...base, speaker } : base;
 }
 
 function resolveSpeaker(

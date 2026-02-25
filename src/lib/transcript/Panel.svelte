@@ -80,7 +80,8 @@
 		onActiveAnnotationChange?: (annotation: Annotation | null) => void;
 		/**
 		 * Called when a transcript segment is clicked, before the default seek behavior.
-		 * Call `event.preventDefault()` to suppress the default seek-to-start behavior.
+		 * Call `event.preventDefault()` synchronously to suppress the default seek.
+		 * Async prevention (calling preventDefault inside an await) will not work.
 		 */
 		onSegmentClick?: (annotation: Annotation, event: { preventDefault: () => void }) => void;
 

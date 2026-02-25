@@ -19,11 +19,11 @@
 		speedOptions?: number[];
 
 		// Icon snippets (optional - fall back to text labels)
-		/** Custom play icon snippet */
+		/** Custom play icon snippet. Provide both playIcon and pauseIcon for consistent visuals. */
 		playIcon?: Snippet;
-		/** Custom pause icon snippet */
+		/** Custom pause icon snippet. Provide both playIcon and pauseIcon for consistent visuals. */
 		pauseIcon?: Snippet;
-		/** Custom skip icon snippet — receives skip amount in seconds (negative = rewind, positive = forward) */
+		/** Custom skip icon snippet — receives the skip amount in seconds from skipAmounts */
 		skipIcon?: Snippet<[{ seconds: number }]>;
 
 		// Reactive state props (optional - fallback to playerRef methods)

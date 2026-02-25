@@ -342,6 +342,13 @@ describe('mergeIntoParagraphs', () => {
 			expect(result).toHaveLength(2);
 		});
 
+		test('throws when maxWordCount < targetWordCount', () => {
+			const segments = makeSegments(['Hello.']);
+			expect(() =>
+				mergeIntoParagraphs(segments, { targetWordCount: 500, maxWordCount: 100 })
+			).toThrow('maxWordCount (100) must be >= targetWordCount (500)');
+		});
+
 		test('cascading priority: time gap wins over word count', () => {
 			const segments: Annotation[] = [
 				{ id: 'seg-1', startTime: 0, endTime: 5, text: 'Before the pause.' },
@@ -349,7 +356,8 @@ describe('mergeIntoParagraphs', () => {
 			];
 			const result = mergeIntoParagraphs(segments, {
 				gapThreshold: 2.0,
-				targetWordCount: 1000
+				targetWordCount: 1000,
+				maxWordCount: 2000
 			});
 
 			expect(result).toHaveLength(2);
