@@ -1,10 +1,12 @@
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from 'svelte';
 import { flushSync } from 'svelte';
 import Transcript from './Transcript.svelte';
 import TestContextProvider from './TestContextProvider.svelte';
+import TestTranscriptContextConsumer from './TestTranscriptContextConsumer.svelte';
 import { createMockPlayerContext } from './test-utils';
 import type { Annotation } from '../sync/types';
+import type { TranscriptContext } from './transcript-context';
 
 describe('Transcript', () => {
 	let target: HTMLElement;
@@ -79,5 +81,142 @@ describe('Transcript', () => {
 		const emptyMessage = target.querySelector('.empty-message');
 		expect(emptyMessage).not.toBeNull();
 		expect(emptyMessage?.textContent).toContain('No transcript available');
+	});
+
+	describe('TranscriptContext provision', () => {
+		test('provides TranscriptContext to children', () => {
+			const playerCtx = createMockPlayerContext();
+			let capturedTranscriptCtx: TranscriptContext | null = null;
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: playerCtx,
+					children: (anchor: any) => {
+						mount(Transcript, {
+							target,
+							anchor,
+							props: {
+								annotations: mockAnnotations,
+								children: () => {
+									mount(TestTranscriptContextConsumer, {
+										target,
+										props: {
+											onResult: (ctx: TranscriptContext) => {
+												capturedTranscriptCtx = ctx;
+											}
+										}
+									});
+								}
+							}
+						});
+					}
+				}
+			});
+			flushSync();
+
+			expect(capturedTranscriptCtx).not.toBeNull();
+			expect(capturedTranscriptCtx!.state.annotations).toEqual(mockAnnotations);
+			expect(capturedTranscriptCtx!.actions.handleAnnotationClick).toBeInstanceOf(Function);
+			expect(capturedTranscriptCtx!.actions.handleMatchChange).toBeInstanceOf(Function);
+		});
+
+		test('context state includes search fields', () => {
+			const playerCtx = createMockPlayerContext();
+			let capturedCtx: TranscriptContext | null = null;
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: playerCtx,
+					children: (anchor: any) => {
+						mount(Transcript, {
+							target,
+							anchor,
+							props: {
+								annotations: mockAnnotations,
+								children: () => {
+									mount(TestTranscriptContextConsumer, {
+										target,
+										props: {
+											onResult: (ctx: TranscriptContext) => {
+												capturedCtx = ctx;
+											}
+										}
+									});
+								}
+							}
+						});
+					}
+				}
+			});
+			flushSync();
+
+			expect(capturedCtx!.state.activeAnnotationId).toBeNull();
+			expect(capturedCtx!.state.searchMatches).toEqual([]);
+			expect(capturedCtx!.state.currentMatchIndex).toBe(-1);
+			expect(capturedCtx!.state.highlightedIds).toBeInstanceOf(Set);
+			expect(capturedCtx!.state.currentMatchId).toBeNull();
+		});
+
+		test('handleAnnotationClick in context seeks media', () => {
+			const playerCtx = createMockPlayerContext();
+			let capturedCtx: TranscriptContext | null = null;
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: playerCtx,
+					children: (anchor: any) => {
+						mount(Transcript, {
+							target,
+							anchor,
+							props: {
+								annotations: mockAnnotations,
+								children: () => {
+									mount(TestTranscriptContextConsumer, {
+										target,
+										props: {
+											onResult: (ctx: TranscriptContext) => {
+												capturedCtx = ctx;
+											}
+										}
+									});
+								}
+							}
+						});
+					}
+				}
+			});
+			flushSync();
+
+			// Click annotation via context action
+			capturedCtx!.actions.handleAnnotationClick(mockAnnotations[1]);
+
+			expect(playerCtx.actions.seekTo).toHaveBeenCalledWith(5); // startTime of a2
+		});
+
+		test('monolithic mode still renders segments without children', () => {
+			const playerCtx = createMockPlayerContext();
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: playerCtx,
+					children: (anchor: any) => {
+						mount(Transcript, {
+							target,
+							anchor,
+							props: { annotations: mockAnnotations }
+						});
+					}
+				}
+			});
+			flushSync();
+
+			// Should render segments directly (no children = monolithic mode)
+			const segments = target.querySelectorAll('[data-annotation-id]');
+			expect(segments).toHaveLength(3);
+		});
 	});
 });

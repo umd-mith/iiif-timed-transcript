@@ -31,6 +31,7 @@
  */
 export { IIIFPlayer } from "./player";
 export type { PlayerContext, PlayerState, PlayerActions } from "./player";
+export type { TranscriptContext, TranscriptState, TranscriptActions } from "./player";
 
 // ============================================================================
 // IIIF Utilities (LDA-1964)

@@ -1,7 +1,8 @@
 <!-- src/lib/player/Transcript.svelte -->
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { untrack, setContext } from 'svelte';
 	import { getPlayerContext } from './context';
+	import { TRANSCRIPT_CONTEXT_KEY, type TranscriptContext } from './transcript-context';
 	import type { Annotation, IIIFMediaViewerRef } from '../sync/types';
 	import type { Snippet } from 'svelte';
 	import { SyncController } from '../sync/SyncController.svelte';
@@ -107,6 +108,24 @@
 		}
 		return searchMatches[currentMatchIndex]?.id ?? null;
 	});
+
+	// Provide TranscriptContext for compound children (TranscriptSearch, TranscriptSegments)
+	setContext(TRANSCRIPT_CONTEXT_KEY, {
+		get state() {
+			return {
+				annotations,
+				activeAnnotationId,
+				searchMatches,
+				currentMatchIndex,
+				highlightedIds,
+				currentMatchId
+			};
+		},
+		actions: {
+			handleAnnotationClick,
+			handleMatchChange
+		}
+	} satisfies TranscriptContext);
 
 	// Search handler - unified callback from Search component
 	function handleMatchChange(matches: Annotation[], index: number) {

@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
 	import Segment from '../transcript/Segment.svelte';
+	import { TRANSCRIPT_CONTEXT_KEY, type TranscriptContext } from './transcript-context';
 	import type { Annotation } from '../sync/types';
 
 	interface Props {
@@ -12,13 +14,23 @@
 	}
 
 	let {
-		annotations = [],
-		activeAnnotationId = null,
-		highlightedIds = new Set(),
-		currentMatchId = null,
-		onclick,
+		annotations: annotationsProp,
+		activeAnnotationId: activeAnnotationIdProp,
+		highlightedIds: highlightedIdsProp,
+		currentMatchId: currentMatchIdProp,
+		onclick: onclickProp,
 		class: className = ''
 	}: Props = $props();
+
+	// Try to read TranscriptContext (available when inside Transcript)
+	const transcriptCtx = getContext<TranscriptContext | undefined>(TRANSCRIPT_CONTEXT_KEY);
+
+	// Use context values when available, fall back to props
+	const annotations = $derived(annotationsProp ?? transcriptCtx?.state.annotations ?? []);
+	const activeAnnotationId = $derived(activeAnnotationIdProp ?? transcriptCtx?.state.activeAnnotationId ?? null);
+	const highlightedIds = $derived(highlightedIdsProp ?? transcriptCtx?.state.highlightedIds ?? new Set<string>());
+	const currentMatchId = $derived(currentMatchIdProp ?? transcriptCtx?.state.currentMatchId ?? null);
+	const onclick = $derived(onclickProp ?? transcriptCtx?.actions.handleAnnotationClick);
 </script>
 
 {#if annotations.length === 0}

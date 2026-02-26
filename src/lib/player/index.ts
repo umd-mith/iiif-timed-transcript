@@ -46,3 +46,4 @@ export const IIIFPlayer = {
 
 // Export types
 export type { PlayerContext, PlayerState, PlayerActions } from './context';
+export type { TranscriptContext, TranscriptState, TranscriptActions } from './transcript-context';
