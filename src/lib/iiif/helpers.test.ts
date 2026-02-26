@@ -1147,4 +1147,29 @@ describe("buildTranscriptAnnotations", () => {
     expect(result).toHaveLength(1);
     expect(result[0]!.id).toBe(pointInTimeAnnotation.id);
   });
+
+  it("should generate unique IDs when annotations share the same id (AVAnnotate pattern)", () => {
+    // AVAnnotate sets every annotation's id to the AnnotationPage URL
+    const sharedId = "https://example.org/page/supp";
+    const dup1 = { ...avAnnotateAnnotation, id: sharedId };
+    const dup2 = { ...avAnnotateAnnotation2, id: sharedId };
+
+    const canvas = createSupplementaryCanvas([
+      {
+        id: sharedId,
+        type: "AnnotationPage",
+        items: [dup1, dup2],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result).toHaveLength(2);
+    // First gets the original id, second gets a suffixed id
+    expect(result[0]!.id).toBe(sharedId);
+    expect(result[1]!.id).toBe(`${sharedId}-1`);
+    // All IDs must be unique
+    const ids = result.map((a) => a.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 });

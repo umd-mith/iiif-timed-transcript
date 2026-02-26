@@ -607,6 +607,7 @@ export function buildTranscriptAnnotations(
 ): Annotation[] {
   const grouped = getSupplementaryTextualBodies(canvas, motivationFilter);
   const result: Annotation[] = [];
+  const seenIds = new Set<string>();
 
   for (const item of grouped) {
     // Must have at least one text body to build a transcript annotation
@@ -618,8 +619,16 @@ export function buildTranscriptAnnotations(
 
     const text = item.textBodies.map((b) => b.value).join(" ");
 
+    // AVAnnotate manifests reuse the AnnotationPage URL as every annotation's
+    // id, so we deduplicate by appending a suffix when collisions occur.
+    let id = item.annotationId;
+    if (seenIds.has(id)) {
+      id = `${id}-${result.length}`;
+    }
+    seenIds.add(id);
+
     const annotation: Annotation = {
-      id: item.annotationId,
+      id,
       startTime: start,
       endTime: end,
       text,
