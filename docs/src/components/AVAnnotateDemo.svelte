@@ -5,6 +5,10 @@
 	 * Unlike the VTT demo, this uses buildTranscriptAnnotations() to extract
 	 * transcript data directly from the IIIF manifest's canvas.annotations —
 	 * the feature added for GitHub issue #2.
+	 *
+	 * Uses a custom segment renderer (AVAnnotateSegments) instead of the
+	 * built-in TranscriptSegments to display richer metadata: speaker names,
+	 * category tags, and interactive tag filtering.
 	 */
 	import { onMount } from 'svelte';
 	import {
@@ -14,6 +18,7 @@
 		buildTranscriptAnnotations,
 		type Annotation
 	} from '@umd-mith/svelte-iiif-transcript-player';
+	import AVAnnotateSegments from './AVAnnotateSegments.svelte';
 
 	// Props
 	let {
@@ -22,18 +27,58 @@
 		manifestUrl: string;
 	} = $props();
 
+	// Known category tags (matching AVAnnotateSegments color map)
+	const categoryNames = ['Speaking', 'Reading', 'Transcription', 'Situational', 'Audience', 'Notes', 'Social'];
+
 	// State
 	let annotations = $state<Annotation[]>([]);
 	let isLoading = $state(true);
 	let loadError = $state<string | null>(null);
 	let annotationCount = $state(0);
+	let activeTags = $state<string[]>([]);
+
+	// Derive unique category tags present in this manifest
+	const availableTags = $derived.by(() => {
+		const allTags = annotations.flatMap((a) => (a.metadata?.tags as string[]) ?? []);
+		const unique = [...new Set(allTags)];
+		return unique.filter((t) => categoryNames.includes(t));
+	});
+
+	// Derive speaker names (tags that aren't categories)
+	const speakers = $derived.by(() => {
+		const allTags = annotations.flatMap((a) => (a.metadata?.tags as string[]) ?? []);
+		const cats = new Set(categoryNames);
+		return [...new Set(allTags.filter((t) => !cats.has(t)))];
+	});
+
+	function toggleTag(tag: string) {
+		if (activeTags.includes(tag)) {
+			activeTags = activeTags.filter((t) => t !== tag);
+		} else {
+			activeTags = [...activeTags, tag];
+		}
+	}
+
+	function clearFilters() {
+		activeTags = [];
+	}
+
+	// Tag color classes (matching AVAnnotateSegments)
+	const tagStyles: Record<string, string> = {
+		'Speaking': 'bg-blue-50 text-blue-700 border-blue-200',
+		'Reading': 'bg-violet-50 text-violet-700 border-violet-200',
+		'Transcription': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+		'Situational': 'bg-orange-50 text-orange-700 border-orange-200',
+		'Audience': 'bg-pink-50 text-pink-700 border-pink-200',
+		'Notes': 'bg-gray-100 text-gray-600 border-gray-200',
+		'Social': 'bg-amber-50 text-amber-700 border-amber-200',
+	};
 
 	onMount(async () => {
 		try {
 			isLoading = true;
 			loadError = null;
 
-			// Fetch and validate the manifest
 			const response = await fetch(manifestUrl);
 			if (!response.ok) {
 				throw new Error(`Failed to fetch manifest: ${response.status}`);
@@ -44,8 +89,6 @@
 				throw new Error(`Invalid manifest: ${result.error.issues.map((e) => e.message).join(', ')}`);
 			}
 
-			// Get the first canvas and build transcript annotations
-			// from canvas.annotations (supplementary annotation pages)
 			const canvas = getFirstCanvas(result.data);
 			if (!canvas) {
 				throw new Error('No canvas found in manifest');
@@ -74,7 +117,10 @@
 		</div>
 	{:else}
 		<div class="mb-4 px-1 text-sm text-ink-500 font-mono">
-			{annotationCount} annotations extracted from canvas.annotations
+			{annotationCount} annotations from canvas.annotations
+			{#if speakers.length > 0}
+				&middot; {speakers.join(', ')}
+			{/if}
 		</div>
 
 		<IIIFPlayer.Root {manifestUrl} canvasIndex={0}>
@@ -96,24 +142,43 @@
 						</IIIFPlayer.Controls>
 					</div>
 
-					<!-- Speaker/tag legend -->
+					<!-- Interactive tag filter -->
 					<div class="bg-white rounded-lg shadow-md p-4 border border-ink-200">
-						<h4 class="text-sm font-semibold text-ink-700 mb-2">Tags from annotations</h4>
+						<div class="flex items-center justify-between mb-2">
+							<h4 class="text-sm font-semibold text-ink-700">Filter by category</h4>
+							{#if activeTags.length > 0}
+								<button
+									type="button"
+									class="text-xs text-terracotta-500 hover:text-terracotta-600 font-medium"
+									onclick={clearFilters}
+								>
+									Clear filters
+								</button>
+							{/if}
+						</div>
 						<div class="flex flex-wrap gap-2">
-							{#each [...new Set(annotations.flatMap((a) => (a.metadata?.tags as string[]) ?? []))] as tag}
-								<span class="inline-block px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full border border-amber-200">
+							{#each availableTags as tag (tag)}
+								{@const isActive = activeTags.includes(tag)}
+								{@const style = tagStyles[tag] ?? 'bg-gray-100 text-gray-600 border-gray-200'}
+								<button
+									type="button"
+									class="tag-filter-btn border {style}"
+									class:active={isActive}
+									onclick={() => toggleTag(tag)}
+									aria-pressed={isActive}
+								>
 									{tag}
-								</span>
+								</button>
 							{/each}
 						</div>
 					</div>
 				</div>
 
-				<!-- Right: Transcript Panel -->
+				<!-- Right: Transcript Panel with custom segments -->
 				<div class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-clip">
 					<IIIFPlayer.Transcript {annotations}>
 						<IIIFPlayer.TranscriptSearch />
-						<IIIFPlayer.TranscriptSegments />
+						<AVAnnotateSegments {activeTags} />
 					</IIIFPlayer.Transcript>
 				</div>
 			</div>
@@ -122,41 +187,29 @@
 </div>
 
 <style>
-	/* Reuse same Tailwind styling as the main demo */
-	:global(.avannotate-demo button[data-annotation-id]) {
-		@apply p-3 mb-2 rounded transition-colors text-left;
+	/* Tag filter buttons */
+	.tag-filter-btn {
+		padding: 0.125rem 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		border-radius: 9999px;
+		cursor: pointer;
+		transition: all 150ms;
+		opacity: 0.6;
 	}
 
-	:global(.avannotate-demo button[data-annotation-id]:hover) {
-		@apply bg-gray-100;
+	.tag-filter-btn:hover {
+		opacity: 0.85;
 	}
 
-	:global(.avannotate-demo button[data-annotation-id][data-state='active']) {
-		@apply bg-blue-100 border-l-4 border-terracotta-500;
+	.tag-filter-btn.active {
+		opacity: 1;
+		box-shadow: 0 0 0 2px rgba(194, 65, 12, 0.3);
 	}
 
-	:global(.avannotate-demo button[data-annotation-id][data-highlighted='true']) {
-		@apply bg-yellow-100;
-	}
-
-	:global(.avannotate-demo button[data-annotation-id][data-current-match='true']) {
-		@apply bg-yellow-200 border-l-4 border-yellow-500;
-	}
-
-	:global(.avannotate-demo button[data-annotation-id] .timestamp) {
-		@apply text-xs text-gray-600 font-semibold block mb-1;
-	}
-
-	:global(.avannotate-demo button[data-annotation-id] .text) {
-		@apply text-gray-800 leading-relaxed;
-	}
-
+	/* Transcript panel and search styling */
 	:global(.avannotate-demo .transcript-panel) {
 		@apply flex-1 flex flex-col overflow-y-auto;
-	}
-
-	:global(.avannotate-demo .segments-container) {
-		@apply p-4;
 	}
 
 	:global(.avannotate-demo input[type="search"]) {
@@ -170,6 +223,7 @@
 		@apply border-terracotta-400;
 	}
 
+	/* Audio controls */
 	:global(.avannotate-demo [data-audio-controls]) {
 		@apply flex items-center justify-center gap-2 flex-wrap;
 	}
