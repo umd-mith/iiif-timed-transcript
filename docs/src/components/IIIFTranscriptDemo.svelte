@@ -125,7 +125,14 @@
 					</div>
 
 					<div class="bg-white rounded-lg shadow-md p-4 border border-ink-200">
-						<IIIFPlayer.Controls />
+						<IIIFPlayer.Controls>
+							<IIIFPlayer.PlayButton />
+							<IIIFPlayer.Progress />
+							<IIIFPlayer.Skip seconds={-10} />
+							<IIIFPlayer.Skip seconds={30} />
+							<IIIFPlayer.Speed />
+							<IIIFPlayer.Time />
+						</IIIFPlayer.Controls>
 					</div>
 				</div>
 
