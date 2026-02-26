@@ -6,14 +6,82 @@
 
 ## Install
 
+> **Note:** This package is not yet published to npm. Use one of the methods below:
+
+### Install from GitHub
+
 ```bash
-pnpm add @umd-mith/svelte-iiif-transcript-player
+pnpm add github:umd-mith/svelte-iiif-transcript-player
+```
+
+### Local Development
+
+```bash
+git clone https://github.com/umd-mith/svelte-iiif-transcript-player.git
+cd svelte-iiif-transcript-player
+pnpm install
+pnpm run build
 ```
 
 ## Peer dependencies
 
 - `svelte ^5.0.0`
 - `xstate ^5.0.0`
+
+## Quick Start
+
+### Compound Component API
+
+Build custom IIIF media players with composable components:
+
+```svelte
+<script>
+  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+
+  const manifestUrl = 'https://example.org/manifest.json';
+  const annotations = [
+    { id: 'a1', startTime: 0, endTime: 5, text: 'First segment' },
+    { id: 'a2', startTime: 5, endTime: 10, text: 'Second segment' }
+  ];
+</script>
+
+<IIIFPlayer.Root {manifestUrl} canvasIndex={0}>
+  <IIIFPlayer.Viewer />
+
+  <IIIFPlayer.Controls>
+    <IIIFPlayer.PlayButton />
+    <IIIFPlayer.Progress />
+    <IIIFPlayer.Skip seconds={10} />
+    <IIIFPlayer.Speed />
+    <IIIFPlayer.Time />
+  </IIIFPlayer.Controls>
+
+  <IIIFPlayer.Transcript {annotations} enableSearch>
+    <IIIFPlayer.TranscriptSearch />
+    <IIIFPlayer.TranscriptSegments />
+  </IIIFPlayer.Transcript>
+</IIIFPlayer.Root>
+```
+
+### Pre-Built Components
+
+For quick integration, use the pre-built components:
+
+```svelte
+<script>
+  import {
+    IIIFMediaViewer,
+    AudioPlayerControls,
+    TranscriptPanel
+  } from '@umd-mith/svelte-iiif-transcript-player';
+
+  let viewer;
+</script>
+
+<IIIFMediaViewer bind:this={viewer} {manifestUrl} />
+<AudioPlayerControls playerRef={viewer} skipAmounts={[10, 30]} />
+<TranscriptPanel {annotations} {viewer} enableSearch />
+```
 
 ## Using `annotation.metadata`
 
