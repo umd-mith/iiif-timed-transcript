@@ -1,15 +1,10 @@
 <script lang="ts">
 	/**
-	 * Integration demo for Astro:
-	 * IIIFMediaViewer + AudioPlayerControls + TranscriptPanel
+	 * Integration demo for Astro using the new IIIFPlayer compound components (LDA-1984).
+	 * Demonstrates: IIIFPlayer.Root + child components in Astro islands.
 	 */
 	import { onMount } from 'svelte';
-	import {
-		IIIFMediaViewer,
-		AudioPlayerControls,
-		TranscriptPanel,
-		type Annotation
-	} from '@umd-mith/svelte-iiif-transcript-player';
+	import { IIIFPlayer, type Annotation } from '@umd-mith/svelte-iiif-transcript-player';
 
 	// Props
 	let {
@@ -21,13 +16,12 @@
 	} = $props();
 
 	// State
-	let viewer: any = $state(null);
 	let annotations = $state<Annotation[]>([]);
 	let isLoadingVTT = $state(true);
 	let vttError = $state<string | null>(null);
 
 	/**
-	 * Simple VTT parser for the spike.
+	 * Simple VTT parser for the demo.
 	 * Converts WebVTT format to Annotation[] structure.
 	 */
 	async function parseVTT(vttUrl: string): Promise<Annotation[]> {
@@ -117,41 +111,44 @@
 
 <div class="iiif-transcript-demo">
 	<div class="demo-header">
-		<h2>IIIF Transcript Player Demo</h2>
+		<h2>IIIF Player Compound Components Demo</h2>
 		<p class="demo-subtitle">
-			Testing: IIIFMediaViewer + AudioPlayerControls + TranscriptPanel in Astro
+			Testing: IIIFPlayer namespace API in Astro (LDA-1984)
 		</p>
 	</div>
 
-	<div class="demo-layout">
-		<!-- Left: Media + Controls -->
-		<div class="demo-media">
-			<IIIFMediaViewer bind:this={viewer} iiifManifestUrl={manifestUrl} />
+	{#if isLoadingVTT}
+		<p>Loading transcript...</p>
+	{:else if vttError}
+		<p class="error">VTT Error: {vttError}</p>
+	{:else}
+		<div class="demo-layout">
+			<!-- Single IIIFPlayer.Root wraps all compound components -->
+			<IIIFPlayer.Root manifestUrl={manifestUrl} canvasIndex={0}>
+				<!-- Left: Media + Controls -->
+				<div class="demo-media">
+					<IIIFPlayer.Viewer />
 
-			{#if viewer}
-				<AudioPlayerControls
-					playerRef={viewer}
-					skipAmounts={[10, 30]}
-					enableSpeed={true}
-					enableSkip={true}
-					enableKeyboard={true}
-				/>
-			{/if}
-		</div>
+					<IIIFPlayer.Controls class="player-controls">
+						<IIIFPlayer.PlayButton />
+						<IIIFPlayer.Progress />
+						<IIIFPlayer.Skip seconds={-10} />
+						<IIIFPlayer.Skip seconds={30} />
+						<IIIFPlayer.Speed />
+						<IIIFPlayer.Time />
+					</IIIFPlayer.Controls>
+				</div>
 
-		<!-- Right: Transcript Panel -->
-		<div class="demo-transcript">
-			{#if isLoadingVTT}
-				<p>Loading transcript...</p>
-			{:else if vttError}
-				<p class="error">VTT Error: {vttError}</p>
-			{:else if !viewer}
-				<p>Waiting for media player to load...</p>
-			{:else}
-				<TranscriptPanel {annotations} {viewer} enableSearch={true} />
-			{/if}
+				<!-- Right: Transcript Panel -->
+				<div class="demo-transcript">
+					<IIIFPlayer.Transcript {annotations} enableSearch>
+						<IIIFPlayer.TranscriptSearch />
+						<IIIFPlayer.TranscriptSegments />
+					</IIIFPlayer.Transcript>
+				</div>
+			</IIIFPlayer.Root>
 		</div>
-	</div>
+	{/if}
 </div>
 
 <style>
@@ -169,6 +166,9 @@
 		border-radius: 4px;
 		transition: background-color 0.2s ease;
 		text-align: left;
+		width: 100%;
+		border: 1px solid #e2e8f0;
+		background: white;
 	}
 
 	.iiif-transcript-demo :global(button[data-annotation-id]:hover) {
@@ -223,6 +223,46 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+	}
+
+	/* Player controls styling */
+	.iiif-transcript-demo :global(.player-controls) {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 1rem;
+		background: #f7fafc;
+		border-radius: 8px;
+		border: 1px solid #e2e8f0;
+	}
+
+	.iiif-transcript-demo :global(.player-controls button) {
+		padding: 0.5rem 1rem;
+		border: 1px solid #cbd5e0;
+		border-radius: 4px;
+		background: white;
+		cursor: pointer;
+		font-size: 0.875rem;
+		transition: all 0.2s ease;
+	}
+
+	.iiif-transcript-demo :global(.player-controls button:hover) {
+		background: #edf2f7;
+		border-color: #a0aec0;
+	}
+
+	.iiif-transcript-demo :global(.player-controls select) {
+		padding: 0.5rem;
+		border: 1px solid #cbd5e0;
+		border-radius: 4px;
+		background: white;
+		cursor: pointer;
+		font-size: 0.875rem;
+	}
+
+	.iiif-transcript-demo :global(.player-controls input[type='range']) {
+		flex: 1;
+		min-width: 200px;
 	}
 
 	.demo-transcript {
