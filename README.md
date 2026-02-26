@@ -2,7 +2,7 @@
 
 > IIIF-powered, transcript-synchronized media player for Svelte 5.
 
-**Status:** Early development. API not stable.
+**Status:** Early development (v0.1.0). API not stable.
 
 ## Install
 
@@ -56,12 +56,24 @@ Build custom IIIF media players with composable components:
     <IIIFPlayer.Time />
   </IIIFPlayer.Controls>
 
-  <IIIFPlayer.Transcript {annotations} enableSearch>
+  <IIIFPlayer.Transcript {annotations}>
     <IIIFPlayer.TranscriptSearch />
     <IIIFPlayer.TranscriptSegments />
   </IIIFPlayer.Transcript>
 </IIIFPlayer.Root>
 ```
+
+## Demo / Docs Site
+
+The docs site is an Astro project in `docs/`. To run locally:
+
+```bash
+cd docs
+pnpm install
+pnpm run dev
+```
+
+Opens at `http://localhost:4321/svelte-iiif-transcript-player` with a live demo using a real IIIF manifest.
 
 ## Component API Reference
 
@@ -148,14 +160,13 @@ Bidirectional synchronized transcript panel with search.
 
 **Props:**
 - `annotations: Annotation[]` - **Required.** Transcript segments with timing
-- `enableSearch?: boolean` - Show search UI (default: false)
 - `syncDebounceMs?: number` - Scroll throttling (default: 150)
 - `onActiveAnnotationChange?: (annotation: Annotation | null) => void` - Active segment callback
 
-**Slots:**
-- `segment` - Custom segment rendering (see metadata examples below)
+**Children:** Compound children only — use `TranscriptSearch` and `TranscriptSegments` inside.
 
 **Context Used:** Player state from `IIIFPlayer.Root`
+**Context Provided:** TranscriptContext (annotations, search state, active annotation)
 
 #### `IIIFPlayer.TranscriptSearch`
 
@@ -199,7 +210,7 @@ interface Annotation {
 
 The library focuses on IIIF playback and sync. For VTT parsing, we recommend:
 - [`media-captions`](https://github.com/vidstack/media-captions) - Robust WebVTT parser
-- Roll your own simple parser (see `astro-test/src/components/IIIFTranscriptDemo.svelte` for example)
+- Roll your own simple parser (see `docs/src/components/IIIFTranscriptDemo.svelte` for example)
 
 #### `PlayerContext`
 
@@ -306,7 +317,7 @@ const annotations = [...]; // Your VTT parsing logic
     </IIIFPlayer.Controls>
 
     <!-- Transcript can lazy-load (often below fold) -->
-    <IIIFPlayer.Transcript client:visible {annotations} enableSearch>
+    <IIIFPlayer.Transcript client:visible {annotations}>
       <IIIFPlayer.TranscriptSearch />
       <IIIFPlayer.TranscriptSegments />
     </IIIFPlayer.Transcript>
@@ -323,7 +334,7 @@ const annotations = [...]; // Your VTT parsing logic
 
 - **Island isolation**: Each `client:*` directive creates a separate island. Components inside the same `IIIFPlayer.Root` share context automatically
 - **Props serialization**: Only JSON-serializable props work across islands. The compound component pattern handles this internally via context
-- **Reference implementation**: See [`astro-test/src/components/IIIFTranscriptDemo.svelte`](./astro-test/src/components/IIIFTranscriptDemo.svelte) for a working example
+- **Reference implementation**: See [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte) for a working example
 
 ## Styling
 
