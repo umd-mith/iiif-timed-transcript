@@ -71,6 +71,7 @@ export {
   SpecificResourceSchema,
   ChoiceBodySchema,
   AnnotationBodySchema,
+  AnnotationPageSchema,
   type ManifestData,
   type CollectionData,
   type ImageServiceData,
@@ -81,6 +82,7 @@ export {
   type SpecificResourceData,
   type ChoiceBodyData,
   type AnnotationBodyData,
+  type AnnotationPageData,
 } from "./iiif/validators";
 
 // Helper functions
@@ -108,6 +110,11 @@ export {
   findManifestInCollection,
   isValidIIIFResource,
   extractIdentifierFromUrl,
+  hasMotivation,
+  getSupplementaryAnnotations,
+  getSupplementaryTextualBodies,
+  buildTranscriptAnnotations,
+  type SupplementaryTextualContent,
 } from "./iiif/helpers";
 
 // Cache
