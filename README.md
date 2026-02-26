@@ -63,24 +63,164 @@ Build custom IIIF media players with composable components:
 </IIIFPlayer.Root>
 ```
 
-### Pre-Built Components
+## Component API Reference
 
-For quick integration, use the pre-built components:
+### Core Components
 
-```svelte
-<script>
-  import {
-    IIIFMediaViewer,
-    AudioPlayerControls,
-    TranscriptPanel
-  } from '@umd-mith/svelte-iiif-transcript-player';
+#### `IIIFPlayer.Root`
 
-  let viewer;
-</script>
+Top-level context provider that manages player state and coordinates all child components.
 
-<IIIFMediaViewer bind:this={viewer} {manifestUrl} />
-<AudioPlayerControls playerRef={viewer} skipAmounts={[10, 30]} />
-<TranscriptPanel {annotations} {viewer} enableSearch />
+**Props:**
+- `manifestUrl: string` - IIIF Presentation 3.0 manifest URL
+- `canvasIndex?: number` - Canvas index to display (default: 0)
+- `initialTime?: number` - Start playback at specific time in seconds
+- `onReady?: () => void` - Callback when manifest is loaded
+- `onError?: (error: Error) => void` - Error handler
+
+**Context Provided:**
+- Player state (playing, currentTime, duration, playbackRate)
+- Actions (play, pause, seekTo, setPlaybackRate)
+- Media element reference
+
+#### `IIIFPlayer.Viewer`
+
+Renders the IIIF media resource (video/audio) from the current canvas.
+
+**Props:** None (receives context from Root)
+
+#### `IIIFPlayer.Controls`
+
+Container for player control components. Pass-through component for layout.
+
+**Props:**
+- `class?: string` - CSS class for styling
+
+**Slots:** Default slot for control components
+
+### Control Components
+
+#### `IIIFPlayer.PlayButton`
+
+Toggle play/pause button.
+
+**Props:** None
+
+**Data Attributes:**
+- `data-playing="true|false"` - Reflects playback state
+
+#### `IIIFPlayer.Progress`
+
+Seekable progress bar (range input).
+
+**Props:** None
+
+**Data Attributes:**
+- `data-progress` - Progress bar element
+
+#### `IIIFPlayer.Skip`
+
+Skip forward/backward button.
+
+**Props:**
+- `seconds: number` - Amount to skip (negative for rewind)
+
+#### `IIIFPlayer.Speed`
+
+Playback speed selector.
+
+**Props:**
+- `speeds?: number[]` - Available speeds (default: [0.5, 0.75, 1, 1.25, 1.5, 2])
+
+#### `IIIFPlayer.Time`
+
+Display current time and duration.
+
+**Props:** None
+
+**Format:** `MM:SS / MM:SS` (current / total)
+
+### Transcript Components
+
+#### `IIIFPlayer.Transcript`
+
+Bidirectional synchronized transcript panel with search.
+
+**Props:**
+- `annotations: Annotation[]` - **Required.** Transcript segments with timing
+- `enableSearch?: boolean` - Show search UI (default: false)
+- `syncDebounceMs?: number` - Scroll throttling (default: 150)
+- `onActiveAnnotationChange?: (annotation: Annotation | null) => void` - Active segment callback
+
+**Slots:**
+- `segment` - Custom segment rendering (see metadata examples below)
+
+**Context Used:** Player state from `IIIFPlayer.Root`
+
+#### `IIIFPlayer.TranscriptSearch`
+
+Search UI for filtering transcript segments.
+
+**Props:** None (receives search context from Transcript)
+
+**Data Attributes:**
+- `data-search-input` - Search input field
+
+#### `IIIFPlayer.TranscriptSegments`
+
+Renders the list of transcript segments with active highlighting.
+
+**Props:** None (receives annotations from Transcript)
+
+**Slots:**
+- `segment` - Custom segment rendering snippet
+
+**Data Attributes:**
+- `data-annotation-id` - Segment ID
+- `data-state="active|inactive"` - Active segment state
+
+### TypeScript Types
+
+#### `Annotation`
+
+Transcript segment with timing information.
+
+```typescript
+interface Annotation {
+  id: string;
+  startTime: number;  // seconds
+  endTime: number;    // seconds
+  text: string;
+  metadata?: Record<string, unknown>;  // Your custom data
+}
+```
+
+**Parsing VTT Files:**
+
+The library focuses on IIIF playback and sync. For VTT parsing, we recommend:
+- [`media-captions`](https://github.com/vidstack/media-captions) - Robust WebVTT parser
+- Roll your own simple parser (see `astro-test/src/components/IIIFTranscriptDemo.svelte` for example)
+
+#### `PlayerContext`
+
+Internal context type (exposed for advanced use cases).
+
+```typescript
+interface PlayerContext {
+  state: {
+    playing: boolean;
+    currentTime: number;
+    duration: number;
+    playbackRate: number;
+  };
+  actions: {
+    play: () => void;
+    pause: () => void;
+    seekTo: (time: number) => void;
+    setPlaybackRate: (rate: number) => void;
+  };
+  mediaElement: HTMLMediaElement | null;
+}
 ```
 
 ## Using `annotation.metadata`
@@ -91,19 +231,19 @@ The `Annotation` type includes an optional `metadata` field (`Record<string, unk
 
 ```svelte
 <script>
-  import { TranscriptPanel } from '@umd-mith/svelte-iiif-transcript-player';
+  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
 </script>
 
-<TranscriptPanel {annotations} {viewer}>
+<IIIFPlayer.Transcript {annotations}>
   {#snippet segment({ annotation, isActive, onClick })}
-    <div data-annotation-id={annotation.id} onclick={onClick}>
+    <button data-annotation-id={annotation.id} onclick={onClick}>
       {#if annotation.metadata?.speaker}
         <strong>{annotation.metadata.speaker}:</strong>
       {/if}
       <span class:active={isActive}>{annotation.text}</span>
-    </div>
+    </button>
   {/snippet}
-</TranscriptPanel>
+</IIIFPlayer.Transcript>
 ```
 
 ### Review flags
@@ -137,6 +277,104 @@ const speakers = new Map(
 
 const paragraphs = mergeIntoParagraphs(annotations, { speakers });
 ```
+
+## Using with Astro
+
+The compound components work seamlessly in Astro islands with proper hydration directives:
+
+```astro
+---
+import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+
+const manifestUrl = 'https://example.org/manifest.json';
+const annotations = [...]; // Your VTT parsing logic
+---
+
+<div class="media-player">
+  <IIIFPlayer.Root client:load {manifestUrl} canvasIndex={0}>
+    <!-- Media viewer needs immediate initialization -->
+    <IIIFPlayer.Viewer />
+
+    <!-- Controls should respond immediately -->
+    <IIIFPlayer.Controls>
+      <IIIFPlayer.PlayButton />
+      <IIIFPlayer.Progress />
+      <IIIFPlayer.Skip seconds={-10} />
+      <IIIFPlayer.Skip seconds={30} />
+      <IIIFPlayer.Speed />
+      <IIIFPlayer.Time />
+    </IIIFPlayer.Controls>
+
+    <!-- Transcript can lazy-load (often below fold) -->
+    <IIIFPlayer.Transcript client:visible {annotations} enableSearch>
+      <IIIFPlayer.TranscriptSearch />
+      <IIIFPlayer.TranscriptSegments />
+    </IIIFPlayer.Transcript>
+  </IIIFPlayer.Root>
+</div>
+```
+
+### Hydration Directive Choices
+
+- `IIIFPlayer.Root` → `client:load` - Controls media element, needs immediate initialization
+- `IIIFPlayer.Transcript` → `client:visible` - Can lazy-load if below the fold, improving initial page load
+
+### Common Pitfalls with Astro
+
+- **Island isolation**: Each `client:*` directive creates a separate island. Components inside the same `IIIFPlayer.Root` share context automatically
+- **Props serialization**: Only JSON-serializable props work across islands. The compound component pattern handles this internally via context
+- **Reference implementation**: See [`astro-test/src/components/IIIFTranscriptDemo.svelte`](./astro-test/src/components/IIIFTranscriptDemo.svelte) for a working example
+
+## Styling
+
+All components ship **unstyled** with semantic HTML and `data-*` attributes for styling hooks. Bring your own CSS.
+
+### What You Need to Style
+
+- **Transcript segments**: Target `button[data-annotation-id]` and use `data-state="active"` for highlighting
+- **Player controls**: Use `data-playing`, `data-progress`, etc. attributes
+- **Search UI**: Target `data-search-input` and related elements
+- **Layout**: Components don't enforce layout — use flexbox/grid as needed
+
+### Example: Active Segment Highlighting
+
+```css
+/* Transcript segment buttons */
+button[data-annotation-id] {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button[data-annotation-id]:hover {
+  background-color: #f3f4f6;
+}
+
+/* Active segment gets blue highlight */
+button[data-annotation-id][data-state='active'] {
+  background-color: #bae6fd;
+  border-left: 4px solid #0ea5e9;
+}
+```
+
+### No CSS Variables (Yet)
+
+The library currently doesn't use CSS custom properties. You control all styling via your own CSS. If you need themeable defaults, open an issue to discuss design token integration.
+
+## Browser Support
+
+- **Modern browsers**: Chrome 90+, Firefox 88+, Safari 15+, Edge 90+
+- **Requires**: Native ESM, `<video>`/`<audio>` elements, Proxy support
+- **Svelte 5**: Requires Svelte 5.0+ (runes, snippets)
+- **XState 5**: State machine for playback sync
+
+**Known limitations:**
+- No IE11 support (Svelte 5 requirement)
+- Safari < 15 lacks some IIIF Presentation 3.0 features
 
 ## Contributing
 

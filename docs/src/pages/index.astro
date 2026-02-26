@@ -133,23 +133,29 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Basic Usage</h3>
 						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
 							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<script>
-  import { IIIFMediaViewer, AudioPlayerControls, TranscriptPanel }
-    from '@umd-mith/svelte-iiif-transcript-player';
+  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
 
-  let viewer = $state(null);
-  let annotations = $state([]);
-
-  // Parse your VTT/WebVTT file into Annotation[] format
-  // (see media-captions library for robust parsing)
+  const manifestUrl = 'https://example.org/manifest.json';
+  const annotations = [...]; // Your parsed VTT or IIIF annotations
 </script>
 
-<IIIFMediaViewer bind:this={viewer} iiifManifestUrl={manifestUrl} />
+<IIIFPlayer.Root {manifestUrl} canvasIndex={0}>
+  <IIIFPlayer.Viewer />
 
-{#if viewer}
-  <AudioPlayerControls playerRef={viewer} />
-{/if}
+  <IIIFPlayer.Controls>
+    <IIIFPlayer.PlayButton />
+    <IIIFPlayer.Progress />
+    <IIIFPlayer.Skip seconds={-10} />
+    <IIIFPlayer.Skip seconds={30} />
+    <IIIFPlayer.Speed />
+    <IIIFPlayer.Time />
+  </IIIFPlayer.Controls>
 
-<TranscriptPanel {annotations} {viewer} enableSearch={true} />`}</code></pre>
+  <IIIFPlayer.Transcript {annotations} enableSearch>
+    <IIIFPlayer.TranscriptSearch />
+    <IIIFPlayer.TranscriptSegments />
+  </IIIFPlayer.Transcript>
+</IIIFPlayer.Root>`}</code></pre>
 						</div>
 					</div>
 				</div>
@@ -159,59 +165,95 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 		<!-- Components Section -->
 		<section id="components" class="py-20 px-4 sm:px-6 lg:px-8 bg-parchment-50">
 			<div class="max-w-4xl mx-auto">
-				<h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-12">Components</h2>
+				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">004</div>
+				<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-6">Component API</h2>
+				<p class="text-lg text-ink-600 mb-12 font-serif leading-relaxed">
+					Composable building blocks for creating custom IIIF media player interfaces. All components are unstyled primitives with data-* attributes for styling.
+				</p>
 
 				<div class="space-y-12">
-					<!-- IIIFMediaViewer -->
+					<!-- IIIFPlayer.Root -->
 					<div class="border-l-4 border-terracotta-500 pl-6">
-						<h3 class="text-2xl font-semibold text-gray-900 mb-3">IIIFMediaViewer</h3>
-						<p class="text-gray-600 mb-4">
-							Renders video or audio from IIIF Presentation 3.0 manifests. Provides ref for programmatic control.
+						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Root</h3>
+						<p class="text-ink-600 mb-4">
+							Top-level context provider that manages player state and coordinates all child components.
 						</p>
-						<div class="bg-gray-50 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-gray-900 mb-2">Essential Props:</h4>
+						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
+							<h4 class="font-semibold text-ink-900 mb-2">Essential Props:</h4>
 							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">iiifManifestUrl</span>: string - IIIF manifest URL</li>
+								<li><span class="text-terracotta-600">manifestUrl</span>: string - IIIF Presentation 3.0 manifest URL</li>
 								<li><span class="text-terracotta-600">canvasIndex</span>?: number - Canvas to display (default: 0)</li>
-								<li><span class="text-terracotta-600">onReady</span>?: () => void - Callback when media is loaded</li>
-								<li><span class="text-terracotta-600">onError</span>?: (error) => void - Error handling</li>
+								<li><span class="text-terracotta-600">initialTime</span>?: number - Start playback at specific time</li>
+								<li><span class="text-terracotta-600">onReady</span>?: () => void - Callback when manifest loaded</li>
+								<li><span class="text-terracotta-600">onError</span>?: (error) => void - Error handler</li>
 							</ul>
 						</div>
 					</div>
 
-					<!-- AudioPlayerControls -->
+					<!-- IIIFPlayer.Viewer -->
 					<div class="border-l-4 border-terracotta-500 pl-6">
-						<h3 class="text-2xl font-semibold text-gray-900 mb-3">AudioPlayerControls</h3>
-						<p class="text-gray-600 mb-4">
-							Unstyled control bar with play/pause, progress, skip buttons, and speed picker. Fully configurable.
+						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Viewer</h3>
+						<p class="text-ink-600 mb-4">
+							Renders the IIIF media resource (video/audio) from the current canvas. No props needed — receives context from Root.
 						</p>
-						<div class="bg-gray-50 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-gray-900 mb-2">Essential Props:</h4>
+					</div>
+
+					<!-- IIIFPlayer.Controls -->
+					<div class="border-l-4 border-terracotta-500 pl-6">
+						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Controls</h3>
+						<p class="text-ink-600 mb-4">
+							Container for player control components. Use as layout wrapper for PlayButton, Progress, Skip, etc.
+						</p>
+						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
+							<h4 class="font-semibold text-ink-900 mb-2">Child Components:</h4>
 							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">playerRef</span>: IIIFMediaViewerRef - Viewer instance to control</li>
-								<li><span class="text-terracotta-600">skipAmounts</span>?: number[] - Skip button values (default: [5, 15, 30])</li>
-								<li><span class="text-terracotta-600">speedOptions</span>?: number[] - Speed picker options (default: [0.5, 0.75, 1, 1.25, 1.5, 2])</li>
-								<li><span class="text-terracotta-600">enableSkip</span>?: boolean - Show skip buttons (default: true)</li>
-								<li><span class="text-terracotta-600">enableSpeed</span>?: boolean - Show speed picker (default: true)</li>
+								<li><span class="text-terracotta-600">PlayButton</span> - Toggle play/pause</li>
+								<li><span class="text-terracotta-600">Progress</span> - Seekable progress bar</li>
+								<li><span class="text-terracotta-600">Skip</span> - Skip forward/back (seconds prop)</li>
+								<li><span class="text-terracotta-600">Speed</span> - Playback speed selector</li>
+								<li><span class="text-terracotta-600">Time</span> - Display current time and duration</li>
 							</ul>
 						</div>
 					</div>
 
-					<!-- TranscriptPanel -->
+					<!-- IIIFPlayer.Transcript -->
 					<div class="border-l-4 border-terracotta-500 pl-6">
-						<h3 class="text-2xl font-semibold text-gray-900 mb-3">TranscriptPanel</h3>
-						<p class="text-gray-600 mb-4">
-							Displays time-coded transcript with bidirectional sync. Click segment to seek, video auto-scrolls active segment.
+						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Transcript</h3>
+						<p class="text-ink-600 mb-4">
+							Bidirectional synchronized transcript panel. Click segment to seek, video auto-scrolls active segment.
 						</p>
-						<div class="bg-gray-50 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-gray-900 mb-2">Essential Props:</h4>
+						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
+							<h4 class="font-semibold text-ink-900 mb-2">Essential Props:</h4>
 							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">annotations</span>: Annotation[] - Transcript cues with timing</li>
-								<li><span class="text-terracotta-600">viewer</span>: IIIFMediaViewerRef | null - Viewer for sync</li>
+								<li><span class="text-terracotta-600">annotations</span>: Annotation[] - Transcript segments with timing</li>
 								<li><span class="text-terracotta-600">enableSearch</span>?: boolean - Show search UI (default: false)</li>
 								<li><span class="text-terracotta-600">syncDebounceMs</span>?: number - Scroll throttling (default: 150)</li>
-								<li><span class="text-terracotta-600">onActiveAnnotationChange</span>?: (ann) => void - Active segment callback</li>
 							</ul>
+							<h4 class="font-semibold text-ink-900 mt-4 mb-2">Child Components:</h4>
+							<ul class="space-y-2 text-sm font-mono">
+								<li><span class="text-terracotta-600">TranscriptSearch</span> - Search UI for filtering segments</li>
+								<li><span class="text-terracotta-600">TranscriptSegments</span> - Renders segment list with highlighting</li>
+							</ul>
+						</div>
+					</div>
+
+					<!-- Custom Segment Snippets -->
+					<div class="border-l-4 border-terracotta-500 pl-6">
+						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">Custom Segment Rendering</h3>
+						<p class="text-ink-600 mb-4">
+							Use the segment snippet to customize how transcript segments are rendered. Access annotation metadata for speakers, confidence scores, etc.
+						</p>
+						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
+							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<IIIFPlayer.Transcript {annotations}>
+  {#snippet segment({ annotation, isActive, onClick })}
+    <button data-annotation-id={annotation.id} onclick={onClick}>
+      {#if annotation.metadata?.speaker}
+        <strong>{annotation.metadata.speaker}:</strong>
+      {/if}
+      <span class:active={isActive}>{annotation.text}</span>
+    </button>
+  {/snippet}
+</IIIFPlayer.Transcript>`}</code></pre>
 						</div>
 					</div>
 				</div>
