@@ -1,23 +1,10 @@
 <script lang="ts">
 	/**
-	 * Integration demo for docs site:
-	 * IIIFMediaViewer + AudioPlayerControls + TranscriptPanel with Tailwind styling
+	 * Integration demo for Astro using the new IIIFPlayer compound components (LDA-1984).
+	 * Demonstrates: IIIFPlayer.Root + child components in Astro islands.
 	 */
 	import { onMount } from 'svelte';
-	import {
-		IIIFMediaViewer,
-		AudioPlayerControls,
-		TranscriptPanel,
-		type Annotation
-	} from '@umd-mith/svelte-iiif-transcript-player';
-	import {
-		Play,
-		Pause,
-		ArrowCounterClockwise,
-		ArrowClockwise,
-		CaretDown,
-		CaretUp
-	} from 'phosphor-svelte';
+	import { IIIFPlayer, type Annotation } from '@umd-mith/svelte-iiif-transcript-player';
 
 	// Props
 	let {
@@ -29,20 +16,13 @@
 	} = $props();
 
 	// State
-	let viewer: any = $state(null);
 	let annotations = $state<Annotation[]>([]);
 	let isLoadingVTT = $state(true);
 	let vttError = $state<string | null>(null);
 
-	// Player state for AudioPlayerControls reactivity
-	let isPlaying = $state(false);
-	let currentTime = $state(0);
-	let duration = $state(0);
-	let playbackSpeed = $state(1);
-
 	/**
 	 * Simple VTT parser for the demo.
-	 * Production apps should use media-captions library for robust parsing.
+	 * Converts WebVTT format to Annotation[] structure.
 	 */
 	async function parseVTT(vttUrl: string): Promise<Annotation[]> {
 		const response = await fetch(vttUrl);
@@ -58,9 +38,11 @@
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i].trim();
 
+			// VTT timing line format: "00:00:00.000 --> 00:00:05.000"
 			if (line.includes('-->')) {
 				const [startStr, endStr] = line.split('-->').map((s) => s.trim());
 
+				// Parse timestamp (HH:MM:SS.mmm or MM:SS.mmm)
 				const parseTimestamp = (ts: string): number => {
 					const parts = ts.split(':');
 					let hours = 0,
@@ -68,13 +50,16 @@
 						seconds = 0;
 
 					if (parts.length === 3) {
+						// HH:MM:SS.mmm
 						hours = parseInt(parts[0], 10);
 						minutes = parseInt(parts[1], 10);
 						seconds = parseFloat(parts[2]);
 					} else if (parts.length === 2) {
+						// MM:SS.mmm
 						minutes = parseInt(parts[0], 10);
 						seconds = parseFloat(parts[1]);
 					} else {
+						// SS.mmm
 						seconds = parseFloat(parts[0]);
 					}
 
@@ -84,13 +69,14 @@
 				const startTime = parseTimestamp(startStr);
 				const endTime = parseTimestamp(endStr);
 
+				// Next line(s) contain the text (until empty line or next timing)
 				const textLines: string[] = [];
-				i++;
+				i++; // Move to text line
 				while (i < lines.length && lines[i].trim() && !lines[i].includes('-->')) {
 					textLines.push(lines[i].trim());
 					i++;
 				}
-				i--;
+				i--; // Back up one since loop will increment
 
 				const text = textLines.join(' ');
 
@@ -108,19 +94,7 @@
 		return annotations;
 	}
 
-	// Handlers for IIIFMediaViewer callbacks
-	function handlePlayStateChange(playing: boolean) {
-		isPlaying = playing;
-	}
-
-	function handleTimeUpdate(time: number) {
-		currentTime = time;
-	}
-
-	function handleDurationChange(dur: number) {
-		duration = dur;
-	}
-
+	// Load VTT on mount
 	onMount(async () => {
 		try {
 			isLoadingVTT = true;
@@ -135,167 +109,197 @@
 	});
 </script>
 
-<div class="w-full iiif-transcript-demo">
-	<div class="grid md:grid-cols-2 gap-6 items-start">
-		<!-- Left: Media + Controls -->
-		<div class="flex flex-col gap-4">
-			<div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-				<IIIFMediaViewer
-				bind:this={viewer}
-				iiifManifestUrl={manifestUrl}
-				controls={false}
-				onPlayStateChange={handlePlayStateChange}
-				onTimeUpdate={handleTimeUpdate}
-				onDurationChange={handleDurationChange}
-			/>
-			</div>
-
-			{#if viewer}
-				<div class="bg-white rounded-lg shadow-md p-4 border border-ink-200">
-					<AudioPlayerControls
-						playerRef={viewer}
-						skipAmounts={[10, 30]}
-						enableSpeed={true}
-						enableSkip={true}
-						{isPlaying}
-						{currentTime}
-						{duration}
-						{playbackSpeed}
-					>
-						{#snippet playIcon()}
-							<Play size={20} weight="bold" />
-						{/snippet}
-						{#snippet pauseIcon()}
-							<Pause size={20} weight="bold" />
-						{/snippet}
-						{#snippet skipIcon({ seconds })}
-							{#if seconds === 10}
-								<ArrowCounterClockwise size={16} weight="bold" />
-							{:else}
-								<ArrowClockwise size={16} weight="bold" />
-							{/if}
-						{/snippet}
-					</AudioPlayerControls>
-				</div>
-			{/if}
-		</div>
-
-		<!-- Right: Transcript Panel -->
-		<div class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-hidden">
-			{#if isLoadingVTT}
-				<div class="p-6 text-center text-gray-600">
-					<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-terracotta-600 mb-3"></div>
-					<p>Loading transcript...</p>
-				</div>
-			{:else if vttError}
-				<div class="p-4 m-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-					<strong>Error:</strong> {vttError}
-				</div>
-			{:else if !viewer}
-				<div class="p-6 text-center text-gray-600">
-					Waiting for media player to load...
-				</div>
-			{:else}
-				<TranscriptPanel {annotations} {viewer} enableSearch={true} />
-			{/if}
-		</div>
+<div class="iiif-transcript-demo">
+	<div class="demo-header">
+		<h2>IIIF Player Compound Components Demo</h2>
+		<p class="demo-subtitle">
+			Testing: IIIFPlayer namespace API in Astro (LDA-1984)
+		</p>
 	</div>
+
+	{#if isLoadingVTT}
+		<p>Loading transcript...</p>
+	{:else if vttError}
+		<p class="error">VTT Error: {vttError}</p>
+	{:else}
+		<div class="demo-layout">
+			<!-- Single IIIFPlayer.Root wraps all compound components -->
+			<IIIFPlayer.Root manifestUrl={manifestUrl} canvasIndex={0}>
+				<!-- Left: Media + Controls -->
+				<div class="demo-media">
+					<IIIFPlayer.Viewer />
+
+					<IIIFPlayer.Controls class="player-controls">
+						<IIIFPlayer.PlayButton />
+						<IIIFPlayer.Progress />
+						<IIIFPlayer.Skip seconds={-10} />
+						<IIIFPlayer.Skip seconds={30} />
+						<IIIFPlayer.Speed />
+						<IIIFPlayer.Time />
+					</IIIFPlayer.Controls>
+				</div>
+
+				<!-- Right: Transcript Panel -->
+				<div class="demo-transcript">
+					<IIIFPlayer.Transcript {annotations} enableSearch>
+						<IIIFPlayer.TranscriptSearch />
+						<IIIFPlayer.TranscriptSegments />
+					</IIIFPlayer.Transcript>
+				</div>
+			</IIIFPlayer.Root>
+		</div>
+	{/if}
 </div>
 
 <style>
-	/* Tailwind-based styling for transcript segments */
-	:global(.iiif-transcript-demo button[data-annotation-id]) {
-		@apply p-3 mb-2 rounded transition-colors text-left;
+	.iiif-transcript-demo {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 2rem;
+		font-family: system-ui, -apple-system, sans-serif;
 	}
 
-	:global(.iiif-transcript-demo button[data-annotation-id]:hover) {
-		@apply bg-gray-100;
+	/* Style transcript segments (library provides unstyled buttons) */
+	.iiif-transcript-demo :global(button[data-annotation-id]) {
+		padding: 0.75rem;
+		margin-bottom: 0.5rem;
+		border-radius: 4px;
+		transition: background-color 0.2s ease;
+		text-align: left;
+		width: 100%;
+		border: 1px solid #e2e8f0;
+		background: white;
 	}
 
-	/* Active segment (playing) - brand color */
-	:global(.iiif-transcript-demo button[data-annotation-id][data-state='active']) {
-		@apply bg-blue-100 border-l-4 border-terracotta-500;
+	.iiif-transcript-demo :global(button[data-annotation-id]:hover) {
+		background-color: #edf2f7;
 	}
 
-	/* Search match - yellow highlight */
-	:global(.iiif-transcript-demo button[data-annotation-id][data-highlighted='true']) {
-		@apply bg-yellow-100;
+	/* Active segment highlighting */
+	.iiif-transcript-demo :global(button[data-annotation-id][data-state='active']) {
+		background-color: #bee3f8;
+		border-left: 4px solid #3182ce;
 	}
 
-	/* Current search match - stronger yellow */
-	:global(.iiif-transcript-demo button[data-annotation-id][data-current-match='true']) {
-		@apply bg-yellow-200 border-l-4 border-yellow-500;
+	.iiif-transcript-demo :global(button[data-annotation-id] .timestamp) {
+		font-size: 0.75rem;
+		color: #718096;
+		font-weight: 600;
+		display: block;
+		margin-bottom: 0.25rem;
 	}
 
-	:global(.iiif-transcript-demo button[data-annotation-id] .timestamp) {
-		@apply text-xs text-gray-600 font-semibold block mb-1;
+	.iiif-transcript-demo :global(button[data-annotation-id] .text) {
+		margin: 0;
+		color: #2d3748;
+		line-height: 1.5;
 	}
 
-	:global(.iiif-transcript-demo button[data-annotation-id] .text) {
-		@apply text-gray-800 leading-relaxed;
+	.demo-header {
+		margin-bottom: 2rem;
+		text-align: center;
 	}
 
-	/* Allow TranscriptPanel's internal scroll to work */
-	:global(.iiif-transcript-demo .transcript-panel) {
-		@apply flex-1 flex flex-col overflow-hidden;
+	.demo-header h2 {
+		margin: 0 0 0.5rem 0;
+		font-size: 2rem;
+		color: #1a202c;
 	}
 
-	:global(.iiif-transcript-demo .segments-container) {
-		@apply p-4;
+	.demo-subtitle {
+		margin: 0;
+		color: #718096;
+		font-size: 0.875rem;
 	}
 
-	/* Prominent search bar styling */
-	:global(.iiif-transcript-demo input[type="search"]) {
-		@apply w-full px-4 py-3 border-2 border-ink-300 rounded-lg;
-		@apply focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:border-terracotta-500;
-		@apply text-base placeholder-ink-400;
-		@apply transition-all duration-200;
+	.demo-layout {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2rem;
+		align-items: start;
 	}
 
-	:global(.iiif-transcript-demo input[type="search"]:hover) {
-		@apply border-terracotta-400;
+	.demo-media {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
 	}
 
-	/* Style audio controls - vertical layout with spacing */
-	:global(.iiif-transcript-demo [data-audio-controls]) {
-		@apply flex flex-col gap-3;
+	/* Player controls styling */
+	.iiif-transcript-demo :global(.player-controls) {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 1rem;
+		background: #f7fafc;
+		border-radius: 8px;
+		border: 1px solid #e2e8f0;
 	}
 
-	/* Progress bar container - add margin for visibility */
-	:global(.iiif-transcript-demo [data-audio-progress]) {
-		@apply mb-3;
+	.iiif-transcript-demo :global(.player-controls button) {
+		padding: 0.5rem 1rem;
+		border: 1px solid #cbd5e0;
+		border-radius: 4px;
+		background: white;
+		cursor: pointer;
+		font-size: 0.875rem;
+		transition: all 0.2s ease;
 	}
 
-	/* Button container - horizontal layout with centered alignment */
-	:global(.iiif-transcript-demo [data-audio-buttons]) {
-		@apply flex items-center justify-center gap-2 flex-wrap;
+	.iiif-transcript-demo :global(.player-controls button:hover) {
+		background: #edf2f7;
+		border-color: #a0aec0;
 	}
 
-	/* General button styling */
-	:global(.iiif-transcript-demo [data-audio-button]) {
-		@apply px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-sm font-medium text-gray-700;
+	.iiif-transcript-demo :global(.player-controls select) {
+		padding: 0.5rem;
+		border: 1px solid #cbd5e0;
+		border-radius: 4px;
+		background: white;
+		cursor: pointer;
+		font-size: 0.875rem;
 	}
 
-	/* Play/Pause button - make it prominent */
-	:global(.iiif-transcript-demo [data-audio-button="play-pause"]) {
-		@apply px-4 py-3 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-full;
+	.iiif-transcript-demo :global(.player-controls input[type='range']) {
+		flex: 1;
+		min-width: 200px;
 	}
 
-	/* Skip buttons - subtle styling */
-	:global(.iiif-transcript-demo [data-audio-button="skip"]) {
-		@apply px-2 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600;
+	.demo-transcript {
+		border: 1px solid #e2e8f0;
+		border-radius: 8px;
+		padding: 0;
+		background: #f7fafc;
+		max-height: 600px;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
 	}
 
-	/* Speed button - distinct from others */
-	:global(.iiif-transcript-demo [data-audio-button="speed"]) {
-		@apply px-3 py-2 bg-white border border-gray-300 hover:border-gray-400 rounded;
+	/* Allow TranscriptPanel's internal scroll container to work */
+	.demo-transcript :global(.transcript-panel) {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
 	}
 
-	:global(.iiif-transcript-demo [data-audio-progress-track]) {
-		@apply w-full h-2 bg-gray-200 rounded-full overflow-hidden cursor-pointer;
+	/* Add padding to segments, not the wrapper */
+	.demo-transcript :global(.segments-container) {
+		padding: 1rem;
 	}
 
-	:global(.iiif-transcript-demo [data-audio-progress-fill]) {
-		@apply h-full bg-terracotta-500 transition-all;
+	.error {
+		color: #e53e3e;
+		padding: 1rem;
+		background: #fff5f5;
+		border: 1px solid #feb2b2;
+		border-radius: 4px;
+	}
+
+	@media (max-width: 768px) {
+		.demo-layout {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>
