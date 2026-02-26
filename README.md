@@ -206,11 +206,11 @@ interface Annotation {
 }
 ```
 
-**Parsing VTT Files:**
+**Parsing Annotations:**
 
-The library focuses on IIIF playback and sync. For VTT parsing, we recommend:
-- [`media-captions`](https://github.com/vidstack/media-captions) - Robust WebVTT parser
-- Roll your own simple parser (see `docs/src/components/IIIFTranscriptDemo.svelte` for example)
+The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) provides utilities for parsing IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`).
+
+For a working example of parsing VTT into `Annotation[]`, see `docs/src/components/IIIFTranscriptDemo.svelte`.
 
 #### `PlayerContext`
 
