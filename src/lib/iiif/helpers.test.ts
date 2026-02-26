@@ -192,6 +192,69 @@ describe("getTextualBodies", () => {
     expect(result[1]!.value).toBe("Second transcription");
   });
 
+  it("should extract from annotations where motivation is an array containing painting", () => {
+    const canvas: CanvasData = {
+      id: "https://example.org/canvas/1",
+      type: "Canvas",
+      width: 800,
+      height: 600,
+      items: [
+        {
+          id: "https://example.org/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.org/annotation/1",
+              type: "Annotation",
+              motivation: ["painting", "supplementing"],
+              body: {
+                type: "TextualBody",
+                value: "Painted with array motivation",
+              },
+              target: "https://example.org/canvas/1",
+            },
+          ],
+        },
+      ],
+    } as CanvasData;
+
+    const result = getTextualBodies(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.value).toBe("Painted with array motivation");
+  });
+
+  it("should skip annotations where motivation array does not include painting", () => {
+    const canvas: CanvasData = {
+      id: "https://example.org/canvas/1",
+      type: "Canvas",
+      width: 800,
+      height: 600,
+      items: [
+        {
+          id: "https://example.org/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.org/annotation/1",
+              type: "Annotation",
+              motivation: ["commenting", "tagging"],
+              body: {
+                type: "TextualBody",
+                value: "Not painted",
+              },
+              target: "https://example.org/canvas/1",
+            },
+          ],
+        },
+      ],
+    } as CanvasData;
+
+    const result = getTextualBodies(canvas);
+
+    expect(result).toHaveLength(0);
+  });
+
   it("should only extract from painting annotations, not other motivations", () => {
     const canvas: CanvasData = {
       id: "https://example.org/canvas/1",

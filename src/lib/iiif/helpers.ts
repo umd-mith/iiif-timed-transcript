@@ -81,6 +81,20 @@ export function getManifests(collection: CollectionData) {
 }
 
 /**
+ * Checks whether an annotation carries a given motivation.
+ * Per the W3C Web Annotation spec, motivation may be a single string
+ * or an array of strings.
+ */
+function hasMotivation(
+  motivation: string | string[],
+  target: string,
+): boolean {
+  return Array.isArray(motivation)
+    ? motivation.includes(target)
+    : motivation === target;
+}
+
+/**
  * Gets painting annotations from a canvas
  * @param canvas - IIIF canvas
  * @returns Array of painting annotation objects
@@ -92,7 +106,7 @@ export function getPaintingAnnotations(canvas: CanvasData): AnnotationData[] {
   for (const page of annotationPages) {
     if (page.items) {
       for (const annotation of page.items) {
-        if (annotation.motivation === "painting") {
+        if (hasMotivation(annotation.motivation, "painting")) {
           paintingAnnotations.push(annotation);
         }
       }

@@ -176,7 +176,9 @@ const AnnotationSchema = z
   .object({
     id: IIIFIdentifier,
     type: z.literal("Annotation"),
-    motivation: z.string().describe('Annotation motivation (e.g., "painting")'),
+    motivation: z
+      .union([z.string(), z.array(z.string())])
+      .describe('Annotation motivation (e.g., "painting" or ["commenting", "tagging"])'),
     body: AnnotationBodySchema.or(z.array(AnnotationBodySchema))
       .optional()
       .describe("Annotation body (single or array)"),
