@@ -16,59 +16,43 @@
 		 * @default 150
 		 */
 		debounceMs?: number;
-		/** Callback fired when search matches change (debounced) */
-		onmatchchange?: (matches: Annotation[]) => void;
-		/** Callback fired when user navigates to different match (prev/next buttons) */
-		onnavigatematch?: (index: number) => void;
-		/**
-		 * Current match index for highlighting (0-based).
-		 * @default -1
-		 */
-		currentMatchIndex?: number;
-		/**
-		 * Total number of matches (for displaying "X / Y").
-		 * @default 0
-		 */
-		totalMatches?: number;
+		/** Callback fired when search matches or current index change */
+		onmatchchange?: (matches: Annotation[], currentIndex: number) => void;
 	}
 
 	let {
 		annotations,
 		placeholder = 'Search transcript...',
 		debounceMs = 150,
-		onmatchchange,
-		onnavigatematch,
-		currentMatchIndex = -1,
-		totalMatches = 0
+		onmatchchange
 	}: Props = $props();
 
 	let query = $state('');
+	let currentIndex = $state(0);
 	let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
 
-	// Search logic
-	function performSearch(searchQuery: string) {
-		if (!searchQuery.trim()) {
-			onmatchchange?.([]);
-			return;
-		}
+	// Derived: filter annotations by search query
+	const matches = $derived.by(() => {
+		if (!query.trim()) return [];
+		const lowerQuery = query.toLowerCase();
+		return annotations.filter((ann) => ann.text.toLowerCase().includes(lowerQuery));
+	});
 
-		const lowerQuery = searchQuery.toLowerCase();
-		const matches = annotations.filter((ann) => ann.text.toLowerCase().includes(lowerQuery));
-
-		onmatchchange?.(matches);
-	}
-
-	// Debounced search
+	// Watch matches and notify parent (including when search is cleared)
 	$effect(() => {
-		if (debounceTimeout) clearTimeout(debounceTimeout);
+		if (query.trim()) {
+			onmatchchange?.(matches, currentIndex);
+		} else {
+			onmatchchange?.([], -1);
+		}
+	});
 
-		debounceTimeout = setTimeout(() => {
-			performSearch(query);
-		}, debounceMs);
-
-		return () => {
-			if (debounceTimeout) clearTimeout(debounceTimeout);
-		};
+	// Reset currentIndex when matches change
+	$effect(() => {
+		const matchCount = matches.length;
+		if (matchCount > 0 && currentIndex >= matchCount) {
+			currentIndex = 0;
+		}
 	});
 
 	// Cleanup on component destroy
@@ -76,28 +60,56 @@
 		if (debounceTimeout) clearTimeout(debounceTimeout);
 	});
 
+	// Debounced input handler
+	function handleInput(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const value = target.value;
+
+		// Debounce search
+		if (debounceTimeout) clearTimeout(debounceTimeout);
+
+		debounceTimeout = setTimeout(() => {
+			query = value;
+			currentIndex = 0;
+		}, debounceMs);
+	}
+
 	// Navigation
 	function navigatePrevious() {
-		if (totalMatches === 0) return;
-		const newIndex = currentMatchIndex <= 0 ? totalMatches - 1 : currentMatchIndex - 1;
-		onnavigatematch?.(newIndex);
+		if (matches.length === 0) return;
+		currentIndex = currentIndex <= 0 ? matches.length - 1 : currentIndex - 1;
+		onmatchchange?.(matches, currentIndex);
 	}
 
 	function navigateNext() {
-		if (totalMatches === 0) return;
-		const newIndex = currentMatchIndex >= totalMatches - 1 ? 0 : currentMatchIndex + 1;
-		onnavigatematch?.(newIndex);
+		if (matches.length === 0) return;
+		currentIndex = currentIndex >= matches.length - 1 ? 0 : currentIndex + 1;
+		onmatchchange?.(matches, currentIndex);
 	}
+
+	// Match count display
+	const matchCountDisplay = $derived.by(() => {
+		if (!query.trim()) return '';
+		if (matches.length === 0) return 'No matches';
+		return `${currentIndex + 1} of ${matches.length}`;
+	});
 </script>
 
 <div class="search-container" role="search">
-	<input type="search" bind:value={query} {placeholder} aria-label="Search transcript" />
+	<input
+		type="search"
+		{placeholder}
+		oninput={handleInput}
+		aria-label="Search transcript"
+		autocomplete="off"
+		spellcheck="false"
+	/>
 
-	{#if totalMatches > 0}
-		<div class="match-counter" aria-live="polite" aria-atomic="true">
-			{currentMatchIndex + 1} / {totalMatches}
-		</div>
+	{#if query.trim()}
+		<span class="match-counter" aria-live="polite" aria-atomic="true">{matchCountDisplay}</span>
+	{/if}
 
+	{#if matches.length > 0}
 		<button type="button" onclick={navigatePrevious} aria-label="Previous match">
 			↑
 		</button>

@@ -12,19 +12,31 @@
 		 */
 		isActive?: boolean;
 		/**
+		 * Whether this segment is highlighted from search.
+		 * @default false
+		 */
+		isHighlighted?: boolean;
+		/**
+		 * Whether this is the current search match (stronger highlight).
+		 * @default false
+		 */
+		isCurrentMatch?: boolean;
+		/**
 		 * Click handler (typically wired to viewer.seekTo).
 		 * @default undefined
 		 */
 		onclick?: () => void;
 	}
 
-	let { annotation, isActive = false, onclick }: Props = $props();
+	let { annotation, isActive = false, isHighlighted = false, isCurrentMatch = false, onclick }: Props = $props();
 </script>
 
 <button
 	type="button"
 	data-annotation-id={annotation.id}
 	data-state={isActive ? 'active' : 'inactive'}
+	data-highlighted={isHighlighted ? 'true' : undefined}
+	data-current-match={isCurrentMatch ? 'true' : undefined}
 	{onclick}
 	aria-current={isActive ? 'true' : undefined}
 >

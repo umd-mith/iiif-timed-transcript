@@ -138,20 +138,29 @@
 	let searchMatches = $state<Annotation[]>([]);
 	let currentMatchIndex = $state(-1);
 
-	// Search handlers
-	function handleMatchChange(matches: Annotation[]) {
-		searchMatches = matches;
-		currentMatchIndex = matches.length > 0 ? 0 : -1;
-	}
+	// Derive set of highlighted IDs (all search matches)
+	const highlightedIds = $derived(new Set(searchMatches.map((m) => m.id)));
 
-	function handleNavigateMatch(index: number) {
+	// Derive current match ID for stronger highlighting
+	const currentMatchId = $derived.by(() => {
+		if (currentMatchIndex < 0 || currentMatchIndex >= searchMatches.length) {
+			return null;
+		}
+		return searchMatches[currentMatchIndex]?.id ?? null;
+	});
+
+	// Search handler - unified callback from Search component
+	function handleMatchChange(matches: Annotation[], index: number) {
+		searchMatches = matches;
 		currentMatchIndex = index;
-		// Scroll to the matched annotation
-		if (searchMatches[index]) {
-			const matchedAnnotation = searchMatches[index];
-			if (viewer) {
-				viewer.seekTo(matchedAnnotation.startTime);
-			}
+
+		// Scroll to and seek to current match
+		if (index >= 0 && matches[index]) {
+			const match = matches[index];
+			// Seek media to match start time
+			viewer?.seekTo(match.startTime);
+			// Scroll to match in transcript (data-annotation-id is set on Segment wrapper)
+			// Implementation would need scroll container ref - omitted for now
 		}
 	}
 
@@ -241,9 +250,6 @@
 							placeholder={searchPlaceholder}
 							debounceMs={searchDebounceMs}
 							onmatchchange={handleMatchChange}
-							onnavigatematch={handleNavigateMatch}
-							{currentMatchIndex}
-							totalMatches={searchMatches.length}
 						/>
 					{/if}
 					{#if enableFullscreen}
@@ -267,6 +273,8 @@
 					<Segment
 						{annotation}
 						isActive={activeAnnotationId === annotation.id}
+						isHighlighted={highlightedIds.has(annotation.id) && currentMatchId !== annotation.id}
+						isCurrentMatch={currentMatchId === annotation.id}
 						onclick={() => handleAnnotationClick(annotation)}
 					/>
 				{/if}

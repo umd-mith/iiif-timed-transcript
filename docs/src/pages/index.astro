@@ -1,0 +1,310 @@
+---
+import IIIFTranscriptDemo from '../components/IIIFTranscriptDemo.svelte';
+
+const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json';
+const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.vtt';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>IIIF Transcript Player - Synchronized Media & Transcripts</title>
+		<meta name="description" content="Svelte 5 component library for synchronized IIIF media playback with transcript navigation. Open source, unstyled primitives, TypeScript support." />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+	</head>
+	<body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
+		<!-- Navigation -->
+		<nav class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div class="flex items-center justify-between h-16">
+					<div class="flex items-center">
+						<a href="#" class="text-xl font-serif font-bold text-ink-900 tracking-tight">
+							IIIF Transcript Player
+						</a>
+					</div>
+					<div class="hidden md:flex items-center space-x-8">
+						<a href="#demo" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Demo</a>
+						<a href="#getting-started" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Get Started</a>
+						<a href="#components" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Components</a>
+						<a href="#styling" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Styling</a>
+						<a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
+							GitHub
+						</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<!-- Hero Section -->
+		<section id="hero" class="pt-32 pb-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
+			<div class="max-w-4xl mx-auto">
+				<!-- Editorial number mark (like manuscript folios) -->
+				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">001</div>
+
+				<h1 class="text-6xl md:text-7xl font-serif font-bold text-ink-900 mb-8 leading-tight">
+					Synchronized Media<br />& Transcript Player
+				</h1>
+				<p class="text-xl md:text-2xl text-ink-600 mb-10 max-w-2xl font-serif leading-relaxed">
+					A Svelte 5 component library for bidirectional synchronization between IIIF media playback and transcript navigation. Unstyled primitives for scholarly and archival applications.
+				</p>
+				<div class="flex items-center gap-4 mb-12">
+					<a href="#demo" class="group px-8 py-4 bg-terracotta-500 text-white font-medium hover:bg-terracotta-600 transition-all duration-200 border-2 border-terracotta-600 hover:border-terracotta-700 hover:shadow-lg">
+						<span class="inline-flex items-center gap-2">
+							See Live Demo
+							<svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+							</svg>
+						</span>
+					</a>
+					<a href="#getting-started" class="px-8 py-4 border-2 border-ink-300 text-ink-700 font-medium hover:border-terracotta-500 hover:text-terracotta-600 transition-colors">
+						Get Started
+					</a>
+				</div>
+				<div class="flex flex-wrap items-center gap-6 text-sm text-ink-500 border-t border-l-4 border-terracotta-300 pt-6 pl-6">
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">IIIF Compliant</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">TypeScript</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Unstyled Primitives</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Open Source</span>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Live Demo Section -->
+		<section id="demo" class="py-24 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200">
+			<div class="max-w-7xl mx-auto">
+				<div class="mb-12">
+					<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">002</div>
+					<h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">Live Demonstration</h2>
+					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
+						Watch the components in action with a real IIIF video and VTT captions from the IIIF Cookbook. Click transcript segments to seek; play video to auto-scroll the active cue.
+					</p>
+				</div>
+
+				<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
+					<IIIFTranscriptDemo client:load {manifestUrl} {vttUrl} />
+				</div>
+			</div>
+		</section>
+
+		<!-- Getting Started Section -->
+		<section id="getting-started" class="py-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
+			<div class="max-w-4xl mx-auto">
+				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">003</div>
+				<h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">Getting Started</h2>
+				<p class="text-lg text-ink-600 mb-12 font-serif leading-relaxed">
+					Install the library and start building synchronized media experiences in minutes. No configuration required.
+				</p>
+
+				<div class="space-y-10">
+					<!-- Installation -->
+					<div class="border-l-4 border-terracotta-400 pl-8">
+						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Installation</h3>
+						<p class="text-ink-600 mb-4 italic">
+							Note: This package is not yet published to npm. Install from GitHub:
+						</p>
+						<div class="bg-ink-900 border-2 border-ink-800 p-6 overflow-x-auto shadow-lg mb-4">
+							<code class="text-sm font-mono text-parchment-100">
+								pnpm add github:umd-mith/svelte-iiif-transcript-player
+							</code>
+						</div>
+						<p class="text-ink-600 text-sm">
+							Peer dependencies: <code class="font-mono text-terracotta-600">svelte@^5</code>, <code class="font-mono text-terracotta-600">xstate@^5</code>
+						</p>
+					</div>
+
+					<!-- Basic Usage -->
+					<div class="border-l-4 border-terracotta-400 pl-8">
+						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Basic Usage</h3>
+						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
+							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<script>
+  import { IIIFMediaViewer, AudioPlayerControls, TranscriptPanel }
+    from '@umd-mith/svelte-iiif-transcript-player';
+
+  let viewer = $state(null);
+  let annotations = $state([]);
+
+  // Parse your VTT/WebVTT file into Annotation[] format
+  // (see media-captions library for robust parsing)
+</script>
+
+<IIIFMediaViewer bind:this={viewer} iiifManifestUrl={manifestUrl} />
+
+{#if viewer}
+  <AudioPlayerControls playerRef={viewer} />
+{/if}
+
+<TranscriptPanel {annotations} {viewer} enableSearch={true} />`}</code></pre>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Components Section -->
+		<section id="components" class="py-20 px-4 sm:px-6 lg:px-8 bg-parchment-50">
+			<div class="max-w-4xl mx-auto">
+				<h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-12">Components</h2>
+
+				<div class="space-y-12">
+					<!-- IIIFMediaViewer -->
+					<div class="border-l-4 border-terracotta-500 pl-6">
+						<h3 class="text-2xl font-semibold text-gray-900 mb-3">IIIFMediaViewer</h3>
+						<p class="text-gray-600 mb-4">
+							Renders video or audio from IIIF Presentation 3.0 manifests. Provides ref for programmatic control.
+						</p>
+						<div class="bg-gray-50 rounded-lg p-4 border border-ink-200">
+							<h4 class="font-semibold text-gray-900 mb-2">Essential Props:</h4>
+							<ul class="space-y-2 text-sm font-mono">
+								<li><span class="text-terracotta-600">iiifManifestUrl</span>: string - IIIF manifest URL</li>
+								<li><span class="text-terracotta-600">canvasIndex</span>?: number - Canvas to display (default: 0)</li>
+								<li><span class="text-terracotta-600">onReady</span>?: () => void - Callback when media is loaded</li>
+								<li><span class="text-terracotta-600">onError</span>?: (error) => void - Error handling</li>
+							</ul>
+						</div>
+					</div>
+
+					<!-- AudioPlayerControls -->
+					<div class="border-l-4 border-terracotta-500 pl-6">
+						<h3 class="text-2xl font-semibold text-gray-900 mb-3">AudioPlayerControls</h3>
+						<p class="text-gray-600 mb-4">
+							Unstyled control bar with play/pause, progress, skip buttons, and speed picker. Fully configurable.
+						</p>
+						<div class="bg-gray-50 rounded-lg p-4 border border-ink-200">
+							<h4 class="font-semibold text-gray-900 mb-2">Essential Props:</h4>
+							<ul class="space-y-2 text-sm font-mono">
+								<li><span class="text-terracotta-600">playerRef</span>: IIIFMediaViewerRef - Viewer instance to control</li>
+								<li><span class="text-terracotta-600">skipAmounts</span>?: number[] - Skip button values (default: [5, 15, 30])</li>
+								<li><span class="text-terracotta-600">speedOptions</span>?: number[] - Speed picker options (default: [0.5, 0.75, 1, 1.25, 1.5, 2])</li>
+								<li><span class="text-terracotta-600">enableSkip</span>?: boolean - Show skip buttons (default: true)</li>
+								<li><span class="text-terracotta-600">enableSpeed</span>?: boolean - Show speed picker (default: true)</li>
+							</ul>
+						</div>
+					</div>
+
+					<!-- TranscriptPanel -->
+					<div class="border-l-4 border-terracotta-500 pl-6">
+						<h3 class="text-2xl font-semibold text-gray-900 mb-3">TranscriptPanel</h3>
+						<p class="text-gray-600 mb-4">
+							Displays time-coded transcript with bidirectional sync. Click segment to seek, video auto-scrolls active segment.
+						</p>
+						<div class="bg-gray-50 rounded-lg p-4 border border-ink-200">
+							<h4 class="font-semibold text-gray-900 mb-2">Essential Props:</h4>
+							<ul class="space-y-2 text-sm font-mono">
+								<li><span class="text-terracotta-600">annotations</span>: Annotation[] - Transcript cues with timing</li>
+								<li><span class="text-terracotta-600">viewer</span>: IIIFMediaViewerRef | null - Viewer for sync</li>
+								<li><span class="text-terracotta-600">enableSearch</span>?: boolean - Show search UI (default: false)</li>
+								<li><span class="text-terracotta-600">syncDebounceMs</span>?: number - Scroll throttling (default: 150)</li>
+								<li><span class="text-terracotta-600">onActiveAnnotationChange</span>?: (ann) => void - Active segment callback</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Styling Guide Section -->
+		<section id="styling" class="py-20 px-4 sm:px-6 lg:px-8">
+			<div class="max-w-4xl mx-auto">
+				<h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Styling Guide</h2>
+				<p class="text-lg text-gray-600 mb-8">
+					All components ship unstyled with data-* attributes. Here's a minimal example to get started.
+				</p>
+
+				<div class="space-y-8">
+					<div>
+						<h3 class="text-2xl font-semibold text-gray-900 mb-4">Transcript Segment Highlighting</h3>
+						<div class="bg-gray-50 rounded-lg p-6 border border-ink-200">
+							<pre class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Target transcript segments via data attributes */
+button[data-annotation-id] {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+  text-align: left;
+}
+
+button[data-annotation-id]:hover {
+  background-color: #f3f4f6;
+}
+
+/* Active segment highlighting */
+button[data-annotation-id][data-state='active'] {
+  background-color: #bae6fd;
+  border-left: 4px solid #0ea5e9;
+}
+
+button[data-annotation-id] .timestamp {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+button[data-annotation-id] .text {
+  color: #1f2937;
+  line-height: 1.5;
+}`}</code></pre>
+						</div>
+					</div>
+
+					<div>
+						<h3 class="text-2xl font-semibold text-gray-900 mb-4">Audio Player Controls</h3>
+						<div class="bg-gray-50 rounded-lg p-6 border border-ink-200">
+							<pre class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Style control bar via data attributes */
+[data-audio-controls] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0.5rem;
+}
+
+[data-audio-button] {
+  padding: 0.5rem;
+  background: #f3f4f6;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+[data-audio-button]:hover {
+  background: #e5e7eb;
+}
+
+[data-audio-state='playing'] [data-audio-button='play-pause'] {
+  background: #bae6fd;
+}`}</code></pre>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Footer -->
+		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-gray-900 text-gray-400">
+			<div class="max-w-7xl mx-auto text-center">
+				<p class="mb-4">
+					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
+				</p>
+				<p class="text-sm">
+					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
+				</p>
+			</div>
+		</footer>
+	</body>
+</html>

@@ -1,26 +1,5 @@
 // Public API — exports added as components are extracted in LDA-1964 through LDA-1968
-
-// ============================================================================
-// Components (LDA-1965)
-// ============================================================================
-export { default as MediaPlayer } from "./components/MediaPlayer.svelte";
-export { default as IIIFMediaViewer } from "./components/IIIFMediaViewer.svelte";
-
-/**
- * AudioPlayerControls - Unstyled audio control bar with feature toggles (LDA-1966).
- *
- * @example
- * ```svelte
- * <script>
- *   import { AudioPlayerControls, IIIFMediaViewer } from '@umd-mith/svelte-iiif-transcript-player';
- *   let viewer;
- * </script>
- *
- * <IIIFMediaViewer bind:this={viewer} {manifestUrl} />
- * <AudioPlayerControls playerRef={viewer} skipAmounts={[10, 30]} />
- * ```
- */
-export { default as AudioPlayerControls } from "./components/AudioPlayerControls.svelte";
+// Components from LDA-1965, LDA-1966 removed in LDA-1983 (replaced by IIIFPlayer namespace)
 
 // ============================================================================
 // Compound Components (LDA-1983)
@@ -163,34 +142,12 @@ export {
 } from "./sync/annotationUtils";
 
 // ============================================================================
-// Transcript Components (LDA-1967)
+// Transcript Utilities (LDA-1967)
 // ============================================================================
+// Note: Individual transcript components removed from public API in LDA-1983.
+// Use IIIFPlayer.Transcript, IIIFPlayer.TranscriptSearch, IIIFPlayer.TranscriptSegments instead.
 
-/**
- * TranscriptPanel - Main orchestrator component for transcript display and sync.
- *
- * @example
- * ```svelte
- * <script>
- *   import { TranscriptPanel } from '@umd-mith/svelte-iiif-transcript-player';
- * </script>
- *
- * <TranscriptPanel {annotations} {viewer} enableSearch />
- * ```
- */
-export { default as TranscriptPanel } from "./transcript/Panel.svelte";
-
-/**
- * TranscriptSearch - Standalone search component for transcript filtering.
- */
-export { default as TranscriptSearch } from "./transcript/Search.svelte";
-
-/**
- * TranscriptSegment - Reference implementation for individual transcript segments.
- */
-export { default as TranscriptSegment } from "./transcript/Segment.svelte";
-
-// Export transcript utilities
+// Utility functions remain exported for advanced use cases
 export { formatTimestamp, getAnnotationById } from "./transcript/utils";
 export { keyboardNav, type KeyboardNavOptions } from "./transcript/keyboardNav";
 
