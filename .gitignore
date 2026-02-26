@@ -6,5 +6,9 @@ coverage/
 # Vitest browser mode screenshots
 **/__screenshots__/
 
+# Test helper build artifacts
+src/test/**/*.d.ts
+src/test/**/*.d.ts.map
+
 # Claude Code local settings
 .claude/settings.local.json
