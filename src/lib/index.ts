@@ -23,6 +23,37 @@ export { default as IIIFMediaViewer } from "./components/IIIFMediaViewer.svelte"
 export { default as AudioPlayerControls } from "./components/AudioPlayerControls.svelte";
 
 // ============================================================================
+// Compound Components (LDA-1983)
+// ============================================================================
+
+/**
+ * IIIFPlayer - Compound component namespace for building IIIF media players.
+ *
+ * Provides a flexible, composable API for creating custom IIIF media player UIs.
+ *
+ * @example
+ * ```svelte
+ * <script>
+ *   import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+ * </script>
+ *
+ * <IIIFPlayer.Root manifestUrl="..." canvasIndex={0}>
+ *   <IIIFPlayer.Viewer />
+ *   <IIIFPlayer.Controls>
+ *     <IIIFPlayer.PlayButton />
+ *     <IIIFPlayer.Progress />
+ *     <IIIFPlayer.Skip seconds={10} />
+ *     <IIIFPlayer.Speed />
+ *     <IIIFPlayer.Time />
+ *   </IIIFPlayer.Controls>
+ *   <IIIFPlayer.Transcript annotations={...} />
+ * </IIIFPlayer.Root>
+ * ```
+ */
+export { IIIFPlayer } from "./player";
+export type { PlayerContext, PlayerState, PlayerActions } from "./player";
+
+// ============================================================================
 // IIIF Utilities (LDA-1964)
 // ============================================================================
 
