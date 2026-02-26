@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { PlayerContext } from './context';
+import type { PlayerContext } from '../../lib/player/context';
 
 export function createMockPlayerContext(overrides: Partial<PlayerContext> = {}): PlayerContext {
 	return {

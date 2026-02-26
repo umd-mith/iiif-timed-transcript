@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getPlayerContext } from './context';
+	import { getPlayerContext } from '../../lib/player/context';
 
 	let { onResult }: { onResult: (ctx: any) => void } = $props();
 

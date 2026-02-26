@@ -2,9 +2,9 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from 'svelte';
 import { flushSync } from 'svelte';
 import Transcript from './Transcript.svelte';
-import TestContextProvider from './TestContextProvider.svelte';
-import TestTranscriptContextConsumer from './TestTranscriptContextConsumer.svelte';
-import { createMockPlayerContext } from './test-utils';
+import TestContextProvider from '../../test/player/TestContextProvider.svelte';
+import TestTranscriptContextConsumer from '../../test/player/TestTranscriptContextConsumer.svelte';
+import { createMockPlayerContext } from '../../test/player/test-utils';
 import type { Annotation } from '../sync/types';
 import type { TranscriptContext } from './transcript-context';
 

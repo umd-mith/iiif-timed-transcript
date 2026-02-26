@@ -2,8 +2,8 @@ import { describe, test, expect, vi, afterEach } from 'vitest';
 import { mount } from 'svelte';
 import { flushSync } from 'svelte';
 import Speed from './Speed.svelte';
-import TestContextProvider from './TestContextProvider.svelte';
-import { createMockPlayerContext } from './test-utils';
+import TestContextProvider from '../../test/player/TestContextProvider.svelte';
+import { createMockPlayerContext } from '../../test/player/test-utils';
 
 describe('Speed', () => {
 	let target: HTMLElement;

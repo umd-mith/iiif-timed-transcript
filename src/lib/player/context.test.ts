@@ -2,8 +2,8 @@ import { describe, test, expect, vi, afterEach } from 'vitest';
 import { mount } from 'svelte';
 import { flushSync } from 'svelte';
 import type { PlayerContext } from './context';
-import TestContextProvider from './TestContextProvider.svelte';
-import TestContextConsumer from './TestContextConsumer.svelte';
+import TestContextProvider from '../../test/player/TestContextProvider.svelte';
+import TestContextConsumer from '../../test/player/TestContextConsumer.svelte';
 
 describe('getPlayerContext', () => {
 	let target: HTMLElement;

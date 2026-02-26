@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getTranscriptContext } from './transcript-context';
+	import { getTranscriptContext } from '../../lib/player/transcript-context';
 
 	let { onResult }: { onResult: (ctx: any) => void } = $props();
 

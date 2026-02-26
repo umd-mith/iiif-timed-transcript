@@ -10,8 +10,8 @@ import {
 } from './transcript-context';
 
 // We need test helpers to mount components that call setContext/getContext
-import TestTranscriptContextProvider from './TestTranscriptContextProvider.svelte';
-import TestTranscriptContextConsumer from './TestTranscriptContextConsumer.svelte';
+import TestTranscriptContextProvider from '../../test/player/TestTranscriptContextProvider.svelte';
+import TestTranscriptContextConsumer from '../../test/player/TestTranscriptContextConsumer.svelte';
 
 describe('transcript-context', () => {
 	let target: HTMLElement;

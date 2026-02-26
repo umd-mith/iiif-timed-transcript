@@ -25,7 +25,10 @@
  *     <IIIFPlayer.Speed />
  *     <IIIFPlayer.Time />
  *   </IIIFPlayer.Controls>
- *   <IIIFPlayer.Transcript annotations={...} />
+ *   <IIIFPlayer.Transcript annotations={...}>
+ *     <IIIFPlayer.TranscriptSearch />
+ *     <IIIFPlayer.TranscriptSegments />
+ *   </IIIFPlayer.Transcript>
  * </IIIFPlayer.Root>
  * ```
  */
