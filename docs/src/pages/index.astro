@@ -158,6 +158,39 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 </IIIFPlayer.Root>`}</code></pre>
 						</div>
 					</div>
+
+					<!-- Using with Astro -->
+					<div class="border-l-4 border-terracotta-400 pl-8">
+						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Using with Astro</h3>
+						<p class="text-ink-600 mb-4">
+							The compound components work seamlessly in Astro islands with proper hydration directives:
+						</p>
+						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
+							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-astro">{`<IIIFPlayer.Root client:load {manifestUrl} canvasIndex={0}>
+  <IIIFPlayer.Viewer />
+
+  <IIIFPlayer.Controls>
+    <IIIFPlayer.PlayButton />
+    <IIIFPlayer.Progress />
+    <IIIFPlayer.Skip seconds={-10} />
+    <IIIFPlayer.Skip seconds={30} />
+    <IIIFPlayer.Speed />
+    <IIIFPlayer.Time />
+  </IIIFPlayer.Controls>
+
+  <!-- Lazy-load transcript if below the fold -->
+  <IIIFPlayer.Transcript client:visible {annotations} enableSearch>
+    <IIIFPlayer.TranscriptSearch />
+    <IIIFPlayer.TranscriptSegments />
+  </IIIFPlayer.Transcript>
+</IIIFPlayer.Root>`}</code></pre>
+						</div>
+						<div class="mt-4 bg-amber-50 border-l-4 border-amber-400 p-4">
+							<p class="text-sm text-amber-900">
+								<strong class="font-semibold">Hydration tip:</strong> Use <code class="font-mono text-terracotta-600">client:load</code> on Root for immediate media initialization, <code class="font-mono text-terracotta-600">client:visible</code> on Transcript to lazy-load below-the-fold content.
+							</p>
+						</div>
+					</div>
 				</div>
 			</div>
 		</section>
