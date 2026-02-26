@@ -196,15 +196,15 @@
 	}
 
 	/* Player controls styling - compound components */
-	:global(.iiif-transcript-demo [data-player-controls]) {
+	:global(.iiif-transcript-demo [data-audio-controls]) {
 		@apply flex items-center justify-center gap-2 flex-wrap;
 	}
 
-	:global(.iiif-transcript-demo [data-play-button]) {
+	:global(.iiif-transcript-demo button[data-audio-button="play-pause"]) {
 		@apply px-4 py-3 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-full transition-colors;
 	}
 
-	:global(.iiif-transcript-demo [data-progress-container]) {
+	:global(.iiif-transcript-demo [data-audio-progress]) {
 		@apply w-full mb-3;
 	}
 
@@ -220,15 +220,15 @@
 		@apply w-4 h-4 bg-terracotta-500 rounded-full cursor-pointer border-0;
 	}
 
-	:global(.iiif-transcript-demo [data-skip-button]) {
+	:global(.iiif-transcript-demo button[data-audio-button="skip"]) {
 		@apply px-2 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors text-sm;
 	}
 
-	:global(.iiif-transcript-demo select[data-speed-select]) {
+	:global(.iiif-transcript-demo select[data-audio-control="speed"]) {
 		@apply px-3 py-2 bg-white border border-gray-300 hover:border-gray-400 rounded transition-colors text-sm;
 	}
 
-	:global(.iiif-transcript-demo [data-time-display]) {
+	:global(.iiif-transcript-demo [data-audio-control="time"]) {
 		@apply text-sm text-gray-600 font-medium;
 	}
 </style>
