@@ -637,11 +637,7 @@ Accessibility basics are solid:
 
 ## Taking a screenshot of the demo
 
-```bash {image}
-\![Demo with search highlighting "Bungle" — 27 matches shown in yellow](demo-screenshot.png)
-```
-
-![Demo with search highlighting "Bungle" — 27 matches shown in yellow](7146db45-2026-02-26.png)
+![Demo with search highlighting "Bungle" — 27 matches shown in yellow](demo-screenshot.png)
 
 ```bash
 echo 'Video networkState=3 (no source) — remote IIIF fixture cannot load in headless Chrome.' && echo 'Simulating playback by dispatching timeupdate events:' && uvx rodney js '(() => { var v = document.querySelector("video"); v.dispatchEvent(new Event("loadedmetadata")); v.dispatchEvent(new Event("timeupdate")); return "currentTime: " + v.currentTime; })()'
