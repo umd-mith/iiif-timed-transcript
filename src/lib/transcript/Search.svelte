@@ -17,14 +17,17 @@
 		 */
 		debounceMs?: number;
 		/** Callback fired when search matches or current index change */
-		onmatchchange?: (matches: Annotation[], currentIndex: number) => void;
+		onmatchchange?: ((matches: Annotation[], currentIndex: number) => void) | undefined;
+		/** CSS class for the search container */
+		class?: string;
 	}
 
 	let {
 		annotations,
 		placeholder = 'Search transcript...',
 		debounceMs = 150,
-		onmatchchange
+		onmatchchange,
+		class: className = ''
 	}: Props = $props();
 
 	let query = $state('');
@@ -95,7 +98,7 @@
 	});
 </script>
 
-<div class="search-container" role="search">
+<div class="search-container {className}" role="search">
 	<input
 		type="search"
 		{placeholder}

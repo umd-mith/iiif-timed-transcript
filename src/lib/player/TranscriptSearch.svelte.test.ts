@@ -73,7 +73,7 @@ describe('TranscriptSearch', () => {
 
 		// handleMatchChange should have been called with the match from context annotations
 		expect(handleMatchChange).toHaveBeenCalled();
-		const [matches] = handleMatchChange.mock.calls[handleMatchChange.mock.calls.length - 1];
+		const [matches] = handleMatchChange.mock.calls[handleMatchChange.mock.calls.length - 1]!;
 		expect(matches).toHaveLength(1);
 		expect(matches[0].id).toBe('a1');
 	});

@@ -39,6 +39,8 @@ describe('getPlayerContext', () => {
 				error: null
 			},
 			mediaElement: null,
+			mediaUrl: 'https://example.com/test.mp3',
+			mediaType: 'audio',
 			actions: {
 				play: vi.fn(),
 				pause: vi.fn(),

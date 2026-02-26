@@ -72,7 +72,7 @@
 		if (!syncController || syncController.activeAnnotations.length === 0) {
 			return null;
 		}
-		return syncController.activeAnnotations[0].id;
+		return syncController.activeAnnotations[0]!.id;
 	});
 
 	// Search state

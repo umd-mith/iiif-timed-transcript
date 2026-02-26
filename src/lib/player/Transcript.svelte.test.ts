@@ -7,6 +7,7 @@ import TestTranscriptContextConsumer from '../../test/player/TestTranscriptConte
 import { createMockPlayerContext } from '../../test/player/test-utils';
 import type { Annotation } from '../sync/types';
 import type { TranscriptContext } from './transcript-context';
+import type { Snippet } from 'svelte';
 
 describe('Transcript', () => {
 	let target: HTMLElement;
@@ -83,7 +84,7 @@ describe('Transcript', () => {
 							anchor,
 							props: {
 								annotations: mockAnnotations,
-								children: () => {
+								children: (() => {
 									mount(TestTranscriptContextConsumer, {
 										target,
 										props: {
@@ -92,7 +93,7 @@ describe('Transcript', () => {
 											}
 										}
 									});
-								}
+								}) as unknown as Snippet
 							}
 						});
 					}
@@ -120,7 +121,7 @@ describe('Transcript', () => {
 							anchor,
 							props: {
 								annotations: mockAnnotations,
-								children: () => {
+								children: (() => {
 									mount(TestTranscriptContextConsumer, {
 										target,
 										props: {
@@ -129,7 +130,7 @@ describe('Transcript', () => {
 											}
 										}
 									});
-								}
+								}) as unknown as Snippet
 							}
 						});
 					}
@@ -158,7 +159,7 @@ describe('Transcript', () => {
 							anchor,
 							props: {
 								annotations: mockAnnotations,
-								children: () => {
+								children: (() => {
 									mount(TestTranscriptContextConsumer, {
 										target,
 										props: {
@@ -167,7 +168,7 @@ describe('Transcript', () => {
 											}
 										}
 									});
-								}
+								}) as unknown as Snippet
 							}
 						});
 					}
