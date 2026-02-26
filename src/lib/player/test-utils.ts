@@ -13,6 +13,8 @@ export function createMockPlayerContext(overrides: Partial<PlayerContext> = {}):
 			...overrides.state
 		},
 		mediaElement: null,
+		mediaUrl: 'https://example.com/media.mp3',
+		mediaType: 'audio',
 		actions: {
 			play: vi.fn(),
 			pause: vi.fn(),

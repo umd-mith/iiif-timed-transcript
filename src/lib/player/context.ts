@@ -20,6 +20,8 @@ export interface PlayerActions {
 export interface PlayerContext {
 	state: PlayerState;
 	mediaElement: HTMLMediaElement | null;
+	mediaUrl: string;
+	mediaType: 'audio' | 'video';
 	actions: PlayerActions;
 }
 

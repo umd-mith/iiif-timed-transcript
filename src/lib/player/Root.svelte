@@ -78,6 +78,8 @@
 	setContext(PLAYER_CONTEXT_KEY, {
 		state,
 		mediaElement,
+		mediaUrl,
+		mediaType,
 		actions
 	});
 
