@@ -3,12 +3,12 @@
 
 	// Props
 	let {
-		controls = true,
-		crossOrigin = 'anonymous',
+		controls = false,
+		crossOrigin,
 		class: className = ''
 	}: {
 		controls?: boolean;
-		crossOrigin?: 'anonymous' | 'use-credentials' | '';
+		crossOrigin?: 'anonymous' | 'use-credentials';
 		class?: string;
 	} = $props();
 
@@ -30,22 +30,24 @@
 	});
 </script>
 
-{#if ctx.mediaType === 'audio'}
-	<audio
-		bind:this={localMediaElement}
-		src={ctx.mediaUrl}
-		{controls}
-		crossorigin={crossOrigin}
-		class={className}
-	></audio>
-{:else if ctx.mediaType === 'video'}
-	<video
-		bind:this={localMediaElement}
-		src={ctx.mediaUrl}
-		{controls}
-		crossorigin={crossOrigin}
-		class={className}
-	>
-		<!-- Caption track slot for accessibility - consumers should provide -->
-	</video>
+{#if ctx.mediaUrl}
+	{#if ctx.mediaType === 'audio'}
+		<audio
+			bind:this={localMediaElement}
+			src={ctx.mediaUrl}
+			{controls}
+			crossorigin={crossOrigin || undefined}
+			class={className}
+		></audio>
+	{:else if ctx.mediaType === 'video'}
+		<video
+			bind:this={localMediaElement}
+			src={ctx.mediaUrl}
+			{controls}
+			crossorigin={crossOrigin || undefined}
+			class={className}
+			style="width: 100%;"
+		>
+		</video>
+	{/if}
 {/if}

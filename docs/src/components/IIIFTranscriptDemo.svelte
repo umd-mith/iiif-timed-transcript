@@ -138,10 +138,7 @@
 
 				<!-- Right: Transcript Panel -->
 				<div class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-hidden">
-					<IIIFPlayer.Transcript {annotations} enableSearch>
-						<IIIFPlayer.TranscriptSearch />
-						<IIIFPlayer.TranscriptSegments />
-					</IIIFPlayer.Transcript>
+					<IIIFPlayer.Transcript {annotations} enableSearch />
 				</div>
 			</div>
 		</IIIFPlayer.Root>

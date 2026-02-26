@@ -75,11 +75,16 @@
 	};
 
 	// Provide context
+	// Use getter/setter pairs for $state variables so child components
+	// can both read updated values AND write back (e.g. Viewer sets mediaElement).
 	setContext(PLAYER_CONTEXT_KEY, {
 		state,
-		mediaElement,
-		mediaUrl,
-		mediaType,
+		get mediaElement() { return mediaElement; },
+		set mediaElement(el) { mediaElement = el; },
+		get mediaUrl() { return mediaUrl; },
+		set mediaUrl(url) { mediaUrl = url; },
+		get mediaType() { return mediaType; },
+		set mediaType(type) { mediaType = type; },
 		actions
 	});
 
@@ -127,8 +132,11 @@
 	}
 
 	// Set up media event listeners
+	// Capture `el` at setup time so cleanup removes from the correct element,
+	// even if mediaElement has changed to null by teardown.
 	$effect(() => {
-		if (!mediaElement) return;
+		const el = mediaElement;
+		if (!el) return;
 
 		const handlePlay = () => {
 			state.isPlaying = true;
@@ -137,37 +145,37 @@
 			state.isPlaying = false;
 		};
 		const handleTimeUpdate = () => {
-			state.currentTime = mediaElement.currentTime;
+			state.currentTime = el.currentTime;
 		};
 		const handleDurationChange = () => {
-			state.duration = mediaElement.duration;
+			state.duration = el.duration;
 			state.isReady = true;
 		};
 		const handleRateChange = () => {
-			state.playbackRate = mediaElement.playbackRate;
+			state.playbackRate = el.playbackRate;
 		};
 		const handleError = () => {
-			const mediaError = mediaElement.error;
+			const mediaError = el.error;
 			if (mediaError) {
 				state.error = new Error(`Media error (code ${mediaError.code})`);
 				state.isReady = false;
 			}
 		};
 
-		mediaElement.addEventListener('play', handlePlay);
-		mediaElement.addEventListener('pause', handlePause);
-		mediaElement.addEventListener('timeupdate', handleTimeUpdate);
-		mediaElement.addEventListener('durationchange', handleDurationChange);
-		mediaElement.addEventListener('ratechange', handleRateChange);
-		mediaElement.addEventListener('error', handleError);
+		el.addEventListener('play', handlePlay);
+		el.addEventListener('pause', handlePause);
+		el.addEventListener('timeupdate', handleTimeUpdate);
+		el.addEventListener('durationchange', handleDurationChange);
+		el.addEventListener('ratechange', handleRateChange);
+		el.addEventListener('error', handleError);
 
 		return () => {
-			mediaElement.removeEventListener('play', handlePlay);
-			mediaElement.removeEventListener('pause', handlePause);
-			mediaElement.removeEventListener('timeupdate', handleTimeUpdate);
-			mediaElement.removeEventListener('durationchange', handleDurationChange);
-			mediaElement.removeEventListener('ratechange', handleRateChange);
-			mediaElement.removeEventListener('error', handleError);
+			el.removeEventListener('play', handlePlay);
+			el.removeEventListener('pause', handlePause);
+			el.removeEventListener('timeupdate', handleTimeUpdate);
+			el.removeEventListener('durationchange', handleDurationChange);
+			el.removeEventListener('ratechange', handleRateChange);
+			el.removeEventListener('error', handleError);
 		};
 	});
 
@@ -176,12 +184,13 @@
 		await loadManifest();
 	});
 
-	// Cleanup on unmount
+	// Cleanup on unmount — capture current element
 	$effect(() => {
+		const el = mediaElement;
 		return () => {
-			if (mediaElement) {
-				mediaElement.pause();
-				mediaElement.src = '';
+			if (el) {
+				el.pause();
+				el.src = '';
 			}
 		};
 	});

@@ -112,7 +112,7 @@ describe('Viewer', () => {
 		expect(audioElement?.crossOrigin).toBe('use-credentials');
 	});
 
-	test('enables controls by default', () => {
+	test('disables native controls by default', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
 
@@ -133,10 +133,10 @@ describe('Viewer', () => {
 		flushSync();
 
 		const audioElement = target.querySelector('audio') as HTMLAudioElement;
-		expect(audioElement?.controls).toBe(true);
+		expect(audioElement?.controls).toBe(false);
 	});
 
-	test('can disable controls', () => {
+	test('can enable native controls', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
 
@@ -150,13 +150,13 @@ describe('Viewer', () => {
 			props: {
 				context: mockContext,
 				children: (anchor: any) => {
-					mount(Viewer, { target, anchor, props: { controls: false } });
+					mount(Viewer, { target, anchor, props: { controls: true } });
 				}
 			}
 		});
 		flushSync();
 
 		const audioElement = target.querySelector('audio') as HTMLAudioElement;
-		expect(audioElement?.controls).toBe(false);
+		expect(audioElement?.controls).toBe(true);
 	});
 });

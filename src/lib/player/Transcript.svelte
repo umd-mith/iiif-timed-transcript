@@ -68,10 +68,15 @@
 	const { actions } = playerContext;
 
 	// Create viewer adapter for SyncController
-	// This adapts the player context to the IIIFMediaViewerRef interface
+	// This adapts the player context to the full IIIFMediaViewerRef interface
 	const viewerAdapter: IIIFMediaViewerRef = {
 		seekTo: (time: number) => actions.seekTo(time),
-		getMediaElement: () => playerContext.mediaElement
+		getCurrentTime: () => playerContext.state.currentTime,
+		getDuration: () => playerContext.state.duration,
+		play: async () => actions.play(),
+		pause: () => actions.pause(),
+		isReady: () => playerContext.state.isReady,
+		setPlaybackRate: (rate: number) => actions.setPlaybackRate(rate)
 	};
 
 	// Refs
