@@ -137,8 +137,11 @@
 				</div>
 
 				<!-- Right: Transcript Panel -->
-				<div class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-hidden">
-					<IIIFPlayer.Transcript {annotations} enableSearch />
+				<div class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-clip">
+					<IIIFPlayer.Transcript {annotations}>
+						<IIIFPlayer.TranscriptSearch />
+						<IIIFPlayer.TranscriptSegments />
+					</IIIFPlayer.Transcript>
 				</div>
 			</div>
 		</IIIFPlayer.Root>
@@ -178,9 +181,9 @@
 		@apply text-gray-800 leading-relaxed;
 	}
 
-	/* Allow TranscriptPanel's internal scroll to work */
+	/* transcript-panel must be the scroll container for SyncController */
 	:global(.iiif-transcript-demo .transcript-panel) {
-		@apply flex-1 flex flex-col overflow-hidden;
+		@apply flex-1 flex flex-col overflow-y-auto;
 	}
 
 	:global(.iiif-transcript-demo .segments-container) {
@@ -208,20 +211,8 @@
 		@apply px-4 py-3 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-full transition-colors;
 	}
 
-	:global(.iiif-transcript-demo [data-audio-progress]) {
-		@apply w-full mb-3;
-	}
-
-	:global(.iiif-transcript-demo input[type="range"]) {
-		@apply w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer;
-	}
-
-	:global(.iiif-transcript-demo input[type="range"]::-webkit-slider-thumb) {
-		@apply appearance-none w-4 h-4 bg-terracotta-500 rounded-full cursor-pointer;
-	}
-
-	:global(.iiif-transcript-demo input[type="range"]::-moz-range-thumb) {
-		@apply w-4 h-4 bg-terracotta-500 rounded-full cursor-pointer border-0;
+	:global(.iiif-transcript-demo input[type="range"][data-audio-progress]) {
+		@apply w-full mb-3 h-2 cursor-pointer accent-terracotta-500;
 	}
 
 	:global(.iiif-transcript-demo button[data-audio-button="skip"]) {

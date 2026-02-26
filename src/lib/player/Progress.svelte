@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getPlayerContext } from './context';
+	import { formatTimestamp } from '../transcript/utils';
 
 	let {
 		class: className = ''
@@ -9,48 +10,25 @@
 
 	const { state, actions } = getPlayerContext();
 
-	// Calculate progress percentage
-	let percentage = $derived(
-		state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0
+	let valueText = $derived(
+		`${formatTimestamp(state.currentTime)} of ${formatTimestamp(state.duration)}`
 	);
 
-	function handleClick(event: MouseEvent) {
-		const track = event.currentTarget as HTMLElement;
-		const rect = track.getBoundingClientRect();
-		const clickX = event.clientX - rect.left;
-		const clickPercentage = clickX / rect.width;
-		const seekTime = clickPercentage * state.duration;
-		actions.seekTo(seekTime);
-	}
-
-	function handleKeydown(event: KeyboardEvent) {
-		const step = 5; // 5 second steps
-
-		switch (event.key) {
-			case 'ArrowLeft':
-				event.preventDefault();
-				actions.seekTo(Math.max(0, state.currentTime - step));
-				break;
-			case 'ArrowRight':
-				event.preventDefault();
-				actions.seekTo(Math.min(state.duration, state.currentTime + step));
-				break;
-		}
+	function handleInput(event: Event) {
+		const target = event.target as HTMLInputElement;
+		actions.seekTo(parseFloat(target.value));
 	}
 </script>
 
-<div
-	role="slider"
+<input
+	type="range"
+	min={0}
+	max={state.duration}
+	value={state.currentTime}
+	step="any"
 	aria-label="Playback progress"
-	aria-valuemin={0}
-	aria-valuemax={state.duration}
-	aria-valuenow={state.currentTime}
-	tabindex="0"
+	aria-valuetext={valueText}
 	data-audio-progress
-	onclick={handleClick}
-	onkeydown={handleKeydown}
+	oninput={handleInput}
 	class={className}
->
-	<div data-progress-track></div>
-	<div data-progress-thumb style="left: {percentage}%"></div>
-</div>
+/>

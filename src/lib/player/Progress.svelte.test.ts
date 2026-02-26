@@ -14,7 +14,7 @@ describe('Progress', () => {
 		}
 	});
 
-	test('renders progress track', () => {
+	test('renders range input with data attribute', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
 
@@ -31,11 +31,12 @@ describe('Progress', () => {
 		});
 		flushSync();
 
-		const track = target.querySelector('[data-audio-progress]');
-		expect(track).not.toBeNull();
+		const input = target.querySelector('input[data-audio-progress]');
+		expect(input).not.toBeNull();
+		expect(input?.getAttribute('type')).toBe('range');
 	});
 
-	test('calculates progress percentage correctly', () => {
+	test('reflects current time as input value', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
 
@@ -54,12 +55,12 @@ describe('Progress', () => {
 		});
 		flushSync();
 
-		// Progress should be 30/120 = 25%
-		const thumb = target.querySelector('[data-progress-thumb]') as HTMLElement;
-		expect(thumb?.style.left).toBe('25%');
+		const input = target.querySelector('input[data-audio-progress]') as HTMLInputElement;
+		expect(input.value).toBe('30');
+		expect(input.max).toBe('120');
 	});
 
-	test('calls seekTo when track is clicked', () => {
+	test('calls seekTo on input event', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
 
@@ -80,41 +81,22 @@ describe('Progress', () => {
 		});
 		flushSync();
 
-		const track = target.querySelector('[data-audio-progress]') as HTMLElement;
+		const input = target.querySelector('input[data-audio-progress]') as HTMLInputElement;
 
-		// Mock getBoundingClientRect
-		track.getBoundingClientRect = vi.fn(() => ({
-			left: 0,
-			width: 200,
-			top: 0,
-			right: 200,
-			bottom: 0,
-			height: 0,
-			x: 0,
-			y: 0,
-			toJSON: () => ({})
-		}));
-
-		// Simulate click at 50% (100px of 200px width)
-		const clickEvent = new MouseEvent('click', {
-			clientX: 100,
-			bubbles: true
-		});
-		track.dispatchEvent(clickEvent);
+		// Simulate user dragging to 60s
+		input.value = '60';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
 		flushSync();
 
-		// Should seek to 50% of 120s = 60s
 		expect(seekToFn).toHaveBeenCalledWith(60);
 	});
 
-	test('handles keyboard navigation - ArrowRight', () => {
+	test('sets min and max from player state', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
 
-		const seekToFn = vi.fn();
 		const ctx = createMockPlayerContext({
-			state: { currentTime: 30, duration: 120, isReady: true },
-			actions: { seekTo: seekToFn }
+			state: { currentTime: 0, duration: 240, isReady: true }
 		});
 
 		mount(TestContextProvider, {
@@ -128,28 +110,16 @@ describe('Progress', () => {
 		});
 		flushSync();
 
-		const track = target.querySelector('[data-audio-progress]') as HTMLElement;
-
-		const keyEvent = new KeyboardEvent('keydown', {
-			key: 'ArrowRight',
-			bubbles: true
-		});
-		track.dispatchEvent(keyEvent);
-		flushSync();
-
-		// Should seek forward by 5 seconds: 30 + 5 = 35
-		expect(seekToFn).toHaveBeenCalledWith(35);
+		const input = target.querySelector('input[data-audio-progress]') as HTMLInputElement;
+		expect(input.min).toBe('0');
+		expect(input.max).toBe('240');
 	});
 
-	test('handles keyboard navigation - ArrowLeft', () => {
+	test('has accessible label', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
 
-		const seekToFn = vi.fn();
-		const ctx = createMockPlayerContext({
-			state: { currentTime: 30, duration: 120, isReady: true },
-			actions: { seekTo: seekToFn }
-		});
+		const ctx = createMockPlayerContext();
 
 		mount(TestContextProvider, {
 			target,
@@ -162,16 +132,7 @@ describe('Progress', () => {
 		});
 		flushSync();
 
-		const track = target.querySelector('[data-audio-progress]') as HTMLElement;
-
-		const keyEvent = new KeyboardEvent('keydown', {
-			key: 'ArrowLeft',
-			bubbles: true
-		});
-		track.dispatchEvent(keyEvent);
-		flushSync();
-
-		// Should seek backward by 5 seconds: 30 - 5 = 25
-		expect(seekToFn).toHaveBeenCalledWith(25);
+		const input = target.querySelector('input[data-audio-progress]') as HTMLInputElement;
+		expect(input.getAttribute('aria-label')).toBe('Playback progress');
 	});
 });

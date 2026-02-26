@@ -48,8 +48,11 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 				<h1 class="text-6xl md:text-7xl font-serif font-bold text-ink-900 mb-8 leading-tight">
 					Synchronized Media<br />& Transcript Player
 				</h1>
-				<p class="text-xl md:text-2xl text-ink-600 mb-10 max-w-2xl font-serif leading-relaxed">
+				<p class="text-xl md:text-2xl text-ink-600 mb-4 max-w-2xl font-serif leading-relaxed">
 					A Svelte 5 component library for bidirectional synchronization between IIIF media playback and transcript navigation. Unstyled primitives for scholarly and archival applications.
+				</p>
+				<p class="text-base text-ink-500 mb-10 max-w-2xl font-serif leading-relaxed">
+					Built on <a href="https://iiif.io" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">IIIF</a> (International Image Interoperability Framework) — the standard used by libraries, museums, and archives worldwide.
 				</p>
 				<div class="flex items-center gap-4 mb-12">
 					<a href="#demo" class="group px-8 py-4 bg-terracotta-500 text-white font-medium hover:bg-terracotta-600 transition-all duration-200 border-2 border-terracotta-600 hover:border-terracotta-700 hover:shadow-lg">
@@ -133,10 +136,16 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Basic Usage</h3>
 						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
 							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<script>
-  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+  import { IIIFPlayer, type Annotation } from '@umd-mith/svelte-iiif-transcript-player';
 
   const manifestUrl = 'https://example.org/manifest.json';
-  const annotations = [...]; // Your parsed VTT or IIIF annotations
+
+  // Parsed VTT or IIIF annotations
+  const annotations: Annotation[] = [
+    { id: 'cue-0', startTime: 0, endTime: 4.5, text: 'Welcome to the presentation.' },
+    { id: 'cue-1', startTime: 4.5, endTime: 9.2, text: 'Today we will discuss...' },
+    { id: 'cue-2', startTime: 9.2, endTime: 14.0, text: 'Let us begin with the first topic.' }
+  ];
 </script>
 
 <IIIFPlayer.Root {manifestUrl} canvasIndex={0}>
@@ -151,7 +160,7 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
     <IIIFPlayer.Time />
   </IIIFPlayer.Controls>
 
-  <IIIFPlayer.Transcript {annotations} enableSearch>
+  <IIIFPlayer.Transcript {annotations}>
     <IIIFPlayer.TranscriptSearch />
     <IIIFPlayer.TranscriptSegments />
   </IIIFPlayer.Transcript>
@@ -178,8 +187,7 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
     <IIIFPlayer.Time />
   </IIIFPlayer.Controls>
 
-  <!-- Lazy-load transcript if below the fold -->
-  <IIIFPlayer.Transcript client:visible {annotations} enableSearch>
+  <IIIFPlayer.Transcript {annotations}>
     <IIIFPlayer.TranscriptSearch />
     <IIIFPlayer.TranscriptSegments />
   </IIIFPlayer.Transcript>
@@ -187,7 +195,7 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 						</div>
 						<div class="mt-4 bg-amber-50 border-l-4 border-amber-400 p-4">
 							<p class="text-sm text-amber-900">
-								<strong class="font-semibold">Hydration tip:</strong> Use <code class="font-mono text-terracotta-600">client:load</code> on Root for immediate media initialization, <code class="font-mono text-terracotta-600">client:visible</code> on Transcript to lazy-load below-the-fold content.
+								<strong class="font-semibold">Hydration tip:</strong> Use <code class="font-mono text-terracotta-600">client:load</code> on the wrapper component (here, Root) for immediate media initialization. Child components inside the hydration boundary do not need their own <code class="font-mono text-terracotta-600">client:</code> directives — Astro hydrates the entire island.
 							</p>
 						</div>
 					</div>
@@ -209,16 +217,16 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 					<div class="border-l-4 border-terracotta-500 pl-6">
 						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Root</h3>
 						<p class="text-ink-600 mb-4">
-							Top-level context provider that manages player state and coordinates all child components.
+							Top-level context provider that manages player state and coordinates all child components. Provides PlayerContext to children.
 						</p>
 						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-ink-900 mb-2">Essential Props:</h4>
+							<h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
 							<ul class="space-y-2 text-sm font-mono">
 								<li><span class="text-terracotta-600">manifestUrl</span>: string - IIIF Presentation 3.0 manifest URL</li>
 								<li><span class="text-terracotta-600">canvasIndex</span>?: number - Canvas to display (default: 0)</li>
 								<li><span class="text-terracotta-600">initialTime</span>?: number - Start playback at specific time</li>
-								<li><span class="text-terracotta-600">onReady</span>?: () => void - Callback when manifest loaded</li>
-								<li><span class="text-terracotta-600">onError</span>?: (error) => void - Error handler</li>
+								<li><span class="text-terracotta-600">autoplay</span>?: boolean - Auto-play when ready (default: false)</li>
+								<li><span class="text-terracotta-600">class</span>?: string - CSS class for the root wrapper</li>
 							</ul>
 						</div>
 					</div>
@@ -227,8 +235,16 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 					<div class="border-l-4 border-terracotta-500 pl-6">
 						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Viewer</h3>
 						<p class="text-ink-600 mb-4">
-							Renders the IIIF media resource (video/audio) from the current canvas. No props needed — receives context from Root.
+							Renders the IIIF media resource (video/audio) from the current canvas. Receives PlayerContext from Root.
 						</p>
+						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
+							<h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
+							<ul class="space-y-2 text-sm font-mono">
+								<li><span class="text-terracotta-600">controls</span>?: boolean - Show native browser controls (default: false)</li>
+								<li><span class="text-terracotta-600">crossOrigin</span>?: 'anonymous' | 'use-credentials' - CORS setting for media</li>
+								<li><span class="text-terracotta-600">class</span>?: string - CSS class for the media element</li>
+							</ul>
+						</div>
 					</div>
 
 					<!-- IIIFPlayer.Controls -->
@@ -253,19 +269,21 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 					<div class="border-l-4 border-terracotta-500 pl-6">
 						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Transcript</h3>
 						<p class="text-ink-600 mb-4">
-							Bidirectional synchronized transcript panel. Click segment to seek, video auto-scrolls active segment.
+							Bidirectional synchronized transcript panel. Click segment to seek, video auto-scrolls active segment. Compose with compound children for full control over layout.
 						</p>
 						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-ink-900 mb-2">Essential Props:</h4>
+							<h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
 							<ul class="space-y-2 text-sm font-mono">
 								<li><span class="text-terracotta-600">annotations</span>: Annotation[] - Transcript segments with timing</li>
-								<li><span class="text-terracotta-600">enableSearch</span>?: boolean - Show search UI (default: false)</li>
-								<li><span class="text-terracotta-600">syncDebounceMs</span>?: number - Scroll throttling (default: 150)</li>
+								<li><span class="text-terracotta-600">ariaLabel</span>?: string - Region aria-label (default: 'Media transcript')</li>
+								<li><span class="text-terracotta-600">onActiveAnnotationChange</span>?: (annotation | null) => void - Active segment callback</li>
+								<li><span class="text-terracotta-600">onSegmentClick</span>?: (annotation, event) => void - Click handler with preventDefault</li>
+								<li><span class="text-terracotta-600">class</span>?: string - CSS class for the transcript region</li>
 							</ul>
-							<h4 class="font-semibold text-ink-900 mt-4 mb-2">Child Components:</h4>
+							<h4 class="font-semibold text-ink-900 mt-4 mb-2">Compound Children:</h4>
 							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">TranscriptSearch</span> - Search UI for filtering segments</li>
-								<li><span class="text-terracotta-600">TranscriptSegments</span> - Renders segment list with highlighting</li>
+								<li><span class="text-terracotta-600">TranscriptSearch</span> - Search UI with match navigation</li>
+								<li><span class="text-terracotta-600">TranscriptSegments</span> - Segment list with active/highlight states</li>
 							</ul>
 						</div>
 					</div>
@@ -296,15 +314,15 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 		<!-- Styling Guide Section -->
 		<section id="styling" class="py-20 px-4 sm:px-6 lg:px-8">
 			<div class="max-w-4xl mx-auto">
-				<h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Styling Guide</h2>
-				<p class="text-lg text-gray-600 mb-8">
+				<h2 class="text-3xl md:text-4xl font-bold text-ink-900 mb-4">Styling Guide</h2>
+				<p class="text-lg text-ink-600 mb-8">
 					All components ship unstyled with data-* attributes. Here's a minimal example to get started.
 				</p>
 
 				<div class="space-y-8">
 					<div>
-						<h3 class="text-2xl font-semibold text-gray-900 mb-4">Transcript Segment Highlighting</h3>
-						<div class="bg-gray-50 rounded-lg p-6 border border-ink-200">
+						<h3 class="text-2xl font-semibold text-ink-900 mb-4">Transcript Segment Highlighting</h3>
+						<div class="bg-parchment-50 rounded-lg p-6 border border-ink-200">
 							<pre class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Target transcript segments via data attributes */
 button[data-annotation-id] {
   padding: 0.75rem;
@@ -324,6 +342,17 @@ button[data-annotation-id][data-state='active'] {
   border-left: 4px solid #0ea5e9;
 }
 
+/* Search match highlighting */
+button[data-annotation-id][data-highlighted='true'] {
+  background-color: #fef9c3;
+}
+
+/* Current search match (stronger) */
+button[data-annotation-id][data-current-match='true'] {
+  background-color: #fde68a;
+  border-left: 4px solid #eab308;
+}
+
 button[data-annotation-id] .timestamp {
   font-size: 0.75rem;
   color: #6b7280;
@@ -338,8 +367,8 @@ button[data-annotation-id] .text {
 					</div>
 
 					<div>
-						<h3 class="text-2xl font-semibold text-gray-900 mb-4">Audio Player Controls</h3>
-						<div class="bg-gray-50 rounded-lg p-6 border border-ink-200">
+						<h3 class="text-2xl font-semibold text-ink-900 mb-4">Audio Player Controls</h3>
+						<div class="bg-parchment-50 rounded-lg p-6 border border-ink-200">
 							<pre class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Style control bar via data attributes */
 [data-audio-controls] {
   display: flex;
@@ -361,8 +390,24 @@ button[data-annotation-id] .text {
   background: #e5e7eb;
 }
 
-[data-audio-state='playing'] [data-audio-button='play-pause'] {
-  background: #bae6fd;
+/* Progress bar */
+input[type="range"][data-audio-progress] {
+  width: 100%;
+  height: 0.5rem;
+  cursor: pointer;
+  accent-color: #0ea5e9;
+}
+
+/* Speed selector */
+select[data-audio-control="speed"] {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Time display */
+[data-audio-control="time"] {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
 }`}</code></pre>
 						</div>
 					</div>
@@ -371,7 +416,7 @@ button[data-annotation-id] .text {
 		</section>
 
 		<!-- Footer -->
-		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-gray-900 text-gray-400">
+		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
 			<div class="max-w-7xl mx-auto text-center">
 				<p class="mb-4">
 					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>

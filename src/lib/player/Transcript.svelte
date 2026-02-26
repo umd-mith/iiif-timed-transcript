@@ -6,11 +6,8 @@
 	import type { Annotation, IIIFMediaViewerRef } from '../sync/types';
 	import type { Snippet } from 'svelte';
 	import { SyncController } from '../sync/SyncController.svelte';
-	import Segment from '../transcript/Segment.svelte';
-	import Search from '../transcript/Search.svelte';
 
 	interface Props {
-		// Required
 		/** Array of transcript annotations with timing and text */
 		annotations?: Annotation[];
 
@@ -18,14 +15,6 @@
 		syncDebounceMs?: number;
 		syncSettleMs?: number;
 		syncPriorityLockDuration?: number;
-
-		// Features
-		enableSearch?: boolean;
-		enableFullscreen?: boolean;
-
-		// UI configuration
-		searchDebounceMs?: number;
-		searchPlaceholder?: string;
 
 		// Accessibility
 		ariaLabel?: string;
@@ -36,12 +25,10 @@
 		onSegmentClick?: (annotation: Annotation, event: { preventDefault: () => void }) => void;
 
 		// Snippets
-		segment?: Snippet<[{ annotation: Annotation; isActive: boolean; onClick: () => void }]>;
-		toolbar?: Snippet;
 		empty?: Snippet;
 
 		class?: string;
-		children?: any;
+		children?: Snippet;
 	}
 
 	let {
@@ -49,16 +36,10 @@
 		syncDebounceMs = 150,
 		syncSettleMs = 100,
 		syncPriorityLockDuration = 1000,
-		enableSearch = false,
-		enableFullscreen = false,
-		searchDebounceMs = 150,
-		searchPlaceholder = 'Search transcript...',
 		ariaLabel = 'Media transcript',
 		announceActiveSegment = true,
 		onActiveAnnotationChange,
 		onSegmentClick,
-		segment,
-		toolbar,
 		empty,
 		class: className = '',
 		children
@@ -202,7 +183,7 @@
 	}
 </script>
 
-<div class="transcript-panel {className}" role="region" aria-label={ariaLabel}>
+<div class="transcript-panel {className}" role="region" aria-label={ariaLabel} bind:this={scrollContainer}>
 	{#if annotations.length === 0}
 		<!-- Empty state -->
 		{#if empty}
@@ -210,53 +191,7 @@
 		{:else}
 			<p class="empty-message">No transcript available.</p>
 		{/if}
-	{:else}
-		<!-- Toolbar (if enabled) -->
-		{#if enableSearch || enableFullscreen}
-			{#if toolbar}
-				{@render toolbar()}
-			{:else}
-				<div class="toolbar">
-					{#if enableSearch}
-						<Search
-							{annotations}
-							placeholder={searchPlaceholder}
-							debounceMs={searchDebounceMs}
-							onmatchchange={handleMatchChange}
-						/>
-					{/if}
-					{#if enableFullscreen}
-						<!-- Fullscreen will be integrated in Part 4 -->
-						<div class="fullscreen-placeholder">Fullscreen (coming in Part 4)</div>
-					{/if}
-				</div>
-			{/if}
-		{/if}
-
-		<!-- Transcript segments -->
-		<div class="segments-container" bind:this={scrollContainer}>
-			{#each annotations as annotation (annotation.id)}
-				{#if segment}
-					{@render segment({
-						annotation,
-						isActive: activeAnnotationId === annotation.id,
-						onClick: () => handleAnnotationClick(annotation)
-					})}
-				{:else}
-					<Segment
-						{annotation}
-						isActive={activeAnnotationId === annotation.id}
-						isHighlighted={highlightedIds.has(annotation.id) && currentMatchId !== annotation.id}
-						isCurrentMatch={currentMatchId === annotation.id}
-						onclick={() => handleAnnotationClick(annotation)}
-					/>
-				{/if}
-			{/each}
-		</div>
-	{/if}
-
-	<!-- Children (for composing with child components) -->
-	{#if children}
+	{:else if children}
 		{@render children()}
 	{/if}
 
@@ -276,32 +211,12 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+		overflow-y: auto;
 	}
 
 	.empty-message {
 		padding: 1rem;
 		text-align: center;
-		color: #666;
-	}
-
-	.toolbar {
-		display: flex;
-		gap: 0.5rem;
-		padding: 0.5rem;
-		border-bottom: 1px solid #e0e0e0;
-	}
-
-	.segments-container {
-		overflow-y: auto;
-		flex: 1;
-	}
-
-	/* Placeholder for fullscreen (Part 4) */
-	.fullscreen-placeholder {
-		padding: 0.25rem 0.5rem;
-		background: #f0f0f0;
-		border-radius: 4px;
-		font-size: 0.875rem;
 		color: #666;
 	}
 

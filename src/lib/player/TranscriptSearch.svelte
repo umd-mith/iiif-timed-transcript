@@ -28,10 +28,21 @@
 	const onmatchchange = $derived(onmatchchangeProp ?? transcriptCtx?.actions.handleMatchChange);
 </script>
 
-<Search
-	{annotations}
-	{placeholder}
-	{debounceMs}
-	{onmatchchange}
-	class={className}
-/>
+<div class="transcript-search-sticky">
+	<Search
+		{annotations}
+		{placeholder}
+		{debounceMs}
+		{onmatchchange}
+		class={className}
+	/>
+</div>
+
+<style>
+	.transcript-search-sticky {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		background: inherit;
+	}
+</style>

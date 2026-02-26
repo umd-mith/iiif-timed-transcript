@@ -51,7 +51,6 @@
 
 <style>
 	.segments-container {
-		overflow-y: auto;
 		flex: 1;
 	}
 

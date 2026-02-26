@@ -28,7 +28,7 @@ describe('Transcript', () => {
 		}
 	});
 
-	test('renders transcript container', () => {
+	test('renders panel but no segments without compound children', () => {
 		const ctx = createMockPlayerContext();
 
 		mount(TestContextProvider, {
@@ -42,26 +42,11 @@ describe('Transcript', () => {
 		});
 		flushSync();
 
-		const container = target.querySelector('.transcript-panel');
-		expect(container).not.toBeNull();
-	});
-
-	test('renders segments from annotations', () => {
-		const ctx = createMockPlayerContext();
-
-		mount(TestContextProvider, {
-			target,
-			props: {
-				context: ctx,
-				children: (anchor: any) => {
-					mount(Transcript, { target, anchor, props: { annotations: mockAnnotations } });
-				}
-			}
-		});
-		flushSync();
-
+		const panel = target.querySelector('.transcript-panel');
+		expect(panel).not.toBeNull();
+		// Without compound children, no segments are rendered (compound mode is the only mode)
 		const segments = target.querySelectorAll('[data-annotation-id]');
-		expect(segments).toHaveLength(3);
+		expect(segments).toHaveLength(0);
 	});
 
 	test('shows empty state when no annotations', () => {
@@ -191,32 +176,10 @@ describe('Transcript', () => {
 			flushSync();
 
 			// Click annotation via context action
-			capturedCtx!.actions.handleAnnotationClick(mockAnnotations[1]);
+			capturedCtx!.actions.handleAnnotationClick(mockAnnotations[1]!);
 
 			expect(playerCtx.actions.seekTo).toHaveBeenCalledWith(5); // startTime of a2
 		});
 
-		test('monolithic mode still renders segments without children', () => {
-			const playerCtx = createMockPlayerContext();
-
-			mount(TestContextProvider, {
-				target,
-				props: {
-					context: playerCtx,
-					children: (anchor: any) => {
-						mount(Transcript, {
-							target,
-							anchor,
-							props: { annotations: mockAnnotations }
-						});
-					}
-				}
-			});
-			flushSync();
-
-			// Should render segments directly (no children = monolithic mode)
-			const segments = target.querySelectorAll('[data-annotation-id]');
-			expect(segments).toHaveLength(3);
-		});
 	});
 });
