@@ -1,23 +1,13 @@
 <script lang="ts">
 	/**
 	 * Integration demo for docs site:
-	 * IIIFMediaViewer + AudioPlayerControls + TranscriptPanel with Tailwind styling
+	 * IIIFPlayer compound components with Tailwind styling
 	 */
 	import { onMount } from 'svelte';
 	import {
-		IIIFMediaViewer,
-		AudioPlayerControls,
-		TranscriptPanel,
+		IIIFPlayer,
 		type Annotation
 	} from '@umd-mith/svelte-iiif-transcript-player';
-	import {
-		Play,
-		Pause,
-		ArrowCounterClockwise,
-		ArrowClockwise,
-		CaretDown,
-		CaretUp
-	} from 'phosphor-svelte';
 
 	// Props
 	let {
@@ -29,16 +19,9 @@
 	} = $props();
 
 	// State
-	let viewer: any = $state(null);
 	let annotations = $state<Annotation[]>([]);
 	let isLoadingVTT = $state(true);
 	let vttError = $state<string | null>(null);
-
-	// Player state for AudioPlayerControls reactivity
-	let isPlaying = $state(false);
-	let currentTime = $state(0);
-	let duration = $state(0);
-	let playbackSpeed = $state(1);
 
 	/**
 	 * Simple VTT parser for the demo.
@@ -108,19 +91,6 @@
 		return annotations;
 	}
 
-	// Handlers for IIIFMediaViewer callbacks
-	function handlePlayStateChange(playing: boolean) {
-		isPlaying = playing;
-	}
-
-	function handleTimeUpdate(time: number) {
-		currentTime = time;
-	}
-
-	function handleDurationChange(dur: number) {
-		duration = dur;
-	}
-
 	onMount(async () => {
 		try {
 			isLoadingVTT = true;
@@ -136,70 +106,39 @@
 </script>
 
 <div class="w-full iiif-transcript-demo">
-	<div class="grid md:grid-cols-2 gap-6 items-start">
-		<!-- Left: Media + Controls -->
-		<div class="flex flex-col gap-4">
-			<div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
-				<IIIFMediaViewer
-				bind:this={viewer}
-				iiifManifestUrl={manifestUrl}
-				controls={false}
-				onPlayStateChange={handlePlayStateChange}
-				onTimeUpdate={handleTimeUpdate}
-				onDurationChange={handleDurationChange}
-			/>
+	{#if isLoadingVTT}
+		<div class="p-6 text-center text-gray-600">
+			<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-terracotta-600 mb-3"></div>
+			<p>Loading transcript...</p>
+		</div>
+	{:else if vttError}
+		<div class="p-4 m-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+			<strong>Error:</strong> {vttError}
+		</div>
+	{:else}
+		<IIIFPlayer.Root {manifestUrl} canvasIndex={0}>
+			<div class="grid md:grid-cols-2 gap-6 items-start">
+				<!-- Left: Media + Controls -->
+				<div class="flex flex-col gap-4">
+					<div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg">
+						<IIIFPlayer.Viewer />
+					</div>
+
+					<div class="bg-white rounded-lg shadow-md p-4 border border-ink-200">
+						<IIIFPlayer.Controls />
+					</div>
+				</div>
+
+				<!-- Right: Transcript Panel -->
+				<div class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-hidden">
+					<IIIFPlayer.Transcript {annotations} enableSearch>
+						<IIIFPlayer.TranscriptSearch />
+						<IIIFPlayer.TranscriptSegments />
+					</IIIFPlayer.Transcript>
+				</div>
 			</div>
-
-			{#if viewer}
-				<div class="bg-white rounded-lg shadow-md p-4 border border-ink-200">
-					<AudioPlayerControls
-						playerRef={viewer}
-						skipAmounts={[10, 30]}
-						enableSpeed={true}
-						enableSkip={true}
-						{isPlaying}
-						{currentTime}
-						{duration}
-						{playbackSpeed}
-					>
-						{#snippet playIcon()}
-							<Play size={20} weight="bold" />
-						{/snippet}
-						{#snippet pauseIcon()}
-							<Pause size={20} weight="bold" />
-						{/snippet}
-						{#snippet skipIcon({ seconds })}
-							{#if seconds === 10}
-								<ArrowCounterClockwise size={16} weight="bold" />
-							{:else}
-								<ArrowClockwise size={16} weight="bold" />
-							{/if}
-						{/snippet}
-					</AudioPlayerControls>
-				</div>
-			{/if}
-		</div>
-
-		<!-- Right: Transcript Panel -->
-		<div class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-hidden">
-			{#if isLoadingVTT}
-				<div class="p-6 text-center text-gray-600">
-					<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-terracotta-600 mb-3"></div>
-					<p>Loading transcript...</p>
-				</div>
-			{:else if vttError}
-				<div class="p-4 m-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-					<strong>Error:</strong> {vttError}
-				</div>
-			{:else if !viewer}
-				<div class="p-6 text-center text-gray-600">
-					Waiting for media player to load...
-				</div>
-			{:else}
-				<TranscriptPanel {annotations} {viewer} enableSearch={true} />
-			{/if}
-		</div>
-	</div>
+		</IIIFPlayer.Root>
+	{/if}
 </div>
 
 <style>
@@ -256,46 +195,40 @@
 		@apply border-terracotta-400;
 	}
 
-	/* Style audio controls - vertical layout with spacing */
-	:global(.iiif-transcript-demo [data-audio-controls]) {
-		@apply flex flex-col gap-3;
-	}
-
-	/* Progress bar container - add margin for visibility */
-	:global(.iiif-transcript-demo [data-audio-progress]) {
-		@apply mb-3;
-	}
-
-	/* Button container - horizontal layout with centered alignment */
-	:global(.iiif-transcript-demo [data-audio-buttons]) {
+	/* Player controls styling - compound components */
+	:global(.iiif-transcript-demo [data-player-controls]) {
 		@apply flex items-center justify-center gap-2 flex-wrap;
 	}
 
-	/* General button styling */
-	:global(.iiif-transcript-demo [data-audio-button]) {
-		@apply px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded transition-colors text-sm font-medium text-gray-700;
+	:global(.iiif-transcript-demo [data-play-button]) {
+		@apply px-4 py-3 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-full transition-colors;
 	}
 
-	/* Play/Pause button - make it prominent */
-	:global(.iiif-transcript-demo [data-audio-button="play-pause"]) {
-		@apply px-4 py-3 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-full;
+	:global(.iiif-transcript-demo [data-progress-container]) {
+		@apply w-full mb-3;
 	}
 
-	/* Skip buttons - subtle styling */
-	:global(.iiif-transcript-demo [data-audio-button="skip"]) {
-		@apply px-2 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600;
+	:global(.iiif-transcript-demo input[type="range"]) {
+		@apply w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer;
 	}
 
-	/* Speed button - distinct from others */
-	:global(.iiif-transcript-demo [data-audio-button="speed"]) {
-		@apply px-3 py-2 bg-white border border-gray-300 hover:border-gray-400 rounded;
+	:global(.iiif-transcript-demo input[type="range"]::-webkit-slider-thumb) {
+		@apply appearance-none w-4 h-4 bg-terracotta-500 rounded-full cursor-pointer;
 	}
 
-	:global(.iiif-transcript-demo [data-audio-progress-track]) {
-		@apply w-full h-2 bg-gray-200 rounded-full overflow-hidden cursor-pointer;
+	:global(.iiif-transcript-demo input[type="range"]::-moz-range-thumb) {
+		@apply w-4 h-4 bg-terracotta-500 rounded-full cursor-pointer border-0;
 	}
 
-	:global(.iiif-transcript-demo [data-audio-progress-fill]) {
-		@apply h-full bg-terracotta-500 transition-all;
+	:global(.iiif-transcript-demo [data-skip-button]) {
+		@apply px-2 py-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors text-sm;
+	}
+
+	:global(.iiif-transcript-demo select[data-speed-select]) {
+		@apply px-3 py-2 bg-white border border-gray-300 hover:border-gray-400 rounded transition-colors text-sm;
+	}
+
+	:global(.iiif-transcript-demo [data-time-display]) {
+		@apply text-sm text-gray-600 font-medium;
 	}
 </style>
