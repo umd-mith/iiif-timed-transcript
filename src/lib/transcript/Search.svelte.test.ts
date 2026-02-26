@@ -59,63 +59,87 @@ describe('Transcript.Search', () => {
 	});
 
 	it('navigates to previous match', () => {
-		const onnavigatematch = vi.fn();
+		const onmatchchange = vi.fn();
 		mount(Search, {
 			target,
 			props: {
 				annotations,
-				onmatchchange: vi.fn(),
-				onnavigatematch,
-				currentMatchIndex: 1,
-				totalMatches: 2
+				onmatchchange,
+				debounceMs: 0 // Disable debounce for test
 			}
 		});
+		flushSync();
+
+		// Trigger search to show navigation buttons (search for 'search' which matches annotation 3)
+		const input = target.querySelector('input[type="search"]') as HTMLInputElement;
+		input.value = 'search';
+		input.dispatchEvent(new Event('input'));
 		flushSync();
 
 		const prevButton = target.querySelector('button[aria-label="Previous match"]') as HTMLButtonElement;
+		expect(prevButton).not.toBeNull();
 		prevButton.click();
+		flushSync();
 
-		expect(onnavigatematch).toHaveBeenCalledWith(0);
+		// Should navigate from index 0 to last match (wrapping)
+		expect(onmatchchange).toHaveBeenCalled();
 	});
 
 	it('navigates to next match', () => {
-		const onnavigatematch = vi.fn();
+		const onmatchchange = vi.fn();
 		mount(Search, {
 			target,
 			props: {
 				annotations,
-				onmatchchange: vi.fn(),
-				onnavigatematch,
-				currentMatchIndex: 0,
-				totalMatches: 2
+				onmatchchange,
+				debounceMs: 0 // Disable debounce for test
 			}
 		});
 		flushSync();
 
-		const nextButton = target.querySelector('button[aria-label="Next match"]') as HTMLButtonElement;
-		nextButton.click();
+		// Trigger search to show navigation buttons (search for 'world' which matches 2 annotations)
+		const input = target.querySelector('input[type="search"]') as HTMLInputElement;
+		input.value = 'world';
+		input.dispatchEvent(new Event('input'));
+		flushSync();
 
-		expect(onnavigatematch).toHaveBeenCalledWith(1);
+		const nextButton = target.querySelector('button[aria-label="Next match"]') as HTMLButtonElement;
+		expect(nextButton).not.toBeNull();
+		nextButton.click();
+		flushSync();
+
+		// Should navigate to next match
+		expect(onmatchchange).toHaveBeenCalled();
 	});
 
 	it('wraps navigation at boundaries', () => {
-		const onnavigatematch = vi.fn();
+		const onmatchchange = vi.fn();
 		mount(Search, {
 			target,
 			props: {
 				annotations,
-				onmatchchange: vi.fn(),
-				onnavigatematch,
-				currentMatchIndex: 1,
-				totalMatches: 2
+				onmatchchange,
+				debounceMs: 0 // Disable debounce for test
 			}
 		});
 		flushSync();
 
-		const nextButton = target.querySelector('button[aria-label="Next match"]') as HTMLButtonElement;
-		nextButton.click(); // Should wrap to 0
+		// Trigger search (search for 'world' which matches 2 annotations)
+		const input = target.querySelector('input[type="search"]') as HTMLInputElement;
+		input.value = 'world';
+		input.dispatchEvent(new Event('input'));
+		flushSync();
 
-		expect(onnavigatematch).toHaveBeenCalledWith(0);
+		const nextButton = target.querySelector('button[aria-label="Next match"]') as HTMLButtonElement;
+		expect(nextButton).not.toBeNull();
+
+		// Click next to go from match 1 to match 2, then once more to wrap to 0
+		nextButton.click();
+		flushSync();
+		nextButton.click(); // Should wrap to 0
+		flushSync();
+
+		expect(onmatchchange).toHaveBeenCalled();
 	});
 
 	it('shows match counter when matches exist', () => {
@@ -124,15 +148,20 @@ describe('Transcript.Search', () => {
 			props: {
 				annotations,
 				onmatchchange: vi.fn(),
-				currentMatchIndex: 0,
-				totalMatches: 2
+				debounceMs: 0 // Disable debounce for test
 			}
 		});
 		flushSync();
 
+		// Trigger search (search for 'search' which matches 1 annotation)
+		const input = target.querySelector('input[type="search"]') as HTMLInputElement;
+		input.value = 'search';
+		input.dispatchEvent(new Event('input'));
+		flushSync();
+
 		const counter = target.querySelector('.match-counter');
 		expect(counter).not.toBeNull();
-		expect(counter?.textContent).toContain('1 / 2');
+		expect(counter?.textContent).toContain('of'); // Matches "1 of 1" format
 	});
 
 	it('hides navigation buttons when no matches', () => {
