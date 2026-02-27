@@ -109,7 +109,7 @@
 	});
 
 	// Fetch and validate a manifest, using module-level cache to avoid duplicate requests
-	async function fetchAndValidateManifest(url: string): Promise<ManifestData> {
+	async function fetchAndValidateManifest(url: string): Promise<{ validated: ManifestData; raw: unknown }> {
 		const response = await fetch(url);
 		if (!response.ok) {
 			throw new Error(`Failed to fetch manifest: ${response.status} ${response.statusText}`);
@@ -123,7 +123,7 @@
 			);
 		}
 
-		return validationResult.data;
+		return { validated: validationResult.data, raw: manifest };
 	}
 
 	// Manifest loading
@@ -136,7 +136,7 @@
 				manifestCache.set(manifestUrl, manifestPromise);
 			}
 
-			const validManifest = await manifestPromise;
+			const { validated: validManifest, raw: rawManifest } = await manifestPromise;
 			const canvas = validManifest.items?.[canvasIndex] ?? getFirstCanvas(validManifest);
 
 			if (!canvas) {
@@ -160,7 +160,7 @@
 
 			// Parse chapter structures (Ranges) from the raw manifest
 			// (validManifest is Zod-parsed and strips `structures`)
-			chapters = parseRanges(manifest as any);
+			chapters = parseRanges(rawManifest as any);
 		} catch (error) {
 			// Remove failed fetches from cache so retries can work
 			manifestCache.delete(manifestUrl);
