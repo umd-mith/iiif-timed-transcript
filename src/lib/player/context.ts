@@ -1,4 +1,5 @@
 import { getContext as svelteGetContext } from 'svelte';
+import type { Chapter } from '@umd-mith/iiif-media-parsers';
 
 export interface PlayerState {
 	isPlaying: boolean;
@@ -16,6 +17,7 @@ export interface PlayerActions {
 	seekTo: (time: number) => void;
 	setPlaybackRate: (rate: number) => void;
 	retry: () => Promise<void>;
+	seekToChapter: (chapter: Chapter) => void;
 }
 
 export interface PlayerContext {
@@ -23,6 +25,8 @@ export interface PlayerContext {
 	mediaElement: HTMLMediaElement | null;
 	mediaUrl: string;
 	mediaType: 'audio' | 'video';
+	chapters: Chapter[];
+	activeChapterId: string | null;
 	actions: PlayerActions;
 }
 

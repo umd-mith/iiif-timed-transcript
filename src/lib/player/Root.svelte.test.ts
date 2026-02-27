@@ -2,6 +2,13 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from 'svelte';
 import { flushSync } from 'svelte';
 import Root from './Root.svelte';
+import TestContextConsumer from '../../test/player/TestContextConsumer.svelte';
+import type { PlayerContext } from './context';
+import {
+	MANIFEST_WITH_CHAPTERS,
+	MANIFEST_WITHOUT_CHAPTERS,
+	mockFetchManifest
+} from './test-fixtures';
 
 describe('Root component', () => {
 	let target: HTMLElement;
@@ -133,5 +140,110 @@ describe('Root component', () => {
 		});
 
 		document.body.removeChild(target2);
+	});
+
+	describe('chapters parsing', () => {
+		test('exposes chapters from manifest with structures', async () => {
+			mockFetchManifest(MANIFEST_WITH_CHAPTERS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/manifest.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				// Context uses getters so .chapters reads the latest value
+				expect(capturedCtx!.chapters).toBeDefined();
+				expect(capturedCtx!.chapters.length).toBe(2);
+				expect(capturedCtx!.chapters[0]).toMatchObject({
+					id: 'https://example.com/range/1',
+					label: 'Introduction',
+					startTime: 0,
+					endTime: 30
+				});
+				expect(capturedCtx!.chapters[1]).toMatchObject({
+					id: 'https://example.com/range/2',
+					label: 'Main Discussion',
+					startTime: 30,
+					endTime: 90
+				});
+			});
+		});
+
+		test('returns empty chapters when manifest has no structures', async () => {
+			mockFetchManifest(MANIFEST_WITHOUT_CHAPTERS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/manifest.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.chapters).toBeDefined();
+				expect(capturedCtx!.chapters).toEqual([]);
+				expect(capturedCtx!.state.error).toBeNull();
+			});
+		});
+
+		test('activeChapterId starts as null', async () => {
+			mockFetchManifest(MANIFEST_WITH_CHAPTERS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/manifest.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.activeChapterId).toBeNull();
+			});
+		});
 	});
 });
