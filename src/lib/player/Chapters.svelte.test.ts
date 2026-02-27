@@ -66,8 +66,8 @@ describe('Chapters', () => {
 
 		const buttons = target.querySelectorAll('[data-chapter-id]');
 		expect(buttons).toHaveLength(2);
-		expect(buttons[0].getAttribute('data-chapter-id')).toBe('ch1');
-		expect(buttons[1].getAttribute('data-chapter-id')).toBe('ch2');
+		expect(buttons[0]!.getAttribute('data-chapter-id')).toBe('ch1');
+		expect(buttons[1]!.getAttribute('data-chapter-id')).toBe('ch2');
 	});
 
 	test('displays chapter label and time range', async () => {
