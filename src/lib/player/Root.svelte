@@ -3,6 +3,8 @@
 	import { PLAYER_CONTEXT_KEY, type PlayerState } from './context';
 	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas } from '../iiif/helpers';
 	import { ManifestSchema, type ManifestData } from '../iiif/validators';
+	import { parseRanges } from '@umd-mith/iiif-media-parsers';
+	import type { Chapter } from '@umd-mith/iiif-media-parsers';
 	import type { Annotation } from '../sync/types';
 	import { manifestCache } from './manifestCache';
 
@@ -39,6 +41,17 @@
 	let mediaElement = $state<HTMLMediaElement | null>(null);
 	let mediaUrl = $state('');
 	let mediaType = $state<'audio' | 'video'>('audio');
+	let chapters = $state<Chapter[]>([]);
+
+	let activeChapterId = $derived.by(() => {
+		const time = playerState.currentTime;
+		for (const chapter of chapters) {
+			if (time >= chapter.startTime && time < chapter.endTime) {
+				return chapter.id;
+			}
+		}
+		return null;
+	});
 
 	// Actions
 	const actions = {
@@ -73,6 +86,9 @@
 		retry: async () => {
 			playerState.error = null;
 			await loadManifest();
+		},
+		seekToChapter: (chapter: Chapter) => {
+			actions.seekTo(chapter.startTime);
 		}
 	};
 
@@ -87,6 +103,8 @@
 		set mediaUrl(url) { mediaUrl = url; },
 		get mediaType() { return mediaType; },
 		set mediaType(type) { mediaType = type; },
+		get chapters() { return chapters; },
+		get activeChapterId() { return activeChapterId; },
 		actions
 	});
 
@@ -139,6 +157,10 @@
 			}
 
 			mediaUrl = primaryResource.id;
+
+			// Parse chapter structures (Ranges) from the raw manifest
+			// (validManifest is Zod-parsed and strips `structures`)
+			chapters = parseRanges(manifest as any);
 		} catch (error) {
 			// Remove failed fetches from cache so retries can work
 			manifestCache.delete(manifestUrl);
@@ -231,6 +253,6 @@
 	{/if}
 
 	{#if children}
-		{@render children({ player: { state: playerState, actions } })}
+		{@render children({ player: { state: playerState, actions, chapters, activeChapterId } })}
 	{/if}
 </div>
