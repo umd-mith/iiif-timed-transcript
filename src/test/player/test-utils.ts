@@ -11,6 +11,7 @@ export function createMockPlayerContext(overrides: {
 	return {
 		state: {
 			isPlaying: false,
+			isBuffering: false,
 			currentTime: 0,
 			duration: 120,
 			playbackRate: 1,

@@ -46,6 +46,9 @@ export const IIIFPlayer: Record<string, Component<any>> = {
 	TranscriptSegments
 };
 
+// Export context accessor for custom child components
+export { getPlayerContext } from './context';
+
 // Export types
 export type { PlayerContext, PlayerState, PlayerActions } from './context';
 export type { TranscriptContext, TranscriptState, TranscriptActions } from './transcript-context';

@@ -19,6 +19,7 @@
 		type Annotation
 	} from '@umd-mith/svelte-iiif-transcript-player';
 	import AVAnnotateSegments from './AVAnnotateSegments.svelte';
+	import BufferingOverlay from './BufferingOverlay.svelte';
 
 	// Props
 	let {
@@ -127,8 +128,9 @@
 			<div class="grid md:grid-cols-2 gap-6 items-start">
 				<!-- Left: Media + Controls -->
 				<div class="flex flex-col gap-4">
-					<div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg p-6 flex items-center justify-center min-h-[120px]">
+					<div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg p-6 flex items-center justify-center min-h-[120px] relative">
 						<IIIFPlayer.Viewer />
+						<BufferingOverlay />
 					</div>
 
 					<div class="bg-white rounded-lg shadow-md p-4 border border-ink-200">

@@ -159,4 +159,76 @@ describe('Viewer', () => {
 		const audioElement = target.querySelector('audio') as HTMLAudioElement;
 		expect(audioElement?.controls).toBe(true);
 	});
+
+	test('sets preload to "auto" by default', () => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const mockContext = createMockPlayerContext({
+			mediaUrl: 'https://example.com/audio.mp3',
+			mediaType: 'audio'
+		});
+
+		mount(TestContextProvider, {
+			target,
+			props: {
+				context: mockContext,
+				children: (anchor: any) => {
+					mount(Viewer, { target, anchor });
+				}
+			}
+		});
+		flushSync();
+
+		const audioElement = target.querySelector('audio') as HTMLAudioElement;
+		expect(audioElement?.preload).toBe('auto');
+	});
+
+	test('allows overriding preload attribute', () => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const mockContext = createMockPlayerContext({
+			mediaUrl: 'https://example.com/audio.mp3',
+			mediaType: 'audio'
+		});
+
+		mount(TestContextProvider, {
+			target,
+			props: {
+				context: mockContext,
+				children: (anchor: any) => {
+					mount(Viewer, { target, anchor, props: { preload: 'metadata' } });
+				}
+			}
+		});
+		flushSync();
+
+		const audioElement = target.querySelector('audio') as HTMLAudioElement;
+		expect(audioElement?.preload).toBe('metadata');
+	});
+
+	test('sets preload on video elements too', () => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const mockContext = createMockPlayerContext({
+			mediaUrl: 'https://example.com/video.mp4',
+			mediaType: 'video'
+		});
+
+		mount(TestContextProvider, {
+			target,
+			props: {
+				context: mockContext,
+				children: (anchor: any) => {
+					mount(Viewer, { target, anchor });
+				}
+			}
+		});
+		flushSync();
+
+		const videoElement = target.querySelector('video') as HTMLVideoElement;
+		expect(videoElement?.preload).toBe('auto');
+	});
 });

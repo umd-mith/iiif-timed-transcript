@@ -32,6 +32,7 @@ describe('getPlayerContext', () => {
 		const mockContext: PlayerContext = {
 			state: {
 				isPlaying: false,
+				isBuffering: false,
 				currentTime: 0,
 				duration: 0,
 				playbackRate: 1,

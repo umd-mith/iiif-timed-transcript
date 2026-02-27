@@ -25,5 +25,5 @@
 	onclick={handleClick}
 	class={className}
 >
-	{state.isPlaying ? 'Pause' : 'Play'}
+	{state.isBuffering ? 'Loading...' : state.isPlaying ? 'Pause' : 'Play'}
 </button>

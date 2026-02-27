@@ -114,6 +114,29 @@ describe('PlayButton', () => {
 		expect(pauseFn).toHaveBeenCalled();
 	});
 
+	test('shows buffering state when isBuffering is true', () => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const ctx = createMockPlayerContext({
+			state: { isBuffering: true, isReady: true, isPlaying: false }
+		});
+
+		mount(TestContextProvider, {
+			target,
+			props: {
+				context: ctx,
+				children: (anchor: any) => {
+					mount(PlayButton, { target, anchor });
+				}
+			}
+		});
+		flushSync();
+
+		const button = target.querySelector('button');
+		expect(button?.textContent).toContain('Loading');
+	});
+
 	test('is disabled when media not ready', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);

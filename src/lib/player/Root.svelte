@@ -2,8 +2,9 @@
 	import { setContext, onMount } from 'svelte';
 	import { PLAYER_CONTEXT_KEY, type PlayerState } from './context';
 	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas } from '../iiif/helpers';
-	import { ManifestSchema } from '../iiif/validators';
+	import { ManifestSchema, type ManifestData } from '../iiif/validators';
 	import type { Annotation } from '../sync/types';
+	import { manifestCache } from './manifestCache';
 
 	// Props
 	let {
@@ -27,6 +28,7 @@
 	// Reactive state
 	let playerState = $state<PlayerState>({
 		isPlaying: false,
+		isBuffering: false,
 		currentTime: 0,
 		duration: 0,
 		playbackRate: 1,
@@ -88,23 +90,35 @@
 		actions
 	});
 
+	// Fetch and validate a manifest, using module-level cache to avoid duplicate requests
+	async function fetchAndValidateManifest(url: string): Promise<ManifestData> {
+		const response = await fetch(url);
+		if (!response.ok) {
+			throw new Error(`Failed to fetch manifest: ${response.status} ${response.statusText}`);
+		}
+
+		const manifest = await response.json();
+		const validationResult = ManifestSchema.safeParse(manifest);
+		if (!validationResult.success) {
+			throw new Error(
+				`Invalid IIIF manifest: ${validationResult.error.issues.map((e) => e.message).join(', ')}`
+			);
+		}
+
+		return validationResult.data;
+	}
+
 	// Manifest loading
 	async function loadManifest() {
 		try {
-			const response = await fetch(manifestUrl);
-			if (!response.ok) {
-				throw new Error(`Failed to fetch manifest: ${response.status} ${response.statusText}`);
+			// Check cache first; store the Promise to deduplicate concurrent requests
+			let manifestPromise = manifestCache.get(manifestUrl);
+			if (!manifestPromise) {
+				manifestPromise = fetchAndValidateManifest(manifestUrl);
+				manifestCache.set(manifestUrl, manifestPromise);
 			}
 
-			const manifest = await response.json();
-			const validationResult = ManifestSchema.safeParse(manifest);
-			if (!validationResult.success) {
-				throw new Error(
-					`Invalid IIIF manifest: ${validationResult.error.issues.map((e) => e.message).join(', ')}`
-				);
-			}
-
-			const validManifest = validationResult.data;
+			const validManifest = await manifestPromise;
 			const canvas = validManifest.items?.[canvasIndex] ?? getFirstCanvas(validManifest);
 
 			if (!canvas) {
@@ -126,6 +140,8 @@
 
 			mediaUrl = primaryResource.id;
 		} catch (error) {
+			// Remove failed fetches from cache so retries can work
+			manifestCache.delete(manifestUrl);
 			playerState.error = error instanceof Error ? error : new Error(String(error));
 			playerState.isReady = false;
 		}
@@ -161,6 +177,12 @@
 				playerState.isReady = false;
 			}
 		};
+		const handleWaiting = () => {
+			playerState.isBuffering = true;
+		};
+		const handleCanPlay = () => {
+			playerState.isBuffering = false;
+		};
 
 		el.addEventListener('play', handlePlay);
 		el.addEventListener('pause', handlePause);
@@ -168,6 +190,8 @@
 		el.addEventListener('durationchange', handleDurationChange);
 		el.addEventListener('ratechange', handleRateChange);
 		el.addEventListener('error', handleError);
+		el.addEventListener('waiting', handleWaiting);
+		el.addEventListener('canplay', handleCanPlay);
 
 		return () => {
 			el.removeEventListener('play', handlePlay);
@@ -176,6 +200,8 @@
 			el.removeEventListener('durationchange', handleDurationChange);
 			el.removeEventListener('ratechange', handleRateChange);
 			el.removeEventListener('error', handleError);
+			el.removeEventListener('waiting', handleWaiting);
+			el.removeEventListener('canplay', handleCanPlay);
 		};
 	});
 

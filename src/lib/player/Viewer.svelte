@@ -5,10 +5,12 @@
 	let {
 		controls = false,
 		crossOrigin,
+		preload = 'auto',
 		class: className = ''
 	}: {
 		controls?: boolean;
 		crossOrigin?: 'anonymous' | 'use-credentials';
+		preload?: 'auto' | 'metadata' | 'none';
 		class?: string;
 	} = $props();
 
@@ -36,6 +38,7 @@
 			bind:this={localMediaElement}
 			src={ctx.mediaUrl}
 			{controls}
+			{preload}
 			crossorigin={crossOrigin || undefined}
 			class={className}
 		></audio>
@@ -44,6 +47,7 @@
 			bind:this={localMediaElement}
 			src={ctx.mediaUrl}
 			{controls}
+			{preload}
 			crossorigin={crossOrigin || undefined}
 			class={className}
 			style="width: 100%;"
