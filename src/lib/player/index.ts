@@ -11,6 +11,7 @@ import Time from './Time.svelte';
 import Transcript from './Transcript.svelte';
 import TranscriptSearch from './TranscriptSearch.svelte';
 import TranscriptSegments from './TranscriptSegments.svelte';
+import Chapters from './Chapters.svelte';
 
 /**
  * IIIF Player compound component namespace.
@@ -43,7 +44,8 @@ export const IIIFPlayer: Record<string, Component<any>> = {
 	Time,
 	Transcript,
 	TranscriptSearch,
-	TranscriptSegments
+	TranscriptSegments,
+	Chapters
 };
 
 // Export context accessor for custom child components
