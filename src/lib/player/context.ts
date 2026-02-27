@@ -2,6 +2,7 @@ import { getContext as svelteGetContext } from 'svelte';
 
 export interface PlayerState {
 	isPlaying: boolean;
+	isBuffering: boolean;
 	currentTime: number;
 	duration: number;
 	playbackRate: number;

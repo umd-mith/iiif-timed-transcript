@@ -2,8 +2,9 @@
 	import { setContext, onMount } from 'svelte';
 	import { PLAYER_CONTEXT_KEY, type PlayerState } from './context';
 	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas } from '../iiif/helpers';
-	import { ManifestSchema } from '../iiif/validators';
+	import { ManifestSchema, type ManifestData } from '../iiif/validators';
 	import type { Annotation } from '../sync/types';
+	import { manifestCache } from './manifestCache';
 
 	// Props
 	let {
@@ -25,8 +26,9 @@
 	} = $props();
 
 	// Reactive state
-	let state = $state<PlayerState>({
+	let playerState = $state<PlayerState>({
 		isPlaying: false,
+		isBuffering: false,
 		currentTime: 0,
 		duration: 0,
 		playbackRate: 1,
@@ -49,7 +51,7 @@
 			mediaElement?.pause();
 		},
 		seekTo: (time: number) => {
-			if (!mediaElement || !state.isReady) {
+			if (!mediaElement || !playerState.isReady) {
 				console.warn('[IIIFPlayer] Cannot seek: media not ready');
 				return;
 			}
@@ -57,7 +59,7 @@
 				console.warn(`[IIIFPlayer] Invalid seek time: ${time}`);
 				return;
 			}
-			const clampedTime = Math.min(time, state.duration);
+			const clampedTime = Math.min(time, playerState.duration);
 			mediaElement.currentTime = clampedTime;
 		},
 		setPlaybackRate: (rate: number) => {
@@ -69,7 +71,7 @@
 			mediaElement.playbackRate = clampedRate;
 		},
 		retry: async () => {
-			state.error = null;
+			playerState.error = null;
 			await loadManifest();
 		}
 	};
@@ -78,7 +80,7 @@
 	// Use getter/setter pairs for $state variables so child components
 	// can both read updated values AND write back (e.g. Viewer sets mediaElement).
 	setContext(PLAYER_CONTEXT_KEY, {
-		state,
+		state: playerState,
 		get mediaElement() { return mediaElement; },
 		set mediaElement(el) { mediaElement = el; },
 		get mediaUrl() { return mediaUrl; },
@@ -88,23 +90,35 @@
 		actions
 	});
 
+	// Fetch and validate a manifest, using module-level cache to avoid duplicate requests
+	async function fetchAndValidateManifest(url: string): Promise<ManifestData> {
+		const response = await fetch(url);
+		if (!response.ok) {
+			throw new Error(`Failed to fetch manifest: ${response.status} ${response.statusText}`);
+		}
+
+		const manifest = await response.json();
+		const validationResult = ManifestSchema.safeParse(manifest);
+		if (!validationResult.success) {
+			throw new Error(
+				`Invalid IIIF manifest: ${validationResult.error.issues.map((e) => e.message).join(', ')}`
+			);
+		}
+
+		return validationResult.data;
+	}
+
 	// Manifest loading
 	async function loadManifest() {
 		try {
-			const response = await fetch(manifestUrl);
-			if (!response.ok) {
-				throw new Error(`Failed to fetch manifest: ${response.status} ${response.statusText}`);
+			// Check cache first; store the Promise to deduplicate concurrent requests
+			let manifestPromise = manifestCache.get(manifestUrl);
+			if (!manifestPromise) {
+				manifestPromise = fetchAndValidateManifest(manifestUrl);
+				manifestCache.set(manifestUrl, manifestPromise);
 			}
 
-			const manifest = await response.json();
-			const validationResult = ManifestSchema.safeParse(manifest);
-			if (!validationResult.success) {
-				throw new Error(
-					`Invalid IIIF manifest: ${validationResult.error.issues.map((e) => e.message).join(', ')}`
-				);
-			}
-
-			const validManifest = validationResult.data;
+			const validManifest = await manifestPromise;
 			const canvas = validManifest.items?.[canvasIndex] ?? getFirstCanvas(validManifest);
 
 			if (!canvas) {
@@ -126,8 +140,10 @@
 
 			mediaUrl = primaryResource.id;
 		} catch (error) {
-			state.error = error instanceof Error ? error : new Error(String(error));
-			state.isReady = false;
+			// Remove failed fetches from cache so retries can work
+			manifestCache.delete(manifestUrl);
+			playerState.error = error instanceof Error ? error : new Error(String(error));
+			playerState.isReady = false;
 		}
 	}
 
@@ -139,27 +155,33 @@
 		if (!el) return;
 
 		const handlePlay = () => {
-			state.isPlaying = true;
+			playerState.isPlaying = true;
 		};
 		const handlePause = () => {
-			state.isPlaying = false;
+			playerState.isPlaying = false;
 		};
 		const handleTimeUpdate = () => {
-			state.currentTime = el.currentTime;
+			playerState.currentTime = el.currentTime;
 		};
 		const handleDurationChange = () => {
-			state.duration = el.duration;
-			state.isReady = true;
+			playerState.duration = el.duration;
+			playerState.isReady = true;
 		};
 		const handleRateChange = () => {
-			state.playbackRate = el.playbackRate;
+			playerState.playbackRate = el.playbackRate;
 		};
 		const handleError = () => {
 			const mediaError = el.error;
 			if (mediaError) {
-				state.error = new Error(`Media error (code ${mediaError.code})`);
-				state.isReady = false;
+				playerState.error = new Error(`Media error (code ${mediaError.code})`);
+				playerState.isReady = false;
 			}
+		};
+		const handleWaiting = () => {
+			playerState.isBuffering = true;
+		};
+		const handleCanPlay = () => {
+			playerState.isBuffering = false;
 		};
 
 		el.addEventListener('play', handlePlay);
@@ -168,6 +190,8 @@
 		el.addEventListener('durationchange', handleDurationChange);
 		el.addEventListener('ratechange', handleRateChange);
 		el.addEventListener('error', handleError);
+		el.addEventListener('waiting', handleWaiting);
+		el.addEventListener('canplay', handleCanPlay);
 
 		return () => {
 			el.removeEventListener('play', handlePlay);
@@ -176,6 +200,8 @@
 			el.removeEventListener('durationchange', handleDurationChange);
 			el.removeEventListener('ratechange', handleRateChange);
 			el.removeEventListener('error', handleError);
+			el.removeEventListener('waiting', handleWaiting);
+			el.removeEventListener('canplay', handleCanPlay);
 		};
 	});
 
@@ -197,14 +223,14 @@
 </script>
 
 <div class="iiif-player-root {className}">
-	{#if state.error}
+	{#if playerState.error}
 		<div role="alert" class="error">
 			<strong>Error:</strong>
-			{state.error.message}
+			{playerState.error.message}
 		</div>
 	{/if}
 
 	{#if children}
-		{@render children({ player: { state, actions } })}
+		{@render children({ player: { state: playerState, actions } })}
 	{/if}
 </div>

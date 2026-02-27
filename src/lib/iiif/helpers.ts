@@ -8,6 +8,8 @@ import type {
   TextualBodyData,
   ChoiceBodyData,
 } from "./validators";
+import { parseAnnotationTarget } from "@umd-mith/iiif-media-parsers";
+import type { Annotation } from "../sync/types";
 
 /**
  * Helper functions for working with IIIF resources
@@ -81,6 +83,20 @@ export function getManifests(collection: CollectionData) {
 }
 
 /**
+ * Checks whether an annotation carries a given motivation.
+ * Per the W3C Web Annotation spec, motivation may be a single string
+ * or an array of strings.
+ */
+export function hasMotivation(
+  motivation: string | string[],
+  target: string,
+): boolean {
+  return Array.isArray(motivation)
+    ? motivation.includes(target)
+    : motivation === target;
+}
+
+/**
  * Gets painting annotations from a canvas
  * @param canvas - IIIF canvas
  * @returns Array of painting annotation objects
@@ -92,7 +108,7 @@ export function getPaintingAnnotations(canvas: CanvasData): AnnotationData[] {
   for (const page of annotationPages) {
     if (page.items) {
       for (const annotation of page.items) {
-        if (annotation.motivation === "painting") {
+        if (hasMotivation(annotation.motivation, "painting")) {
           paintingAnnotations.push(annotation);
         }
       }
@@ -417,4 +433,215 @@ export function getTextualBodies(canvas: CanvasData): TextualBodyData[] {
   }
 
   return textualBodies;
+}
+
+// ============================================================================
+// Supplementary Annotation Helpers (canvas.annotations)
+// ============================================================================
+
+/**
+ * Content extracted from a supplementary annotation's bodies,
+ * separated into text and tags by W3C `purpose` field.
+ */
+export interface SupplementaryTextualContent {
+  annotationId: string;
+  target: string;
+  textBodies: TextualBodyData[];
+  tagBodies: TextualBodyData[];
+}
+
+/**
+ * Gets all annotations from a canvas's supplementary annotation pages
+ * (`canvas.annotations`).
+ *
+ * By default returns **all** annotations found — the structural placement
+ * in `canvas.annotations` already signals they are non-painting content.
+ * An optional motivation filter narrows results for consumers who want
+ * stricter matching.
+ *
+ * **Design note (Postel's Law):** Real-world producers use different motivations
+ * for supplementary content. AVAnnotate uses `["commenting", "tagging"]`;
+ * Lakeland Archive uses `"supplementing"`. Defaulting to no filter accepts
+ * all patterns. Pass `"supplementing"` for strict IIIF spec compliance.
+ *
+ * @param canvas - IIIF canvas with optional `annotations` property
+ * @param motivationFilter - Optional motivation(s) to match. When omitted,
+ *   all annotations are returned regardless of motivation.
+ * @returns Array of annotations from supplementary pages
+ */
+export function getSupplementaryAnnotations(
+  canvas: CanvasData,
+  motivationFilter?: string | string[],
+): AnnotationData[] {
+  const pages = canvas.annotations || [];
+  const annotations: AnnotationData[] = [];
+
+  for (const page of pages) {
+    if (!page.items) continue;
+    for (const annotation of page.items) {
+      if (!motivationFilter) {
+        annotations.push(annotation);
+      } else if (Array.isArray(motivationFilter)) {
+        if (motivationFilter.some((m) => hasMotivation(annotation.motivation, m))) {
+          annotations.push(annotation);
+        }
+      } else {
+        if (hasMotivation(annotation.motivation, motivationFilter)) {
+          annotations.push(annotation);
+        }
+      }
+    }
+  }
+
+  return annotations;
+}
+
+/**
+ * Checks whether a TextualBody's `purpose` indicates tagging content.
+ */
+function isTagPurpose(purpose: string | undefined): boolean {
+  return purpose === "tagging";
+}
+
+/**
+ * Checks whether a TextualBody's `purpose` indicates text content.
+ * Bodies without a purpose, or with "commenting" or "describing" purpose,
+ * are treated as text.
+ */
+function isTextPurpose(purpose: string | undefined): boolean {
+  return !purpose || purpose === "commenting" || purpose === "describing";
+}
+
+/**
+ * Collects all TextualBody items from an annotation body (single, array, or Choice),
+ * separated into text and tag arrays by W3C `purpose`.
+ */
+function collectTextualBodies(
+  body: AnnotationBodyData | AnnotationBodyData[],
+): { text: TextualBodyData[]; tags: TextualBodyData[] } {
+  const text: TextualBodyData[] = [];
+  const tags: TextualBodyData[] = [];
+
+  const bodies = Array.isArray(body) ? body : [body];
+  for (const b of bodies) {
+    if (isTextualBody(b)) {
+      if (isTagPurpose(b.purpose)) {
+        tags.push(b);
+      } else if (isTextPurpose(b.purpose)) {
+        text.push(b);
+      }
+    } else if (isChoiceBody(b)) {
+      for (const item of b.items) {
+        if (isTextualBody(item)) {
+          if (isTagPurpose(item.purpose)) {
+            tags.push(item);
+          } else if (isTextPurpose(item.purpose)) {
+            text.push(item);
+          }
+        }
+      }
+    }
+  }
+
+  return { text, tags };
+}
+
+/**
+ * Extracts TextualBody items from supplementary annotations, grouped per
+ * annotation and separated into text vs tag bodies by W3C `purpose`.
+ *
+ * - **Text:** purpose is absent, `"commenting"`, or `"describing"`
+ * - **Tags:** `purpose === "tagging"`
+ *
+ * Annotations without any TextualBody (e.g., VTT external resources) are skipped.
+ *
+ * @param canvas - IIIF canvas
+ * @param motivationFilter - Optional motivation filter (passed through to
+ *   `getSupplementaryAnnotations`)
+ * @returns Array of per-annotation grouped results preserving target URIs
+ */
+export function getSupplementaryTextualBodies(
+  canvas: CanvasData,
+  motivationFilter?: string | string[],
+): SupplementaryTextualContent[] {
+  const annotations = getSupplementaryAnnotations(canvas, motivationFilter);
+  const results: SupplementaryTextualContent[] = [];
+
+  for (const annotation of annotations) {
+    if (!annotation.body) continue;
+
+    const { text, tags } = collectTextualBodies(annotation.body);
+
+    // Skip annotations with no textual bodies at all
+    if (text.length === 0 && tags.length === 0) continue;
+
+    results.push({
+      annotationId: annotation.id,
+      target: annotation.target,
+      textBodies: text,
+      tagBodies: tags,
+    });
+  }
+
+  return results;
+}
+
+/**
+ * Builds transcript-ready `Annotation[]` from supplementary annotations.
+ *
+ * Combines body extraction, target parsing (`#t=start,end`), and
+ * tag→metadata mapping into the format expected by the transcript UI.
+ *
+ * - Multiple text bodies on one annotation are joined with a space
+ * - Tags are placed in `metadata.tags: string[]`
+ * - Annotations without text bodies are skipped (e.g., VTT external resources)
+ * - `end` defaults to `start` when absent (point-in-time annotations)
+ *
+ * @param canvas - IIIF canvas with supplementary annotations
+ * @param motivationFilter - Optional motivation filter
+ * @returns Array of `Annotation` objects ready for transcript display
+ */
+export function buildTranscriptAnnotations(
+  canvas: CanvasData,
+  motivationFilter?: string | string[],
+): Annotation[] {
+  const grouped = getSupplementaryTextualBodies(canvas, motivationFilter);
+  const result: Annotation[] = [];
+  const seenIds = new Set<string>();
+
+  for (const item of grouped) {
+    // Must have at least one text body to build a transcript annotation
+    if (item.textBodies.length === 0) continue;
+
+    const parsed = parseAnnotationTarget(item.target);
+    const start = parsed?.temporal?.start ?? 0;
+    const end = parsed?.temporal?.end ?? start;
+
+    const text = item.textBodies.map((b) => b.value).join(" ");
+
+    // AVAnnotate manifests reuse the AnnotationPage URL as every annotation's
+    // id, so we deduplicate by appending a suffix when collisions occur.
+    let id = item.annotationId;
+    if (seenIds.has(id)) {
+      id = `${id}-${result.length}`;
+    }
+    seenIds.add(id);
+
+    const annotation: Annotation = {
+      id,
+      startTime: start,
+      endTime: end,
+      text,
+    };
+
+    if (item.tagBodies.length > 0) {
+      annotation.metadata = {
+        tags: item.tagBodies.map((b) => b.value),
+      };
+    }
+
+    result.push(annotation);
+  }
+
+  return result;
 }

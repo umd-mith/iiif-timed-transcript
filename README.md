@@ -86,20 +86,38 @@ Top-level context provider that manages player state and coordinates all child c
 **Props:**
 - `manifestUrl: string` - IIIF Presentation 3.0 manifest URL
 - `canvasIndex?: number` - Canvas index to display (default: 0)
+- `annotations?: Annotation[]` - Transcript annotations (passed through to children)
 - `initialTime?: number` - Start playback at specific time in seconds
-- `onReady?: () => void` - Callback when manifest is loaded
-- `onError?: (error: Error) => void` - Error handler
+- `autoplay?: boolean` - Auto-play media on load (default: false)
+- `class?: string` - CSS class for the root container
 
 **Context Provided:**
-- Player state (playing, currentTime, duration, playbackRate)
-- Actions (play, pause, seekTo, setPlaybackRate)
-- Media element reference
+- Player state (`isPlaying`, `isBuffering`, `currentTime`, `duration`, `playbackRate`, `isReady`, `error`)
+- Actions (`play`, `pause`, `seekTo`, `setPlaybackRate`, `retry`)
+- Media element reference, media URL, media type
+
+**Children Snippet:**
+
+Root passes `{ player: { state, actions } }` to its children snippet, allowing direct access to player state:
+
+```svelte
+<IIIFPlayer.Root {manifestUrl}>
+  {#snippet children({ player })}
+    <p>Time: {player.state.currentTime}</p>
+    <button onclick={() => player.actions.seekTo(0)}>Restart</button>
+  {/snippet}
+</IIIFPlayer.Root>
+```
 
 #### `IIIFPlayer.Viewer`
 
 Renders the IIIF media resource (video/audio) from the current canvas.
 
-**Props:** None (receives context from Root)
+**Props:**
+- `controls?: boolean` - Show native media controls (default: false)
+- `crossOrigin?: 'anonymous' | 'use-credentials'` - CORS setting for media element
+- `preload?: 'auto' | 'metadata' | 'none'` - Media preload strategy (default: 'auto')
+- `class?: string` - CSS class for the media element
 
 #### `IIIFPlayer.Controls`
 
@@ -114,21 +132,23 @@ Container for player control components. Pass-through component for layout.
 
 #### `IIIFPlayer.PlayButton`
 
-Toggle play/pause button.
+Toggle play/pause button. Shows "Play", "Pause", or "Loading..." based on state.
 
-**Props:** None
+**Props:**
+- `class?: string` - CSS class
 
 **Data Attributes:**
-- `data-playing="true|false"` - Reflects playback state
+- `data-audio-button="play-pause"` - Button identifier
 
 #### `IIIFPlayer.Progress`
 
-Seekable progress bar (range input).
+Seekable progress bar (`<input type="range">`).
 
-**Props:** None
+**Props:**
+- `class?: string` - CSS class
 
 **Data Attributes:**
-- `data-progress` - Progress bar element
+- `data-audio-progress` - Progress bar element
 
 #### `IIIFPlayer.Skip`
 
@@ -136,19 +156,28 @@ Skip forward/backward button.
 
 **Props:**
 - `seconds: number` - Amount to skip (negative for rewind)
+- `class?: string` - CSS class
+
+**Data Attributes:**
+- `data-audio-button="skip"` - Button identifier
 
 #### `IIIFPlayer.Speed`
 
 Playback speed selector.
 
 **Props:**
-- `speeds?: number[]` - Available speeds (default: [0.5, 0.75, 1, 1.25, 1.5, 2])
+- `rates?: number[]` - Available playback rates (default: [0.5, 0.75, 1, 1.25, 1.5, 2])
+- `class?: string` - CSS class
 
 #### `IIIFPlayer.Time`
 
 Display current time and duration.
 
-**Props:** None
+**Props:**
+- `class?: string` - CSS class
+
+**Data Attributes:**
+- `data-audio-control="time"` - Time display element
 
 **Format:** `MM:SS / MM:SS` (current / total)
 
@@ -159,36 +188,50 @@ Display current time and duration.
 Bidirectional synchronized transcript panel with search.
 
 **Props:**
-- `annotations: Annotation[]` - **Required.** Transcript segments with timing
-- `syncDebounceMs?: number` - Scroll throttling (default: 150)
+- `annotations?: Annotation[]` - Transcript segments with timing (default: [])
+- `syncDebounceMs?: number` - Scroll debounce in ms (default: 150)
+- `syncSettleMs?: number` - Settle delay after scroll in ms (default: 100)
+- `syncPriorityLockDuration?: number` - Priority lock duration in ms (default: 1000)
+- `ariaLabel?: string` - Region label (default: "Media transcript")
+- `announceActiveSegment?: boolean` - Screen reader announcements for active segment (default: true)
 - `onActiveAnnotationChange?: (annotation: Annotation | null) => void` - Active segment callback
+- `onSegmentClick?: (annotation: Annotation, event: { preventDefault: () => void }) => void` - Intercept segment clicks (call `preventDefault()` synchronously to suppress default seek)
+- `empty?: Snippet` - Custom empty state when no annotations
+- `class?: string` - CSS class
 
-**Children:** Compound children only — use `TranscriptSearch` and `TranscriptSegments` inside.
+**Children:** Use `TranscriptSearch` and `TranscriptSegments` as compound children. Without children, shows empty state.
 
 **Context Used:** Player state from `IIIFPlayer.Root`
-**Context Provided:** TranscriptContext (annotations, search state, active annotation)
+**Context Provided:** TranscriptContext (annotations, search state, active annotation) for compound children
 
 #### `IIIFPlayer.TranscriptSearch`
 
-Search UI for filtering transcript segments.
+Search UI for filtering transcript segments. Reads from TranscriptContext when inside Transcript, or accepts props directly.
 
-**Props:** None (receives search context from Transcript)
-
-**Data Attributes:**
-- `data-search-input` - Search input field
+**Props (optional, overrides context):**
+- `annotations?: Annotation[]` - Annotations to search
+- `placeholder?: string` - Input placeholder (default: "Search transcript...")
+- `debounceMs?: number` - Input debounce in ms (default: 150)
+- `onmatchchange?: (matches: Annotation[], index: number) => void` - Match change callback
+- `class?: string` - CSS class
 
 #### `IIIFPlayer.TranscriptSegments`
 
-Renders the list of transcript segments with active highlighting.
+Renders the list of transcript segments with active highlighting. Reads from TranscriptContext when inside Transcript, or accepts props directly.
 
-**Props:** None (receives annotations from Transcript)
+**Props (optional, overrides context):**
+- `annotations?: Annotation[]` - Annotations to display
+- `activeAnnotationId?: string | null` - Currently active annotation
+- `highlightedIds?: Set<string>` - Set of search-highlighted annotation IDs
+- `currentMatchId?: string | null` - Current search match for stronger highlight
+- `onclick?: (annotation: Annotation) => void` - Segment click handler
+- `class?: string` - CSS class
 
-**Slots:**
-- `segment` - Custom segment rendering snippet
-
-**Data Attributes:**
+**Data Attributes (on each Segment):**
 - `data-annotation-id` - Segment ID
 - `data-state="active|inactive"` - Active segment state
+- `data-highlighted="true"` - Present when segment matches search query
+- `data-current-match="true"` - Present on the focused search match
 
 ### TypeScript Types
 
@@ -214,23 +257,33 @@ For a working example of parsing VTT into `Annotation[]`, see `docs/src/componen
 
 #### `PlayerContext`
 
-Internal context type (exposed for advanced use cases).
+Internal context type (exposed for advanced use cases). Defined in `src/lib/player/context.ts`.
 
 ```typescript
+interface PlayerState {
+  isPlaying: boolean;
+  isBuffering: boolean;
+  currentTime: number;
+  duration: number;
+  playbackRate: number;
+  isReady: boolean;
+  error: Error | null;
+}
+
+interface PlayerActions {
+  play: () => Promise<void>;
+  pause: () => void;
+  seekTo: (time: number) => void;
+  setPlaybackRate: (rate: number) => void;
+  retry: () => Promise<void>;
+}
+
 interface PlayerContext {
-  state: {
-    playing: boolean;
-    currentTime: number;
-    duration: number;
-    playbackRate: number;
-  };
-  actions: {
-    play: () => void;
-    pause: () => void;
-    seekTo: (time: number) => void;
-    setPlaybackRate: (rate: number) => void;
-  };
+  state: PlayerState;
+  actions: PlayerActions;
   mediaElement: HTMLMediaElement | null;
+  mediaUrl: string;
+  mediaType: 'audio' | 'video';
 }
 ```
 
@@ -316,8 +369,8 @@ const annotations = [...]; // Your VTT parsing logic
       <IIIFPlayer.Time />
     </IIIFPlayer.Controls>
 
-    <!-- Transcript can lazy-load (often below fold) -->
-    <IIIFPlayer.Transcript client:visible {annotations}>
+    <!-- Transcript shares Root's context — no separate hydration directive needed -->
+    <IIIFPlayer.Transcript {annotations}>
       <IIIFPlayer.TranscriptSearch />
       <IIIFPlayer.TranscriptSegments />
     </IIIFPlayer.Transcript>
@@ -328,7 +381,7 @@ const annotations = [...]; // Your VTT parsing logic
 ### Hydration Directive Choices
 
 - `IIIFPlayer.Root` → `client:load` - Controls media element, needs immediate initialization
-- `IIIFPlayer.Transcript` → `client:visible` - Can lazy-load if below the fold, improving initial page load
+- Child components inside Root share its hydration context — do not add separate `client:*` directives on nested Svelte components (they only work on top-level Astro islands)
 
 ### Common Pitfalls with Astro
 
@@ -343,8 +396,8 @@ All components ship **unstyled** with semantic HTML and `data-*` attributes for 
 ### What You Need to Style
 
 - **Transcript segments**: Target `button[data-annotation-id]` and use `data-state="active"` for highlighting
-- **Player controls**: Use `data-playing`, `data-progress`, etc. attributes
-- **Search UI**: Target `data-search-input` and related elements
+- **Player controls**: Use `data-audio-button`, `data-audio-progress`, `data-audio-control` attributes
+- **Search UI**: Target `input[type="search"]` inside `.search-container`
 - **Layout**: Components don't enforce layout — use flexbox/grid as needed
 
 ### Example: Active Segment Highlighting

@@ -65,8 +65,8 @@ describe('keyboardNav action', () => {
 		const node = document.createElement('div');
 		const onArrowDown = vi.fn();
 
-		const { destroy } = keyboardNav(node, { onArrowDown });
-		destroy();
+		const result = keyboardNav(node, { onArrowDown })!;
+		result.destroy!();
 
 		const event = new KeyboardEvent('keydown', { key: 'ArrowDown' });
 		node.dispatchEvent(event);

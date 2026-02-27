@@ -176,7 +176,9 @@ const AnnotationSchema = z
   .object({
     id: IIIFIdentifier,
     type: z.literal("Annotation"),
-    motivation: z.string().describe('Annotation motivation (e.g., "painting")'),
+    motivation: z
+      .union([z.string(), z.array(z.string())])
+      .describe('Annotation motivation (e.g., "painting" or ["commenting", "tagging"])'),
     body: AnnotationBodySchema.or(z.array(AnnotationBodySchema))
       .optional()
       .describe("Annotation body (single or array)"),
@@ -185,7 +187,7 @@ const AnnotationSchema = z
   .describe("IIIF annotation");
 
 // Annotation Page schema
-const AnnotationPageSchema = z
+export const AnnotationPageSchema = z
   .object({
     id: IIIFIdentifier,
     type: z.literal("AnnotationPage"),
@@ -219,6 +221,10 @@ const CanvasSchema = z
       .array(AnnotationPageSchema)
       .optional()
       .describe("Array of annotation pages"),
+    annotations: z
+      .array(AnnotationPageSchema)
+      .optional()
+      .describe("Supplementary annotation pages (non-painting)"),
   })
   .describe("IIIF canvas")
   .refine(
@@ -342,3 +348,4 @@ export type TextualBodyData = z.infer<typeof TextualBodySchema>;
 export type SpecificResourceData = z.infer<typeof SpecificResourceSchema>;
 export type ChoiceBodyData = z.infer<typeof ChoiceBodySchema>;
 export type AnnotationBodyData = z.infer<typeof AnnotationBodySchema>;
+export type AnnotationPageData = z.infer<typeof AnnotationPageSchema>;

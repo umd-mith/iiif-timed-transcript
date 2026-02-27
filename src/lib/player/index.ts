@@ -1,4 +1,5 @@
 // Compound component exports for IIIF Player
+import type { Component } from 'svelte';
 import Root from './Root.svelte';
 import Viewer from './Viewer.svelte';
 import Controls from './Controls.svelte';
@@ -30,7 +31,8 @@ import TranscriptSegments from './TranscriptSegments.svelte';
  * </IIIFPlayer.Root>
  * ```
  */
-export const IIIFPlayer = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const IIIFPlayer: Record<string, Component<any>> = {
 	Root,
 	Viewer,
 	Controls,
@@ -43,6 +45,9 @@ export const IIIFPlayer = {
 	TranscriptSearch,
 	TranscriptSegments
 };
+
+// Export context accessor for custom child components
+export { getPlayerContext } from './context';
 
 // Export types
 export type { PlayerContext, PlayerState, PlayerActions } from './context';

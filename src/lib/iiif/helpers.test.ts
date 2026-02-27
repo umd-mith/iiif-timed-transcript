@@ -7,6 +7,10 @@ import {
   getCanvasDimensions,
   getThumbnail,
   extractIdentifierFromUrl,
+  hasMotivation,
+  getSupplementaryAnnotations,
+  getSupplementaryTextualBodies,
+  buildTranscriptAnnotations,
 } from "./helpers";
 import type { CanvasData } from "./validators";
 
@@ -190,6 +194,69 @@ describe("getTextualBodies", () => {
     expect(result).toHaveLength(2);
     expect(result[0]!.value).toBe("First transcription");
     expect(result[1]!.value).toBe("Second transcription");
+  });
+
+  it("should extract from annotations where motivation is an array containing painting", () => {
+    const canvas: CanvasData = {
+      id: "https://example.org/canvas/1",
+      type: "Canvas",
+      width: 800,
+      height: 600,
+      items: [
+        {
+          id: "https://example.org/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.org/annotation/1",
+              type: "Annotation",
+              motivation: ["painting", "supplementing"],
+              body: {
+                type: "TextualBody",
+                value: "Painted with array motivation",
+              },
+              target: "https://example.org/canvas/1",
+            },
+          ],
+        },
+      ],
+    } as CanvasData;
+
+    const result = getTextualBodies(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.value).toBe("Painted with array motivation");
+  });
+
+  it("should skip annotations where motivation array does not include painting", () => {
+    const canvas: CanvasData = {
+      id: "https://example.org/canvas/1",
+      type: "Canvas",
+      width: 800,
+      height: 600,
+      items: [
+        {
+          id: "https://example.org/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.org/annotation/1",
+              type: "Annotation",
+              motivation: ["commenting", "tagging"],
+              body: {
+                type: "TextualBody",
+                value: "Not painted",
+              },
+              target: "https://example.org/canvas/1",
+            },
+          ],
+        },
+      ],
+    } as CanvasData;
+
+    const result = getTextualBodies(canvas);
+
+    expect(result).toHaveLength(0);
   });
 
   it("should only extract from painting annotations, not other motivations", () => {
@@ -546,5 +613,563 @@ describe("extractIdentifierFromUrl", () => {
       // Should return first capture group
       expect(result).toBe("abc");
     });
+  });
+});
+
+// ============================================================================
+// Supplementary Annotation Tests
+// ============================================================================
+
+/**
+ * Helper to create a canvas with supplementary annotations (canvas.annotations).
+ * Mirrors the existing createCanvas() pattern for painting annotations.
+ */
+function createSupplementaryCanvas(
+  annotationPages: unknown[],
+  paintingPages?: unknown[],
+): CanvasData {
+  return {
+    id: "https://example.org/canvas/1",
+    type: "Canvas",
+    duration: 300,
+    items: paintingPages ?? [
+      {
+        id: "https://example.org/page/painting",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/media",
+            type: "Annotation",
+            motivation: "painting",
+            body: {
+              id: "https://example.org/audio.mp3",
+              type: "Sound",
+              format: "audio/mpeg",
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ],
+    annotations: annotationPages,
+  } as CanvasData;
+}
+
+/** AVAnnotate-style annotation: multi-body with text + tag, array motivation */
+const avAnnotateAnnotation = {
+  id: "https://example.org/annotation/av-1",
+  type: "Annotation" as const,
+  motivation: ["commenting", "tagging"],
+  body: [
+    {
+      type: "TextualBody" as const,
+      value: "Hello, welcome to the interview.",
+      format: "text/plain",
+      purpose: "commenting",
+    },
+    {
+      type: "TextualBody" as const,
+      value: "Interviewer",
+      purpose: "tagging",
+    },
+  ],
+  target: "https://example.org/canvas/1#t=0,5.2",
+};
+
+/** Second AVAnnotate annotation for multi-annotation tests */
+const avAnnotateAnnotation2 = {
+  id: "https://example.org/annotation/av-2",
+  type: "Annotation" as const,
+  motivation: ["commenting", "tagging"],
+  body: [
+    {
+      type: "TextualBody" as const,
+      value: "Can you tell us about growing up?",
+      format: "text/plain",
+      purpose: "commenting",
+    },
+    {
+      type: "TextualBody" as const,
+      value: "A second thought on this.",
+      format: "text/plain",
+      purpose: "commenting",
+    },
+    {
+      type: "TextualBody" as const,
+      value: "Narrator",
+      purpose: "tagging",
+    },
+  ],
+  target: "https://example.org/canvas/1#t=5.2,12",
+};
+
+/** Lakeland-style annotation: supplementing motivation with external VTT resource */
+const lakelandVttAnnotation = {
+  id: "https://example.org/annotation/lda-1",
+  type: "Annotation" as const,
+  motivation: "supplementing",
+  body: {
+    id: "https://example.org/transcript.vtt",
+    type: "Text" as const,
+    format: "text/vtt",
+  },
+  target: "https://example.org/canvas/1",
+};
+
+/** Point-in-time annotation (#t=3 — start only, no end) */
+const pointInTimeAnnotation = {
+  id: "https://example.org/annotation/point",
+  type: "Annotation" as const,
+  motivation: "supplementing",
+  body: {
+    type: "TextualBody" as const,
+    value: "A brief moment",
+  },
+  target: "https://example.org/canvas/1#t=3",
+};
+
+describe("hasMotivation", () => {
+  it("should match a single string motivation", () => {
+    expect(hasMotivation("painting", "painting")).toBe(true);
+  });
+
+  it("should not match a different string motivation", () => {
+    expect(hasMotivation("painting", "commenting")).toBe(false);
+  });
+
+  it("should match when array contains the target", () => {
+    expect(hasMotivation(["commenting", "tagging"], "commenting")).toBe(true);
+  });
+
+  it("should not match when array does not contain the target", () => {
+    expect(hasMotivation(["commenting", "tagging"], "painting")).toBe(false);
+  });
+});
+
+describe("getSupplementaryAnnotations", () => {
+  it("should return empty array when canvas has no annotations property", () => {
+    const canvas: CanvasData = {
+      id: "https://example.org/canvas/1",
+      type: "Canvas",
+      duration: 300,
+      items: [],
+    } as CanvasData;
+
+    expect(getSupplementaryAnnotations(canvas)).toEqual([]);
+  });
+
+  it("should return all annotations from pages when no filter", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation, lakelandVttAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryAnnotations(canvas);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]!.id).toBe(avAnnotateAnnotation.id);
+    expect(result[1]!.id).toBe(lakelandVttAnnotation.id);
+  });
+
+  it("should filter by single motivation string", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation, lakelandVttAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryAnnotations(canvas, "supplementing");
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.id).toBe(lakelandVttAnnotation.id);
+  });
+
+  it("should filter by motivation array", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation, lakelandVttAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryAnnotations(canvas, ["commenting", "tagging"]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.id).toBe(avAnnotateAnnotation.id);
+  });
+
+  it("should handle array motivation on annotation matching a single filter", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation],
+      },
+    ]);
+
+    // avAnnotateAnnotation has motivation: ["commenting", "tagging"]
+    // Filter for just "commenting" should match
+    const result = getSupplementaryAnnotations(canvas, "commenting");
+
+    expect(result).toHaveLength(1);
+  });
+
+  it("should collect annotations across multiple pages", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/1",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation],
+      },
+      {
+        id: "https://example.org/page/2",
+        type: "AnnotationPage",
+        items: [lakelandVttAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryAnnotations(canvas);
+
+    expect(result).toHaveLength(2);
+  });
+
+  it("should handle pages with no items", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/empty",
+        type: "AnnotationPage",
+      },
+    ]);
+
+    expect(getSupplementaryAnnotations(canvas)).toEqual([]);
+  });
+});
+
+describe("getSupplementaryTextualBodies", () => {
+  it("should separate text and tag bodies by purpose", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryTextualBodies(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.textBodies).toHaveLength(1);
+    expect(result[0]!.textBodies[0]!.value).toBe("Hello, welcome to the interview.");
+    expect(result[0]!.tagBodies).toHaveLength(1);
+    expect(result[0]!.tagBodies[0]!.value).toBe("Interviewer");
+  });
+
+  it("should treat bodies without purpose as text", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/no-purpose",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              type: "TextualBody",
+              value: "No purpose field",
+            },
+            target: "https://example.org/canvas/1#t=0,5",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryTextualBodies(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.textBodies).toHaveLength(1);
+    expect(result[0]!.tagBodies).toHaveLength(0);
+  });
+
+  it("should skip annotations with only external resource bodies", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [lakelandVttAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryTextualBodies(canvas);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("should handle Choice bodies", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/choice",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              type: "Choice",
+              items: [
+                {
+                  type: "TextualBody",
+                  value: "English text",
+                  language: "en",
+                  purpose: "describing",
+                },
+                {
+                  type: "TextualBody",
+                  value: "French text",
+                  language: "fr",
+                },
+              ],
+            },
+            target: "https://example.org/canvas/1#t=0,10",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryTextualBodies(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.textBodies).toHaveLength(2);
+  });
+
+  it("should preserve target string", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryTextualBodies(canvas);
+
+    expect(result[0]!.target).toBe("https://example.org/canvas/1#t=0,5.2");
+  });
+
+  it("should pass through motivation filter", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation, lakelandVttAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryTextualBodies(canvas, "supplementing");
+
+    // lakelandVttAnnotation matches but has no TextualBody → skipped
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe("buildTranscriptAnnotations", () => {
+  it("should build Annotation[] from AVAnnotate multi-body pattern", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      id: "https://example.org/annotation/av-1",
+      startTime: 0,
+      endTime: 5.2,
+      text: "Hello, welcome to the interview.",
+      metadata: { tags: ["Interviewer"] },
+    });
+  });
+
+  it("should parse correct startTime/endTime from #t= fragments", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation, avAnnotateAnnotation2],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]!.startTime).toBe(0);
+    expect(result[0]!.endTime).toBe(5.2);
+    expect(result[1]!.startTime).toBe(5.2);
+    expect(result[1]!.endTime).toBe(12);
+  });
+
+  it("should join multiple text bodies with space", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation2],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result[0]!.text).toBe(
+      "Can you tell us about growing up? A second thought on this.",
+    );
+  });
+
+  it("should place tags in metadata.tags", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation2],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result[0]!.metadata).toEqual({ tags: ["Narrator"] });
+  });
+
+  it("should omit metadata when no tags", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/no-tags",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              type: "TextualBody",
+              value: "Just text, no tags",
+            },
+            target: "https://example.org/canvas/1#t=10,20",
+          },
+        ],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.metadata).toBeUndefined();
+  });
+
+  it("should return empty array for canvas with no supplementary text content", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [lakelandVttAnnotation],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result).toEqual([]);
+  });
+
+  it("should handle point-in-time annotations (start only, no end)", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [pointInTimeAnnotation],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    // #t=3 → temporal: { start: 3 } (no end), builder defaults end to start
+    expect(result).toHaveLength(1);
+    expect(result[0]!.startTime).toBe(3);
+    expect(result[0]!.endTime).toBe(3);
+  });
+
+  it("should default start/end to 0 when target has no temporal fragment", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/no-time",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              type: "TextualBody",
+              value: "No time fragment",
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result[0]!.startTime).toBe(0);
+    expect(result[0]!.endTime).toBe(0);
+  });
+
+  it("should respect motivation filter", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation, pointInTimeAnnotation],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas, "supplementing");
+
+    // Only pointInTimeAnnotation has motivation "supplementing"
+    expect(result).toHaveLength(1);
+    expect(result[0]!.id).toBe(pointInTimeAnnotation.id);
+  });
+
+  it("should generate unique IDs when annotations share the same id (AVAnnotate pattern)", () => {
+    // AVAnnotate sets every annotation's id to the AnnotationPage URL
+    const sharedId = "https://example.org/page/supp";
+    const dup1 = { ...avAnnotateAnnotation, id: sharedId };
+    const dup2 = { ...avAnnotateAnnotation2, id: sharedId };
+
+    const canvas = createSupplementaryCanvas([
+      {
+        id: sharedId,
+        type: "AnnotationPage",
+        items: [dup1, dup2],
+      },
+    ]);
+
+    const result = buildTranscriptAnnotations(canvas);
+
+    expect(result).toHaveLength(2);
+    // First gets the original id, second gets a suffixed id
+    expect(result[0]!.id).toBe(sharedId);
+    expect(result[1]!.id).toBe(`${sharedId}-1`);
+    // All IDs must be unique
+    const ids = result.map((a) => a.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
