@@ -19,6 +19,7 @@ function createMockPlayerContext(overrides: Partial<PlayerContext> = {}): Player
 		mediaElement: null,
 		mediaUrl: 'https://example.com/audio.mp3',
 		mediaType: 'audio' as const,
+		isHls: false,
 		chapters: [
 			{ id: 'ch1', label: 'Introduction', startTime: 0, endTime: 30 },
 			{ id: 'ch2', label: 'Main Discussion', startTime: 30, endTime: 90 }

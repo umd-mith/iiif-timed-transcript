@@ -165,3 +165,14 @@ export { keyboardNav, type KeyboardNavOptions } from "./transcript/keyboardNav";
 // Paragraph merging utility
 export { mergeIntoParagraphs } from "./transcript/paragraphMerger";
 export type { MergedParagraph, MergeConfig } from "./transcript/paragraphMerger";
+
+// ============================================================================
+// Media Utilities
+// ============================================================================
+
+export {
+  isHlsUrl,
+  isHlsNativelySupported,
+  createHlsAdapter,
+} from "./media/hlsUtils";
+export type { HlsConstructor, HlsAdapter } from "./media/hlsUtils";

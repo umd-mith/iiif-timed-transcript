@@ -94,6 +94,42 @@ export const MANIFEST_WITHOUT_CHAPTERS = {
 };
 
 /**
+ * Manifest with an HLS streaming URL (.m3u8).
+ */
+export const MANIFEST_WITH_HLS = {
+  '@context': 'http://iiif.io/api/presentation/3/context.json',
+  id: 'https://example.com/manifest-hls',
+  type: 'Manifest',
+  label: { en: ['HLS Test Manifest'] },
+  items: [
+    {
+      id: 'https://example.com/canvas/1',
+      type: 'Canvas',
+      duration: 120,
+      items: [
+        {
+          id: 'https://example.com/canvas/1/page/1',
+          type: 'AnnotationPage',
+          items: [
+            {
+              id: 'https://example.com/canvas/1/page/1/annotation/1',
+              type: 'Annotation',
+              motivation: 'painting',
+              body: {
+                id: 'https://example.com/stream/master.m3u8',
+                type: 'Video',
+                format: 'application/x-mpegURL'
+              },
+              target: 'https://example.com/canvas/1'
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+/**
  * Helper: mock fetch to return a manifest.
  */
 export function mockFetchManifest(manifest: Record<string, unknown>) {

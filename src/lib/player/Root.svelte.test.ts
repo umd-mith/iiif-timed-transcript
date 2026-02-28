@@ -7,6 +7,7 @@ import type { PlayerContext } from './context';
 import {
 	MANIFEST_WITH_CHAPTERS,
 	MANIFEST_WITHOUT_CHAPTERS,
+	MANIFEST_WITH_HLS,
 	mockFetchManifest
 } from './test-fixtures';
 
@@ -217,7 +218,7 @@ describe('Root component', () => {
 			});
 		});
 
-		test('activeChapterId starts as null', async () => {
+		test('activeChapterId starts as null (with chapters manifest)', async () => {
 			mockFetchManifest(MANIFEST_WITH_CHAPTERS);
 
 			let capturedCtx: PlayerContext | null = null;
@@ -243,6 +244,67 @@ describe('Root component', () => {
 			await vi.waitFor(() => {
 				expect(capturedCtx).not.toBeNull();
 				expect(capturedCtx!.activeChapterId).toBeNull();
+			});
+		});
+	});
+
+	describe('HLS detection', () => {
+		test('sets isHls to true for .m3u8 URLs', async () => {
+			mockFetchManifest(MANIFEST_WITH_HLS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/hls-manifest.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.mediaUrl).toBe('https://example.com/stream/master.m3u8');
+				expect(capturedCtx!.isHls).toBe(true);
+			});
+		});
+
+		test('sets isHls to false for non-HLS URLs', async () => {
+			mockFetchManifest(MANIFEST_WITHOUT_CHAPTERS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/non-hls-manifest.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.isHls).toBe(false);
 			});
 		});
 	});

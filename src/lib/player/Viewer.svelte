@@ -18,6 +18,9 @@
 	const ctx = getPlayerContext();
 	let localMediaElement = $state<HTMLMediaElement | null>(null);
 
+	// When HLS, the src is managed externally (by hls.js adapter), not via attribute
+	const mediaSrc = $derived(ctx.isHls ? undefined : ctx.mediaUrl);
+
 	// Update context's mediaElement when ours is mounted
 	$effect(() => {
 		if (localMediaElement) {
@@ -36,7 +39,7 @@
 	{#if ctx.mediaType === 'audio'}
 		<audio
 			bind:this={localMediaElement}
-			src={ctx.mediaUrl}
+			src={mediaSrc}
 			{controls}
 			{preload}
 			crossorigin={crossOrigin || undefined}
@@ -45,7 +48,7 @@
 	{:else if ctx.mediaType === 'video'}
 		<video
 			bind:this={localMediaElement}
-			src={ctx.mediaUrl}
+			src={mediaSrc}
 			{controls}
 			{preload}
 			crossorigin={crossOrigin || undefined}

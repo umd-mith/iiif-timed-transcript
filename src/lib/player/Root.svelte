@@ -4,6 +4,7 @@
 	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas } from '../iiif/helpers';
 	import { ManifestSchema, type ManifestData } from '../iiif/validators';
 	import { parseRanges } from '@umd-mith/iiif-media-parsers';
+	import { isHlsUrl } from '../media/hlsUtils';
 	import type { Chapter } from '@umd-mith/iiif-media-parsers';
 	import type { Annotation } from '../sync/types';
 	import { manifestCache } from './manifestCache';
@@ -41,6 +42,7 @@
 	let mediaElement = $state<HTMLMediaElement | null>(null);
 	let mediaUrl = $state('');
 	let mediaType = $state<'audio' | 'video'>('audio');
+	let isHls = $state(false);
 	let chapters = $state<Chapter[]>([]);
 
 	let activeChapterId = $derived.by(() => {
@@ -103,6 +105,7 @@
 		set mediaUrl(url) { mediaUrl = url; },
 		get mediaType() { return mediaType; },
 		set mediaType(type) { mediaType = type; },
+		get isHls() { return isHls; },
 		get chapters() { return chapters; },
 		get activeChapterId() { return activeChapterId; },
 		actions
@@ -157,6 +160,7 @@
 			}
 
 			mediaUrl = primaryResource.id;
+			isHls = isHlsUrl(primaryResource.id, primaryResource.format);
 
 			// Parse chapter structures (Ranges) from the raw manifest
 			// (validManifest is Zod-parsed and strips `structures`)

@@ -208,6 +208,58 @@ describe('Viewer', () => {
 		expect(audioElement?.preload).toBe('metadata');
 	});
 
+	test('does not set src attribute when isHls is true', () => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const mockContext = createMockPlayerContext({
+			mediaUrl: 'https://example.com/stream/master.m3u8',
+			mediaType: 'video',
+			isHls: true
+		});
+
+		mount(TestContextProvider, {
+			target,
+			props: {
+				context: mockContext,
+				children: (anchor: any) => {
+					mount(Viewer, { target, anchor });
+				}
+			}
+		});
+		flushSync();
+
+		const videoElement = target.querySelector('video') as HTMLVideoElement;
+		expect(videoElement).not.toBeNull();
+		// When HLS, the src should NOT be set directly — hls.js manages the source
+		expect(videoElement?.getAttribute('src')).toBeNull();
+	});
+
+	test('sets src attribute when isHls is false', () => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const mockContext = createMockPlayerContext({
+			mediaUrl: 'https://example.com/video.mp4',
+			mediaType: 'video',
+			isHls: false
+		});
+
+		mount(TestContextProvider, {
+			target,
+			props: {
+				context: mockContext,
+				children: (anchor: any) => {
+					mount(Viewer, { target, anchor });
+				}
+			}
+		});
+		flushSync();
+
+		const videoElement = target.querySelector('video') as HTMLVideoElement;
+		expect(videoElement?.src).toBe('https://example.com/video.mp4');
+	});
+
 	test('sets preload on video elements too', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
