@@ -4,7 +4,8 @@
 	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas } from '../iiif/helpers';
 	import { ManifestSchema, type ManifestData } from '../iiif/validators';
 	import { parseRanges } from '@umd-mith/iiif-media-parsers';
-	import { isHlsUrl } from '../media/hlsUtils';
+	import { isHlsUrl, isHlsNativelySupported, createHlsAdapter, type HlsConstructor } from '../media/hlsUtils';
+	import type { MediaStrategy } from './context';
 	import type { Chapter } from '@umd-mith/iiif-media-parsers';
 	import type { Annotation } from '../sync/types';
 	import { manifestCache } from './manifestCache';
@@ -16,6 +17,7 @@
 		annotations = [],
 		initialTime,
 		autoplay = false,
+		hlsConstructor,
 		class: className = '',
 		children
 	}: {
@@ -24,6 +26,7 @@
 		annotations?: Annotation[];
 		initialTime?: number;
 		autoplay?: boolean;
+		hlsConstructor?: HlsConstructor;
 		class?: string;
 		children?: any;
 	} = $props();
@@ -42,7 +45,8 @@
 	let mediaElement = $state<HTMLMediaElement | null>(null);
 	let mediaUrl = $state('');
 	let mediaType = $state<'audio' | 'video'>('audio');
-	let isHls = $state(false);
+	let mediaStrategy = $state<MediaStrategy>('native');
+	let hlsAdapter = $state<ReturnType<typeof createHlsAdapter> | null>(null);
 	let chapters = $state<Chapter[]>([]);
 
 	let activeChapterId = $derived.by(() => {
@@ -105,7 +109,8 @@
 		set mediaUrl(url) { mediaUrl = url; },
 		get mediaType() { return mediaType; },
 		set mediaType(type) { mediaType = type; },
-		get isHls() { return isHls; },
+		get mediaStrategy() { return mediaStrategy; },
+		get hlsAdapter() { return hlsAdapter; },
 		get chapters() { return chapters; },
 		get activeChapterId() { return activeChapterId; },
 		actions
@@ -160,7 +165,29 @@
 			}
 
 			mediaUrl = primaryResource.id;
-			isHls = isHlsUrl(primaryResource.id, primaryResource.format);
+
+			// Determine media strategy for HLS streams
+			if (isHlsUrl(primaryResource.id, primaryResource.format)) {
+				if (isHlsNativelySupported()) {
+					// Safari handles HLS natively — just set src like a normal file
+					mediaStrategy = 'native';
+				} else {
+					mediaStrategy = 'hls-js';
+					const Hls = hlsConstructor
+						?? await import('hls.js').then((m) => m.default as unknown as HlsConstructor).catch(() => {
+								console.warn(
+									'[IIIFPlayer] HLS stream detected but hls.js is not installed. ' +
+										'Install it with: npm install hls.js'
+								);
+								return null;
+							});
+					if (Hls) {
+						hlsAdapter = createHlsAdapter(Hls);
+					}
+				}
+			} else {
+				mediaStrategy = 'native';
+			}
 
 			// Parse chapter structures (Ranges) from the raw manifest
 			// (validManifest is Zod-parsed and strips `structures`)
@@ -236,10 +263,12 @@
 		await loadManifest();
 	});
 
-	// Cleanup on unmount — capture current element
+	// Cleanup on unmount — capture current element and adapter
 	$effect(() => {
 		const el = mediaElement;
+		const adapter = hlsAdapter;
 		return () => {
+			adapter?.detach();
 			if (el) {
 				el.pause();
 				el.src = '';

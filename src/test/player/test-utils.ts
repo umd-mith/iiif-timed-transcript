@@ -24,7 +24,8 @@ export function createMockPlayerContext(overrides: MockPlayerOverrides = {}): Pl
 		mediaElement: null,
 		mediaUrl: 'https://example.com/media.mp3',
 		mediaType: 'audio',
-		isHls: false,
+		mediaStrategy: 'native',
+		hlsAdapter: null,
 		chapters: [],
 		activeChapterId: null,
 		actions: {

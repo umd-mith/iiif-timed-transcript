@@ -33,8 +33,9 @@
  * ```
  */
 export { IIIFPlayer, getPlayerContext } from "./player";
-export type { PlayerContext, PlayerState, PlayerActions } from "./player";
+export type { PlayerContext, PlayerState, PlayerActions, MediaStrategy } from "./player";
 export type { TranscriptContext, TranscriptState, TranscriptActions } from "./player";
+export type { TrackDefinition } from "./player";
 
 // ============================================================================
 // IIIF Utilities (LDA-1964)
