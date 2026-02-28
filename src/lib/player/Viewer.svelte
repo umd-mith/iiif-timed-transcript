@@ -27,6 +27,9 @@
 	const ctx = getPlayerContext();
 	let localMediaElement = $state<HTMLMediaElement | null>(null);
 
+	// Merge tracks: explicit prop overrides auto-discovered context tracks
+	const effectiveTracks = $derived(tracks.length > 0 ? tracks : ctx.tracks);
+
 	// When hls-js strategy, src is managed by the adapter, not via attribute
 	const mediaSrc = $derived(ctx.mediaStrategy === 'hls-js' ? undefined : ctx.mediaUrl);
 
@@ -87,7 +90,7 @@
 			class={className}
 			style="width: 100%;"
 		>
-			{#each tracks as track, i}
+			{#each effectiveTracks as track, i}
 				<track
 					src={track.src}
 					kind={track.kind}

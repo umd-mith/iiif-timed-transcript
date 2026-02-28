@@ -8,6 +8,7 @@ import {
 	MANIFEST_WITH_CHAPTERS,
 	MANIFEST_WITHOUT_CHAPTERS,
 	MANIFEST_WITH_HLS,
+	MANIFEST_WITH_VTT_CAPTIONS,
 	mockFetchManifest
 } from './test-fixtures';
 
@@ -321,6 +322,73 @@ describe('Root component', () => {
 				expect(capturedCtx).not.toBeNull();
 				expect(capturedCtx!.mediaStrategy).toBe('native');
 				expect(capturedCtx!.hlsAdapter).toBeNull();
+			});
+		});
+	});
+
+	describe('VTT caption discovery', () => {
+		test('discovers VTT tracks from canvas annotations', async () => {
+			mockFetchManifest(MANIFEST_WITH_VTT_CAPTIONS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/vtt-manifest.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.tracks).toBeDefined();
+				expect(capturedCtx!.tracks).toHaveLength(1);
+				expect(capturedCtx!.tracks[0]).toMatchObject({
+					src: 'https://example.com/captions-en.vtt',
+					kind: 'captions',
+					srclang: 'en'
+				});
+			});
+		});
+
+		test('returns empty tracks when manifest has no VTT annotations', async () => {
+			mockFetchManifest(MANIFEST_WITHOUT_CHAPTERS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/no-vtt-manifest.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.tracks).toBeDefined();
+				expect(capturedCtx!.tracks).toEqual([]);
 			});
 		});
 	});

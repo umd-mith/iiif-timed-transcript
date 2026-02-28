@@ -28,6 +28,7 @@ export function createMockPlayerContext(overrides: MockPlayerOverrides = {}): Pl
 		hlsAdapter: null,
 		chapters: [],
 		activeChapterId: null,
+		tracks: [],
 		actions: {
 			play: vi.fn(),
 			pause: vi.fn(),

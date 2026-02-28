@@ -1,6 +1,7 @@
 import { getContext as svelteGetContext } from 'svelte';
 import type { Chapter } from '@umd-mith/iiif-media-parsers';
 import type { HlsAdapter } from '../media/hlsUtils';
+import type { TrackDefinition } from './Viewer.svelte';
 
 export interface PlayerState {
 	isPlaying: boolean;
@@ -37,6 +38,7 @@ export interface PlayerContext {
 	readonly hlsAdapter: HlsAdapter | null;
 	readonly chapters: Chapter[];
 	readonly activeChapterId: string | null;
+	readonly tracks: TrackDefinition[];
 	actions: PlayerActions;
 }
 

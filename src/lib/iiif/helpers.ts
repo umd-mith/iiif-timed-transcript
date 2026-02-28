@@ -8,6 +8,7 @@ import type {
   TextualBodyData,
   ChoiceBodyData,
 } from "./validators";
+import type { TrackDefinition } from "../player/Viewer.svelte";
 import { parseAnnotationTarget } from "@umd-mith/iiif-media-parsers";
 import type { Annotation } from "../sync/types";
 
@@ -644,4 +645,79 @@ export function buildTranscriptAnnotations(
   }
 
   return result;
+}
+
+// ============================================================================
+// VTT Track Discovery (IIIF Cookbook recipe 0219)
+// ============================================================================
+
+/**
+ * Checks whether an annotation body is a VTT external resource,
+ * identified by `format: "text/vtt"` or a `.vtt` file extension.
+ */
+function isVTTResource(
+  body: AnnotationBodyData,
+): body is ContentResourceData {
+  if (!isExternalResource(body)) return false;
+  const resource = body as ContentResourceData;
+  if (resource.format === "text/vtt") return true;
+  if (resource.id?.endsWith(".vtt")) return true;
+  return false;
+}
+
+/**
+ * Extracts a label string from a body that may have a IIIF `label` map,
+ * a `language` string, or neither.
+ */
+function getVTTLabel(body: ContentResourceData): string {
+  // Some bodies carry a IIIF label map (Record<string, string[]>)
+  const labelMap = (body as unknown as { label?: Record<string, string[]> }).label;
+  if (labelMap && typeof labelMap === "object") {
+    for (const arr of Object.values(labelMap)) {
+      if (arr.length > 0 && arr[0]) return arr[0];
+    }
+  }
+  // Fall back to language code, then "Unknown"
+  return (body as unknown as { language?: string }).language ?? "Unknown";
+}
+
+/**
+ * Extracts VTT caption/subtitle track definitions from a canvas's
+ * supplementary annotations (`canvas.annotations`).
+ *
+ * Follows IIIF Cookbook recipe 0219: VTT files are linked as
+ * `supplementing` annotations with body type `Text` and
+ * format `text/vtt`.
+ *
+ * @param canvas - IIIF canvas with optional `annotations` property
+ * @returns Array of `TrackDefinition` objects for use with `<track>` elements
+ */
+export function getSupplementaryVTTTracks(
+  canvas: CanvasData,
+): TrackDefinition[] {
+  const annotations = getSupplementaryAnnotations(canvas, "supplementing");
+  const tracks: TrackDefinition[] = [];
+
+  for (const annotation of annotations) {
+    if (!annotation.body) continue;
+
+    const bodies = Array.isArray(annotation.body)
+      ? annotation.body
+      : [annotation.body];
+
+    for (const body of bodies) {
+      if (isVTTResource(body)) {
+        const resource = body as ContentResourceData;
+        const language = (resource as unknown as { language?: string }).language ?? "en";
+        tracks.push({
+          src: resource.id,
+          kind: "captions",
+          srclang: language,
+          label: getVTTLabel(resource),
+        });
+      }
+    }
+  }
+
+  return tracks;
 }

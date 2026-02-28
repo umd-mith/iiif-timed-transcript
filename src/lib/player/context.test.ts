@@ -47,6 +47,7 @@ describe('getPlayerContext', () => {
 			hlsAdapter: null,
 			chapters: [],
 			activeChapterId: null,
+			tracks: [],
 			actions: {
 				play: vi.fn(),
 				pause: vi.fn(),
@@ -109,6 +110,7 @@ describe('PlayerContext chapter types', () => {
 			hlsAdapter: null,
 			chapters,
 			activeChapterId: 'ch1',
+			tracks: [],
 			actions: {
 				play: async () => {},
 				pause: () => {},

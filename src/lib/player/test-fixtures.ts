@@ -130,6 +130,63 @@ export const MANIFEST_WITH_HLS = {
 };
 
 /**
+ * Video manifest with a VTT caption file in canvas.annotations.
+ * Follows IIIF Cookbook recipe 0219 pattern.
+ */
+export const MANIFEST_WITH_VTT_CAPTIONS = {
+  '@context': 'http://iiif.io/api/presentation/3/context.json',
+  id: 'https://example.com/manifest-vtt',
+  type: 'Manifest',
+  label: { en: ['VTT Caption Test Manifest'] },
+  items: [
+    {
+      id: 'https://example.com/canvas/1',
+      type: 'Canvas',
+      duration: 120,
+      items: [
+        {
+          id: 'https://example.com/canvas/1/page/1',
+          type: 'AnnotationPage',
+          items: [
+            {
+              id: 'https://example.com/canvas/1/page/1/annotation/1',
+              type: 'Annotation',
+              motivation: 'painting',
+              body: {
+                id: 'https://example.com/video.mp4',
+                type: 'Video',
+                format: 'video/mp4'
+              },
+              target: 'https://example.com/canvas/1'
+            }
+          ]
+        }
+      ],
+      annotations: [
+        {
+          id: 'https://example.com/canvas/1/annotations/1',
+          type: 'AnnotationPage',
+          items: [
+            {
+              id: 'https://example.com/canvas/1/annotations/1/annotation/1',
+              type: 'Annotation',
+              motivation: 'supplementing',
+              body: {
+                id: 'https://example.com/captions-en.vtt',
+                type: 'Text',
+                format: 'text/vtt',
+                language: 'en'
+              },
+              target: 'https://example.com/canvas/1'
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+/**
  * Helper: mock fetch to return a manifest.
  */
 export function mockFetchManifest(manifest: Record<string, unknown>) {
