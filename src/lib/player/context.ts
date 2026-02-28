@@ -25,8 +25,8 @@ export interface PlayerContext {
 	mediaElement: HTMLMediaElement | null;
 	mediaUrl: string;
 	mediaType: 'audio' | 'video';
-	chapters: Chapter[];
-	activeChapterId: string | null;
+	readonly chapters: Chapter[];
+	readonly activeChapterId: string | null;
 	actions: PlayerActions;
 }
 
