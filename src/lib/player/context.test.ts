@@ -85,6 +85,7 @@ describe('PlayerContext chapter types', () => {
 	test('PlayerContext includes chapters and activeChapterId', () => {
 		const mockState: PlayerState = {
 			isPlaying: false,
+			isBuffering: false,
 			currentTime: 15,
 			duration: 90,
 			playbackRate: 1,

@@ -9,6 +9,7 @@ function createMockPlayerContext(overrides: Partial<PlayerContext> = {}): Player
 	return {
 		state: {
 			isPlaying: false,
+			isBuffering: false,
 			currentTime: 0,
 			duration: 90,
 			playbackRate: 1,
