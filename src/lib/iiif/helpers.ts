@@ -9,8 +9,10 @@ import type {
   ChoiceBodyData,
 } from "./validators";
 import type { TrackDefinition } from "../player/Viewer.svelte";
-import { parseAnnotationTarget } from "@umd-mith/iiif-media-parsers";
+import type { CanvasInfo } from "../player/context";
+import { parseAnnotationTarget, parseRanges } from "@umd-mith/iiif-media-parsers";
 import type { Annotation } from "../sync/types";
+import type { Chapter } from "@umd-mith/iiif-media-parsers";
 
 /**
  * Helper functions for working with IIIF resources
@@ -645,6 +647,105 @@ export function buildTranscriptAnnotations(
   }
 
   return result;
+}
+
+// ============================================================================
+// Multi-Canvas Navigation Helpers
+// ============================================================================
+
+/**
+ * Builds a lightweight CanvasInfo list from a validated manifest.
+ * Maps each canvas to its index, id, label, duration, and media type.
+ *
+ * @param manifest - Validated IIIF manifest
+ * @returns Array of CanvasInfo objects
+ */
+export function buildCanvasInfoList(manifest: ManifestData): CanvasInfo[] {
+  const canvases = getCanvases(manifest);
+  return canvases.map((canvas, index) => {
+    let label: string;
+    try {
+      label = getLabel(canvas as unknown as { label: Record<string, string[]> });
+    } catch {
+      label = '';
+    }
+    if (!label) {
+      label = `Canvas ${index + 1}`;
+    }
+
+    let mediaType: 'audio' | 'video';
+    if (isVideoCanvas(canvas)) {
+      mediaType = 'video';
+    } else {
+      mediaType = 'audio';
+    }
+
+    const info: CanvasInfo = {
+      index,
+      id: canvas.id,
+      label,
+      mediaType,
+    };
+    if (canvas.duration != null) {
+      info.duration = canvas.duration;
+    }
+    return info;
+  });
+}
+
+/**
+ * Filters chapters (Ranges) from a raw manifest to only those referencing
+ * a specific canvas.
+ *
+ * Walks `rawManifest.structures` to build a set of Range IDs that reference
+ * the target canvas (matching by stripping `#t=...` fragments from item IDs).
+ * Then calls `parseRanges()` and filters output to only matching chapters.
+ *
+ * @param rawManifest - Raw (unparsed) manifest JSON
+ * @param canvasId - The canvas ID to filter by
+ * @returns Chapters belonging to the specified canvas
+ */
+export function filterChaptersForCanvas(
+  rawManifest: unknown,
+  canvasId: string,
+): Chapter[] {
+  if (
+    !rawManifest ||
+    typeof rawManifest !== 'object' ||
+    !('structures' in rawManifest)
+  ) {
+    return [];
+  }
+
+  const manifest = rawManifest as { structures?: unknown[] };
+  if (!Array.isArray(manifest.structures)) {
+    return [];
+  }
+
+  // Build set of Range IDs that reference this canvas
+  const matchingRangeIds = new Set<string>();
+  for (const structure of manifest.structures) {
+    const range = structure as { id?: string; items?: Array<{ id?: string }> };
+    if (!range.id || !Array.isArray(range.items)) continue;
+
+    for (const item of range.items) {
+      if (!item.id) continue;
+      // Strip #t=... fragment to get base canvas ID
+      const baseId = item.id.split('#')[0];
+      if (baseId === canvasId) {
+        matchingRangeIds.add(range.id);
+        break;
+      }
+    }
+  }
+
+  if (matchingRangeIds.size === 0) {
+    return [];
+  }
+
+  // Parse all chapters then filter to matching ones
+  const allChapters = parseRanges(rawManifest as any);
+  return allChapters.filter((chapter) => matchingRangeIds.has(chapter.id));
 }
 
 // ============================================================================

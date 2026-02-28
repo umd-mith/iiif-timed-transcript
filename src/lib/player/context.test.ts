@@ -48,13 +48,17 @@ describe('getPlayerContext', () => {
 			chapters: [],
 			activeChapterId: null,
 			tracks: [],
+			canvasIndex: 0,
+			canvasCount: 1,
+			canvases: [],
 			actions: {
 				play: vi.fn(),
 				pause: vi.fn(),
 				seekTo: vi.fn(),
 				setPlaybackRate: vi.fn(),
 				retry: vi.fn(),
-				seekToChapter: vi.fn()
+				seekToChapter: vi.fn(),
+				switchCanvas: vi.fn()
 			}
 		};
 
@@ -111,13 +115,17 @@ describe('PlayerContext chapter types', () => {
 			chapters,
 			activeChapterId: 'ch1',
 			tracks: [],
+			canvasIndex: 0,
+			canvasCount: 1,
+			canvases: [],
 			actions: {
 				play: async () => {},
 				pause: () => {},
 				seekTo: () => {},
 				setPlaybackRate: () => {},
 				retry: async () => {},
-				seekToChapter: () => {}
+				seekToChapter: () => {},
+				switchCanvas: () => {}
 			}
 		};
 

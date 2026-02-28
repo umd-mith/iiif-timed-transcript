@@ -33,7 +33,7 @@
  * ```
  */
 export { IIIFPlayer, getPlayerContext } from "./player";
-export type { PlayerContext, PlayerState, PlayerActions, MediaStrategy } from "./player";
+export type { PlayerContext, PlayerState, PlayerActions, MediaStrategy, CanvasInfo } from "./player";
 export type { TranscriptContext, TranscriptState, TranscriptActions } from "./player";
 export type { TrackDefinition } from "./player";
 
@@ -116,6 +116,8 @@ export {
   getSupplementaryTextualBodies,
   buildTranscriptAnnotations,
   getSupplementaryVTTTracks,
+  buildCanvasInfoList,
+  filterChaptersForCanvas,
   type SupplementaryTextualContent,
 } from "./iiif/helpers";
 

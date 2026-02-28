@@ -12,8 +12,11 @@ import {
   getSupplementaryTextualBodies,
   buildTranscriptAnnotations,
   getSupplementaryVTTTracks,
+  buildCanvasInfoList,
+  filterChaptersForCanvas,
 } from "./helpers";
-import type { CanvasData } from "./validators";
+import type { CanvasData, ManifestData } from "./validators";
+import { MANIFEST_MULTI_CANVAS } from "../player/test-fixtures";
 
 /**
  * Tests for getTextualBodies() helper function
@@ -1377,5 +1380,120 @@ describe("getSupplementaryVTTTracks", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]!.src).toBe("https://example.org/captions.vtt");
+  });
+});
+
+// ============================================================================
+// Multi-Canvas Navigation Helper Tests
+// ============================================================================
+
+describe("buildCanvasInfoList", () => {
+  it("should build CanvasInfo for each canvas in a multi-canvas manifest", () => {
+    // Cast the validated parts of the fixture — buildCanvasInfoList uses ManifestData
+    const manifest = MANIFEST_MULTI_CANVAS as unknown as ManifestData;
+
+    const result = buildCanvasInfoList(manifest);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      index: 0,
+      id: "https://example.com/canvas/1",
+      label: "Interview Part 1",
+      duration: 90,
+      mediaType: "audio",
+    });
+    expect(result[1]).toEqual({
+      index: 1,
+      id: "https://example.com/canvas/2",
+      label: "Interview Part 2",
+      duration: 120,
+      mediaType: "video",
+    });
+  });
+
+  it("should fallback to 'Canvas N' when label is missing", () => {
+    const manifest = {
+      ...MANIFEST_MULTI_CANVAS,
+      items: MANIFEST_MULTI_CANVAS.items.map((canvas, i) => {
+        const { label, ...rest } = canvas as any;
+        return rest;
+      }),
+    } as unknown as ManifestData;
+
+    const result = buildCanvasInfoList(manifest);
+
+    expect(result[0]!.label).toBe("Canvas 1");
+    expect(result[1]!.label).toBe("Canvas 2");
+  });
+
+  it("should return empty array for manifest with no canvases", () => {
+    const manifest = { items: [] } as unknown as ManifestData;
+
+    const result = buildCanvasInfoList(manifest);
+
+    expect(result).toEqual([]);
+  });
+});
+
+describe("filterChaptersForCanvas", () => {
+  it("should return only chapters referencing canvas/1", () => {
+    const result = filterChaptersForCanvas(
+      MANIFEST_MULTI_CANVAS,
+      "https://example.com/canvas/1",
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({
+      id: "https://example.com/range/1",
+      label: "Introduction",
+      startTime: 0,
+      endTime: 30,
+    });
+    expect(result[1]).toMatchObject({
+      id: "https://example.com/range/2",
+      label: "Early Life",
+      startTime: 30,
+      endTime: 90,
+    });
+  });
+
+  it("should return only chapters referencing canvas/2", () => {
+    const result = filterChaptersForCanvas(
+      MANIFEST_MULTI_CANVAS,
+      "https://example.com/canvas/2",
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({
+      id: "https://example.com/range/3",
+      label: "Career Beginnings",
+    });
+    expect(result[1]).toMatchObject({
+      id: "https://example.com/range/4",
+      label: "Later Years",
+    });
+  });
+
+  it("should return empty array for non-existent canvas ID", () => {
+    const result = filterChaptersForCanvas(
+      MANIFEST_MULTI_CANVAS,
+      "https://example.com/canvas/999",
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it("should return empty array when manifest has no structures", () => {
+    const result = filterChaptersForCanvas(
+      { items: [] },
+      "https://example.com/canvas/1",
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it("should return empty array for null/undefined input", () => {
+    expect(filterChaptersForCanvas(null, "id")).toEqual([]);
+    expect(filterChaptersForCanvas(undefined, "id")).toEqual([]);
   });
 });

@@ -27,13 +27,17 @@ function createMockPlayerContext(overrides: Partial<PlayerContext> = {}): Player
 		],
 		activeChapterId: null,
 		tracks: [],
+		canvasIndex: 0,
+		canvasCount: 1,
+		canvases: [],
 		actions: {
 			play: async () => {},
 			pause: () => {},
 			seekTo: vi.fn(),
 			setPlaybackRate: () => {},
 			retry: async () => {},
-			seekToChapter: vi.fn()
+			seekToChapter: vi.fn(),
+			switchCanvas: vi.fn()
 		},
 		...overrides
 	};

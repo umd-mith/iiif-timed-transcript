@@ -3,6 +3,14 @@ import type { Chapter } from '@umd-mith/iiif-media-parsers';
 import type { HlsAdapter } from '../media/hlsUtils';
 import type { TrackDefinition } from './Viewer.svelte';
 
+export interface CanvasInfo {
+	index: number;
+	id: string;
+	label: string;
+	duration?: number;
+	mediaType: 'audio' | 'video';
+}
+
 export interface PlayerState {
 	isPlaying: boolean;
 	isBuffering: boolean;
@@ -20,6 +28,7 @@ export interface PlayerActions {
 	setPlaybackRate: (rate: number) => void;
 	retry: () => Promise<void>;
 	seekToChapter: (chapter: Chapter) => void;
+	switchCanvas: (index: number) => void;
 }
 
 /**
@@ -39,6 +48,9 @@ export interface PlayerContext {
 	readonly chapters: Chapter[];
 	readonly activeChapterId: string | null;
 	readonly tracks: TrackDefinition[];
+	readonly canvasIndex: number;
+	readonly canvasCount: number;
+	readonly canvases: CanvasInfo[];
 	actions: PlayerActions;
 }
 
