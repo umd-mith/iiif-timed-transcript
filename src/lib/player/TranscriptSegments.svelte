@@ -1,62 +1,134 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import Segment from '../transcript/Segment.svelte';
-	import { TRANSCRIPT_CONTEXT_KEY, type TranscriptContext } from './transcript-context';
-	import type { Annotation } from '../sync/types';
+  import { getContext } from "svelte";
+  import Segment from "../transcript/Segment.svelte";
+  import {
+    TRANSCRIPT_CONTEXT_KEY,
+    type TranscriptContext,
+  } from "./transcript-context";
+  import type { Annotation } from "../sync/types";
 
-	interface Props {
-		annotations?: Annotation[];
-		activeAnnotationId?: string | null;
-		highlightedIds?: Set<string>;
-		currentMatchId?: string | null;
-		onclick?: (annotation: Annotation) => void;
-		class?: string;
-	}
+  interface Props {
+    annotations?: Annotation[];
+    activeAnnotationId?: string | null;
+    highlightedIds?: Set<string>;
+    currentMatchId?: string | null;
+    onclick?: (annotation: Annotation) => void;
+    class?: string;
+  }
 
-	let {
-		annotations: annotationsProp,
-		activeAnnotationId: activeAnnotationIdProp,
-		highlightedIds: highlightedIdsProp,
-		currentMatchId: currentMatchIdProp,
-		onclick: onclickProp,
-		class: className = ''
-	}: Props = $props();
+  let {
+    annotations: annotationsProp,
+    activeAnnotationId: activeAnnotationIdProp,
+    highlightedIds: highlightedIdsProp,
+    currentMatchId: currentMatchIdProp,
+    onclick: onclickProp,
+    class: className = "",
+  }: Props = $props();
 
-	// Try to read TranscriptContext (available when inside Transcript)
-	const transcriptCtx = getContext<TranscriptContext | undefined>(TRANSCRIPT_CONTEXT_KEY);
+  // Try to read TranscriptContext (available when inside Transcript)
+  const transcriptCtx = getContext<TranscriptContext | undefined>(
+    TRANSCRIPT_CONTEXT_KEY,
+  );
 
-	// Use context values when available, fall back to props
-	const annotations = $derived(annotationsProp ?? transcriptCtx?.state.annotations ?? []);
-	const activeAnnotationId = $derived(activeAnnotationIdProp ?? transcriptCtx?.state.activeAnnotationId ?? null);
-	const highlightedIds = $derived(highlightedIdsProp ?? transcriptCtx?.state.highlightedIds ?? new Set<string>());
-	const currentMatchId = $derived(currentMatchIdProp ?? transcriptCtx?.state.currentMatchId ?? null);
-	const onclick = $derived(onclickProp ?? transcriptCtx?.actions.handleAnnotationClick);
+  // Use context values when available, fall back to props
+  const annotations = $derived(
+    annotationsProp ?? transcriptCtx?.state.annotations ?? [],
+  );
+  const activeAnnotationId = $derived(
+    activeAnnotationIdProp ?? transcriptCtx?.state.activeAnnotationId ?? null,
+  );
+  const highlightedIds = $derived(
+    highlightedIdsProp ??
+      transcriptCtx?.state.highlightedIds ??
+      new Set<string>(),
+  );
+  const currentMatchId = $derived(
+    currentMatchIdProp ?? transcriptCtx?.state.currentMatchId ?? null,
+  );
+  const onclick = $derived(
+    onclickProp ?? transcriptCtx?.actions.handleAnnotationClick,
+  );
+
+  // Roving tabindex state — tracks which segment index is in the tab order
+  let focusedIndex = $state(0);
+
+  // Reset focused index when annotations change
+  $effect(() => {
+    if (annotations.length > 0 && focusedIndex >= annotations.length) {
+      focusedIndex = 0;
+    }
+  });
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (annotations.length === 0) return;
+
+    let nextIndex: number | null = null;
+
+    switch (event.key) {
+      case "ArrowDown":
+        event.preventDefault();
+        nextIndex =
+          focusedIndex < annotations.length - 1 ? focusedIndex + 1 : 0;
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        nextIndex =
+          focusedIndex > 0 ? focusedIndex - 1 : annotations.length - 1;
+        break;
+      case "Home":
+        event.preventDefault();
+        nextIndex = 0;
+        break;
+      case "End":
+        event.preventDefault();
+        nextIndex = annotations.length - 1;
+        break;
+    }
+
+    if (nextIndex !== null) {
+      focusedIndex = nextIndex;
+      // Focus the button at the new index
+      const container = event.currentTarget as HTMLElement;
+      const buttons = container.querySelectorAll<HTMLElement>(
+        "button[data-annotation-id]",
+      );
+      buttons[nextIndex]?.focus();
+    }
+  }
 </script>
 
 {#if annotations.length === 0}
-	<p class="empty-message">No segments available.</p>
+  <p class="empty-message">No segments available.</p>
 {:else}
-	<div class="segments-container {className}">
-		{#each annotations as annotation (annotation.id)}
-			<Segment
-				{annotation}
-				isActive={activeAnnotationId === annotation.id}
-				isHighlighted={highlightedIds.has(annotation.id) && currentMatchId !== annotation.id}
-				isCurrentMatch={currentMatchId === annotation.id}
-				onclick={() => onclick?.(annotation)}
-			/>
-		{/each}
-	</div>
+  <div
+    class="segments-container {className}"
+    role="listbox"
+    aria-label="Transcript segments"
+    tabindex="-1"
+    onkeydown={handleKeydown}
+  >
+    {#each annotations as annotation, i (annotation.id)}
+      <Segment
+        {annotation}
+        isActive={activeAnnotationId === annotation.id}
+        isHighlighted={highlightedIds.has(annotation.id) &&
+          currentMatchId !== annotation.id}
+        isCurrentMatch={currentMatchId === annotation.id}
+        onclick={() => onclick?.(annotation)}
+        tabindex={i === focusedIndex ? 0 : -1}
+      />
+    {/each}
+  </div>
 {/if}
 
 <style>
-	.segments-container {
-		flex: 1;
-	}
+  .segments-container {
+    flex: 1;
+  }
 
-	.empty-message {
-		padding: 1rem;
-		text-align: center;
-		color: #666;
-	}
+  .empty-message {
+    padding: 1rem;
+    text-align: center;
+    color: #595959;
+  }
 </style>

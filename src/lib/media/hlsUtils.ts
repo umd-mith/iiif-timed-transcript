@@ -1,4 +1,4 @@
-const HLS_FORMATS = ['application/vnd.apple.mpegurl', 'application/x-mpegurl'];
+const HLS_FORMATS = ["application/vnd.apple.mpegurl", "application/x-mpegurl"];
 
 /**
  * Detects whether a URL points to an HLS stream.
@@ -6,29 +6,31 @@ const HLS_FORMATS = ['application/vnd.apple.mpegurl', 'application/x-mpegurl'];
  * known HLS content types from the IIIF manifest format field.
  */
 export function isHlsUrl(url: string, format?: string): boolean {
-	try {
-		const pathname = new URL(url).pathname;
-		if (pathname.endsWith('.m3u8')) return true;
-	} catch {
-		// If URL parsing fails, try simple string match
-		if (url.split('?')[0]?.split('#')[0]?.endsWith('.m3u8')) return true;
-	}
+  try {
+    const pathname = new URL(url).pathname;
+    if (pathname.endsWith(".m3u8")) return true;
+  } catch {
+    // If URL parsing fails, try simple string match
+    if (url.split("?")[0]?.split("#")[0]?.endsWith(".m3u8")) return true;
+  }
 
-	if (format && HLS_FORMATS.includes(format.toLowerCase())) return true;
+  if (format && HLS_FORMATS.includes(format.toLowerCase())) return true;
 
-	return false;
+  return false;
 }
 
 /**
  * Checks whether the browser supports HLS playback natively (e.g. Safari).
  * Accepts an optional media element for testability via dependency injection.
  */
-export function isHlsNativelySupported(mediaElement?: HTMLMediaElement): boolean {
-	const el = mediaElement ?? document.createElement('video');
-	return (
-		el.canPlayType('application/vnd.apple.mpegurl') !== '' ||
-		el.canPlayType('application/x-mpegURL') !== ''
-	);
+export function isHlsNativelySupported(
+  mediaElement?: HTMLMediaElement,
+): boolean {
+  const el = mediaElement ?? document.createElement("video");
+  return (
+    el.canPlayType("application/vnd.apple.mpegurl") !== "" ||
+    el.canPlayType("application/x-mpegURL") !== ""
+  );
 }
 
 /**
@@ -36,23 +38,27 @@ export function isHlsNativelySupported(mediaElement?: HTMLMediaElement): boolean
  * so consumers provide the actual hls.js library (optional peer dep).
  */
 export interface HlsConstructor {
-	new (): HlsInstance;
-	isSupported(): boolean;
-	Events: { MANIFEST_PARSED: string; ERROR: string };
+  new (): HlsInstance;
+  isSupported(): boolean;
+  Events: { MANIFEST_PARSED: string; ERROR: string };
 }
 
 interface HlsInstance {
-	loadSource(src: string): void;
-	attachMedia(el: HTMLMediaElement): void;
-	destroy(): void;
-	on(event: string, handler: (...args: unknown[]) => void): void;
-	off(event: string, handler: (...args: unknown[]) => void): void;
+  loadSource(src: string): void;
+  attachMedia(el: HTMLMediaElement): void;
+  destroy(): void;
+  on(event: string, handler: (...args: unknown[]) => void): void;
+  off(event: string, handler: (...args: unknown[]) => void): void;
 }
 
 export interface HlsAdapter {
-	attach(el: HTMLMediaElement, src: string, options?: { onError?: (data: unknown) => void }): void;
-	detach(): void;
-	isSupported(): boolean;
+  attach(
+    el: HTMLMediaElement,
+    src: string,
+    options?: { onError?: (data: unknown) => void },
+  ): void;
+  detach(): void;
+  isSupported(): boolean;
 }
 
 /**
@@ -60,38 +66,38 @@ export interface HlsAdapter {
  * The hls.js constructor is injected so the library remains an optional peer dep.
  */
 export function createHlsAdapter(Hls: HlsConstructor): HlsAdapter {
-	let instance: HlsInstance | null = null;
+  let instance: HlsInstance | null = null;
 
-	return {
-		attach(el, src, options) {
-			// Clean up any previous instance
-			if (instance) {
-				instance.destroy();
-				instance = null;
-			}
+  return {
+    attach(el, src, options) {
+      // Clean up any previous instance
+      if (instance) {
+        instance.destroy();
+        instance = null;
+      }
 
-			instance = new Hls();
+      instance = new Hls();
 
-			if (options?.onError) {
-				const onError = options.onError;
-				instance.on(Hls.Events.ERROR, (_event: unknown, data: unknown) => {
-					onError(data);
-				});
-			}
+      if (options?.onError) {
+        const onError = options.onError;
+        instance.on(Hls.Events.ERROR, (_event: unknown, data: unknown) => {
+          onError(data);
+        });
+      }
 
-			instance.loadSource(src);
-			instance.attachMedia(el);
-		},
+      instance.loadSource(src);
+      instance.attachMedia(el);
+    },
 
-		detach() {
-			if (instance) {
-				instance.destroy();
-				instance = null;
-			}
-		},
+    detach() {
+      if (instance) {
+        instance.destroy();
+        instance = null;
+      }
+    },
 
-		isSupported() {
-			return Hls.isSupported();
-		}
-	};
+    isSupported() {
+      return Hls.isSupported();
+    },
+  };
 }

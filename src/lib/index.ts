@@ -33,8 +33,18 @@
  * ```
  */
 export { IIIFPlayer, getPlayerContext } from "./player";
-export type { PlayerContext, PlayerState, PlayerActions, MediaStrategy, CanvasInfo } from "./player";
-export type { TranscriptContext, TranscriptState, TranscriptActions } from "./player";
+export type {
+  PlayerContext,
+  PlayerState,
+  PlayerActions,
+  MediaStrategy,
+  CanvasInfo,
+} from "./player";
+export type {
+  TranscriptContext,
+  TranscriptState,
+  TranscriptActions,
+} from "./player";
 export type { TrackDefinition } from "./player";
 
 // ============================================================================
@@ -168,7 +178,10 @@ export { keyboardNav, type KeyboardNavOptions } from "./transcript/keyboardNav";
 
 // Paragraph merging utility
 export { mergeIntoParagraphs } from "./transcript/paragraphMerger";
-export type { MergedParagraph, MergeConfig } from "./transcript/paragraphMerger";
+export type {
+  MergedParagraph,
+  MergeConfig,
+} from "./transcript/paragraphMerger";
 
 // ============================================================================
 // Media Utilities

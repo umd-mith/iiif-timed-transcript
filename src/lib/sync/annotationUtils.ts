@@ -4,7 +4,7 @@
  * Pure utility functions for annotation time-mapping operations.
  */
 
-import type { Annotation } from './types';
+import type { Annotation } from "./types";
 
 /**
  * Get the annotation that should be active at a given time.
@@ -13,8 +13,14 @@ import type { Annotation } from './types';
  * @param annotations - Array of annotations to search (REQUIRED)
  * @returns The active annotation, or null if none
  */
-export function getActiveAnnotation(time: number, annotations: Annotation[]): Annotation | null {
-	return annotations.find((ann) => time >= ann.startTime && time < ann.endTime) ?? null;
+export function getActiveAnnotation(
+  time: number,
+  annotations: Annotation[],
+): Annotation | null {
+  return (
+    annotations.find((ann) => time >= ann.startTime && time < ann.endTime) ??
+    null
+  );
 }
 
 /**
@@ -26,8 +32,8 @@ export function getActiveAnnotation(time: number, annotations: Annotation[]): An
  * @returns Scroll progress from 0 to 1
  */
 export function timeToScrollProgress(time: number, duration: number): number {
-	if (duration === 0) return 0;
-	return Math.max(0, Math.min(1, time / duration));
+  if (duration === 0) return 0;
+  return Math.max(0, Math.min(1, time / duration));
 }
 
 /**
@@ -47,40 +53,44 @@ export function timeToScrollProgress(time: number, duration: number): number {
  * scrollProgressToTime(0.5, annotations) // => ~60s (middle annotation)
  * scrollProgressToTime(1.0, annotations) // => 120s (last annotation end)
  */
-export function scrollProgressToTime(scrollProgress: number, annotations: Annotation[]): number {
-	// Handle edge cases
-	if (annotations.length === 0) return 0;
+export function scrollProgressToTime(
+  scrollProgress: number,
+  annotations: Annotation[],
+): number {
+  // Handle edge cases
+  if (annotations.length === 0) return 0;
 
-	// Clamp scroll progress to [0, 1]
-	const clampedProgress = Math.max(0, Math.min(1, scrollProgress));
+  // Clamp scroll progress to [0, 1]
+  const clampedProgress = Math.max(0, Math.min(1, scrollProgress));
 
-	// Special case: 100% scroll should map to end of last annotation
-	if (clampedProgress === 1.0) {
-		const lastAnnotation = annotations.at(-1);
-		return lastAnnotation?.endTime ?? 0;
-	}
+  // Special case: 100% scroll should map to end of last annotation
+  if (clampedProgress === 1.0) {
+    const lastAnnotation = annotations.at(-1);
+    return lastAnnotation?.endTime ?? 0;
+  }
 
-	// Map scroll progress (0-1) to annotation array index
-	// Example: 24 annotations, 50% scroll => index 12
-	const exactIndex = clampedProgress * annotations.length;
-	const baseIndex = Math.floor(exactIndex);
+  // Map scroll progress (0-1) to annotation array index
+  // Example: 24 annotations, 50% scroll => index 12
+  const exactIndex = clampedProgress * annotations.length;
+  const baseIndex = Math.floor(exactIndex);
 
-	// Clamp to valid array bounds
-	const clampedIndex = Math.max(0, Math.min(baseIndex, annotations.length - 1));
+  // Clamp to valid array bounds
+  const clampedIndex = Math.max(0, Math.min(baseIndex, annotations.length - 1));
 
-	// Get the annotation at this index
-	const annotation = annotations[clampedIndex];
+  // Get the annotation at this index
+  const annotation = annotations[clampedIndex];
 
-	if (!annotation) {
-		return 0;
-	}
+  if (!annotation) {
+    return 0;
+  }
 
-	// Calculate local progress within this annotation's time range
-	// Example: exactIndex 12.3 => baseIndex 12, localProgress 0.3
-	const localProgress = exactIndex - baseIndex;
+  // Calculate local progress within this annotation's time range
+  // Example: exactIndex 12.3 => baseIndex 12, localProgress 0.3
+  const localProgress = exactIndex - baseIndex;
 
-	// Interpolate within the annotation's time range
-	const timeWithinAnnotation = localProgress * (annotation.endTime - annotation.startTime);
+  // Interpolate within the annotation's time range
+  const timeWithinAnnotation =
+    localProgress * (annotation.endTime - annotation.startTime);
 
-	return annotation.startTime + timeWithinAnnotation;
+  return annotation.startTime + timeWithinAnnotation;
 }

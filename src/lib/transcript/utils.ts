@@ -1,4 +1,4 @@
-import type { Annotation } from '../sync/types';
+import type { Annotation } from "../sync/types";
 
 /**
  * Format time in seconds to MM:SS display
@@ -6,7 +6,7 @@ import type { Annotation } from '../sync/types';
 export function formatTimestamp(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
 /**
@@ -14,7 +14,7 @@ export function formatTimestamp(seconds: number): string {
  */
 export function getAnnotationById(
   annotations: Annotation[],
-  id: string
+  id: string,
 ): Annotation | null {
-  return annotations.find(ann => ann.id === id) ?? null;
+  return annotations.find((ann) => ann.id === id) ?? null;
 }

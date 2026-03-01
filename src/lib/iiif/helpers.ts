@@ -8,9 +8,12 @@ import type {
   TextualBodyData,
   ChoiceBodyData,
 } from "./validators";
-import type { TrackDefinition } from "../player/Viewer.svelte";
+import type { TrackDefinition } from "../player/context";
 import type { CanvasInfo } from "../player/context";
-import { parseAnnotationTarget, parseRanges } from "@umd-mith/iiif-media-parsers";
+import {
+  parseAnnotationTarget,
+  parseRanges,
+} from "@umd-mith/iiif-media-parsers";
 import type { Annotation } from "../sync/types";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 
@@ -485,7 +488,9 @@ export function getSupplementaryAnnotations(
       if (!motivationFilter) {
         annotations.push(annotation);
       } else if (Array.isArray(motivationFilter)) {
-        if (motivationFilter.some((m) => hasMotivation(annotation.motivation, m))) {
+        if (
+          motivationFilter.some((m) => hasMotivation(annotation.motivation, m))
+        ) {
           annotations.push(annotation);
         }
       } else {
@@ -665,19 +670,21 @@ export function buildCanvasInfoList(manifest: ManifestData): CanvasInfo[] {
   return canvases.map((canvas, index) => {
     let label: string;
     try {
-      label = getLabel(canvas as unknown as { label: Record<string, string[]> });
+      label = getLabel(
+        canvas as unknown as { label: Record<string, string[]> },
+      );
     } catch {
-      label = '';
+      label = "";
     }
     if (!label) {
       label = `Canvas ${index + 1}`;
     }
 
-    let mediaType: 'audio' | 'video';
+    let mediaType: "audio" | "video";
     if (isVideoCanvas(canvas)) {
-      mediaType = 'video';
+      mediaType = "video";
     } else {
-      mediaType = 'audio';
+      mediaType = "audio";
     }
 
     const info: CanvasInfo = {
@@ -711,8 +718,8 @@ export function filterChaptersForCanvas(
 ): Chapter[] {
   if (
     !rawManifest ||
-    typeof rawManifest !== 'object' ||
-    !('structures' in rawManifest)
+    typeof rawManifest !== "object" ||
+    !("structures" in rawManifest)
   ) {
     return [];
   }
@@ -727,25 +734,38 @@ export function filterChaptersForCanvas(
   // so we must walk the full tree, not just the top level.
   const matchingRangeIds = new Set<string>();
 
-  function walkRange(range: { id?: string; items?: Array<{ id?: string; type?: string; items?: unknown[] }> }) {
+  function walkRange(range: {
+    id?: string;
+    items?: Array<{ id?: string; type?: string; items?: unknown[] }>;
+  }) {
     if (!range.id || !Array.isArray(range.items)) return;
 
     for (const item of range.items) {
       if (!item.id) continue;
-      const baseId = item.id.split('#')[0];
+      const baseId = item.id.split("#")[0];
       if (baseId === canvasId) {
         matchingRangeIds.add(range.id);
         break;
       }
       // Recurse into child Ranges
-      if (item.type === 'Range' && Array.isArray(item.items)) {
-        walkRange(item as { id: string; items: Array<{ id?: string; type?: string; items?: unknown[] }> });
+      if (item.type === "Range" && Array.isArray(item.items)) {
+        walkRange(
+          item as {
+            id: string;
+            items: Array<{ id?: string; type?: string; items?: unknown[] }>;
+          },
+        );
       }
     }
   }
 
   for (const structure of manifest.structures) {
-    walkRange(structure as { id: string; items: Array<{ id?: string; type?: string; items?: unknown[] }> });
+    walkRange(
+      structure as {
+        id: string;
+        items: Array<{ id?: string; type?: string; items?: unknown[] }>;
+      },
+    );
   }
 
   if (matchingRangeIds.size === 0) {
@@ -753,7 +773,7 @@ export function filterChaptersForCanvas(
   }
 
   // Parse all chapters then filter to matching ones
-  const allChapters = parseRanges(rawManifest as any);
+  const allChapters = parseRanges(rawManifest as Record<string, unknown>);
   return allChapters.filter((chapter) => matchingRangeIds.has(chapter.id));
 }
 
@@ -765,9 +785,7 @@ export function filterChaptersForCanvas(
  * Checks whether an annotation body is a VTT external resource,
  * identified by `format: "text/vtt"` or a `.vtt` file extension.
  */
-function isVTTResource(
-  body: AnnotationBodyData,
-): body is ContentResourceData {
+function isVTTResource(body: AnnotationBodyData): body is ContentResourceData {
   if (!isExternalResource(body)) return false;
   const resource = body as ContentResourceData;
   if (resource.format === "text/vtt") return true;
@@ -781,7 +799,8 @@ function isVTTResource(
  */
 function getVTTLabel(body: ContentResourceData): string {
   // Some bodies carry a IIIF label map (Record<string, string[]>)
-  const labelMap = (body as unknown as { label?: Record<string, string[]> }).label;
+  const labelMap = (body as unknown as { label?: Record<string, string[]> })
+    .label;
   if (labelMap && typeof labelMap === "object") {
     for (const arr of Object.values(labelMap)) {
       if (arr.length > 0 && arr[0]) return arr[0];
@@ -818,7 +837,8 @@ export function getSupplementaryVTTTracks(
     for (const body of bodies) {
       if (isVTTResource(body)) {
         const resource = body as ContentResourceData;
-        const language = (resource as unknown as { language?: string }).language ?? "en";
+        const language =
+          (resource as unknown as { language?: string }).language ?? "en";
         tracks.push({
           src: resource.id,
           kind: "captions",

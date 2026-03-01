@@ -5,12 +5,17 @@
  * Wraps XState machine with reactive Svelte 5 runes API.
  */
 
-import { createActor } from 'xstate';
-import type { Actor } from 'xstate';
-import { syncMachine } from './syncMachine';
-import type { SyncConfig, IIIFMediaViewerRef, Annotation, SyncContext } from './types';
-import { DEFAULT_SYNC_CONFIG } from './config';
-import { scrollProgressToTime, getActiveAnnotation } from './annotationUtils';
+import { createActor } from "xstate";
+import type { Actor } from "xstate";
+import { syncMachine } from "./syncMachine";
+import type {
+  SyncConfig,
+  IIIFMediaViewerRef,
+  Annotation,
+  SyncContext,
+} from "./types";
+import { DEFAULT_SYNC_CONFIG } from "./config";
+import { scrollProgressToTime, getActiveAnnotation } from "./annotationUtils";
 
 /**
  * Type alias for SyncController's XState actor
@@ -27,229 +32,242 @@ type SyncMachineActor = Actor<typeof syncMachine>;
  * ```
  */
 export class SyncController {
-	// Reactive state exposed via Svelte 5 $state
-	currentTime = $state(0);
-	scrollProgress = $state(0);
-	activeAnnotations = $state<Annotation[]>([]);
+  // Reactive state exposed via Svelte 5 $state
+  currentTime = $state(0);
+  scrollProgress = $state(0);
+  activeAnnotations = $state<Annotation[]>([]);
 
-	// Private state
-	private actor: SyncMachineActor | null = null;
-	private config: SyncConfig;
-	private viewer: IIIFMediaViewerRef | null = null;
-	private scrollContainer: HTMLElement | null = null;
-	private annotations: Annotation[] = [];
-	private isInitialized = false;
-	private cleanupHandlers: Array<() => void> = [];
-	private lastProgrammaticScroll: number = 0; // Timestamp of last auto-scroll
-	private lastScrollEvent: number = 0; // Timestamp of last processed scroll event (for throttling)
+  // Private state
+  private actor: SyncMachineActor | null = null;
+  private config: SyncConfig;
+  private viewer: IIIFMediaViewerRef | null = null;
+  private scrollContainer: HTMLElement | null = null;
+  private annotations: Annotation[] = [];
+  private isInitialized = false;
+  private cleanupHandlers: Array<() => void> = [];
+  private lastProgrammaticScroll: number = 0; // Timestamp of last auto-scroll
+  private lastScrollEvent: number = 0; // Timestamp of last processed scroll event (for throttling)
 
-	/**
-	 * Creates a new SyncController instance.
-	 *
-	 * @param config - Optional configuration overrides
-	 */
-	constructor(config?: Partial<SyncConfig>) {
-		this.config = { ...DEFAULT_SYNC_CONFIG, ...config };
-	}
+  /**
+   * Creates a new SyncController instance.
+   *
+   * @param config - Optional configuration overrides
+   */
+  constructor(config?: Partial<SyncConfig>) {
+    this.config = { ...DEFAULT_SYNC_CONFIG, ...config };
+  }
 
-	/**
-	 * Validate viewer and scrollContainer inputs.
-	 * @throws {Error} if validation fails
-	 */
-	private validateInputs(viewer: IIIFMediaViewerRef, scrollContainer: HTMLElement): void {
-		if (
-			!viewer ||
-			typeof viewer.getCurrentTime !== 'function' ||
-			typeof viewer.seekTo !== 'function'
-		) {
-			throw new Error(
-				'initialize() requires a valid IIIFMediaViewerRef with getCurrentTime() and seekTo() methods'
-			);
-		}
+  /**
+   * Validate viewer and scrollContainer inputs.
+   * @throws {Error} if validation fails
+   */
+  private validateInputs(
+    viewer: IIIFMediaViewerRef,
+    scrollContainer: HTMLElement,
+  ): void {
+    if (
+      !viewer ||
+      typeof viewer.getCurrentTime !== "function" ||
+      typeof viewer.seekTo !== "function"
+    ) {
+      throw new Error(
+        "initialize() requires a valid IIIFMediaViewerRef with getCurrentTime() and seekTo() methods",
+      );
+    }
 
-		if (!scrollContainer || !(scrollContainer instanceof HTMLElement)) {
-			throw new Error('initialize() requires a valid HTMLElement as scrollContainer');
-		}
-	}
+    if (!scrollContainer || !(scrollContainer instanceof HTMLElement)) {
+      throw new Error(
+        "initialize() requires a valid HTMLElement as scrollContainer",
+      );
+    }
+  }
 
-	/**
-	 * Initialize the controller with viewer and scroll container references.
-	 *
-	 * @param viewer - Reference to IIIFMediaViewer component
-	 * @param scrollContainer - HTML element containing the transcript
-	 * @param annotations - Array of annotations for scroll-to-time mapping (required)
-	 * @throws {Error} if viewer or scrollContainer is invalid
-	 */
-	initialize(
-		viewer: IIIFMediaViewerRef,
-		scrollContainer: HTMLElement,
-		annotations: Annotation[]
-	): void {
-		if (this.isInitialized) {
-			return;
-		}
+  /**
+   * Initialize the controller with viewer and scroll container references.
+   *
+   * @param viewer - Reference to IIIFMediaViewer component
+   * @param scrollContainer - HTML element containing the transcript
+   * @param annotations - Array of annotations for scroll-to-time mapping (required)
+   * @throws {Error} if viewer or scrollContainer is invalid
+   */
+  initialize(
+    viewer: IIIFMediaViewerRef,
+    scrollContainer: HTMLElement,
+    annotations: Annotation[],
+  ): void {
+    if (this.isInitialized) {
+      return;
+    }
 
-		this.validateInputs(viewer, scrollContainer);
+    this.validateInputs(viewer, scrollContainer);
 
-		this.viewer = viewer;
-		this.scrollContainer = scrollContainer;
-		this.annotations = annotations;
+    this.viewer = viewer;
+    this.scrollContainer = scrollContainer;
+    this.annotations = annotations;
 
-		// Create and start the actor with viewer, scrollContainer, and annotations input
-		this.actor = createActor(syncMachine);
+    // Create and start the actor with viewer, scrollContainer, and annotations input
+    this.actor = createActor(syncMachine);
 
-		// Subscribe to state changes
-		this.actor.subscribe((state) => {
-			this.updateReactiveState(state.context);
+    // Subscribe to state changes
+    this.actor.subscribe((state) => {
+      this.updateReactiveState(state.context);
 
-			// Track when auto-scroll happens to block subsequent scroll events
-			// mediaDriven means we're auto-scrolling the transcript
-			if (state.matches('mediaDriven')) {
-				this.lastProgrammaticScroll = Date.now();
-			}
-		});
+      // Track when auto-scroll happens to block subsequent scroll events
+      // mediaDriven means we're auto-scrolling the transcript
+      if (state.matches("mediaDriven")) {
+        this.lastProgrammaticScroll = Date.now();
+      }
+    });
 
-		this.actor.start();
+    this.actor.start();
 
-		// Send INITIALIZE event to transition from idle → ready
-		this.actor.send({
-			type: 'INITIALIZE',
-			viewer: this.viewer,
-			scrollContainer: this.scrollContainer,
-			annotations: this.annotations
-		});
+    // Send INITIALIZE event to transition from idle → ready
+    this.actor.send({
+      type: "INITIALIZE",
+      viewer: this.viewer,
+      scrollContainer: this.scrollContainer,
+      annotations: this.annotations,
+    });
 
-		// Set up event listeners to bridge DOM events to XState machine
-		this.setupEventListeners();
+    // Set up event listeners to bridge DOM events to XState machine
+    this.setupEventListeners();
 
-		this.isInitialized = true;
-	}
+    this.isInitialized = true;
+  }
 
-	/**
-	 * Set up DOM event listeners and connect them to the XState machine.
-	 * Creates the bridge between browser events and machine events.
-	 */
-	private setupEventListeners(): void {
-		if (!this.viewer || !this.scrollContainer || !this.actor) {
-			return;
-		}
+  /**
+   * Set up DOM event listeners and connect them to the XState machine.
+   * Creates the bridge between browser events and machine events.
+   */
+  private setupEventListeners(): void {
+    if (!this.viewer || !this.scrollContainer || !this.actor) {
+      return;
+    }
 
-		// Video timeupdate: Poll getCurrentTime() every 100ms (10 FPS update rate)
-		// Polling is necessary because IIIFMediaViewerRef doesn't expose the raw video element
-		// or timeupdate events. The viewer interface only provides getCurrentTime() method.
-		// Alternative: If viewer API adds ontimeupdate callback, we could switch to event-based sync.
-		const timeupdateInterval = setInterval(() => {
-			if (this.viewer && this.actor) {
-				const currentTime = this.viewer.getCurrentTime();
-				this.actor.send({ type: 'VIDEO_TIME_UPDATE', currentTime });
-			}
-		}, 100);
+    // Video timeupdate: Poll getCurrentTime() every 100ms (10 FPS update rate)
+    // Polling is necessary because IIIFMediaViewerRef doesn't expose the raw video element
+    // or timeupdate events. The viewer interface only provides getCurrentTime() method.
+    // Alternative: If viewer API adds ontimeupdate callback, we could switch to event-based sync.
+    const timeupdateInterval = setInterval(() => {
+      if (this.viewer && this.actor) {
+        const currentTime = this.viewer.getCurrentTime();
+        this.actor.send({ type: "VIDEO_TIME_UPDATE", currentTime });
+      }
+    }, 100);
 
-		this.cleanupHandlers.push(() => clearInterval(timeupdateInterval));
+    this.cleanupHandlers.push(() => clearInterval(timeupdateInterval));
 
-		// Transcript scroll: Listen to scroll events and send to machine
-		const handleScroll = () => {
-			if (this.scrollContainer && this.actor) {
-				const now = Date.now();
+    // Transcript scroll: Listen to scroll events and send to machine
+    const handleScroll = () => {
+      if (this.scrollContainer && this.actor) {
+        const now = Date.now();
 
-				// Ignore scroll events for 600ms after auto-scroll
-				// scrollIntoView({ behavior: 'smooth' }) triggers scroll events during its animation.
-				// We must block these for the full animation duration (~500ms) to prevent jump-back.
-				const timeSinceAutoScroll = now - this.lastProgrammaticScroll;
-				if (timeSinceAutoScroll < 600) {
-					return; // Skip scroll events during/after auto-scroll animation
-				}
+        // Ignore scroll events for 600ms after auto-scroll
+        // scrollIntoView({ behavior: 'smooth' }) triggers scroll events during its animation.
+        // We must block these for the full animation duration (~500ms) to prevent jump-back.
+        const timeSinceAutoScroll = now - this.lastProgrammaticScroll;
+        if (timeSinceAutoScroll < 600) {
+          return; // Skip scroll events during/after auto-scroll animation
+        }
 
-				// Throttle user scroll events to prevent video stuttering
-				// Only process one scroll event per debounceMs during manual scrolling
-				const timeSinceLastScroll = now - this.lastScrollEvent;
-				if (timeSinceLastScroll < this.config.debounceMs) {
-					return; // Skip rapid scroll events
-				}
-				this.lastScrollEvent = now;
+        // Throttle user scroll events to prevent video stuttering
+        // Only process one scroll event per debounceMs during manual scrolling
+        const timeSinceLastScroll = now - this.lastScrollEvent;
+        if (timeSinceLastScroll < this.config.debounceMs) {
+          return; // Skip rapid scroll events
+        }
+        this.lastScrollEvent = now;
 
-				const { scrollTop, scrollHeight, clientHeight } = this.scrollContainer;
-				const maxScroll = scrollHeight - clientHeight;
-				const scrollProgress = maxScroll > 0 ? scrollTop / maxScroll : 0;
+        const { scrollTop, scrollHeight, clientHeight } = this.scrollContainer;
+        const maxScroll = scrollHeight - clientHeight;
+        const scrollProgress = maxScroll > 0 ? scrollTop / maxScroll : 0;
 
-				// Use annotation-based mapping instead of linear duration mapping
-				// Maps scroll position to annotation time ranges, not full video duration
-				const mappedTime = scrollProgressToTime(scrollProgress, this.annotations);
+        // Use annotation-based mapping instead of linear duration mapping
+        // Maps scroll position to annotation time ranges, not full video duration
+        const mappedTime = scrollProgressToTime(
+          scrollProgress,
+          this.annotations,
+        );
 
-				this.actor.send({
-					type: 'TRANSCRIPT_SCROLL',
-					scrollProgress,
-					mappedTime
-				});
-			}
-		};
+        this.actor.send({
+          type: "TRANSCRIPT_SCROLL",
+          scrollProgress,
+          mappedTime,
+        });
+      }
+    };
 
-		this.scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-		this.cleanupHandlers.push(() => {
-			this.scrollContainer?.removeEventListener('scroll', handleScroll);
-		});
-	}
+    this.scrollContainer.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
+    this.cleanupHandlers.push(() => {
+      this.scrollContainer?.removeEventListener("scroll", handleScroll);
+    });
+  }
 
-	/**
-	 * Updates reactive state from machine context.
-	 * Video seeking and scrolling are handled by actor invocations.
-	 */
-	private updateReactiveState(context: SyncContext): void {
-		this.currentTime = context.currentTime;
-		// scrollPosition is already 0-1 progress from the machine
-		this.scrollProgress = context.scrollPosition;
+  /**
+   * Updates reactive state from machine context.
+   * Video seeking and scrolling are handled by actor invocations.
+   */
+  private updateReactiveState(context: SyncContext): void {
+    this.currentTime = context.currentTime;
+    // scrollPosition is already 0-1 progress from the machine
+    this.scrollProgress = context.scrollPosition;
 
-		// Track active annotation based on current time
-		const activeAnnotation = getActiveAnnotation(context.currentTime, this.annotations);
-		this.activeAnnotations = activeAnnotation ? [activeAnnotation] : [];
+    // Track active annotation based on current time
+    const activeAnnotation = getActiveAnnotation(
+      context.currentTime,
+      this.annotations,
+    );
+    this.activeAnnotations = activeAnnotation ? [activeAnnotation] : [];
 
-		// Video seeking and transcript scrolling are now handled automatically by the machine's
-		// videoController and scrollController actors invoked in scrollDriven and mediaDriven states.
-	}
+    // Video seeking and transcript scrolling are now handled automatically by the machine's
+    // videoController and scrollController actors invoked in scrollDriven and mediaDriven states.
+  }
 
-	/**
-	 * Reset the controller to idle state.
-	 */
-	reset(): void {
-		if (this.actor) {
-			this.actor.send({ type: 'RESET' });
-		}
-	}
+  /**
+   * Reset the controller to idle state.
+   */
+  reset(): void {
+    if (this.actor) {
+      this.actor.send({ type: "RESET" });
+    }
+  }
 
-	/**
-	 * Check if the controller is ready (machine is in ready state).
-	 */
-	get isReady(): boolean {
-		if (!this.actor) {
-			return false;
-		}
+  /**
+   * Check if the controller is ready (machine is in ready state).
+   */
+  get isReady(): boolean {
+    if (!this.actor) {
+      return false;
+    }
 
-		const snapshot = this.actor.getSnapshot();
-		return snapshot.matches('ready');
-	}
+    const snapshot = this.actor.getSnapshot();
+    return snapshot.matches("ready");
+  }
 
-	/**
-	 * Cleanup and destroy the controller.
-	 * Stops the actor and clears references.
-	 * Safe to call multiple times (idempotent).
-	 */
-	destroy(): void {
-		// Idempotent: safe to call multiple times
-		if (!this.isInitialized && !this.actor) {
-			return;
-		}
+  /**
+   * Cleanup and destroy the controller.
+   * Stops the actor and clears references.
+   * Safe to call multiple times (idempotent).
+   */
+  destroy(): void {
+    // Idempotent: safe to call multiple times
+    if (!this.isInitialized && !this.actor) {
+      return;
+    }
 
-		// Clean up event listeners
-		this.cleanupHandlers.forEach((cleanup) => cleanup());
-		this.cleanupHandlers = [];
+    // Clean up event listeners
+    this.cleanupHandlers.forEach((cleanup) => cleanup());
+    this.cleanupHandlers = [];
 
-		if (this.actor) {
-			this.actor.stop();
-			this.actor = null;
-		}
+    if (this.actor) {
+      this.actor.stop();
+      this.actor = null;
+    }
 
-		this.viewer = null;
-		this.scrollContainer = null;
-		this.isInitialized = false;
-	}
+    this.viewer = null;
+    this.scrollContainer = null;
+    this.isInitialized = false;
+  }
 }

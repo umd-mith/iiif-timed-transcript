@@ -1,25 +1,25 @@
 <script lang="ts">
-	import Root from '../../lib/player/Root.svelte';
-	import TestContextConsumer from './TestContextConsumer.svelte';
-	import type { PlayerContext } from '../../lib/player/context';
+  import Root from "../../lib/player/Root.svelte";
+  import TestContextConsumer from "./TestContextConsumer.svelte";
+  import type { PlayerContext } from "../../lib/player/context";
 
-	let {
-		manifestUrl,
-		canvasIndex: initialCanvasIndex = 0,
-		onResult
-	}: {
-		manifestUrl: string;
-		canvasIndex?: number;
-		onResult: (ctx: PlayerContext) => void;
-	} = $props();
+  let {
+    manifestUrl,
+    canvasIndex: initialCanvasIndex = 0,
+    onResult,
+  }: {
+    manifestUrl: string;
+    canvasIndex?: number;
+    onResult: (ctx: PlayerContext) => void;
+  } = $props();
 
-	let canvasIndex = $state(initialCanvasIndex);
+  let canvasIndex = $state(initialCanvasIndex);
 
-	export function setCanvasIndex(idx: number) {
-		canvasIndex = idx;
-	}
+  export function setCanvasIndex(idx: number) {
+    canvasIndex = idx;
+  }
 </script>
 
 <Root {manifestUrl} {canvasIndex}>
-	<TestContextConsumer {onResult} />
+  <TestContextConsumer {onResult} />
 </Root>

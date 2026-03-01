@@ -6,27 +6,27 @@
  * size and caching for performance.
  */
 
-import { fromCallback } from 'xstate';
+import { fromCallback } from "xstate";
 
 /**
  * Input configuration for the scrollObserver actor.
  */
 export interface ScrollObserverInput {
-	/** The container element to observe for scroll events */
-	scrollContainer: HTMLElement;
-	/** Total duration of the media in seconds */
-	duration: number;
+  /** The container element to observe for scroll events */
+  scrollContainer: HTMLElement;
+  /** Total duration of the media in seconds */
+  duration: number;
 }
 
 /**
  * Output event emitted by the scrollObserver actor.
  */
 export interface ScrollObserverOutput {
-	type: 'TRANSCRIPT_SCROLL';
-	/** Scroll progress as a value between 0 and 1 */
-	scrollProgress: number;
-	/** Mapped time in seconds based on scroll position */
-	mappedTime: number;
+  type: "TRANSCRIPT_SCROLL";
+  /** Scroll progress as a value between 0 and 1 */
+  scrollProgress: number;
+  /** Mapped time in seconds based on scroll position */
+  mappedTime: number;
 }
 
 /**
@@ -37,7 +37,7 @@ export interface ScrollObserverOutput {
  * @returns Throttle interval in milliseconds
  */
 function getAdaptiveThrottle(documentHeight: number): number {
-	return documentHeight > 10000 ? 100 : 50;
+  return documentHeight > 10000 ? 100 : 50;
 }
 
 /**
@@ -48,16 +48,16 @@ function getAdaptiveThrottle(documentHeight: number): number {
  * @returns Scroll progress clamped to [0, 1]
  */
 function calculateScrollProgress(scrollContainer: HTMLElement): number {
-	const { scrollTop, scrollHeight, clientHeight} = scrollContainer;
-	const maxScroll = scrollHeight - clientHeight;
+  const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+  const maxScroll = scrollHeight - clientHeight;
 
-	// Handle edge case where there's no scrollable content
-	if (maxScroll <= 0) return 0;
+  // Handle edge case where there's no scrollable content
+  if (maxScroll <= 0) return 0;
 
-	const progress = scrollTop / maxScroll;
+  const progress = scrollTop / maxScroll;
 
-	// Clamp to [0, 1] range
-	return Math.max(0, Math.min(1, progress));
+  // Clamp to [0, 1] range
+  return Math.max(0, Math.min(1, progress));
 }
 
 /**
@@ -69,89 +69,102 @@ function calculateScrollProgress(scrollContainer: HTMLElement): number {
  * @param cache - Map cache for storing computed values
  * @returns Mapped time in seconds
  */
-function mapScrollToTime(progress: number, duration: number, cache: Map<number, number>): number {
-	// Create cache key with 0.001 precision
-	const cacheKey = Math.round(progress * 1000);
+function mapScrollToTime(
+  progress: number,
+  duration: number,
+  cache: Map<number, number>,
+): number {
+  // Create cache key with 0.001 precision
+  const cacheKey = Math.round(progress * 1000);
 
-	// Check cache first
-	if (cache.has(cacheKey)) {
-		return cache.get(cacheKey)!;
-	}
+  // Check cache first
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey)!;
+  }
 
-	// Calculate time and cache it
-	const time = progress * duration;
-	cache.set(cacheKey, time);
+  // Calculate time and cache it
+  const time = progress * duration;
+  cache.set(cacheKey, time);
 
-	return time;
+  return time;
 }
 
 /**
  * scrollObserver actor logic.
  * Uses fromCallback to observe scroll events with adaptive throttling.
  */
-export const scrollObserver = fromCallback<ScrollObserverOutput, ScrollObserverInput>(
-	({ sendBack, input }) => {
-		const { scrollContainer, duration } = input;
+export const scrollObserver = fromCallback<
+  ScrollObserverOutput,
+  ScrollObserverInput
+>(({ sendBack, input }) => {
+  const { scrollContainer, duration } = input;
 
-		// Initialize cache for scroll-to-time mappings
-		const scrollTimeCache = new Map<number, number>();
+  // Initialize cache for scroll-to-time mappings
+  const scrollTimeCache = new Map<number, number>();
 
-		// Calculate adaptive throttle based on document size
-		const documentHeight = scrollContainer.scrollHeight;
-		const throttleMs = getAdaptiveThrottle(documentHeight);
+  // Calculate adaptive throttle based on document size
+  const documentHeight = scrollContainer.scrollHeight;
+  const throttleMs = getAdaptiveThrottle(documentHeight);
 
-		// Throttle state
-		let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
-		let lastScrollTime = 0;
-		let pendingScroll = false;
+  // Throttle state
+  let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
+  let lastScrollTime = 0;
+  let pendingScroll = false;
 
-		const handleScroll = () => {
-			const now = Date.now();
-			const timeSinceLastScroll = now - lastScrollTime;
+  const handleScroll = () => {
+    const now = Date.now();
+    const timeSinceLastScroll = now - lastScrollTime;
 
-			if (timeSinceLastScroll >= throttleMs) {
-				// Emit immediately (leading edge)
-				lastScrollTime = now;
-				pendingScroll = false;
+    if (timeSinceLastScroll >= throttleMs) {
+      // Emit immediately (leading edge)
+      lastScrollTime = now;
+      pendingScroll = false;
 
-				const scrollProgress = calculateScrollProgress(scrollContainer);
-				const mappedTime = mapScrollToTime(scrollProgress, duration, scrollTimeCache);
+      const scrollProgress = calculateScrollProgress(scrollContainer);
+      const mappedTime = mapScrollToTime(
+        scrollProgress,
+        duration,
+        scrollTimeCache,
+      );
 
-				sendBack({
-					type: 'TRANSCRIPT_SCROLL',
-					scrollProgress,
-					mappedTime
-				});
-			} else if (!pendingScroll) {
-				// Schedule trailing edge emission
-				pendingScroll = true;
-				const delay = throttleMs - timeSinceLastScroll;
+      sendBack({
+        type: "TRANSCRIPT_SCROLL",
+        scrollProgress,
+        mappedTime,
+      });
+    } else if (!pendingScroll) {
+      // Schedule trailing edge emission
+      pendingScroll = true;
+      const delay = throttleMs - timeSinceLastScroll;
 
-				throttleTimeout = setTimeout(() => {
-					lastScrollTime = Date.now();
-					pendingScroll = false;
+      throttleTimeout = setTimeout(() => {
+        lastScrollTime = Date.now();
+        pendingScroll = false;
 
-					const scrollProgress = calculateScrollProgress(scrollContainer);
-					const mappedTime = mapScrollToTime(scrollProgress, duration, scrollTimeCache);
+        const scrollProgress = calculateScrollProgress(scrollContainer);
+        const mappedTime = mapScrollToTime(
+          scrollProgress,
+          duration,
+          scrollTimeCache,
+        );
 
-					sendBack({
-						type: 'TRANSCRIPT_SCROLL',
-						scrollProgress,
-						mappedTime
-					});
-				}, delay);
-			}
-		};
+        sendBack({
+          type: "TRANSCRIPT_SCROLL",
+          scrollProgress,
+          mappedTime,
+        });
+      }, delay);
+    }
+  };
 
-		// Add scroll event listener
-		scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+  // Add scroll event listener
+  scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
 
-		// Cleanup function
-		return () => {
-			scrollContainer.removeEventListener('scroll', handleScroll);
-			if (throttleTimeout) {
-				clearTimeout(throttleTimeout);
-			}
-		};
-	}
-);
+  // Cleanup function
+  return () => {
+    scrollContainer.removeEventListener("scroll", handleScroll);
+    if (throttleTimeout) {
+      clearTimeout(throttleTimeout);
+    }
+  };
+});

@@ -178,7 +178,9 @@ const AnnotationSchema = z
     type: z.literal("Annotation"),
     motivation: z
       .union([z.string(), z.array(z.string())])
-      .describe('Annotation motivation (e.g., "painting" or ["commenting", "tagging"])'),
+      .describe(
+        'Annotation motivation (e.g., "painting" or ["commenting", "tagging"])',
+      ),
     body: AnnotationBodySchema.or(z.array(AnnotationBodySchema))
       .optional()
       .describe("Annotation body (single or array)"),
