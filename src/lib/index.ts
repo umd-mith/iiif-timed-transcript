@@ -33,8 +33,9 @@
  * ```
  */
 export { IIIFPlayer, getPlayerContext } from "./player";
-export type { PlayerContext, PlayerState, PlayerActions } from "./player";
+export type { PlayerContext, PlayerState, PlayerActions, MediaStrategy } from "./player";
 export type { TranscriptContext, TranscriptState, TranscriptActions } from "./player";
+export type { TrackDefinition } from "./player";
 
 // ============================================================================
 // IIIF Utilities (LDA-1964)
@@ -165,3 +166,14 @@ export { keyboardNav, type KeyboardNavOptions } from "./transcript/keyboardNav";
 // Paragraph merging utility
 export { mergeIntoParagraphs } from "./transcript/paragraphMerger";
 export type { MergedParagraph, MergeConfig } from "./transcript/paragraphMerger";
+
+// ============================================================================
+// Media Utilities
+// ============================================================================
+
+export {
+  isHlsUrl,
+  isHlsNativelySupported,
+  createHlsAdapter,
+} from "./media/hlsUtils";
+export type { HlsConstructor, HlsAdapter } from "./media/hlsUtils";

@@ -52,5 +52,6 @@ export const IIIFPlayer: Record<string, Component<any>> = {
 export { getPlayerContext } from './context';
 
 // Export types
-export type { PlayerContext, PlayerState, PlayerActions } from './context';
+export type { PlayerContext, PlayerState, PlayerActions, MediaStrategy } from './context';
 export type { TranscriptContext, TranscriptState, TranscriptActions } from './transcript-context';
+export type { TrackDefinition } from './Viewer.svelte';

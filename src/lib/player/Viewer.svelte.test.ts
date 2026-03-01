@@ -1,4 +1,4 @@
-import { describe, test, expect, afterEach } from 'vitest';
+import { describe, test, expect, vi, afterEach } from 'vitest';
 import { mount } from 'svelte';
 import { flushSync } from 'svelte';
 import Viewer from './Viewer.svelte';
@@ -206,6 +206,242 @@ describe('Viewer', () => {
 
 		const audioElement = target.querySelector('audio') as HTMLAudioElement;
 		expect(audioElement?.preload).toBe('metadata');
+	});
+
+	test('does not set src attribute when mediaStrategy is hls-js', () => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const mockAdapter = {
+			attach: vi.fn(),
+			detach: vi.fn(),
+			isSupported: () => true
+		};
+
+		const mockContext = createMockPlayerContext({
+			mediaUrl: 'https://example.com/stream/master.m3u8',
+			mediaType: 'video',
+			mediaStrategy: 'hls-js',
+			hlsAdapter: mockAdapter
+		});
+
+		mount(TestContextProvider, {
+			target,
+			props: {
+				context: mockContext,
+				children: (anchor: any) => {
+					mount(Viewer, { target, anchor });
+				}
+			}
+		});
+		flushSync();
+
+		const videoElement = target.querySelector('video') as HTMLVideoElement;
+		expect(videoElement).not.toBeNull();
+		// When hls-js strategy, the src should NOT be set directly — adapter manages the source
+		expect(videoElement?.getAttribute('src')).toBeNull();
+	});
+
+	test('sets src attribute when mediaStrategy is native', () => {
+		target = document.createElement('div');
+		document.body.appendChild(target);
+
+		const mockContext = createMockPlayerContext({
+			mediaUrl: 'https://example.com/video.mp4',
+			mediaType: 'video',
+			mediaStrategy: 'native'
+		});
+
+		mount(TestContextProvider, {
+			target,
+			props: {
+				context: mockContext,
+				children: (anchor: any) => {
+					mount(Viewer, { target, anchor });
+				}
+			}
+		});
+		flushSync();
+
+		const videoElement = target.querySelector('video') as HTMLVideoElement;
+		expect(videoElement?.src).toBe('https://example.com/video.mp4');
+	});
+
+	describe('HLS adapter wiring', () => {
+		test('attaches adapter when mediaStrategy is hls-js', async () => {
+			target = document.createElement('div');
+			document.body.appendChild(target);
+
+			const mockAdapter = {
+				attach: vi.fn(),
+				detach: vi.fn(),
+				isSupported: () => true
+			};
+
+			const mockContext = createMockPlayerContext({
+				mediaUrl: 'https://example.com/stream/master.m3u8',
+				mediaType: 'video',
+				mediaStrategy: 'hls-js',
+				hlsAdapter: mockAdapter
+			});
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: mockContext,
+					children: (anchor: any) => {
+						mount(Viewer, { target, anchor });
+					}
+				}
+			});
+			flushSync();
+
+			await vi.waitFor(() => {
+				expect(mockAdapter.attach).toHaveBeenCalledWith(
+					expect.any(HTMLVideoElement),
+					'https://example.com/stream/master.m3u8',
+					expect.objectContaining({ onError: expect.any(Function) })
+				);
+			});
+		});
+
+		test('does not attach adapter when mediaStrategy is native', () => {
+			target = document.createElement('div');
+			document.body.appendChild(target);
+
+			const mockContext = createMockPlayerContext({
+				mediaUrl: 'https://example.com/video.mp4',
+				mediaType: 'video',
+				mediaStrategy: 'native'
+			});
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: mockContext,
+					children: (anchor: any) => {
+						mount(Viewer, { target, anchor });
+					}
+				}
+			});
+			flushSync();
+
+			// No adapter to attach — nothing to assert beyond no errors
+			const videoElement = target.querySelector('video') as HTMLVideoElement;
+			expect(videoElement?.src).toBe('https://example.com/video.mp4');
+		});
+
+		// Note: unmount/detach behavior is tested implicitly through the $effect cleanup.
+		// Explicitly testing unmount via removeChild is unreliable in Svelte's test environment.
+	});
+
+	describe('caption tracks', () => {
+		test('renders track elements inside video when tracks prop is provided', () => {
+			target = document.createElement('div');
+			document.body.appendChild(target);
+
+			const mockContext = createMockPlayerContext({
+				mediaUrl: 'https://example.com/video.mp4',
+				mediaType: 'video'
+			});
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: mockContext,
+					children: (anchor: any) => {
+						mount(Viewer, {
+							target,
+							anchor,
+							props: {
+								tracks: [
+									{ src: '/captions-en.vtt', kind: 'captions', srclang: 'en', label: 'English' },
+									{ src: '/subs-es.vtt', kind: 'subtitles', srclang: 'es', label: 'Spanish' }
+								]
+							}
+						});
+					}
+				}
+			});
+			flushSync();
+
+			const tracks = target.querySelectorAll('video track');
+			expect(tracks).toHaveLength(2);
+
+			const firstTrack = tracks[0] as HTMLTrackElement;
+			expect(firstTrack.src).toContain('/captions-en.vtt');
+			expect(firstTrack.kind).toBe('captions');
+			expect(firstTrack.srclang).toBe('en');
+			expect(firstTrack.label).toBe('English');
+
+			const secondTrack = tracks[1] as HTMLTrackElement;
+			expect(secondTrack.kind).toBe('subtitles');
+			expect(secondTrack.srclang).toBe('es');
+		});
+
+		test('marks first captions track as default', () => {
+			target = document.createElement('div');
+			document.body.appendChild(target);
+
+			const mockContext = createMockPlayerContext({
+				mediaUrl: 'https://example.com/video.mp4',
+				mediaType: 'video'
+			});
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: mockContext,
+					children: (anchor: any) => {
+						mount(Viewer, {
+							target,
+							anchor,
+							props: {
+								tracks: [
+									{ src: '/captions.vtt', kind: 'captions', srclang: 'en', label: 'English' }
+								]
+							}
+						});
+					}
+				}
+			});
+			flushSync();
+
+			const track = target.querySelector('video track') as HTMLTrackElement;
+			expect(track.default).toBe(true);
+		});
+
+		test('does not render tracks inside audio elements', () => {
+			target = document.createElement('div');
+			document.body.appendChild(target);
+
+			const mockContext = createMockPlayerContext({
+				mediaUrl: 'https://example.com/audio.mp3',
+				mediaType: 'audio'
+			});
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: mockContext,
+					children: (anchor: any) => {
+						mount(Viewer, {
+							target,
+							anchor,
+							props: {
+								tracks: [
+									{ src: '/captions.vtt', kind: 'captions', srclang: 'en', label: 'English' }
+								]
+							}
+						});
+					}
+				}
+			});
+			flushSync();
+
+			const tracks = target.querySelectorAll('track');
+			expect(tracks).toHaveLength(0);
+		});
 	});
 
 	test('sets preload on video elements too', () => {

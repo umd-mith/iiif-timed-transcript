@@ -1,6 +1,6 @@
 {
   "name": "@umd-mith/svelte-iiif-transcript-player",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Svelte 5 component library for synchronized IIIF media playback with transcript navigation",
   "keywords": [
     "svelte",
@@ -34,8 +34,14 @@
     "LICENSE"
   ],
   "peerDependencies": {
+    "hls.js": "^1.5.0",
     "svelte": "^5.0.0",
     "xstate": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "hls.js": {
+      "optional": true
+    }
   },
   "scripts": {
     "build": "svelte-kit sync && svelte-package && publint",
@@ -63,6 +69,7 @@
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.15.0",
+    "hls.js": "^1.6.15",
     "husky": "^9.1.7",
     "media-captions": "^0.0.18",
     "playwright": "^1.58.2",

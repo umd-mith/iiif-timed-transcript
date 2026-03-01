@@ -43,6 +43,8 @@ describe('getPlayerContext', () => {
 			mediaElement: null,
 			mediaUrl: 'https://example.com/test.mp3',
 			mediaType: 'audio',
+			mediaStrategy: 'native',
+			hlsAdapter: null,
 			chapters: [],
 			activeChapterId: null,
 			actions: {
@@ -103,6 +105,8 @@ describe('PlayerContext chapter types', () => {
 			mediaElement: null,
 			mediaUrl: 'https://example.com/audio.mp3',
 			mediaType: 'audio',
+			mediaStrategy: 'native',
+			hlsAdapter: null,
 			chapters,
 			activeChapterId: 'ch1',
 			actions: {

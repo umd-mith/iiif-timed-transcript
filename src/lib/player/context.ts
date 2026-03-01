@@ -1,5 +1,6 @@
 import { getContext as svelteGetContext } from 'svelte';
 import type { Chapter } from '@umd-mith/iiif-media-parsers';
+import type { HlsAdapter } from '../media/hlsUtils';
 
 export interface PlayerState {
 	isPlaying: boolean;
@@ -20,11 +21,20 @@ export interface PlayerActions {
 	seekToChapter: (chapter: Chapter) => void;
 }
 
+/**
+ * How Root decided to handle media source attachment.
+ * - 'native': use <audio/video src="..."> (progressive download or native HLS in Safari)
+ * - 'hls-js': hls.js manages the source via the hlsAdapter in context
+ */
+export type MediaStrategy = 'native' | 'hls-js';
+
 export interface PlayerContext {
 	state: PlayerState;
 	mediaElement: HTMLMediaElement | null;
 	mediaUrl: string;
 	mediaType: 'audio' | 'video';
+	readonly mediaStrategy: MediaStrategy;
+	readonly hlsAdapter: HlsAdapter | null;
 	readonly chapters: Chapter[];
 	readonly activeChapterId: string | null;
 	actions: PlayerActions;
