@@ -69,10 +69,13 @@
 
 	// React to prop-driven canvas changes after manifest is loaded.
 	// This effect drives external side effects (media teardown/setup), not state derivation.
+	// Both canvasIndex and manifestData are tracked so the effect re-runs when either changes —
+	// this ensures prop changes that arrive before manifest loads are not dropped.
 	$effect(() => {
 		const propIndex = canvasIndex;
+		const manifest = manifestData;
 		untrack(() => {
-			if (manifestData && propIndex !== activeCanvasIndex) {
+			if (manifest && propIndex !== activeCanvasIndex) {
 				performCanvasSwitch(propIndex);
 			}
 		});

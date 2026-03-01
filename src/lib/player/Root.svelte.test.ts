@@ -1,8 +1,8 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount } from 'svelte';
-import { flushSync } from 'svelte';
+import { mount, flushSync } from 'svelte';
 import Root from './Root.svelte';
 import TestContextConsumer from '../../test/player/TestContextConsumer.svelte';
+import TestRootWrapper from '../../test/player/TestRootWrapper.svelte';
 import type { PlayerContext } from './context';
 import {
 	MANIFEST_WITH_CHAPTERS,
@@ -631,6 +631,47 @@ describe('Root component', () => {
 			// Should still be on canvas 0
 			expect(capturedCtx!.canvasIndex).toBe(0);
 			expect(capturedCtx!.mediaUrl).toBe('https://example.com/audio1.mp3');
+		});
+
+		test('prop canvasIndex change before manifest loads is honored', async () => {
+			// Create a deferred promise so we control when fetch resolves
+			let resolveFetch!: (value: any) => void;
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mockReturnValue(
+				new Promise((resolve) => {
+					resolveFetch = resolve;
+				})
+			);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			// Mount wrapper with canvasIndex=0
+			const wrapper = mount(TestRootWrapper, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/multi-canvas-prop-change.json',
+					canvasIndex: 0,
+					onResult: (ctx: PlayerContext) => {
+						capturedCtx = ctx;
+					}
+				}
+			});
+
+			// Change canvasIndex prop to 1 BEFORE manifest resolves
+			wrapper.setCanvasIndex(1);
+			flushSync();
+
+			// Now resolve the fetch
+			resolveFetch({
+				ok: true,
+				json: async () => MANIFEST_MULTI_CANVAS
+			});
+
+			// Canvas 1 should load (video2.mp4), not canvas 0 (audio1.mp3)
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.canvasIndex).toBe(1);
+				expect(capturedCtx!.mediaUrl).toBe('https://example.com/video2.mp4');
+			});
 		});
 
 		test('single-canvas manifest has canvasCount=1 and empty canvases for CanvasNav', async () => {
