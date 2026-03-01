@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { setContext, onMount } from 'svelte';
 	import { PLAYER_CONTEXT_KEY, type PlayerState } from './context';
-	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas } from '../iiif/helpers';
+	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas, getSupplementaryVTTTracks } from '../iiif/helpers';
 	import { ManifestSchema, type ManifestData } from '../iiif/validators';
 	import { parseRanges } from '@umd-mith/iiif-media-parsers';
 	import { isHlsUrl, isHlsNativelySupported, createHlsAdapter, type HlsConstructor } from '../media/hlsUtils';
 	import type { MediaStrategy } from './context';
 	import type { Chapter } from '@umd-mith/iiif-media-parsers';
 	import type { Annotation } from '../sync/types';
+	import type { TrackDefinition } from './Viewer.svelte';
 	import { manifestCache } from './manifestCache';
 
 	// Props
@@ -48,6 +49,7 @@
 	let mediaStrategy = $state<MediaStrategy>('native');
 	let hlsAdapter = $state<ReturnType<typeof createHlsAdapter> | null>(null);
 	let chapters = $state<Chapter[]>([]);
+	let tracks = $state<TrackDefinition[]>([]);
 
 	let activeChapterId = $derived.by(() => {
 		const time = playerState.currentTime;
@@ -113,6 +115,7 @@
 		get hlsAdapter() { return hlsAdapter; },
 		get chapters() { return chapters; },
 		get activeChapterId() { return activeChapterId; },
+		get tracks() { return tracks; },
 		actions
 	});
 
@@ -192,6 +195,9 @@
 			// Parse chapter structures (Ranges) from the raw manifest
 			// (validManifest is Zod-parsed and strips `structures`)
 			chapters = parseRanges(rawManifest as any);
+
+			// Discover VTT caption tracks from canvas.annotations (recipe 0219)
+			tracks = getSupplementaryVTTTracks(canvas);
 		} catch (error) {
 			// Remove failed fetches from cache so retries can work
 			manifestCache.delete(manifestUrl);

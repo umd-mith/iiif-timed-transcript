@@ -11,6 +11,7 @@ import {
   getSupplementaryAnnotations,
   getSupplementaryTextualBodies,
   buildTranscriptAnnotations,
+  getSupplementaryVTTTracks,
 } from "./helpers";
 import type { CanvasData } from "./validators";
 
@@ -1171,5 +1172,210 @@ describe("buildTranscriptAnnotations", () => {
     // All IDs must be unique
     const ids = result.map((a) => a.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("getSupplementaryVTTTracks", () => {
+  it("should extract VTT track from supplementing annotation with format text/vtt", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [lakelandVttAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      src: "https://example.org/transcript.vtt",
+      kind: "captions",
+      srclang: "en",
+      label: "Unknown",
+    });
+  });
+
+  it("should use language from body when available", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/vtt-fr",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              id: "https://example.org/captions-fr.vtt",
+              type: "Text",
+              format: "text/vtt",
+              language: "fr",
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.srclang).toBe("fr");
+    expect(result[0]!.label).toBe("fr");
+  });
+
+  it("should use label from body when available", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/vtt-labeled",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              id: "https://example.org/captions.vtt",
+              type: "Text",
+              format: "text/vtt",
+              language: "en",
+              label: { en: ["English Captions"] },
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.label).toBe("English Captions");
+    expect(result[0]!.srclang).toBe("en");
+  });
+
+  it("should detect VTT by .vtt file extension when format is absent", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/vtt-ext",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              id: "https://example.org/captions.vtt",
+              type: "Text",
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.src).toBe("https://example.org/captions.vtt");
+  });
+
+  it("should return empty array when no VTT annotations exist", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotateAnnotation],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toEqual([]);
+  });
+
+  it("should return empty array when canvas has no annotations", () => {
+    const canvas: CanvasData = {
+      id: "https://example.org/canvas/1",
+      type: "Canvas",
+      duration: 300,
+      items: [],
+    } as CanvasData;
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toEqual([]);
+  });
+
+  it("should extract multiple VTT tracks from different annotations", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/vtt-en",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              id: "https://example.org/captions-en.vtt",
+              type: "Text",
+              format: "text/vtt",
+              language: "en",
+            },
+            target: "https://example.org/canvas/1",
+          },
+          {
+            id: "https://example.org/annotation/vtt-es",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              id: "https://example.org/captions-es.vtt",
+              type: "Text",
+              format: "text/vtt",
+              language: "es",
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]!.srclang).toBe("en");
+    expect(result[1]!.srclang).toBe("es");
+  });
+
+  it("should handle body in array form", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/vtt-array",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: [
+              {
+                id: "https://example.org/captions.vtt",
+                type: "Text",
+                format: "text/vtt",
+                language: "en",
+              },
+            ],
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.src).toBe("https://example.org/captions.vtt");
   });
 });

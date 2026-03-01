@@ -26,6 +26,7 @@ function createMockPlayerContext(overrides: Partial<PlayerContext> = {}): Player
 			{ id: 'ch2', label: 'Main Discussion', startTime: 30, endTime: 90 }
 		],
 		activeChapterId: null,
+		tracks: [],
 		actions: {
 			play: async () => {},
 			pause: () => {},

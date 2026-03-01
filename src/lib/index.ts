@@ -115,6 +115,7 @@ export {
   getSupplementaryAnnotations,
   getSupplementaryTextualBodies,
   buildTranscriptAnnotations,
+  getSupplementaryVTTTracks,
   type SupplementaryTextualContent,
 } from "./iiif/helpers";
 

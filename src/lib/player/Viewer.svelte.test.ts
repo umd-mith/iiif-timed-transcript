@@ -444,6 +444,105 @@ describe('Viewer', () => {
 		});
 	});
 
+	describe('auto-discovered caption tracks', () => {
+		test('renders tracks from context when no tracks prop provided', () => {
+			target = document.createElement('div');
+			document.body.appendChild(target);
+
+			const mockContext = createMockPlayerContext({
+				mediaUrl: 'https://example.com/video.mp4',
+				mediaType: 'video',
+				tracks: [
+					{ src: 'https://example.com/captions-en.vtt', kind: 'captions', srclang: 'en', label: 'English' }
+				]
+			});
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: mockContext,
+					children: (anchor: any) => {
+						mount(Viewer, { target, anchor });
+					}
+				}
+			});
+			flushSync();
+
+			const tracks = target.querySelectorAll('video track');
+			expect(tracks).toHaveLength(1);
+			const track = tracks[0] as HTMLTrackElement;
+			expect(track.src).toContain('captions-en.vtt');
+			expect(track.kind).toBe('captions');
+			expect(track.srclang).toBe('en');
+		});
+
+		test('explicit tracks prop overrides context tracks', () => {
+			target = document.createElement('div');
+			document.body.appendChild(target);
+
+			const mockContext = createMockPlayerContext({
+				mediaUrl: 'https://example.com/video.mp4',
+				mediaType: 'video',
+				tracks: [
+					{ src: 'https://example.com/auto-en.vtt', kind: 'captions', srclang: 'en', label: 'Auto English' }
+				]
+			});
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: mockContext,
+					children: (anchor: any) => {
+						mount(Viewer, {
+							target,
+							anchor,
+							props: {
+								tracks: [
+									{ src: '/custom.vtt', kind: 'subtitles', srclang: 'fr', label: 'French' }
+								]
+							}
+						});
+					}
+				}
+			});
+			flushSync();
+
+			const tracks = target.querySelectorAll('video track');
+			expect(tracks).toHaveLength(1);
+			const track = tracks[0] as HTMLTrackElement;
+			expect(track.src).toContain('/custom.vtt');
+			expect(track.kind).toBe('subtitles');
+			expect(track.srclang).toBe('fr');
+		});
+
+		test('renders no tracks for audio even with context tracks', () => {
+			target = document.createElement('div');
+			document.body.appendChild(target);
+
+			const mockContext = createMockPlayerContext({
+				mediaUrl: 'https://example.com/audio.mp3',
+				mediaType: 'audio',
+				tracks: [
+					{ src: 'https://example.com/captions.vtt', kind: 'captions', srclang: 'en', label: 'English' }
+				]
+			});
+
+			mount(TestContextProvider, {
+				target,
+				props: {
+					context: mockContext,
+					children: (anchor: any) => {
+						mount(Viewer, { target, anchor });
+					}
+				}
+			});
+			flushSync();
+
+			const tracks = target.querySelectorAll('track');
+			expect(tracks).toHaveLength(0);
+		});
+	});
+
 	test('sets preload on video elements too', () => {
 		target = document.createElement('div');
 		document.body.appendChild(target);
