@@ -29,6 +29,9 @@ export function createMockPlayerContext(overrides: MockPlayerOverrides = {}): Pl
 		chapters: [],
 		activeChapterId: null,
 		tracks: [],
+		canvasIndex: 0,
+		canvasCount: 1,
+		canvases: [],
 		actions: {
 			play: vi.fn(),
 			pause: vi.fn(),
@@ -36,6 +39,7 @@ export function createMockPlayerContext(overrides: MockPlayerOverrides = {}): Pl
 			setPlaybackRate: vi.fn(),
 			retry: vi.fn(),
 			seekToChapter: vi.fn(),
+			switchCanvas: vi.fn(),
 			...actionsOverrides
 		},
 		...rest

@@ -12,13 +12,15 @@ import type {
 	PlayerState,
 	PlayerActions,
 	MediaStrategy,
-	TrackDefinition
+	TrackDefinition,
+	CanvasInfo
 } from './context';
 import type { HlsAdapter } from '../media/hlsUtils';
 import type { Chapter } from '@umd-mith/iiif-media-parsers';
 
 export interface PlayerStateManagerOptions {
 	onRetry?: () => Promise<void>;
+	onSwitchCanvas?: (index: number) => void;
 }
 
 export class PlayerStateManager implements PlayerContext {
@@ -41,6 +43,14 @@ export class PlayerStateManager implements PlayerContext {
 	hlsAdapter = $state.raw<HlsAdapter | null>(null);
 	chapters = $state<Chapter[]>([]);
 	tracks = $state<TrackDefinition[]>([]);
+
+	// Canvas navigation
+	canvasIndex = $state(0);
+	canvases = $state<CanvasInfo[]>([]);
+
+	get canvasCount(): number {
+		return this.canvases.length;
+	}
 
 	// Derived
 	readonly activeChapterId: string | null = $derived.by(() => {
@@ -89,12 +99,17 @@ export class PlayerStateManager implements PlayerContext {
 		},
 		seekToChapter: (chapter: Chapter) => {
 			this.actions.seekTo(chapter.startTime);
+		},
+		switchCanvas: (index: number) => {
+			this.onSwitchCanvas?.(index);
 		}
 	};
 
 	private onRetry?: () => Promise<void>;
+	private onSwitchCanvas?: (index: number) => void;
 
 	constructor(options?: PlayerStateManagerOptions) {
 		this.onRetry = options?.onRetry;
+		this.onSwitchCanvas = options?.onSwitchCanvas;
 	}
 }

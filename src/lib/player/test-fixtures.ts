@@ -187,6 +187,126 @@ export const MANIFEST_WITH_VTT_CAPTIONS = {
 };
 
 /**
+ * Multi-canvas manifest with two canvases: audio (90s) and video (120s).
+ * Structures reference different canvases for chapter filtering tests.
+ * Canvas 2 has VTT annotations for track discovery per canvas.
+ */
+export const MANIFEST_MULTI_CANVAS = {
+  '@context': 'http://iiif.io/api/presentation/3/context.json',
+  id: 'https://example.com/manifest-multi',
+  type: 'Manifest',
+  label: { en: ['Multi-Canvas Manifest'] },
+  items: [
+    {
+      id: 'https://example.com/canvas/1',
+      type: 'Canvas',
+      label: { en: ['Interview Part 1'] },
+      duration: 90,
+      items: [
+        {
+          id: 'https://example.com/canvas/1/page/1',
+          type: 'AnnotationPage',
+          items: [
+            {
+              id: 'https://example.com/canvas/1/page/1/annotation/1',
+              type: 'Annotation',
+              motivation: 'painting',
+              body: {
+                id: 'https://example.com/audio1.mp3',
+                type: 'Sound',
+                format: 'audio/mp3'
+              },
+              target: 'https://example.com/canvas/1'
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'https://example.com/canvas/2',
+      type: 'Canvas',
+      label: { en: ['Interview Part 2'] },
+      duration: 120,
+      width: 1920,
+      height: 1080,
+      items: [
+        {
+          id: 'https://example.com/canvas/2/page/1',
+          type: 'AnnotationPage',
+          items: [
+            {
+              id: 'https://example.com/canvas/2/page/1/annotation/1',
+              type: 'Annotation',
+              motivation: 'painting',
+              body: {
+                id: 'https://example.com/video2.mp4',
+                type: 'Video',
+                format: 'video/mp4'
+              },
+              target: 'https://example.com/canvas/2'
+            }
+          ]
+        }
+      ],
+      annotations: [
+        {
+          id: 'https://example.com/canvas/2/annotations/1',
+          type: 'AnnotationPage',
+          items: [
+            {
+              id: 'https://example.com/canvas/2/annotations/1/annotation/1',
+              type: 'Annotation',
+              motivation: 'supplementing',
+              body: {
+                id: 'https://example.com/captions-en.vtt',
+                type: 'Text',
+                format: 'text/vtt',
+                language: 'en'
+              },
+              target: 'https://example.com/canvas/2'
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  structures: [
+    {
+      id: 'https://example.com/range/1',
+      type: 'Range',
+      label: { en: ['Introduction'] },
+      items: [
+        { id: 'https://example.com/canvas/1#t=0,30', type: 'Canvas' }
+      ]
+    },
+    {
+      id: 'https://example.com/range/2',
+      type: 'Range',
+      label: { en: ['Early Life'] },
+      items: [
+        { id: 'https://example.com/canvas/1#t=30,90', type: 'Canvas' }
+      ]
+    },
+    {
+      id: 'https://example.com/range/3',
+      type: 'Range',
+      label: { en: ['Career Beginnings'] },
+      items: [
+        { id: 'https://example.com/canvas/2#t=0,60', type: 'Canvas' }
+      ]
+    },
+    {
+      id: 'https://example.com/range/4',
+      type: 'Range',
+      label: { en: ['Later Years'] },
+      items: [
+        { id: 'https://example.com/canvas/2#t=60,120', type: 'Canvas' }
+      ]
+    }
+  ]
+};
+
+/**
  * Helper: mock fetch to return a manifest.
  */
 export function mockFetchManifest(manifest: Record<string, unknown>) {
