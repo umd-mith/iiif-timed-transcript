@@ -1,43 +1,13 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { mount } from 'svelte';
 import { flushSync } from 'svelte';
 import TestContextProvider from '../../test/player/TestContextProvider.svelte';
-import type { PlayerContext } from './context';
-import type { Chapter } from '@umd-mith/iiif-media-parsers';
+import { createMockPlayerContext } from '../../test/player/test-utils';
 
-function createMockPlayerContext(overrides: Partial<PlayerContext> = {}): PlayerContext {
-	return {
-		state: {
-			isPlaying: false,
-			isBuffering: false,
-			currentTime: 0,
-			duration: 90,
-			playbackRate: 1,
-			isReady: true,
-			error: null
-		},
-		mediaElement: null,
-		mediaUrl: 'https://example.com/audio.mp3',
-		mediaType: 'audio' as const,
-		mediaStrategy: 'native' as const,
-		hlsAdapter: null,
-		chapters: [
-			{ id: 'ch1', label: 'Introduction', startTime: 0, endTime: 30 },
-			{ id: 'ch2', label: 'Main Discussion', startTime: 30, endTime: 90 }
-		],
-		activeChapterId: null,
-		tracks: [],
-		actions: {
-			play: async () => {},
-			pause: () => {},
-			seekTo: vi.fn(),
-			setPlaybackRate: () => {},
-			retry: async () => {},
-			seekToChapter: vi.fn()
-		},
-		...overrides
-	};
-}
+const testChapters = [
+	{ id: 'ch1', label: 'Introduction', startTime: 0, endTime: 30 },
+	{ id: 'ch2', label: 'Main Discussion', startTime: 30, endTime: 90 }
+];
 
 describe('Chapters', () => {
 	let target: HTMLElement;
@@ -55,7 +25,7 @@ describe('Chapters', () => {
 
 	test('renders chapter buttons from context', async () => {
 		const { default: Chapters } = await import('./Chapters.svelte');
-		const ctx = createMockPlayerContext();
+		const ctx = createMockPlayerContext({ chapters: testChapters });
 
 		mount(TestContextProvider, {
 			target,
@@ -76,7 +46,7 @@ describe('Chapters', () => {
 
 	test('displays chapter label and time range', async () => {
 		const { default: Chapters } = await import('./Chapters.svelte');
-		const ctx = createMockPlayerContext();
+		const ctx = createMockPlayerContext({ chapters: testChapters });
 
 		mount(TestContextProvider, {
 			target,
@@ -102,7 +72,7 @@ describe('Chapters', () => {
 
 	test('marks active chapter with data-state="active"', async () => {
 		const { default: Chapters } = await import('./Chapters.svelte');
-		const ctx = createMockPlayerContext({ activeChapterId: 'ch1' });
+		const ctx = createMockPlayerContext({ chapters: testChapters, activeChapterId: 'ch1' });
 
 		mount(TestContextProvider, {
 			target,
@@ -125,7 +95,7 @@ describe('Chapters', () => {
 
 	test('clicking chapter calls seekToChapter', async () => {
 		const { default: Chapters } = await import('./Chapters.svelte');
-		const ctx = createMockPlayerContext();
+		const ctx = createMockPlayerContext({ chapters: testChapters });
 
 		mount(TestContextProvider, {
 			target,
