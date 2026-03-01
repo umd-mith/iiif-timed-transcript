@@ -1,7 +1,13 @@
 import { getContext as svelteGetContext } from 'svelte';
 import type { Chapter } from '@umd-mith/iiif-media-parsers';
 import type { HlsAdapter } from '../media/hlsUtils';
-import type { TrackDefinition } from './Viewer.svelte';
+
+export interface TrackDefinition {
+	src: string;
+	kind: 'captions' | 'subtitles' | 'descriptions' | 'chapters' | 'metadata';
+	srclang: string;
+	label: string;
+}
 
 export interface CanvasInfo {
 	index: number;

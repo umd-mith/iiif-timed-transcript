@@ -1,12 +1,5 @@
 <script lang="ts">
-	import { getPlayerContext } from './context';
-
-	export interface TrackDefinition {
-		src: string;
-		kind: 'captions' | 'subtitles' | 'descriptions' | 'chapters' | 'metadata';
-		srclang: string;
-		label: string;
-	}
+	import { getPlayerContext, type TrackDefinition } from './context';
 
 	// Props
 	let {
