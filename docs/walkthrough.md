@@ -1,6 +1,7 @@
 # How svelte-iiif-transcript-player Works
 
-*2026-02-26T16:40:25Z by Showboat 0.6.1*
+_2026-02-26T16:40:25Z by Showboat 0.6.1_
+
 <!-- showboat-id: 8d54deca-c463-47ee-b386-1bc94d04da95 -->
 
 ## What this library does
@@ -107,12 +108,12 @@ No test helpers in the package — only production code. Test fixtures live in `
 
 Three layers are visible:
 
-| Layer | Purpose |
-|-------|---------|
-| `iiif/` | IIIF manifest fetching, caching, validation — no UI |
-| `sync/` | XState-based sync engine: time↔scroll mapping, scroll observers, video controllers |
-| `player/` | Svelte 5 compound components that wire iiif + sync together |
-| `transcript/` | Lower-level transcript UI: `Panel.svelte`, `Search.svelte`, `Segment.svelte` |
+| Layer         | Purpose                                                                            |
+| ------------- | ---------------------------------------------------------------------------------- |
+| `iiif/`       | IIIF manifest fetching, caching, validation — no UI                                |
+| `sync/`       | XState-based sync engine: time↔scroll mapping, scroll observers, video controllers |
+| `player/`     | Svelte 5 compound components that wire iiif + sync together                        |
+| `transcript/` | Lower-level transcript UI: `Panel.svelte`, `Search.svelte`, `Segment.svelte`       |
 
 ## The two entry points
 
@@ -122,7 +123,7 @@ The library has a top-level `index.ts` and a `player/index.ts`. Let's see what e
 cat src/lib/index.ts
 ```
 
-```output
+````output
 // Public API — exports added as components are extracted in LDA-1964 through LDA-1968
 // Components from LDA-1965, LDA-1966 removed in LDA-1983 (replaced by IIIFPlayer namespace)
 
@@ -283,7 +284,7 @@ export { keyboardNav, type KeyboardNavOptions } from "./transcript/keyboardNav";
 // Paragraph merging utility
 export { mergeIntoParagraphs } from "./transcript/paragraphMerger";
 export type { MergedParagraph, MergeConfig } from "./transcript/paragraphMerger";
-```
+````
 
 **Rough edge #3: The export surface is large.** This single package exports IIIF validators/schemas, parsing utilities, cache infrastructure, sync engine internals, keyboard nav, paragraph merging, and the UI components. A consumer who just wants "play audio with transcript" has to navigate past Zod schemas, XState types, and cache config. The compound components are the main attraction; everything else is "advanced use."
 
@@ -428,7 +429,7 @@ Here's the minimal Svelte 5 code to get a working player with transcript:
 
 ```svelte
 <script>
-  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+  import { IIIFPlayer } from "@umd-mith/svelte-iiif-transcript-player";
 
   // Annotations must be provided by the consumer — the library doesn't parse VTT.
   // Each annotation needs { id, startTime, endTime, text }.
@@ -657,10 +658,10 @@ However, **the `overflow-hidden` conflict we found IS a real bug** that would pr
 
 ## Summary of remaining rough edges
 
-| # | Issue | Severity | Notes |
-|---|-------|----------|-------|
-| 3 | Large export surface for a "player component" library | Design discussion | Consider splitting IIIF utils into a separate package |
-| 4 | No VTT parser included — annotations are BYO | Design discussion | Should leverage `@umd-mith/iiif-media-parsers` |
+| #   | Issue                                                 | Severity          | Notes                                                 |
+| --- | ----------------------------------------------------- | ----------------- | ----------------------------------------------------- |
+| 3   | Large export surface for a "player component" library | Design discussion | Consider splitting IIIF utils into a separate package |
+| 4   | No VTT parser included — annotations are BYO          | Design discussion | Should leverage `@umd-mith/iiif-media-parsers`        |
 
 ```bash
 cd docs && pnpm run dev --port 4322 &>/dev/null & sleep 3 && echo 'Dev server running' && curl -s -o /dev/null -w '%{http_code}' http://localhost:4322/svelte-iiif-transcript-player && echo ' — page loads OK'
@@ -675,8 +676,7 @@ Dev server running
 
 This walkthrough found two remaining rough edges worth discussing:
 
-| # | Issue | Severity | Notes |
-|---|-------|----------|-------|
-| 3 | Large export surface for a "player component" library | Design discussion | Consider splitting IIIF utils into a separate package |
-| 4 | No VTT parser included — annotations are BYO | Design discussion | Should leverage `@umd-mith/iiif-media-parsers` |
-
+| #   | Issue                                                 | Severity          | Notes                                                 |
+| --- | ----------------------------------------------------- | ----------------- | ----------------------------------------------------- |
+| 3   | Large export surface for a "player component" library | Design discussion | Consider splitting IIIF utils into a separate package |
+| 4   | No VTT parser included — annotations are BYO          | Design discussion | Should leverage `@umd-mith/iiif-media-parsers`        |

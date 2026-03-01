@@ -25,21 +25,25 @@ Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works 
 ## Test Results: Build & SSR Phase ✅
 
 ### ✅ Installation
+
 - Library installed successfully via `pnpm add ../`
 - All peer dependencies resolved (Svelte 5, XState 5)
 - No dependency conflicts
 
 ### ✅ Astro Build Configuration
+
 - `@astrojs/svelte` integration added successfully
 - No build errors or warnings
 - Dev server starts without errors
 
 ### ✅ Component Import
+
 - All components import correctly from `@umd-mith/svelte-iiif-transcript-player`
 - TypeScript types available and working
 - No module resolution issues
 
 ### ✅ SSR Rendering
+
 - Page renders successfully (HTTP 200)
 - Astro island hydration markup present (`<astro-island client="load">`)
 - Props serialized correctly in island attrs
@@ -48,6 +52,7 @@ Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works 
   - "Loading transcript..."
 
 ### ✅ CSS Loading
+
 - All component styles loaded via module scripts
 - Svelte's scoped CSS classes applied correctly
 - No style conflicts or missing styles in SSR output
@@ -59,18 +64,21 @@ Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works 
 ### 🔍 Requires Browser Testing
 
 #### 1. IIIF Manifest Loading
+
 - [ ] Manifest fetches successfully
 - [ ] Video element renders with correct dimensions
 - [ ] Video plays when user interacts
 - [ ] CORS handling works (crossOrigin="anonymous")
 
 #### 2. VTT Parsing
+
 - [ ] VTT file fetches successfully
 - [ ] VTT parser converts cues to Annotation[] format
 - [ ] Annotations display in TranscriptPanel
 - [ ] Timestamp formatting correct (HH:MM:SS or MM:SS)
 
 #### 3. AudioPlayerControls Functionality
+
 - [ ] Play/pause buttons work
 - [ ] Skip forward/backward (10s, 30s) works
 - [ ] Speed control (0.5x, 1x, 1.5x, 2x) works
@@ -78,18 +86,21 @@ Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works 
 - [ ] Visual feedback for active state
 
 #### 4. Transcript Bidirectional Sync
+
 - [ ] **Video → Transcript**: Active segment highlights as video plays
 - [ ] **Video → Transcript**: Transcript auto-scrolls to active segment
 - [ ] **Transcript → Video**: Clicking transcript segment seeks video
 - [ ] No jitter or race conditions during sync
 
 #### 5. Search Functionality
+
 - [ ] Search input filters transcript annotations
 - [ ] Match counter updates (e.g., "2 / 15")
 - [ ] Previous/Next buttons navigate matches
 - [ ] Clicking match seeks video to timestamp
 
 #### 6. Hydration Errors
+
 - [ ] No console errors in browser DevTools
 - [ ] No hydration mismatches (SSR vs client render)
 - [ ] Event handlers attach correctly after hydration
@@ -128,8 +139,11 @@ Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works 
 ```svelte
 <!-- IIIFTranscriptDemo.svelte -->
 <script>
-  import { IIIFMediaViewer, AudioPlayerControls, TranscriptPanel }
-    from '@umd-mith/svelte-iiif-transcript-player';
+  import {
+    IIIFMediaViewer,
+    AudioPlayerControls,
+    TranscriptPanel,
+  } from "@umd-mith/svelte-iiif-transcript-player";
 
   let viewer = $state(null);
   let annotations = $state<Annotation[]>([]);
@@ -155,27 +169,32 @@ Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works 
 ### Potential Issues Identified
 
 #### 1. Unstyled Segments Require Consumer CSS
+
 **Issue**: Segment component uses `all: unset` - no default active highlighting
 **Impact**: Active segments invisible without consumer-provided CSS
 **Root Cause**: Library design decision for maximum styling flexibility
 
 **Solution Applied in Demo**:
+
 ```css
 /* Target segments via data attributes */
-button[data-annotation-id][data-state='active'] {
+button[data-annotation-id][data-state="active"] {
   background-color: #bee3f8;
   border-left: 4px solid #3182ce;
 }
 ```
 
 **Recommendation for Production**:
+
 - Document in README that segment styling is consumer's responsibility
 - Provide example CSS snippets for common patterns
 - Consider adding optional `<Segment variant="styled" />` prop with default theme
 
 #### 2. VTT Parser Simplicity
+
 **Issue**: Custom VTT parser in demo is basic (regex-based line parsing)
 **Impact**: May not handle:
+
 - VTT style tags (`<v Speaker>`, `<i>`, `<b>`)
 - Positioning cues (`align:start`, `line:0%`)
 - Malformed timestamp formats
@@ -183,6 +202,7 @@ button[data-annotation-id][data-state='active'] {
 **Recommendation**: Document that `media-captions` library should be used for production VTT parsing.
 
 #### 2. Viewer Ref Timing
+
 **Issue**: `{#if viewer}` guard required before AudioPlayerControls
 **Why**: `bind:this` populates after mount, AudioPlayerControls needs ref immediately
 
@@ -190,6 +210,7 @@ button[data-annotation-id][data-state='active'] {
 **No Action Needed**: This is expected Svelte 5 behavior
 
 #### 3. XState Peer Dependency
+
 **Issue**: XState 5 is a peer dependency (not bundled)
 **Impact**: Consumers must install XState separately (~50KB)
 
@@ -198,11 +219,13 @@ button[data-annotation-id][data-state='active'] {
 ## Build Output Analysis
 
 ### Dev Server
+
 - **Start Time**: 350ms
 - **Page Load**: 12-28ms (subsequent loads)
 - **HMR**: Working (file watching active)
 
 ### Module Resolution
+
 - Library modules resolved via `/@fs/` protocol (Vite dev server)
 - All imports resolved correctly
 - No "module not found" errors
@@ -210,10 +233,13 @@ button[data-annotation-id][data-state='active'] {
 ## Conclusions
 
 ### ✅ **PASS** - Build & SSR Phase
+
 The library successfully integrates with Astro's build system and SSR. All components render without errors, and the island hydration architecture is correctly configured.
 
 ### ⚠️ **PENDING** - Client Hydration Phase
+
 Manual browser testing required to verify:
+
 - Media playback works
 - VTT parsing produces correct annotations
 - Bidirectional sync functions without race conditions
@@ -221,6 +247,7 @@ Manual browser testing required to verify:
 - No hydration mismatches
 
 ### 🎯 **SUCCESS CRITERIA MET** (Automated Portion)
+
 1. ✅ Library installs without conflicts
 2. ✅ Components import successfully
 3. ✅ Astro builds without errors
@@ -253,13 +280,15 @@ Manual browser testing required to verify:
 ## Critical Bugs Found During Manual Testing
 
 ### Bug 1: Missing Active Segment Highlighting (LDA-1572 Regression)
+
 **Root Cause**: During OSS extraction, the `syncController` variable lost its `$state()` wrapper, breaking Svelte's reactivity tracking.
 
 **Impact**: SyncController computed active annotations correctly, but Panel's `$derived()` never reacted to changes → no highlighting, transcript didn't track playback.
 
-**Why Tests Didn't Catch It**: The lakeland test for LDA-1572 verified *reinitialization* when annotations change, but NOT *continuous reactivity* during playback. Test passed during extraction but failed in actual usage.
+**Why Tests Didn't Catch It**: The lakeland test for LDA-1572 verified _reinitialization_ when annotations change, but NOT _continuous reactivity_ during playback. Test passed during extraction but failed in actual usage.
 
 **Fix Applied**:
+
 ```typescript
 // BEFORE (broken during extraction):
 let syncController: SyncController | null = null;
@@ -272,6 +301,7 @@ let syncController: SyncController | null = $state(null);
 Also changed from `$derived()` to `$derived.by()` (also from lakeland LDA-1572).
 
 **Files Modified**:
+
 - `src/lib/transcript/Panel.svelte` (lines 126, 130-135)
 - `src/lib/sync/SyncController.svelte.ts` (removed debug logging)
 
@@ -280,11 +310,13 @@ Also changed from `$derived()` to `$derived.by()` (also from lakeland LDA-1572).
 ---
 
 ### Bug 2: Scroll Bouncing During Playback
+
 **Root Cause**: Demo wrapper CSS had `overflow: hidden` on parent, blocking library's internal scroll container from controlling scrolling.
 
 **Impact**: Transcript continuously jumped to top then back to active segment during playback.
 
 **Fix Applied**: Applied flexbox layout allowing `.segments-container` to control scrolling:
+
 ```css
 .demo-transcript {
   display: flex;
@@ -309,13 +341,15 @@ Also changed from `$derived()` to `$derived.by()` (also from lakeland LDA-1572).
 ---
 
 ### Bug 3: No Visual Highlighting on Active Segments
+
 **Root Cause**: Library's Segment component is intentionally unstyled (`all: unset`) for maximum consumer flexibility.
 
 **Impact**: Even after reactivity was fixed, active segments had no visual styling.
 
 **Fix Applied**: Consumer CSS targeting `[data-state='active']`:
+
 ```css
-.iiif-transcript-demo :global(button[data-annotation-id][data-state='active']) {
+.iiif-transcript-demo :global(button[data-annotation-id][data-state="active"]) {
   background-color: #bee3f8;
   border-left: 4px solid #3182ce;
 }
@@ -328,6 +362,7 @@ Also changed from `$derived()` to `$derived.by()` (also from lakeland LDA-1572).
 ## Extraction Methodology Failure
 
 ### What Should Have Happened
+
 ```bash
 # 1. Copy working lakeland code VERBATIM
 cp lakeland/Panel.svelte → oss/Panel.svelte
@@ -340,6 +375,7 @@ cp lakeland/SyncController.svelte.ts → oss/SyncController.svelte.ts
 ```
 
 ### What Actually Happened (TDD Approach)
+
 ```bash
 # 1. Write tests first (TDD)
 # 2. Rebuild functionality from scratch
@@ -351,9 +387,10 @@ cp lakeland/SyncController.svelte.ts → oss/SyncController.svelte.ts
 
 **User Feedback**: "This was supposed to be more like copying code but we have diverged into broken hell"
 
-**Root Problem**: TDD extraction approach rebuilt *functionality* but lost *patterns*. Tests verified behavior but didn't capture Svelte 5 reactivity subtleties.
+**Root Problem**: TDD extraction approach rebuilt _functionality_ but lost _patterns_. Tests verified behavior but didn't capture Svelte 5 reactivity subtleties.
 
 **Recommendation for Future Extractions**:
+
 1. **Copy First, Test Second** - Start with working code, not empty files
 2. **Preserve Comments** - Every `// LDA-XXXX` comment is weight-bearing
 3. **Continuous Reactivity Tests** - Don't just test initialization, test updates over time

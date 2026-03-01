@@ -36,12 +36,12 @@ Build custom IIIF media players with composable components:
 
 ```svelte
 <script>
-  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+  import { IIIFPlayer } from "@umd-mith/svelte-iiif-transcript-player";
 
-  const manifestUrl = 'https://example.org/manifest.json';
+  const manifestUrl = "https://example.org/manifest.json";
   const annotations = [
-    { id: 'a1', startTime: 0, endTime: 5, text: 'First segment' },
-    { id: 'a2', startTime: 5, endTime: 10, text: 'Second segment' }
+    { id: "a1", startTime: 0, endTime: 5, text: "First segment" },
+    { id: "a2", startTime: 5, endTime: 10, text: "Second segment" },
   ];
 </script>
 
@@ -84,6 +84,7 @@ Opens at `http://localhost:4321/svelte-iiif-transcript-player` with a live demo 
 Top-level context provider that manages player state and coordinates all child components.
 
 **Props:**
+
 - `manifestUrl: string` - IIIF Presentation 3.0 manifest URL
 - `canvasIndex?: number` - Canvas index to display (default: 0)
 - `annotations?: Annotation[]` - Transcript annotations (passed through to children)
@@ -92,6 +93,7 @@ Top-level context provider that manages player state and coordinates all child c
 - `class?: string` - CSS class for the root container
 
 **Context Provided:**
+
 - Player state (`isPlaying`, `isBuffering`, `currentTime`, `duration`, `playbackRate`, `isReady`, `error`)
 - Actions (`play`, `pause`, `seekTo`, `setPlaybackRate`, `retry`)
 - Media element reference, media URL, media type
@@ -114,6 +116,7 @@ Root passes `{ player: { state, actions } }` to its children snippet, allowing d
 Renders the IIIF media resource (video/audio) from the current canvas.
 
 **Props:**
+
 - `controls?: boolean` - Show native media controls (default: false)
 - `crossOrigin?: 'anonymous' | 'use-credentials'` - CORS setting for media element
 - `preload?: 'auto' | 'metadata' | 'none'` - Media preload strategy (default: 'auto')
@@ -124,6 +127,7 @@ Renders the IIIF media resource (video/audio) from the current canvas.
 Container for player control components. Pass-through component for layout.
 
 **Props:**
+
 - `class?: string` - CSS class for styling
 
 **Slots:** Default slot for control components
@@ -135,9 +139,11 @@ Container for player control components. Pass-through component for layout.
 Toggle play/pause button. Shows "Play", "Pause", or "Loading..." based on state.
 
 **Props:**
+
 - `class?: string` - CSS class
 
 **Data Attributes:**
+
 - `data-audio-button="play-pause"` - Button identifier
 
 #### `IIIFPlayer.Progress`
@@ -145,9 +151,11 @@ Toggle play/pause button. Shows "Play", "Pause", or "Loading..." based on state.
 Seekable progress bar (`<input type="range">`).
 
 **Props:**
+
 - `class?: string` - CSS class
 
 **Data Attributes:**
+
 - `data-audio-progress` - Progress bar element
 
 #### `IIIFPlayer.Skip`
@@ -155,10 +163,12 @@ Seekable progress bar (`<input type="range">`).
 Skip forward/backward button.
 
 **Props:**
+
 - `seconds: number` - Amount to skip (negative for rewind)
 - `class?: string` - CSS class
 
 **Data Attributes:**
+
 - `data-audio-button="skip"` - Button identifier
 
 #### `IIIFPlayer.Speed`
@@ -166,6 +176,7 @@ Skip forward/backward button.
 Playback speed selector.
 
 **Props:**
+
 - `rates?: number[]` - Available playback rates (default: [0.5, 0.75, 1, 1.25, 1.5, 2])
 - `class?: string` - CSS class
 
@@ -174,9 +185,11 @@ Playback speed selector.
 Display current time and duration.
 
 **Props:**
+
 - `class?: string` - CSS class
 
 **Data Attributes:**
+
 - `data-audio-control="time"` - Time display element
 
 **Format:** `MM:SS / MM:SS` (current / total)
@@ -188,6 +201,7 @@ Display current time and duration.
 Bidirectional synchronized transcript panel with search.
 
 **Props:**
+
 - `annotations?: Annotation[]` - Transcript segments with timing (default: [])
 - `syncDebounceMs?: number` - Scroll debounce in ms (default: 150)
 - `syncSettleMs?: number` - Settle delay after scroll in ms (default: 100)
@@ -209,6 +223,7 @@ Bidirectional synchronized transcript panel with search.
 Search UI for filtering transcript segments. Reads from TranscriptContext when inside Transcript, or accepts props directly.
 
 **Props (optional, overrides context):**
+
 - `annotations?: Annotation[]` - Annotations to search
 - `placeholder?: string` - Input placeholder (default: "Search transcript...")
 - `debounceMs?: number` - Input debounce in ms (default: 150)
@@ -220,6 +235,7 @@ Search UI for filtering transcript segments. Reads from TranscriptContext when i
 Renders the list of transcript segments with active highlighting. Reads from TranscriptContext when inside Transcript, or accepts props directly.
 
 **Props (optional, overrides context):**
+
 - `annotations?: Annotation[]` - Annotations to display
 - `activeAnnotationId?: string | null` - Currently active annotation
 - `highlightedIds?: Set<string>` - Set of search-highlighted annotation IDs
@@ -228,6 +244,7 @@ Renders the list of transcript segments with active highlighting. Reads from Tra
 - `class?: string` - CSS class
 
 **Data Attributes (on each Segment):**
+
 - `data-annotation-id` - Segment ID
 - `data-state="active|inactive"` - Active segment state
 - `data-highlighted="true"` - Present when segment matches search query
@@ -242,10 +259,10 @@ Transcript segment with timing information.
 ```typescript
 interface Annotation {
   id: string;
-  startTime: number;  // seconds
-  endTime: number;    // seconds
+  startTime: number; // seconds
+  endTime: number; // seconds
   text: string;
-  metadata?: Record<string, unknown>;  // Your custom data
+  metadata?: Record<string, unknown>; // Your custom data
 }
 ```
 
@@ -283,7 +300,7 @@ interface PlayerContext {
   actions: PlayerActions;
   mediaElement: HTMLMediaElement | null;
   mediaUrl: string;
-  mediaType: 'audio' | 'video';
+  mediaType: "audio" | "video";
 }
 ```
 
@@ -295,7 +312,7 @@ The `Annotation` type includes an optional `metadata` field (`Record<string, unk
 
 ```svelte
 <script>
-  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+  import { IIIFPlayer } from "@umd-mith/svelte-iiif-transcript-player";
 </script>
 
 <IIIFPlayer.Transcript {annotations}>
@@ -317,7 +334,7 @@ The `Annotation` type includes an optional `metadata` field (`Record<string, unk
   <div
     data-annotation-id={annotation.id}
     onclick={onClick}
-    class:needs-review={annotation.metadata?.reviewStatus === 'needs-review'}
+    class:needs-review={annotation.metadata?.reviewStatus === "needs-review"}
   >
     {annotation.text}
     {#if annotation.metadata?.confidence != null && annotation.metadata.confidence < 0.5}
@@ -330,13 +347,13 @@ The `Annotation` type includes an optional `metadata` field (`Record<string, unk
 ### Paragraph merging with speakers
 
 ```ts
-import { mergeIntoParagraphs } from '@umd-mith/svelte-iiif-transcript-player';
+import { mergeIntoParagraphs } from "@umd-mith/svelte-iiif-transcript-player";
 
 // Build a speaker map from metadata
 const speakers = new Map(
   annotations
-    .filter(a => a.metadata?.speaker)
-    .map(a => [a.id, a.metadata!.speaker as string])
+    .filter((a) => a.metadata?.speaker)
+    .map((a) => [a.id, a.metadata!.speaker as string]),
 );
 
 const paragraphs = mergeIntoParagraphs(annotations, { speakers });
@@ -419,7 +436,7 @@ button[data-annotation-id]:hover {
 }
 
 /* Active segment gets blue highlight */
-button[data-annotation-id][data-state='active'] {
+button[data-annotation-id][data-state="active"] {
   background-color: #bae6fd;
   border-left: 4px solid #0ea5e9;
 }
@@ -437,6 +454,7 @@ The library currently doesn't use CSS custom properties. You control all styling
 - **XState 5**: State machine for playback sync
 
 **Known limitations:**
+
 - No IE11 support (Svelte 5 requirement)
 - Safari < 15 lacks some IIIF Presentation 3.0 features
 
