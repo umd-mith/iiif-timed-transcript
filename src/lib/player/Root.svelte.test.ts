@@ -1,14 +1,15 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount } from 'svelte';
-import { flushSync } from 'svelte';
+import { mount, flushSync } from 'svelte';
 import Root from './Root.svelte';
 import TestContextConsumer from '../../test/player/TestContextConsumer.svelte';
+import TestRootWrapper from '../../test/player/TestRootWrapper.svelte';
 import type { PlayerContext } from './context';
 import {
 	MANIFEST_WITH_CHAPTERS,
 	MANIFEST_WITHOUT_CHAPTERS,
 	MANIFEST_WITH_HLS,
 	MANIFEST_WITH_VTT_CAPTIONS,
+	MANIFEST_MULTI_CANVAS,
 	mockFetchManifest
 } from './test-fixtures';
 
@@ -389,6 +390,318 @@ describe('Root component', () => {
 				expect(capturedCtx).not.toBeNull();
 				expect(capturedCtx!.tracks).toBeDefined();
 				expect(capturedCtx!.tracks).toEqual([]);
+			});
+		});
+	});
+
+	describe('multi-canvas navigation', () => {
+		test('exposes canvasIndex, canvasCount, and canvases from context', async () => {
+			mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/multi-canvas.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.canvasIndex).toBe(0);
+				expect(capturedCtx!.canvasCount).toBe(2);
+				expect(capturedCtx!.canvases).toHaveLength(2);
+				expect(capturedCtx!.canvases[0]).toMatchObject({
+					index: 0,
+					id: 'https://example.com/canvas/1',
+					label: 'Interview Part 1',
+					mediaType: 'audio'
+				});
+				expect(capturedCtx!.canvases[1]).toMatchObject({
+					index: 1,
+					id: 'https://example.com/canvas/2',
+					label: 'Interview Part 2',
+					mediaType: 'video'
+				});
+			});
+		});
+
+		test('filters chapters to current canvas', async () => {
+			mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/multi-canvas-chapters.json',
+					canvasIndex: 0,
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				// Canvas 0 has 2 chapters: Introduction and Early Life
+				expect(capturedCtx!.chapters).toHaveLength(2);
+				expect(capturedCtx!.chapters[0]).toMatchObject({
+					label: 'Introduction',
+					startTime: 0,
+					endTime: 30
+				});
+				expect(capturedCtx!.chapters[1]).toMatchObject({
+					label: 'Early Life',
+					startTime: 30,
+					endTime: 90
+				});
+			});
+		});
+
+		test('loads correct media for canvasIndex=1', async () => {
+			mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/multi-canvas-idx1.json',
+					canvasIndex: 1,
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.mediaUrl).toBe('https://example.com/video2.mp4');
+				expect(capturedCtx!.mediaType).toBe('video');
+				expect(capturedCtx!.canvasIndex).toBe(1);
+				// Canvas 1 has 2 chapters: Career Beginnings and Later Years
+				expect(capturedCtx!.chapters).toHaveLength(2);
+				expect(capturedCtx!.chapters[0]).toMatchObject({ label: 'Career Beginnings' });
+				// Canvas 1 has VTT tracks
+				expect(capturedCtx!.tracks).toHaveLength(1);
+			});
+		});
+
+		test('switchCanvas changes active canvas', async () => {
+			mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/multi-canvas-switch.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			// Wait for initial load
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.mediaUrl).toBe('https://example.com/audio1.mp3');
+			});
+
+			// Switch to canvas 1
+			capturedCtx!.actions.switchCanvas(1);
+
+			await vi.waitFor(() => {
+				expect(capturedCtx!.canvasIndex).toBe(1);
+				expect(capturedCtx!.mediaUrl).toBe('https://example.com/video2.mp4');
+				expect(capturedCtx!.mediaType).toBe('video');
+				expect(capturedCtx!.chapters).toHaveLength(2);
+				expect(capturedCtx!.chapters[0]).toMatchObject({ label: 'Career Beginnings' });
+			});
+		});
+
+		test('switchCanvas fires onCanvasChange callback', async () => {
+			mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+			let capturedCtx: PlayerContext | null = null;
+			const onCanvasChange = vi.fn();
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/multi-canvas-callback.json',
+					onCanvasChange,
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.mediaUrl).toBeTruthy();
+			});
+
+			capturedCtx!.actions.switchCanvas(1);
+
+			await vi.waitFor(() => {
+				expect(onCanvasChange).toHaveBeenCalledWith(1, expect.objectContaining({
+					index: 1,
+					id: 'https://example.com/canvas/2',
+					label: 'Interview Part 2'
+				}));
+			});
+		});
+
+		test('switchCanvas ignores out-of-bounds index', async () => {
+			mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/multi-canvas-bounds.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.mediaUrl).toBeTruthy();
+			});
+
+			capturedCtx!.actions.switchCanvas(99);
+
+			// Should still be on canvas 0
+			expect(capturedCtx!.canvasIndex).toBe(0);
+			expect(capturedCtx!.mediaUrl).toBe('https://example.com/audio1.mp3');
+		});
+
+		test('prop canvasIndex change before manifest loads is honored', async () => {
+			// Create a deferred promise so we control when fetch resolves
+			let resolveFetch!: (value: any) => void;
+			(globalThis.fetch as ReturnType<typeof vi.fn>).mockReturnValue(
+				new Promise((resolve) => {
+					resolveFetch = resolve;
+				})
+			);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			// Mount wrapper with canvasIndex=0
+			const wrapper = mount(TestRootWrapper, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/multi-canvas-prop-change.json',
+					canvasIndex: 0,
+					onResult: (ctx: PlayerContext) => {
+						capturedCtx = ctx;
+					}
+				}
+			});
+
+			// Change canvasIndex prop to 1 BEFORE manifest resolves
+			wrapper.setCanvasIndex(1);
+			flushSync();
+
+			// Now resolve the fetch
+			resolveFetch({
+				ok: true,
+				json: async () => MANIFEST_MULTI_CANVAS
+			});
+
+			// Canvas 1 should load (video2.mp4), not canvas 0 (audio1.mp3)
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.canvasIndex).toBe(1);
+				expect(capturedCtx!.mediaUrl).toBe('https://example.com/video2.mp4');
+			});
+		});
+
+		test('single-canvas manifest has canvasCount=1 and empty canvases for CanvasNav', async () => {
+			mockFetchManifest(MANIFEST_WITH_CHAPTERS);
+
+			let capturedCtx: PlayerContext | null = null;
+
+			mount(Root, {
+				target,
+				props: {
+					manifestUrl: 'https://example.com/single-canvas-nav.json',
+					children: (anchor: any) => {
+						mount(TestContextConsumer, {
+							target,
+							anchor,
+							props: {
+								onResult: (ctx: PlayerContext) => {
+									capturedCtx = ctx;
+								}
+							}
+						});
+					}
+				}
+			});
+
+			await vi.waitFor(() => {
+				expect(capturedCtx).not.toBeNull();
+				expect(capturedCtx!.canvasCount).toBe(1);
+				expect(capturedCtx!.canvases).toHaveLength(1);
+				expect(capturedCtx!.canvasIndex).toBe(0);
 			});
 		});
 	});

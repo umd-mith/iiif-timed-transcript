@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { setContext, onMount } from 'svelte';
-	import { PLAYER_CONTEXT_KEY, type PlayerState } from './context';
-	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas, getSupplementaryVTTTracks } from '../iiif/helpers';
+	import { setContext, onMount, untrack } from 'svelte';
+	import { PLAYER_CONTEXT_KEY, type PlayerState, type CanvasInfo } from './context';
+	import { getFirstCanvas, getPrimaryResource, isAudioCanvas, isVideoCanvas, getSupplementaryVTTTracks, buildCanvasInfoList, filterChaptersForCanvas } from '../iiif/helpers';
 	import { ManifestSchema, type ManifestData } from '../iiif/validators';
-	import { parseRanges } from '@umd-mith/iiif-media-parsers';
 	import { isHlsUrl, isHlsNativelySupported, createHlsAdapter, type HlsConstructor } from '../media/hlsUtils';
 	import type { MediaStrategy } from './context';
 	import type { Chapter } from '@umd-mith/iiif-media-parsers';
@@ -19,6 +18,7 @@
 		initialTime,
 		autoplay = false,
 		hlsConstructor,
+		onCanvasChange,
 		class: className = '',
 		children
 	}: {
@@ -28,6 +28,7 @@
 		initialTime?: number;
 		autoplay?: boolean;
 		hlsConstructor?: HlsConstructor;
+		onCanvasChange?: (index: number, canvas: CanvasInfo) => void;
 		class?: string;
 		children?: any;
 	} = $props();
@@ -51,6 +52,11 @@
 	let chapters = $state<Chapter[]>([]);
 	let tracks = $state<TrackDefinition[]>([]);
 
+	// Canvas navigation state
+	let activeCanvasIndex = $state(canvasIndex);
+	let canvasInfoList = $state<CanvasInfo[]>([]);
+	let manifestData = $state<{ validated: ManifestData; raw: unknown } | null>(null);
+
 	let activeChapterId = $derived.by(() => {
 		const time = playerState.currentTime;
 		for (const chapter of chapters) {
@@ -60,6 +66,49 @@
 		}
 		return null;
 	});
+
+	// React to prop-driven canvas changes after manifest is loaded.
+	// This effect drives external side effects (media teardown/setup), not state derivation.
+	// Both canvasIndex and manifestData are tracked so the effect re-runs when either changes —
+	// this ensures prop changes that arrive before manifest loads are not dropped.
+	$effect(() => {
+		const propIndex = canvasIndex;
+		const manifest = manifestData;
+		untrack(() => {
+			if (manifest && propIndex !== activeCanvasIndex) {
+				performCanvasSwitch(propIndex);
+			}
+		});
+	});
+
+	function performCanvasSwitch(index: number) {
+		if (!manifestData) return;
+		if (index < 0 || index >= canvasInfoList.length) return;
+		if (index === activeCanvasIndex) return;
+
+		// Pause and detach current media
+		mediaElement?.pause();
+		hlsAdapter?.detach();
+
+		// Reset player state for new canvas
+		playerState.isPlaying = false;
+		playerState.currentTime = 0;
+		playerState.duration = 0;
+		playerState.isReady = false;
+		playerState.error = null;
+
+		// Clear mediaUrl to trigger Viewer unmount
+		mediaUrl = '';
+
+		// Update active index and load new canvas
+		activeCanvasIndex = index;
+		loadCanvas(index);
+
+		// Fire callback
+		if (onCanvasChange && canvasInfoList[index]) {
+			onCanvasChange(index, canvasInfoList[index]);
+		}
+	}
 
 	// Actions
 	const actions = {
@@ -93,10 +142,13 @@
 		},
 		retry: async () => {
 			playerState.error = null;
-			await loadManifest();
+			await fetchManifestData();
 		},
 		seekToChapter: (chapter: Chapter) => {
 			actions.seekTo(chapter.startTime);
+		},
+		switchCanvas: (index: number) => {
+			performCanvasSwitch(index);
 		}
 	};
 
@@ -116,6 +168,9 @@
 		get chapters() { return chapters; },
 		get activeChapterId() { return activeChapterId; },
 		get tracks() { return tracks; },
+		get canvasIndex() { return activeCanvasIndex; },
+		get canvasCount() { return canvasInfoList.length; },
+		get canvases() { return canvasInfoList; },
 		actions
 	});
 
@@ -137,18 +192,32 @@
 		return { validated: validationResult.data, raw: manifest };
 	}
 
-	// Manifest loading
-	async function loadManifest() {
+	// Phase 1: Fetch manifest — runs once per manifestUrl
+	async function fetchManifestData() {
 		try {
-			// Check cache first; store the Promise to deduplicate concurrent requests
 			let manifestPromise = manifestCache.get(manifestUrl);
 			if (!manifestPromise) {
 				manifestPromise = fetchAndValidateManifest(manifestUrl);
 				manifestCache.set(manifestUrl, manifestPromise);
 			}
 
-			const { validated: validManifest, raw: rawManifest } = await manifestPromise;
-			const canvas = validManifest.items?.[canvasIndex] ?? getFirstCanvas(validManifest);
+			manifestData = await manifestPromise;
+			canvasInfoList = buildCanvasInfoList(manifestData.validated);
+
+			loadCanvas(activeCanvasIndex);
+		} catch (error) {
+			manifestCache.delete(manifestUrl);
+			playerState.error = error instanceof Error ? error : new Error(String(error));
+			playerState.isReady = false;
+		}
+	}
+
+	// Phase 2: Load a specific canvas — runs on each canvas switch
+	function loadCanvas(index: number) {
+		if (!manifestData) return;
+
+		try {
+			const canvas = manifestData.validated.items?.[index] ?? getFirstCanvas(manifestData.validated);
 
 			if (!canvas) {
 				throw new Error('No canvas found in IIIF manifest');
@@ -172,37 +241,37 @@
 			// Determine media strategy for HLS streams
 			if (isHlsUrl(primaryResource.id, primaryResource.format)) {
 				if (isHlsNativelySupported()) {
-					// Safari handles HLS natively — just set src like a normal file
 					mediaStrategy = 'native';
 				} else {
 					mediaStrategy = 'hls-js';
-					const Hls = hlsConstructor
-						?? await import('hls.js').then((m) => m.default as unknown as HlsConstructor).catch(() => {
-								console.warn(
-									'[IIIFPlayer] HLS stream detected but hls.js is not installed. ' +
-										'Install it with: npm install hls.js'
-								);
-								return null;
-							});
-					if (Hls) {
-						hlsAdapter = createHlsAdapter(Hls);
-					}
+					resolveHlsAdapter();
 				}
 			} else {
 				mediaStrategy = 'native';
 			}
 
-			// Parse chapter structures (Ranges) from the raw manifest
-			// (validManifest is Zod-parsed and strips `structures`)
-			chapters = parseRanges(rawManifest as any);
+			// Filter chapters to current canvas
+			chapters = filterChaptersForCanvas(manifestData.raw, canvas.id);
 
 			// Discover VTT caption tracks from canvas.annotations (recipe 0219)
 			tracks = getSupplementaryVTTTracks(canvas);
 		} catch (error) {
-			// Remove failed fetches from cache so retries can work
-			manifestCache.delete(manifestUrl);
 			playerState.error = error instanceof Error ? error : new Error(String(error));
 			playerState.isReady = false;
+		}
+	}
+
+	async function resolveHlsAdapter() {
+		const Hls = hlsConstructor
+			?? await import('hls.js').then((m) => m.default as unknown as HlsConstructor).catch(() => {
+					console.warn(
+						'[IIIFPlayer] HLS stream detected but hls.js is not installed. ' +
+							'Install it with: npm install hls.js'
+					);
+					return null;
+				});
+		if (Hls) {
+			hlsAdapter = createHlsAdapter(Hls);
 		}
 	}
 
@@ -266,7 +335,7 @@
 
 	// Load manifest on mount
 	onMount(async () => {
-		await loadManifest();
+		await fetchManifestData();
 	});
 
 	// Cleanup on unmount — capture current element and adapter

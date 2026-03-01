@@ -6,6 +6,10 @@ describe('IIIFPlayer namespace', () => {
 		expect(IIIFPlayer.Chapters).toBeDefined();
 	});
 
+	test('exports CanvasNav component', () => {
+		expect(IIIFPlayer.CanvasNav).toBeDefined();
+	});
+
 	// Verify existing components still exported
 	test('exports all existing components', () => {
 		expect(IIIFPlayer.Root).toBeDefined();
