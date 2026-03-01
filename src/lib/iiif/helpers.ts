@@ -722,21 +722,30 @@ export function filterChaptersForCanvas(
     return [];
   }
 
-  // Build set of Range IDs that reference this canvas
+  // Recursively collect Range IDs whose items reference this canvas.
+  // IIIF structures can be nested (e.g. acts > scenes > canvas refs),
+  // so we must walk the full tree, not just the top level.
   const matchingRangeIds = new Set<string>();
-  for (const structure of manifest.structures) {
-    const range = structure as { id?: string; items?: Array<{ id?: string }> };
-    if (!range.id || !Array.isArray(range.items)) continue;
+
+  function walkRange(range: { id?: string; items?: Array<{ id?: string; type?: string; items?: unknown[] }> }) {
+    if (!range.id || !Array.isArray(range.items)) return;
 
     for (const item of range.items) {
       if (!item.id) continue;
-      // Strip #t=... fragment to get base canvas ID
       const baseId = item.id.split('#')[0];
       if (baseId === canvasId) {
         matchingRangeIds.add(range.id);
         break;
       }
+      // Recurse into child Ranges
+      if (item.type === 'Range' && Array.isArray(item.items)) {
+        walkRange(item as { id: string; items: Array<{ id?: string; type?: string; items?: unknown[] }> });
+      }
     }
+  }
+
+  for (const structure of manifest.structures) {
+    walkRange(structure as { id: string; items: Array<{ id?: string; type?: string; items?: unknown[] }> });
   }
 
   if (matchingRangeIds.size === 0) {

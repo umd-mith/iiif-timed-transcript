@@ -1496,4 +1496,74 @@ describe("filterChaptersForCanvas", () => {
     expect(filterChaptersForCanvas(null, "id")).toEqual([]);
     expect(filterChaptersForCanvas(undefined, "id")).toEqual([]);
   });
+
+  it("should handle nested Range structures (e.g. IIIF Cookbook 0026)", () => {
+    // Simulates the opera manifest: root Range > act Ranges > scene Ranges with canvas refs
+    const nestedManifest = {
+      '@context': 'http://iiif.io/api/presentation/3/context.json',
+      id: 'https://example.com/manifest-nested',
+      type: 'Manifest',
+      items: [
+        {
+          id: 'https://example.com/canvas/1',
+          type: 'Canvas',
+          duration: 100,
+          items: [{
+            id: 'https://example.com/canvas/1/page/1',
+            type: 'AnnotationPage',
+            items: [{
+              id: 'https://example.com/canvas/1/page/1/ann/1',
+              type: 'Annotation',
+              motivation: 'painting',
+              body: { id: 'https://example.com/video.mp4', type: 'Video', format: 'video/mp4' },
+              target: 'https://example.com/canvas/1'
+            }]
+          }]
+        }
+      ],
+      structures: [
+        {
+          id: 'https://example.com/range/root',
+          type: 'Range',
+          label: { en: ['Full Opera'] },
+          items: [
+            {
+              id: 'https://example.com/range/act1',
+              type: 'Range',
+              label: { en: ['Act 1'] },
+              items: [
+                {
+                  id: 'https://example.com/range/scene1',
+                  type: 'Range',
+                  label: { en: ['Scene 1'] },
+                  items: [
+                    { id: 'https://example.com/canvas/1#t=0,50', type: 'Canvas' }
+                  ]
+                },
+                {
+                  id: 'https://example.com/range/scene2',
+                  type: 'Range',
+                  label: { en: ['Scene 2'] },
+                  items: [
+                    { id: 'https://example.com/canvas/1#t=50,100', type: 'Canvas' }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    const result = filterChaptersForCanvas(
+      nestedManifest,
+      "https://example.com/canvas/1",
+    );
+
+    // parseRanges flattens the hierarchy — should find the leaf scenes
+    expect(result.length).toBeGreaterThan(0);
+    const labels = result.map(ch => ch.label);
+    expect(labels).toContain('Scene 1');
+    expect(labels).toContain('Scene 2');
+  });
 });
