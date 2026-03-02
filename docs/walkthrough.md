@@ -279,7 +279,7 @@ export {
 
 // Utility functions remain exported for advanced use cases
 export { formatTimestamp, getAnnotationById } from "./transcript/utils";
-export { keyboardNav, type KeyboardNavOptions } from "./transcript/keyboardNav";
+export { getNextIndex, focusSegmentAtIndex } from "./transcript/keyboardNav";
 
 // Paragraph merging utility
 export { mergeIntoParagraphs } from "./transcript/paragraphMerger";
