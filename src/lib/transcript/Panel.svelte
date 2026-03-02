@@ -126,8 +126,9 @@
   let scrollContainer: HTMLElement | null = $state(null);
 
   // SyncController instance
-  // Must be $state so derived values recompute when controller properties change (lakeland LDA-1572)
-  let syncController: SyncController | null = $state(null);
+  // Use $state.raw to avoid nested reactive proxies — the controller's internal $state fields
+  // drive reactivity directly (lakeland LDA-1572)
+  let syncController: SyncController | null = $state.raw(null);
 
   // Derived active annotation ID from SyncController
   // Use $derived.by() to ensure reactivity when controller changes (from lakeland LDA-1572)

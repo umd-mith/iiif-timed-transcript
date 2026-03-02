@@ -112,11 +112,9 @@
     spellcheck="false"
   />
 
-  {#if query.trim()}
-    <span class="match-counter" aria-live="polite" aria-atomic="true"
-      >{matchCountDisplay}</span
-    >
-  {/if}
+  <span class="match-counter" aria-live="polite" aria-atomic="true"
+    >{matchCountDisplay}</span
+  >
 
   {#if matches.length > 0}
     <button

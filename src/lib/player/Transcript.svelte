@@ -71,7 +71,7 @@
   let scrollContainer: HTMLElement | null = $state(null);
 
   // SyncController instance
-  let syncController: SyncController | null = $state(null);
+  let syncController: SyncController | null = $state.raw(null);
 
   // Derived active annotation ID from SyncController
   let activeAnnotationId = $derived.by(() => {
@@ -80,6 +80,9 @@
     }
     return syncController.activeAnnotations[0]!.id;
   });
+
+  // Track whether last annotation change was user-initiated (for screen reader announcements)
+  let lastInteractionWasUser = $state(false);
 
   // Search state
   let searchMatches = $state<Annotation[]>([]);
@@ -122,6 +125,7 @@
     // Scroll to and seek to current match
     if (index >= 0 && matches[index]) {
       const match = matches[index];
+      lastInteractionWasUser = true;
       // Seek media to match start time
       actions.seekTo(match.startTime);
     }
@@ -166,6 +170,18 @@
     };
   });
 
+  // Reset user interaction flag after announcement has been processed
+  $effect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- track activeAnnotationId
+    activeAnnotationId;
+    if (lastInteractionWasUser) {
+      // Allow one render cycle for the live region to update, then reset
+      untrack(() => {
+        lastInteractionWasUser = false;
+      });
+    }
+  });
+
   // Fire onActiveAnnotationChange when active annotation changes
   $effect(() => {
     const id = activeAnnotationId;
@@ -190,6 +206,7 @@
       });
       if (prevented) return;
     }
+    lastInteractionWasUser = true;
     actions.seekTo(annotation.startTime);
   }
 </script>
@@ -211,8 +228,8 @@
     {@render children()}
   {/if}
 
-  <!-- Screen reader announcements for active segment -->
-  {#if announceActiveSegment && activeAnnotationId}
+  <!-- Screen reader announcements for active segment (user-initiated changes only) -->
+  {#if announceActiveSegment && activeAnnotationId && lastInteractionWasUser}
     {@const activeAnnotation = annotations.find(
       (a) => a.id === activeAnnotationId,
     )}

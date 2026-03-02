@@ -39,10 +39,15 @@ export const scrollController = fromPromise(
       return;
     }
 
-    // Scroll annotation into view with smooth behavior
+    // Respect prefers-reduced-motion for users with vestibular disorders
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Scroll annotation into view
     // 'center' block positioning keeps annotation in middle of viewport
     annotationElement.scrollIntoView({
-      behavior: "smooth",
+      behavior: prefersReducedMotion ? "instant" : "smooth",
       block: "center",
       inline: "nearest",
     });

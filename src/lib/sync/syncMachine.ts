@@ -20,7 +20,6 @@ import { setup, assign } from "xstate";
 import type { SyncContext, SyncEvent, SyncPriority, Annotation } from "./types";
 import { videoController } from "./actors/videoController";
 import { scrollController } from "./actors/scrollController";
-import { scrollObserver } from "./actors/scrollObserver";
 import { getActiveAnnotation, scrollProgressToTime } from "./annotationUtils";
 
 /**
@@ -41,6 +40,7 @@ function createInitialContext(): SyncContext {
     viewer: null,
     scrollContainer: null,
     annotations: [],
+    priorityLockDuration: 1000,
   };
 }
 
@@ -53,7 +53,10 @@ function canSyncToVideo({ context }: { context: SyncContext }): boolean {
   const now = Date.now();
 
   // Allow if no lock or lock expired
-  if (!syncPriority.direction || now - syncPriority.timestamp > 1000) {
+  if (
+    !syncPriority.direction ||
+    now - syncPriority.timestamp > context.priorityLockDuration
+  ) {
     return true;
   }
 
@@ -105,7 +108,6 @@ export const syncMachine = setup({
   actors: {
     videoController,
     scrollController,
-    scrollObserver,
   },
   guards: {
     canSyncToVideo,
@@ -209,6 +211,12 @@ export const syncMachine = setup({
         }
         return [];
       },
+      priorityLockDuration: ({ context, event }) => {
+        if (event.type === "INITIALIZE" && event.priorityLockDuration != null) {
+          return event.priorityLockDuration;
+        }
+        return context.priorityLockDuration;
+      },
     }),
 
     /**
@@ -242,14 +250,8 @@ export const syncMachine = setup({
       },
     },
     ready: {
-      invoke: {
-        id: "scrollObserver",
-        src: "scrollObserver",
-        input: ({ context }) => ({
-          scrollContainer: context.scrollContainer!,
-          duration: context.viewer?.getDuration() ?? 0,
-        }),
-      },
+      // Scroll observation is handled by SyncController.setupEventListeners()
+      // which provides programmatic-scroll suppression and annotation-based time mapping.
       on: {
         TRANSCRIPT_SCROLL: {
           target: "scrollDriven",
@@ -284,6 +286,7 @@ export const syncMachine = setup({
           targetTime: context.targetTime,
         }),
         onDone: "ready",
+        onError: "ready",
       },
       on: {
         TRANSCRIPT_SCROLL: {
@@ -321,6 +324,7 @@ export const syncMachine = setup({
           };
         },
         onDone: "ready",
+        onError: "ready",
       },
       on: {
         VIDEO_TIME_UPDATE: {

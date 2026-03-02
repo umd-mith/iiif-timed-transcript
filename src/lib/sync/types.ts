@@ -41,6 +41,8 @@ export interface SyncContext {
   scrollContainer: HTMLElement | null;
   /** Annotations for time-mapping operations */
   annotations: Annotation[];
+  /** Duration to lock sync priority after user interaction (milliseconds) */
+  priorityLockDuration: number;
 }
 
 /**
@@ -52,6 +54,7 @@ export type SyncEvent =
       viewer: IIIFMediaViewerRef;
       scrollContainer: HTMLElement;
       annotations: Annotation[];
+      priorityLockDuration?: number;
     }
   | { type: "VIDEO_TIME_UPDATE"; currentTime: number }
   | { type: "TRANSCRIPT_SCROLL"; scrollProgress: number; mappedTime: number }
