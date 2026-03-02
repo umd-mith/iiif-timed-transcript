@@ -17,10 +17,14 @@
  */
 
 import { setup, assign } from "xstate";
-import type { SyncContext, SyncEvent, SyncPriority, Annotation } from "./types";
+import type { SyncContext, SyncEvent, SyncPriority } from "./types";
 import { videoController } from "./actors/videoController";
 import { scrollController } from "./actors/scrollController";
-import { getActiveAnnotation, scrollProgressToTime } from "./annotationUtils";
+import {
+  getActiveAnnotation,
+  getActiveAnnotationWithIndex,
+  scrollProgressToTime,
+} from "./annotationUtils";
 
 /**
  * Create initial context for the sync machine.
@@ -77,13 +81,11 @@ function annotationChanged({
 }): boolean {
   if (event.type !== "VIDEO_TIME_UPDATE") return false;
 
-  const activeAnnotation = getActiveAnnotation(
+  const result = getActiveAnnotationWithIndex(
     event.currentTime,
     context.annotations,
   );
-  const currentIndex = activeAnnotation
-    ? context.annotations.findIndex((ann) => ann.id === activeAnnotation.id)
-    : -1;
+  const currentIndex = result?.index ?? -1;
 
   // Only trigger transition if there IS an active annotation and it changed
   // Prevents scroll-to-top bug when entering gaps in transcript coverage
@@ -95,7 +97,7 @@ function annotationChanged({
  *
  * Flow:
  * 1. Start in idle
- * 2. INITIALIZE event → ready state, spawn scrollObserver
+ * 2. INITIALIZE event → ready state, listen for scroll and video events
  * 3. User scrolls → scrollDriven, invoke videoController
  * 4. Video updates → mediaDriven, invoke scrollController (on annotation change)
  * 5. RESET event → back to idle
@@ -177,15 +179,11 @@ export const syncMachine = setup({
       annotationIndex: ({ context, event }) => {
         if (event.type !== "VIDEO_TIME_UPDATE") return context.annotationIndex;
 
-        const activeAnnotation = getActiveAnnotation(
+        const result = getActiveAnnotationWithIndex(
           event.currentTime,
           context.annotations,
         );
-        if (!activeAnnotation) return -1;
-
-        return context.annotations.findIndex(
-          (ann: Annotation) => ann.id === activeAnnotation.id,
-        );
+        return result?.index ?? -1;
       },
     }),
 

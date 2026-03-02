@@ -18,6 +18,24 @@ export function getActiveAnnotation(
   time: number,
   annotations: Annotation[],
 ): Annotation | null {
+  return getActiveAnnotationWithIndex(time, annotations)?.annotation ?? null;
+}
+
+/**
+ * Get the active annotation and its index at a given time.
+ * Uses binary search for O(log n) performance on sorted annotations.
+ *
+ * Used internally by the sync machine to avoid a redundant O(n) findIndex
+ * after the binary search.
+ *
+ * @param time - Current playback time in seconds
+ * @param annotations - Array of annotations sorted by startTime (REQUIRED)
+ * @returns Object with annotation and index, or null if none active
+ */
+export function getActiveAnnotationWithIndex(
+  time: number,
+  annotations: Annotation[],
+): { annotation: Annotation; index: number } | null {
   let lo = 0;
   let hi = annotations.length - 1;
 
@@ -29,7 +47,7 @@ export function getActiveAnnotation(
     } else if (time >= ann.endTime) {
       lo = mid + 1;
     } else {
-      return ann;
+      return { annotation: ann, index: mid };
     }
   }
   return null;

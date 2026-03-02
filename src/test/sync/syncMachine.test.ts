@@ -423,19 +423,16 @@ describe("syncMachine", () => {
   });
 
   describe("error recovery", () => {
-    it("returns to ready when scrollController actor errors", () => {
-      // The scrollController actor errors if no annotation element is in the DOM.
-      // Our mock querySelector returns an element, but we can test the onError
-      // path by sending events that would cause the input function to throw.
-      // The input function throws when getActiveAnnotation returns null,
-      // which happens when the annotationChanged guard lets through a stale event.
-      // Since we can't easily trigger that race in a unit test, we verify
-      // the onError configuration exists by checking the machine definition.
+    it("has onError handlers configured for actor invocations", () => {
       const states = syncMachine.config.states!;
       const mediaDriven = states.mediaDriven as {
-        invoke?: { onError?: string };
+        invoke?: { onError?: unknown };
       };
-      expect(mediaDriven.invoke).toBeDefined();
+      const scrollDriven = states.scrollDriven as {
+        invoke?: { onError?: unknown };
+      };
+      expect(mediaDriven.invoke?.onError).toBeDefined();
+      expect(scrollDriven.invoke?.onError).toBeDefined();
     });
   });
 
