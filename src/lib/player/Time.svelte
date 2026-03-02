@@ -17,9 +17,8 @@
 
 <div
   data-audio-control="time"
-  role="status"
+  role="timer"
   aria-label="Playback time"
-  aria-live="off"
   class={className}
 >
   {formatted}

@@ -3,6 +3,7 @@ import {
   isHlsUrl,
   isHlsNativelySupported,
   createHlsAdapter,
+  type HlsConstructor,
 } from "../../lib/media/hlsUtils";
 
 describe("isHlsUrl", () => {
@@ -79,16 +80,19 @@ describe("createHlsAdapter", () => {
   }
 
   function createMockHlsConstructor(instance = createMockHlsInstance()) {
-    // Must use function (not arrow) to be constructable with `new`
-    function Ctor(this: any) {
-      Object.assign(this, instance);
-    }
-    Ctor.isSupported = vi.fn(() => true);
-    Ctor.Events = {
-      MANIFEST_PARSED: "hlsManifestParsed",
-      ERROR: "hlsError",
-    };
-    return { Ctor: Ctor as any, instance };
+    const Ctor = Object.assign(
+      function (this: Record<string, unknown>) {
+        Object.assign(this, instance);
+      },
+      {
+        isSupported: vi.fn(() => true),
+        Events: {
+          MANIFEST_PARSED: "hlsManifestParsed",
+          ERROR: "hlsError",
+        },
+      },
+    ) as unknown as HlsConstructor;
+    return { Ctor, instance };
   }
 
   test("attach loads source and attaches to media element", () => {
@@ -126,17 +130,21 @@ describe("createHlsAdapter", () => {
     const instance1 = createMockHlsInstance();
     const instance2 = createMockHlsInstance();
     let callCount = 0;
-    function Ctor(this: any) {
-      callCount++;
-      Object.assign(this, callCount === 1 ? instance1 : instance2);
-    }
-    (Ctor as any).isSupported = vi.fn(() => true);
-    (Ctor as any).Events = {
-      MANIFEST_PARSED: "hlsManifestParsed",
-      ERROR: "hlsError",
-    };
+    const Ctor = Object.assign(
+      function (this: Record<string, unknown>) {
+        callCount++;
+        Object.assign(this, callCount === 1 ? instance1 : instance2);
+      },
+      {
+        isSupported: vi.fn(() => true),
+        Events: {
+          MANIFEST_PARSED: "hlsManifestParsed",
+          ERROR: "hlsError",
+        },
+      },
+    ) as unknown as HlsConstructor;
 
-    const adapter = createHlsAdapter(Ctor as any);
+    const adapter = createHlsAdapter(Ctor);
     const video = document.createElement("video");
 
     adapter.attach(video, "https://example.com/stream1.m3u8");

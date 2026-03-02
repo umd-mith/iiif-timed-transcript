@@ -3,7 +3,7 @@ import { mount } from "svelte";
 import { flushSync } from "svelte";
 import Time from "../../lib/player/Time.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 
 describe("Time", () => {
   let target: HTMLElement;
@@ -24,9 +24,7 @@ describe("Time", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Time, { target, anchor });
-        },
+        children: createChildSnippet(target, Time),
       },
     });
     flushSync();
@@ -47,9 +45,7 @@ describe("Time", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Time, { target, anchor });
-        },
+        children: createChildSnippet(target, Time),
       },
     });
     flushSync();

@@ -1,7 +1,9 @@
 <script lang="ts">
   import { getPlayerContext } from "../../lib/player/context";
 
-  let { onResult }: { onResult: (ctx: any) => void } = $props();
+  import type { PlayerContext } from "../../lib/player/context";
+
+  let { onResult }: { onResult: (ctx: PlayerContext) => void } = $props();
 
   const ctx = getPlayerContext();
   onResult(ctx);

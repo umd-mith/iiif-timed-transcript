@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, afterEach } from "vitest";
 import { mount } from "svelte";
 import { flushSync } from "svelte";
+import type { Snippet } from "svelte";
 import {
   TRANSCRIPT_CONTEXT_KEY,
   type TranscriptContext,
@@ -64,16 +65,17 @@ describe("transcript-context", () => {
       target,
       props: {
         context: mockContext,
-        children: () => {
+        children: ((_anchor: Node) => {
           mount(TestTranscriptContextConsumer, {
             target,
+            anchor: _anchor,
             props: {
               onResult: (ctx: TranscriptContext) => {
                 capturedResult = ctx;
               },
             },
           });
-        },
+        }) as unknown as Snippet,
       },
     });
     flushSync();

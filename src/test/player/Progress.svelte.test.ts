@@ -3,7 +3,7 @@ import { mount } from "svelte";
 import { flushSync } from "svelte";
 import Progress from "../../lib/player/Progress.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 
 describe("Progress", () => {
   let target: HTMLElement;
@@ -24,9 +24,7 @@ describe("Progress", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Progress, { target, anchor });
-        },
+        children: createChildSnippet(target, Progress),
       },
     });
     flushSync();
@@ -48,9 +46,7 @@ describe("Progress", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Progress, { target, anchor });
-        },
+        children: createChildSnippet(target, Progress),
       },
     });
     flushSync();
@@ -76,9 +72,7 @@ describe("Progress", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Progress, { target, anchor });
-        },
+        children: createChildSnippet(target, Progress),
       },
     });
     flushSync();
@@ -107,9 +101,7 @@ describe("Progress", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Progress, { target, anchor });
-        },
+        children: createChildSnippet(target, Progress),
       },
     });
     flushSync();
@@ -131,9 +123,7 @@ describe("Progress", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Progress, { target, anchor });
-        },
+        children: createChildSnippet(target, Progress),
       },
     });
     flushSync();

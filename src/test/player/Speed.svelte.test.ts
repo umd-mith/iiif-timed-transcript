@@ -3,7 +3,7 @@ import { mount } from "svelte";
 import { flushSync } from "svelte";
 import Speed from "../../lib/player/Speed.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 
 describe("Speed", () => {
   let target: HTMLElement;
@@ -24,9 +24,7 @@ describe("Speed", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Speed, { target, anchor });
-        },
+        children: createChildSnippet(target, Speed),
       },
     });
     flushSync();
@@ -45,9 +43,9 @@ describe("Speed", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Speed, { target, anchor, props: { rates: [0.5, 1, 1.5, 2] } });
-        },
+        children: createChildSnippet(target, Speed, {
+          rates: [0.5, 1, 1.5, 2],
+        }),
       },
     });
     flushSync();
@@ -70,9 +68,7 @@ describe("Speed", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Speed, { target, anchor });
-        },
+        children: createChildSnippet(target, Speed),
       },
     });
     flushSync();
@@ -95,9 +91,7 @@ describe("Speed", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Speed, { target, anchor });
-        },
+        children: createChildSnippet(target, Speed),
       },
     });
     flushSync();

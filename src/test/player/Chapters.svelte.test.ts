@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import { mount } from "svelte";
 import { flushSync } from "svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 
 const testChapters = [
   { id: "ch1", label: "Introduction", startTime: 0, endTime: 30 },
@@ -32,9 +32,7 @@ describe("Chapters", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(Chapters, { target });
-        },
+        children: createChildSnippet(target, Chapters),
       },
     });
     flushSync();
@@ -54,9 +52,7 @@ describe("Chapters", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(Chapters, { target });
-        },
+        children: createChildSnippet(target, Chapters),
       },
     });
     flushSync();
@@ -96,9 +92,7 @@ describe("Chapters", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(Chapters, { target });
-        },
+        children: createChildSnippet(target, Chapters),
       },
     });
     flushSync();
@@ -120,9 +114,7 @@ describe("Chapters", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(Chapters, { target });
-        },
+        children: createChildSnippet(target, Chapters),
       },
     });
     flushSync();
@@ -144,9 +136,7 @@ describe("Chapters", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(Chapters, { target });
-        },
+        children: createChildSnippet(target, Chapters),
       },
     });
     flushSync();

@@ -4,6 +4,7 @@ import { flushSync } from "svelte";
 import TranscriptSegments from "../../lib/player/TranscriptSegments.svelte";
 import TestTranscriptContextProvider from "./TestTranscriptContextProvider.svelte";
 import { createMockTranscriptContext } from "./transcript-test-utils";
+import { createChildSnippet } from "./test-utils";
 import type { Annotation } from "../../lib/sync/types";
 
 describe("TranscriptSegments", () => {
@@ -67,10 +68,7 @@ describe("TranscriptSegments", () => {
       target,
       props: {
         context: transcriptCtx,
-        children: () => {
-          // No annotations prop — should come from context
-          mount(TranscriptSegments, { target });
-        },
+        children: createChildSnippet(target, TranscriptSegments),
       },
     });
     flushSync();
@@ -91,9 +89,7 @@ describe("TranscriptSegments", () => {
       target,
       props: {
         context: transcriptCtx,
-        children: () => {
-          mount(TranscriptSegments, { target });
-        },
+        children: createChildSnippet(target, TranscriptSegments),
       },
     });
     flushSync();
@@ -115,9 +111,7 @@ describe("TranscriptSegments", () => {
       target,
       props: {
         context: transcriptCtx,
-        children: () => {
-          mount(TranscriptSegments, { target });
-        },
+        children: createChildSnippet(target, TranscriptSegments),
       },
     });
     flushSync();
@@ -143,9 +137,7 @@ describe("TranscriptSegments", () => {
       target,
       props: {
         context: transcriptCtx,
-        children: () => {
-          mount(TranscriptSegments, { target });
-        },
+        children: createChildSnippet(target, TranscriptSegments),
       },
     });
     flushSync();

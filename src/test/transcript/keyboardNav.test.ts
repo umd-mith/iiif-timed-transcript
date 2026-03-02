@@ -1,79 +1,58 @@
-// src/lib/transcript/keyboardNav.test.ts
-import { describe, it, expect, vi } from "vitest";
-import { keyboardNav } from "../../lib/transcript/keyboardNav";
+import { describe, it, expect } from "vitest";
+import {
+  getNextIndex,
+  focusSegmentAtIndex,
+} from "../../lib/transcript/keyboardNav";
 
-describe("keyboardNav action", () => {
-  it("calls onArrowDown when down arrow pressed", () => {
-    const node = document.createElement("div");
-    const onArrowDown = vi.fn();
-
-    keyboardNav(node, { onArrowDown });
-
-    const event = new KeyboardEvent("keydown", { key: "ArrowDown" });
-    node.dispatchEvent(event);
-
-    expect(onArrowDown).toHaveBeenCalledTimes(1);
+describe("getNextIndex", () => {
+  it("moves down with wrapping", () => {
+    expect(getNextIndex("ArrowDown", 0, 5)).toBe(1);
+    expect(getNextIndex("ArrowDown", 4, 5)).toBe(0); // wraps
   });
 
-  it("calls onArrowUp when up arrow pressed", () => {
-    const node = document.createElement("div");
-    const onArrowUp = vi.fn();
-
-    keyboardNav(node, { onArrowUp });
-
-    const event = new KeyboardEvent("keydown", { key: "ArrowUp" });
-    node.dispatchEvent(event);
-
-    expect(onArrowUp).toHaveBeenCalledTimes(1);
+  it("moves up with wrapping", () => {
+    expect(getNextIndex("ArrowUp", 2, 5)).toBe(1);
+    expect(getNextIndex("ArrowUp", 0, 5)).toBe(4); // wraps
   });
 
-  it("calls onEnter when Enter pressed", () => {
-    const node = document.createElement("div");
-    const onEnter = vi.fn();
-
-    keyboardNav(node, { onEnter });
-
-    const event = new KeyboardEvent("keydown", { key: "Enter" });
-    node.dispatchEvent(event);
-
-    expect(onEnter).toHaveBeenCalledTimes(1);
+  it("jumps to start on Home", () => {
+    expect(getNextIndex("Home", 3, 5)).toBe(0);
   });
 
-  it("calls onEscape when Escape pressed", () => {
-    const node = document.createElement("div");
-    const onEscape = vi.fn();
-
-    keyboardNav(node, { onEscape });
-
-    const event = new KeyboardEvent("keydown", { key: "Escape" });
-    node.dispatchEvent(event);
-
-    expect(onEscape).toHaveBeenCalledTimes(1);
+  it("jumps to end on End", () => {
+    expect(getNextIndex("End", 0, 5)).toBe(4);
   });
 
-  it("prevents default for handled keys", () => {
-    const node = document.createElement("div");
-    keyboardNav(node, { onArrowDown: vi.fn() });
+  it("returns null for non-navigation keys", () => {
+    expect(getNextIndex("Enter", 0, 5)).toBeNull();
+    expect(getNextIndex("Tab", 0, 5)).toBeNull();
+    expect(getNextIndex("a", 0, 5)).toBeNull();
+  });
+});
 
-    const event = new KeyboardEvent("keydown", {
-      key: "ArrowDown",
-      cancelable: true,
-    });
-    node.dispatchEvent(event);
+describe("focusSegmentAtIndex", () => {
+  it("focuses the button at the given index", () => {
+    const container = document.createElement("div");
+    const btn0 = document.createElement("button");
+    btn0.dataset.annotationId = "a1";
+    const btn1 = document.createElement("button");
+    btn1.dataset.annotationId = "a2";
+    container.append(btn0, btn1);
+    document.body.appendChild(container);
 
-    expect(event.defaultPrevented).toBe(true);
+    focusSegmentAtIndex(container, 1);
+    expect(document.activeElement).toBe(btn1);
+
+    document.body.removeChild(container);
   });
 
-  it("cleans up event listener on destroy", () => {
-    const node = document.createElement("div");
-    const onArrowDown = vi.fn();
+  it("does nothing for out-of-bounds index", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
 
-    const result = keyboardNav(node, { onArrowDown })!;
-    result.destroy!();
+    // Should not throw
+    focusSegmentAtIndex(container, 5);
 
-    const event = new KeyboardEvent("keydown", { key: "ArrowDown" });
-    node.dispatchEvent(event);
-
-    expect(onArrowDown).not.toHaveBeenCalled();
+    document.body.removeChild(container);
   });
 });

@@ -1,9 +1,10 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushSync } from "svelte";
 import Root from "../../lib/player/Root.svelte";
-import TestContextConsumer from "./TestContextConsumer.svelte";
 import TestRootWrapper from "./TestRootWrapper.svelte";
 import type { PlayerContext } from "../../lib/player/context";
+import type { HlsConstructor } from "../../lib/media/hlsUtils";
+import { createContextCapture } from "./test-utils";
 import {
   MANIFEST_WITH_CHAPTERS,
   MANIFEST_WITHOUT_CHAPTERS,
@@ -19,7 +20,7 @@ describe("Root component", () => {
   beforeEach(() => {
     target = document.createElement("div");
     document.body.appendChild(target);
-    globalThis.fetch = vi.fn() as any;
+    globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -61,10 +62,10 @@ describe("Root component", () => {
 
   // Use unique URLs per test to avoid module-level cache cross-contamination
   test("renders without errors", () => {
-    (globalThis.fetch as any).mockResolvedValue({
+    vi.mocked(globalThis.fetch).mockResolvedValue({
       ok: true,
       json: async () => mockManifest,
-    });
+    } as Response);
 
     mount(Root, {
       target,
@@ -77,10 +78,10 @@ describe("Root component", () => {
 
   test("does not re-fetch manifest for same URL when mounted twice", async () => {
     const url = "https://example.com/cache-dedup-test.json";
-    (globalThis.fetch as any).mockResolvedValue({
+    vi.mocked(globalThis.fetch).mockResolvedValue({
       ok: true,
       json: async () => mockManifest,
-    });
+    } as Response);
 
     // Mount first instance
     mount(Root, {
@@ -114,10 +115,10 @@ describe("Root component", () => {
   });
 
   test("fetches different URLs separately", async () => {
-    (globalThis.fetch as any).mockResolvedValue({
+    vi.mocked(globalThis.fetch).mockResolvedValue({
       ok: true,
       json: async () => mockManifest,
-    });
+    } as Response);
 
     mount(Root, {
       target,
@@ -155,17 +156,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/manifest.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -198,17 +191,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/manifest.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -229,17 +214,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/manifest.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -255,20 +232,24 @@ describe("Root component", () => {
       mockFetchManifest(MANIFEST_WITH_HLS);
 
       // Create a mock HLS constructor for Root to use
-      function MockHls() {
-        return {
-          loadSource: vi.fn(),
-          attachMedia: vi.fn(),
-          destroy: vi.fn(),
-          on: vi.fn(),
-          off: vi.fn(),
-        };
-      }
-      (MockHls as any).isSupported = () => true;
-      (MockHls as any).Events = {
-        MANIFEST_PARSED: "hlsManifestParsed",
-        ERROR: "hlsError",
-      };
+      const MockHls = Object.assign(
+        function () {
+          return {
+            loadSource: vi.fn(),
+            attachMedia: vi.fn(),
+            destroy: vi.fn(),
+            on: vi.fn(),
+            off: vi.fn(),
+          };
+        },
+        {
+          isSupported: () => true,
+          Events: {
+            MANIFEST_PARSED: "hlsManifestParsed",
+            ERROR: "hlsError",
+          },
+        },
+      ) as unknown as HlsConstructor;
 
       let capturedCtx: PlayerContext | null = null;
 
@@ -276,18 +257,10 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/hls-manifest.json",
-          hlsConstructor: MockHls as any,
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          hlsConstructor: MockHls,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -316,17 +289,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/non-hls-manifest.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -348,17 +313,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/vtt-manifest.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -383,17 +340,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/no-vtt-manifest.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -415,17 +364,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/multi-canvas.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -459,17 +400,9 @@ describe("Root component", () => {
         props: {
           manifestUrl: "https://example.com/multi-canvas-chapters.json",
           canvasIndex: 0,
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -500,17 +433,9 @@ describe("Root component", () => {
         props: {
           manifestUrl: "https://example.com/multi-canvas-idx1.json",
           canvasIndex: 1,
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -538,17 +463,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/multi-canvas-switch.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -583,17 +500,9 @@ describe("Root component", () => {
         props: {
           manifestUrl: "https://example.com/multi-canvas-callback.json",
           onCanvasChange,
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -625,17 +534,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/multi-canvas-bounds.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 
@@ -653,7 +554,7 @@ describe("Root component", () => {
 
     test("prop canvasIndex change before manifest loads is honored", async () => {
       // Create a deferred promise so we control when fetch resolves
-      let resolveFetch!: (value: any) => void;
+      let resolveFetch!: (value: unknown) => void;
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockReturnValue(
         new Promise((resolve) => {
           resolveFetch = resolve;
@@ -701,17 +602,9 @@ describe("Root component", () => {
         target,
         props: {
           manifestUrl: "https://example.com/single-canvas-nav.json",
-          children: (anchor: any) => {
-            mount(TestContextConsumer, {
-              target,
-              anchor,
-              props: {
-                onResult: (ctx: PlayerContext) => {
-                  capturedCtx = ctx;
-                },
-              },
-            });
-          },
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
         },
       });
 

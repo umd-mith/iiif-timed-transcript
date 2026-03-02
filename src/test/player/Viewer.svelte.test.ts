@@ -3,7 +3,7 @@ import { mount } from "svelte";
 import { flushSync } from "svelte";
 import Viewer from "../../lib/player/Viewer.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 
 describe("Viewer", () => {
   let target: HTMLElement;
@@ -27,9 +27,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor });
-        },
+        children: createChildSnippet(target, Viewer),
       },
     });
     flushSync();
@@ -52,9 +50,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor });
-        },
+        children: createChildSnippet(target, Viewer),
       },
     });
     flushSync();
@@ -77,9 +73,9 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor, props: { class: "custom-viewer" } });
-        },
+        children: createChildSnippet(target, Viewer, {
+          class: "custom-viewer",
+        }),
       },
     });
     flushSync();
@@ -101,13 +97,9 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, {
-            target,
-            anchor,
-            props: { crossOrigin: "use-credentials" },
-          });
-        },
+        children: createChildSnippet(target, Viewer, {
+          crossOrigin: "use-credentials",
+        }),
       },
     });
     flushSync();
@@ -129,9 +121,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor });
-        },
+        children: createChildSnippet(target, Viewer),
       },
     });
     flushSync();
@@ -153,9 +143,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor, props: { controls: true } });
-        },
+        children: createChildSnippet(target, Viewer, { controls: true }),
       },
     });
     flushSync();
@@ -177,9 +165,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor });
-        },
+        children: createChildSnippet(target, Viewer),
       },
     });
     flushSync();
@@ -201,9 +187,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor, props: { preload: "metadata" } });
-        },
+        children: createChildSnippet(target, Viewer, { preload: "metadata" }),
       },
     });
     flushSync();
@@ -233,9 +217,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor });
-        },
+        children: createChildSnippet(target, Viewer),
       },
     });
     flushSync();
@@ -260,9 +242,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor });
-        },
+        children: createChildSnippet(target, Viewer),
       },
     });
     flushSync();
@@ -293,9 +273,7 @@ describe("Viewer", () => {
         target,
         props: {
           context: mockContext,
-          children: (anchor: any) => {
-            mount(Viewer, { target, anchor });
-          },
+          children: createChildSnippet(target, Viewer),
         },
       });
       flushSync();
@@ -323,9 +301,7 @@ describe("Viewer", () => {
         target,
         props: {
           context: mockContext,
-          children: (anchor: any) => {
-            mount(Viewer, { target, anchor });
-          },
+          children: createChildSnippet(target, Viewer),
         },
       });
       flushSync();
@@ -353,28 +329,22 @@ describe("Viewer", () => {
         target,
         props: {
           context: mockContext,
-          children: (anchor: any) => {
-            mount(Viewer, {
-              target,
-              anchor,
-              props: {
-                tracks: [
-                  {
-                    src: "/captions-en.vtt",
-                    kind: "captions",
-                    srclang: "en",
-                    label: "English",
-                  },
-                  {
-                    src: "/subs-es.vtt",
-                    kind: "subtitles",
-                    srclang: "es",
-                    label: "Spanish",
-                  },
-                ],
+          children: createChildSnippet(target, Viewer, {
+            tracks: [
+              {
+                src: "/captions-en.vtt",
+                kind: "captions",
+                srclang: "en",
+                label: "English",
               },
-            });
-          },
+              {
+                src: "/subs-es.vtt",
+                kind: "subtitles",
+                srclang: "es",
+                label: "Spanish",
+              },
+            ],
+          }),
         },
       });
       flushSync();
@@ -406,22 +376,16 @@ describe("Viewer", () => {
         target,
         props: {
           context: mockContext,
-          children: (anchor: any) => {
-            mount(Viewer, {
-              target,
-              anchor,
-              props: {
-                tracks: [
-                  {
-                    src: "/captions.vtt",
-                    kind: "captions",
-                    srclang: "en",
-                    label: "English",
-                  },
-                ],
+          children: createChildSnippet(target, Viewer, {
+            tracks: [
+              {
+                src: "/captions.vtt",
+                kind: "captions",
+                srclang: "en",
+                label: "English",
               },
-            });
-          },
+            ],
+          }),
         },
       });
       flushSync();
@@ -443,22 +407,16 @@ describe("Viewer", () => {
         target,
         props: {
           context: mockContext,
-          children: (anchor: any) => {
-            mount(Viewer, {
-              target,
-              anchor,
-              props: {
-                tracks: [
-                  {
-                    src: "/captions.vtt",
-                    kind: "captions",
-                    srclang: "en",
-                    label: "English",
-                  },
-                ],
+          children: createChildSnippet(target, Viewer, {
+            tracks: [
+              {
+                src: "/captions.vtt",
+                kind: "captions",
+                srclang: "en",
+                label: "English",
               },
-            });
-          },
+            ],
+          }),
         },
       });
       flushSync();
@@ -490,9 +448,7 @@ describe("Viewer", () => {
         target,
         props: {
           context: mockContext,
-          children: (anchor: any) => {
-            mount(Viewer, { target, anchor });
-          },
+          children: createChildSnippet(target, Viewer),
         },
       });
       flushSync();
@@ -526,22 +482,16 @@ describe("Viewer", () => {
         target,
         props: {
           context: mockContext,
-          children: (anchor: any) => {
-            mount(Viewer, {
-              target,
-              anchor,
-              props: {
-                tracks: [
-                  {
-                    src: "/custom.vtt",
-                    kind: "subtitles",
-                    srclang: "fr",
-                    label: "French",
-                  },
-                ],
+          children: createChildSnippet(target, Viewer, {
+            tracks: [
+              {
+                src: "/custom.vtt",
+                kind: "subtitles",
+                srclang: "fr",
+                label: "French",
               },
-            });
-          },
+            ],
+          }),
         },
       });
       flushSync();
@@ -575,9 +525,7 @@ describe("Viewer", () => {
         target,
         props: {
           context: mockContext,
-          children: (anchor: any) => {
-            mount(Viewer, { target, anchor });
-          },
+          children: createChildSnippet(target, Viewer),
         },
       });
       flushSync();
@@ -600,9 +548,7 @@ describe("Viewer", () => {
       target,
       props: {
         context: mockContext,
-        children: (anchor: any) => {
-          mount(Viewer, { target, anchor });
-        },
+        children: createChildSnippet(target, Viewer),
       },
     });
     flushSync();

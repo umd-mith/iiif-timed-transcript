@@ -3,7 +3,7 @@ import { mount } from "svelte";
 import { flushSync } from "svelte";
 import PlayButton from "../../lib/player/PlayButton.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 
 describe("PlayButton", () => {
   let target: HTMLElement;
@@ -24,9 +24,7 @@ describe("PlayButton", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(PlayButton, { target, anchor });
-        },
+        children: createChildSnippet(target, PlayButton),
       },
     });
     flushSync();
@@ -47,9 +45,7 @@ describe("PlayButton", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(PlayButton, { target, anchor });
-        },
+        children: createChildSnippet(target, PlayButton),
       },
     });
     flushSync();
@@ -72,9 +68,7 @@ describe("PlayButton", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(PlayButton, { target, anchor });
-        },
+        children: createChildSnippet(target, PlayButton),
       },
     });
     flushSync();
@@ -100,9 +94,7 @@ describe("PlayButton", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(PlayButton, { target, anchor });
-        },
+        children: createChildSnippet(target, PlayButton),
       },
     });
     flushSync();
@@ -126,9 +118,7 @@ describe("PlayButton", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(PlayButton, { target, anchor });
-        },
+        children: createChildSnippet(target, PlayButton),
       },
     });
     flushSync();
@@ -147,9 +137,7 @@ describe("PlayButton", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(PlayButton, { target, anchor });
-        },
+        children: createChildSnippet(target, PlayButton),
       },
     });
     flushSync();

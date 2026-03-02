@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, afterEach } from "vitest";
 import { mount } from "svelte";
 import { flushSync } from "svelte";
+import type { Snippet } from "svelte";
 import type { PlayerContext, PlayerState } from "../../lib/player/context";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import TestContextProvider from "./TestContextProvider.svelte";
@@ -69,16 +70,17 @@ describe("getPlayerContext", () => {
       target,
       props: {
         context: mockContext,
-        children: () => {
+        children: ((_anchor: Node) => {
           mount(TestContextConsumer, {
             target,
+            anchor: _anchor,
             props: {
               onResult: (ctx: PlayerContext) => {
                 capturedResult = ctx;
               },
             },
           });
-        },
+        }) as unknown as Snippet,
       },
     });
     flushSync();

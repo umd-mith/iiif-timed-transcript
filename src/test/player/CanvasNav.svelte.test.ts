@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount } from "svelte";
 import { flushSync } from "svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 import type { CanvasInfo } from "../../lib/player/context";
 
 const twoCanvases: CanvasInfo[] = [
@@ -48,9 +48,7 @@ describe("CanvasNav", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(CanvasNav, { target });
-        },
+        children: createChildSnippet(target, CanvasNav),
       },
     });
     flushSync();
@@ -73,9 +71,7 @@ describe("CanvasNav", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(CanvasNav, { target });
-        },
+        children: createChildSnippet(target, CanvasNav),
       },
     });
     flushSync();
@@ -110,9 +106,7 @@ describe("CanvasNav", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(CanvasNav, { target });
-        },
+        children: createChildSnippet(target, CanvasNav),
       },
     });
     flushSync();
@@ -137,9 +131,7 @@ describe("CanvasNav", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(CanvasNav, { target });
-        },
+        children: createChildSnippet(target, CanvasNav),
       },
     });
     flushSync();
@@ -165,9 +157,7 @@ describe("CanvasNav", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(CanvasNav, { target, props: { onCanvasChange } });
-        },
+        children: createChildSnippet(target, CanvasNav, { onCanvasChange }),
       },
     });
     flushSync();
@@ -192,9 +182,7 @@ describe("CanvasNav", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(CanvasNav, { target });
-        },
+        children: createChildSnippet(target, CanvasNav),
       },
     });
     flushSync();
@@ -216,9 +204,7 @@ describe("CanvasNav", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(CanvasNav, { target });
-        },
+        children: createChildSnippet(target, CanvasNav),
       },
     });
     flushSync();
@@ -243,9 +229,7 @@ describe("CanvasNav", () => {
       target,
       props: {
         context: ctx,
-        children: () => {
-          mount(CanvasNav, { target });
-        },
+        children: createChildSnippet(target, CanvasNav),
       },
     });
     flushSync();

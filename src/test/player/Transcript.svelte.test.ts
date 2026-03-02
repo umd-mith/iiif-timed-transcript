@@ -1,13 +1,13 @@
 import { describe, test, expect, beforeEach, afterEach } from "vitest";
 import { mount } from "svelte";
 import { flushSync } from "svelte";
+import type { Snippet } from "svelte";
 import Transcript from "../../lib/player/Transcript.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
 import TestTranscriptContextConsumer from "./TestTranscriptContextConsumer.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 import type { Annotation } from "../../lib/sync/types";
 import type { TranscriptContext } from "../../lib/player/transcript-context";
-import type { Snippet } from "svelte";
 
 describe("Transcript", () => {
   let target: HTMLElement;
@@ -36,13 +36,9 @@ describe("Transcript", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Transcript, {
-            target,
-            anchor,
-            props: { annotations: mockAnnotations },
-          });
-        },
+        children: createChildSnippet(target, Transcript, {
+          annotations: mockAnnotations,
+        }),
       },
     });
     flushSync();
@@ -61,9 +57,7 @@ describe("Transcript", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Transcript, { target, anchor, props: { annotations: [] } });
-        },
+        children: createChildSnippet(target, Transcript, { annotations: [] }),
       },
     });
     flushSync();
@@ -82,25 +76,19 @@ describe("Transcript", () => {
         target,
         props: {
           context: playerCtx,
-          children: (anchor: any) => {
-            mount(Transcript, {
-              target,
-              anchor,
-              props: {
-                annotations: mockAnnotations,
-                children: (() => {
-                  mount(TestTranscriptContextConsumer, {
-                    target,
-                    props: {
-                      onResult: (ctx: TranscriptContext) => {
-                        capturedTranscriptCtx = ctx;
-                      },
-                    },
-                  });
-                }) as unknown as Snippet,
-              },
-            });
-          },
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+            children: (() => {
+              mount(TestTranscriptContextConsumer, {
+                target,
+                props: {
+                  onResult: (ctx: TranscriptContext) => {
+                    capturedTranscriptCtx = ctx;
+                  },
+                },
+              });
+            }) as unknown as Snippet,
+          }),
         },
       });
       flushSync();
@@ -123,25 +111,19 @@ describe("Transcript", () => {
         target,
         props: {
           context: playerCtx,
-          children: (anchor: any) => {
-            mount(Transcript, {
-              target,
-              anchor,
-              props: {
-                annotations: mockAnnotations,
-                children: (() => {
-                  mount(TestTranscriptContextConsumer, {
-                    target,
-                    props: {
-                      onResult: (ctx: TranscriptContext) => {
-                        capturedCtx = ctx;
-                      },
-                    },
-                  });
-                }) as unknown as Snippet,
-              },
-            });
-          },
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+            children: (() => {
+              mount(TestTranscriptContextConsumer, {
+                target,
+                props: {
+                  onResult: (ctx: TranscriptContext) => {
+                    capturedCtx = ctx;
+                  },
+                },
+              });
+            }) as unknown as Snippet,
+          }),
         },
       });
       flushSync();
@@ -161,25 +143,19 @@ describe("Transcript", () => {
         target,
         props: {
           context: playerCtx,
-          children: (anchor: any) => {
-            mount(Transcript, {
-              target,
-              anchor,
-              props: {
-                annotations: mockAnnotations,
-                children: (() => {
-                  mount(TestTranscriptContextConsumer, {
-                    target,
-                    props: {
-                      onResult: (ctx: TranscriptContext) => {
-                        capturedCtx = ctx;
-                      },
-                    },
-                  });
-                }) as unknown as Snippet,
-              },
-            });
-          },
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+            children: (() => {
+              mount(TestTranscriptContextConsumer, {
+                target,
+                props: {
+                  onResult: (ctx: TranscriptContext) => {
+                    capturedCtx = ctx;
+                  },
+                },
+              });
+            }) as unknown as Snippet,
+          }),
         },
       });
       flushSync();

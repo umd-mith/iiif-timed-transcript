@@ -4,6 +4,7 @@ import { flushSync } from "svelte";
 import TranscriptSearch from "../../lib/player/TranscriptSearch.svelte";
 import TestTranscriptContextProvider from "./TestTranscriptContextProvider.svelte";
 import { createMockTranscriptContext } from "./transcript-test-utils";
+import { createChildSnippet } from "./test-utils";
 import type { Annotation } from "../../lib/sync/types";
 
 describe("TranscriptSearch", () => {
@@ -58,10 +59,7 @@ describe("TranscriptSearch", () => {
       target,
       props: {
         context: transcriptCtx,
-        children: () => {
-          // No annotations prop — should come from context
-          mount(TranscriptSearch, { target });
-        },
+        children: createChildSnippet(target, TranscriptSearch),
       },
     });
     flushSync();

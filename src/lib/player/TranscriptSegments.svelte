@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getContext } from "svelte";
   import Segment from "../transcript/Segment.svelte";
+  import { getNextIndex, focusSegmentAtIndex } from "../transcript/keyboardNav";
   import {
     TRANSCRIPT_CONTEXT_KEY,
     type TranscriptContext,
@@ -61,38 +62,11 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (annotations.length === 0) return;
-
-    let nextIndex: number | null = null;
-
-    switch (event.key) {
-      case "ArrowDown":
-        event.preventDefault();
-        nextIndex =
-          focusedIndex < annotations.length - 1 ? focusedIndex + 1 : 0;
-        break;
-      case "ArrowUp":
-        event.preventDefault();
-        nextIndex =
-          focusedIndex > 0 ? focusedIndex - 1 : annotations.length - 1;
-        break;
-      case "Home":
-        event.preventDefault();
-        nextIndex = 0;
-        break;
-      case "End":
-        event.preventDefault();
-        nextIndex = annotations.length - 1;
-        break;
-    }
-
+    const nextIndex = getNextIndex(event.key, focusedIndex, annotations.length);
     if (nextIndex !== null) {
+      event.preventDefault();
       focusedIndex = nextIndex;
-      // Focus the button at the new index
-      const container = event.currentTarget as HTMLElement;
-      const buttons = container.querySelectorAll<HTMLElement>(
-        "button[data-annotation-id]",
-      );
-      buttons[nextIndex]?.focus();
+      focusSegmentAtIndex(event.currentTarget as HTMLElement, nextIndex);
     }
   }
 </script>
@@ -102,7 +76,7 @@
 {:else}
   <div
     class="segments-container {className}"
-    role="listbox"
+    role="group"
     aria-label="Transcript segments"
     tabindex="-1"
     onkeydown={handleKeydown}

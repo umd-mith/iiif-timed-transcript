@@ -1,9 +1,9 @@
 import { describe, test, expect, vi, afterEach } from "vitest";
-import { mount } from "svelte";
+import { mount, type Component } from "svelte";
 import { flushSync } from "svelte";
 import Skip from "../../lib/player/Skip.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext } from "./test-utils";
+import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 
 describe("Skip", () => {
   let target: HTMLElement;
@@ -24,9 +24,9 @@ describe("Skip", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Skip, { target, anchor, props: { seconds: 10 } });
-        },
+        children: createChildSnippet(target, Skip as Component, {
+          seconds: 10,
+        }),
       },
     });
     flushSync();
@@ -45,9 +45,9 @@ describe("Skip", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Skip, { target, anchor, props: { seconds: 30 } });
-        },
+        children: createChildSnippet(target, Skip as Component, {
+          seconds: 30,
+        }),
       },
     });
     flushSync();
@@ -66,9 +66,9 @@ describe("Skip", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Skip, { target, anchor, props: { seconds: -10 } });
-        },
+        children: createChildSnippet(target, Skip as Component, {
+          seconds: -10,
+        }),
       },
     });
     flushSync();
@@ -91,9 +91,9 @@ describe("Skip", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Skip, { target, anchor, props: { seconds: 10 } });
-        },
+        children: createChildSnippet(target, Skip as Component, {
+          seconds: 10,
+        }),
       },
     });
     flushSync();
@@ -116,9 +116,9 @@ describe("Skip", () => {
       target,
       props: {
         context: ctx,
-        children: (anchor: any) => {
-          mount(Skip, { target, anchor, props: { seconds: 10 } });
-        },
+        children: createChildSnippet(target, Skip as Component, {
+          seconds: 10,
+        }),
       },
     });
     flushSync();

@@ -1,9 +1,66 @@
 import { vi } from "vitest";
+import { mount, type Component } from "svelte";
+import type { Snippet } from "svelte";
 import type {
   PlayerActions,
   PlayerContext,
   PlayerState,
 } from "../../lib/player/context";
+import type { Chapter } from "@umd-mith/iiif-media-parsers";
+import TestContextConsumer from "./TestContextConsumer.svelte";
+
+/**
+ * Creates a typed Snippet for Root's children prop that mounts a
+ * TestContextConsumer to capture the PlayerContext.
+ */
+export function createContextCapture(
+  target: HTMLElement,
+  onResult: (ctx: PlayerContext) => void,
+): Snippet<
+  [
+    {
+      player: {
+        state: PlayerState;
+        actions: PlayerActions;
+        chapters: Chapter[];
+        activeChapterId: string | null;
+      };
+    },
+  ]
+> {
+  return ((_anchor: Node) => {
+    mount(TestContextConsumer, {
+      target,
+      anchor: _anchor,
+      props: { onResult },
+    });
+  }) as unknown as Snippet<
+    [
+      {
+        player: {
+          state: PlayerState;
+          actions: PlayerActions;
+          chapters: Chapter[];
+          activeChapterId: string | null;
+        };
+      },
+    ]
+  >;
+}
+
+/**
+ * Creates a plain Snippet that mounts a component at the anchor point.
+ * Centralizes the Snippet cast needed for Svelte's mount() in tests.
+ */
+export function createChildSnippet(
+  target: HTMLElement,
+  ChildComponent: Component,
+  props: Record<string, unknown> = {},
+): Snippet {
+  return ((_anchor: Node) => {
+    mount(ChildComponent, { target, anchor: _anchor, props });
+  }) as unknown as Snippet;
+}
 
 type MockPlayerOverrides = Partial<
   Omit<PlayerContext, "state" | "actions"> & {

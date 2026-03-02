@@ -1,55 +1,37 @@
 // src/lib/transcript/keyboardNav.ts
-import type { Action } from "svelte/action";
 
-export interface KeyboardNavOptions {
-  onArrowUp?: () => void;
-  onArrowDown?: () => void;
-  onEnter?: () => void;
-  onEscape?: () => void;
+/**
+ * Compute the next focused index for roving tabindex keyboard navigation.
+ * Returns null if the key is not a navigation key.
+ */
+export function getNextIndex(
+  key: string,
+  currentIndex: number,
+  length: number,
+): number | null {
+  switch (key) {
+    case "ArrowDown":
+      return currentIndex < length - 1 ? currentIndex + 1 : 0;
+    case "ArrowUp":
+      return currentIndex > 0 ? currentIndex - 1 : length - 1;
+    case "Home":
+      return 0;
+    case "End":
+      return length - 1;
+    default:
+      return null;
+  }
 }
 
 /**
- * Svelte action for keyboard navigation.
- * Handles arrow keys, Enter, and Escape.
+ * Focus the segment button at the given index within a container.
  */
-export const keyboardNav: Action<HTMLElement, KeyboardNavOptions> = (
-  node,
-  options = {},
-) => {
-  function handleKeydown(event: KeyboardEvent) {
-    switch (event.key) {
-      case "ArrowUp":
-        if (options.onArrowUp) {
-          event.preventDefault();
-          options.onArrowUp();
-        }
-        break;
-      case "ArrowDown":
-        if (options.onArrowDown) {
-          event.preventDefault();
-          options.onArrowDown();
-        }
-        break;
-      case "Enter":
-        if (options.onEnter) {
-          event.preventDefault();
-          options.onEnter();
-        }
-        break;
-      case "Escape":
-        if (options.onEscape) {
-          event.preventDefault();
-          options.onEscape();
-        }
-        break;
-    }
-  }
-
-  node.addEventListener("keydown", handleKeydown);
-
-  return {
-    destroy() {
-      node.removeEventListener("keydown", handleKeydown);
-    },
-  };
-};
+export function focusSegmentAtIndex(
+  container: HTMLElement,
+  index: number,
+): void {
+  const buttons = container.querySelectorAll<HTMLElement>(
+    "button[data-annotation-id]",
+  );
+  buttons[index]?.focus();
+}

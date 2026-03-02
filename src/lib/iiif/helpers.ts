@@ -22,6 +22,26 @@ import type { Chapter } from "@umd-mith/iiif-media-parsers";
  * Following functional light patterns with pure functions
  */
 
+// Type guards for loosely-typed IIIF properties not covered by parser types
+
+function hasLabel(obj: unknown): obj is { label: Record<string, string[]> } {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "label" in obj &&
+    typeof (obj as Record<string, unknown>).label === "object"
+  );
+}
+
+function hasLanguage(obj: unknown): obj is { language: string } {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "language" in obj &&
+    typeof (obj as Record<string, unknown>).language === "string"
+  );
+}
+
 /**
  * Gets the label from any IIIF resource in the preferred language
  * @param resource - IIIF resource with label property
@@ -669,11 +689,13 @@ export function buildCanvasInfoList(manifest: ManifestData): CanvasInfo[] {
   const canvases = getCanvases(manifest);
   return canvases.map((canvas, index) => {
     let label: string;
-    try {
-      label = getLabel(
-        canvas as unknown as { label: Record<string, string[]> },
-      );
-    } catch {
+    if (hasLabel(canvas)) {
+      try {
+        label = getLabel(canvas);
+      } catch {
+        label = "";
+      }
+    } else {
       label = "";
     }
     if (!label) {
@@ -773,7 +795,9 @@ export function filterChaptersForCanvas(
   }
 
   // Parse all chapters then filter to matching ones
-  const allChapters = parseRanges(rawManifest as Record<string, unknown>);
+  const allChapters = parseRanges(
+    rawManifest as Parameters<typeof parseRanges>[0],
+  );
   return allChapters.filter((chapter) => matchingRangeIds.has(chapter.id));
 }
 
@@ -799,15 +823,13 @@ function isVTTResource(body: AnnotationBodyData): body is ContentResourceData {
  */
 function getVTTLabel(body: ContentResourceData): string {
   // Some bodies carry a IIIF label map (Record<string, string[]>)
-  const labelMap = (body as unknown as { label?: Record<string, string[]> })
-    .label;
-  if (labelMap && typeof labelMap === "object") {
-    for (const arr of Object.values(labelMap)) {
+  if (hasLabel(body)) {
+    for (const arr of Object.values(body.label)) {
       if (arr.length > 0 && arr[0]) return arr[0];
     }
   }
   // Fall back to language code, then "Unknown"
-  return (body as unknown as { language?: string }).language ?? "Unknown";
+  return hasLanguage(body) ? body.language : "Unknown";
 }
 
 /**
@@ -837,8 +859,7 @@ export function getSupplementaryVTTTracks(
     for (const body of bodies) {
       if (isVTTResource(body)) {
         const resource = body as ContentResourceData;
-        const language =
-          (resource as unknown as { language?: string }).language ?? "en";
+        const language = hasLanguage(resource) ? resource.language : "en";
         tracks.push({
           src: resource.id,
           kind: "captions",

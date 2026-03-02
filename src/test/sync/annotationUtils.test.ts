@@ -206,9 +206,9 @@ describe("annotationUtils", () => {
     });
 
     it("handles annotation without endTime gracefully (should not happen)", () => {
-      const broken: any[] = [
+      const broken = [
         { id: "broken", startTime: 0, text: "No end time" },
-      ];
+      ] as unknown as Annotation[];
       // endTime is undefined => NaN in calculation
       const result = scrollProgressToTime(0.5, broken);
       expect(Number.isNaN(result)).toBe(true);

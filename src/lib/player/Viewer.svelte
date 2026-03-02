@@ -28,13 +28,16 @@
     ctx.mediaStrategy === "hls-js" ? undefined : ctx.mediaUrl,
   );
 
-  // Dev warning: video without captions (WCAG 1.2.2)
+  // Dev warning: video without captions (WCAG 1.2.2) — warn once per mediaUrl
+  let warnedForUrl = "";
   $effect(() => {
     if (
       ctx.mediaType === "video" &&
       effectiveTracks.length === 0 &&
-      ctx.mediaUrl
+      ctx.mediaUrl &&
+      ctx.mediaUrl !== warnedForUrl
     ) {
+      warnedForUrl = ctx.mediaUrl;
       console.warn(
         "[IIIFPlayer] Video has no caption tracks. " +
           "Provide captions via the tracks prop or IIIF manifest annotations for WCAG 1.2.2 compliance.",
