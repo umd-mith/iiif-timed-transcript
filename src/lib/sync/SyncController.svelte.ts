@@ -127,6 +127,7 @@ export class SyncController {
       viewer: this.viewer,
       scrollContainer: this.scrollContainer,
       annotations: this.annotations,
+      priorityLockDuration: this.config.priorityLockDuration,
     });
 
     // Set up event listeners to bridge DOM events to XState machine

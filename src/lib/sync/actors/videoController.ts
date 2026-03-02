@@ -20,13 +20,19 @@ export interface VideoControllerInput {
 
 /**
  * Wait for the viewer to be ready with polling.
- * Polls isReady() until it returns true.
+ * Polls isReady() until it returns true, with a 5-second timeout.
  */
 async function waitForReady(viewer: IIIFMediaViewerRef): Promise<void> {
   const pollInterval = 50; // Poll every 50ms
+  const timeout = 5000;
+  let elapsed = 0;
 
   while (!viewer.isReady()) {
+    if (elapsed >= timeout) {
+      throw new Error("Viewer did not become ready within 5 seconds");
+    }
     await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    elapsed += pollInterval;
   }
 }
 

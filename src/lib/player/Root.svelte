@@ -27,9 +27,7 @@
     canvasIndex = 0,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- public API props, wired in future release
     annotations = [],
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     initialTime,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     autoplay = false,
     hlsConstructor,
     onCanvasChange,
@@ -57,6 +55,20 @@
       ]
     >;
   } = $props();
+
+  // Warn about unimplemented props in development
+  if (import.meta.env?.DEV) {
+    if (initialTime != null) {
+      console.warn(
+        "[IIIFPlayer] initialTime prop is not yet implemented and will be ignored.",
+      );
+    }
+    if (autoplay) {
+      console.warn(
+        "[IIIFPlayer] autoplay prop is not yet implemented and will be ignored.",
+      );
+    }
+  }
 
   // Manifest data (stored outside PlayerStateManager since it's Root-specific)
   let manifestData = $state<{ validated: ManifestData; raw: unknown } | null>(

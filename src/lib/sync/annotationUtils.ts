@@ -8,19 +8,49 @@ import type { Annotation } from "./types";
 
 /**
  * Get the annotation that should be active at a given time.
+ * Uses binary search for O(log n) performance on sorted annotations.
  *
  * @param time - Current playback time in seconds
- * @param annotations - Array of annotations to search (REQUIRED)
+ * @param annotations - Array of annotations sorted by startTime (REQUIRED)
  * @returns The active annotation, or null if none
  */
 export function getActiveAnnotation(
   time: number,
   annotations: Annotation[],
 ): Annotation | null {
-  return (
-    annotations.find((ann) => time >= ann.startTime && time < ann.endTime) ??
-    null
-  );
+  return getActiveAnnotationWithIndex(time, annotations)?.annotation ?? null;
+}
+
+/**
+ * Get the active annotation and its index at a given time.
+ * Uses binary search for O(log n) performance on sorted annotations.
+ *
+ * Used internally by the sync machine to avoid a redundant O(n) findIndex
+ * after the binary search.
+ *
+ * @param time - Current playback time in seconds
+ * @param annotations - Array of annotations sorted by startTime (REQUIRED)
+ * @returns Object with annotation and index, or null if none active
+ */
+export function getActiveAnnotationWithIndex(
+  time: number,
+  annotations: Annotation[],
+): { annotation: Annotation; index: number } | null {
+  let lo = 0;
+  let hi = annotations.length - 1;
+
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    const ann = annotations[mid]!;
+    if (time < ann.startTime) {
+      hi = mid - 1;
+    } else if (time >= ann.endTime) {
+      lo = mid + 1;
+    } else {
+      return { annotation: ann, index: mid };
+    }
+  }
+  return null;
 }
 
 /**
