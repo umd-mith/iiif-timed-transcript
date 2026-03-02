@@ -86,7 +86,7 @@
     "xstate": "^5.28.0"
   },
   "dependencies": {
-    "@umd-mith/iiif-media-parsers": "^0.3.0",
+    "@umd-mith/iiif-media-parsers": "^0.3.1",
     "quick-lru": "^7.3.0",
     "xstate": "^5.0.0",
     "zod": "^4.3.6"

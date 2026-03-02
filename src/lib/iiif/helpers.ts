@@ -471,7 +471,7 @@ export function getTextualBodies(canvas: CanvasData): TextualBodyData[] {
  */
 export interface SupplementaryTextualContent {
   annotationId: string;
-  target: string;
+  target: AnnotationData["target"];
   textBodies: TextualBodyData[];
   tagBodies: TextualBodyData[];
 }
@@ -641,7 +641,9 @@ export function buildTranscriptAnnotations(
     // Must have at least one text body to build a transcript annotation
     if (item.textBodies.length === 0) continue;
 
-    const parsed = parseAnnotationTarget(item.target);
+    const parsed = parseAnnotationTarget(
+      item.target as Parameters<typeof parseAnnotationTarget>[0],
+    );
     const start = parsed?.temporal?.start ?? 0;
     const end = parsed?.temporal?.end ?? start;
 

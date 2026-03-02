@@ -184,7 +184,9 @@ const AnnotationSchema = z
     body: AnnotationBodySchema.or(z.array(AnnotationBodySchema))
       .optional()
       .describe("Annotation body (single or array)"),
-    target: z.string().describe("Annotation target (canvas ID)"),
+    target: z
+      .union([z.string(), SpecificResourceSchema])
+      .describe("Annotation target (canvas URI or SpecificResource with selector)"),
   })
   .describe("IIIF annotation");
 
