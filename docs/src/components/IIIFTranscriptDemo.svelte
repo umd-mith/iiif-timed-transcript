@@ -4,6 +4,7 @@
    * IIIFPlayer compound components with Tailwind styling
    */
   import { onMount } from "svelte";
+  import { parseResponse } from "media-captions";
   import {
     IIIFPlayer,
     type Annotation,
@@ -23,76 +24,14 @@
   let isLoadingVTT = $state(true);
   let vttError = $state<string | null>(null);
 
-  /**
-   * Simple VTT parser for the demo.
-   * Production apps should use media-captions library for robust parsing.
-   */
-  async function parseVTT(vttUrl: string): Promise<Annotation[]> {
-    const response = await fetch(vttUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch VTT: ${response.status}`);
-    }
-
-    const text = await response.text();
-    const lines = text.split("\n");
-    const annotations: Annotation[] = [];
-    let currentId = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-
-      if (line.includes("-->")) {
-        const [startStr, endStr] = line.split("-->").map((s) => s.trim());
-
-        const parseTimestamp = (ts: string): number => {
-          const parts = ts.split(":");
-          let hours = 0,
-            minutes = 0,
-            seconds = 0;
-
-          if (parts.length === 3) {
-            hours = parseInt(parts[0], 10);
-            minutes = parseInt(parts[1], 10);
-            seconds = parseFloat(parts[2]);
-          } else if (parts.length === 2) {
-            minutes = parseInt(parts[0], 10);
-            seconds = parseFloat(parts[1]);
-          } else {
-            seconds = parseFloat(parts[0]);
-          }
-
-          return hours * 3600 + minutes * 60 + seconds;
-        };
-
-        const startTime = parseTimestamp(startStr);
-        const endTime = parseTimestamp(endStr);
-
-        const textLines: string[] = [];
-        i++;
-        while (
-          i < lines.length &&
-          lines[i].trim() &&
-          !lines[i].includes("-->")
-        ) {
-          textLines.push(lines[i].trim());
-          i++;
-        }
-        i--;
-
-        const text = textLines.join(" ");
-
-        if (text) {
-          annotations.push({
-            id: `cue-${currentId++}`,
-            startTime,
-            endTime,
-            text,
-          });
-        }
-      }
-    }
-
-    return annotations;
+  async function parseVTT(url: string): Promise<Annotation[]> {
+    const { cues } = await parseResponse(fetch(url), { type: "vtt" });
+    return cues.map((cue) => ({
+      id: cue.id || `cue-${cue.startTime}`,
+      startTime: cue.startTime,
+      endTime: cue.endTime,
+      text: cue.text,
+    }));
   }
 
   onMount(async () => {

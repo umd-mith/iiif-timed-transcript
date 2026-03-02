@@ -1,8 +1,51 @@
 ---
 import IIIFTranscriptDemo from '../components/IIIFTranscriptDemo.svelte';
+import { parseText } from 'media-captions';
+import {
+	ManifestSchema,
+	getFirstCanvas,
+	buildTranscriptAnnotations,
+	getSupplementaryVTTTracks,
+} from '@umd-mith/svelte-iiif-transcript-player';
 
 const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json';
 const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.vtt';
+
+// Extract transcript from IIIF manifest at build time for SEO structured data.
+// Strategy: try embedded annotations first, fall back to referenced VTT.
+const manifestResponse = await fetch(manifestUrl);
+const manifestJson = await manifestResponse.json();
+const { data: manifest } = ManifestSchema.safeParse(manifestJson);
+const canvas = manifest ? getFirstCanvas(manifest) : undefined;
+
+let transcript = '';
+if (canvas) {
+	// Path A: Annotations embedded directly in the manifest
+	const annotations = buildTranscriptAnnotations(canvas);
+	if (annotations.length > 0) {
+		transcript = annotations.map((a) => a.text).join(' ');
+	} else {
+		// Path B: Manifest references an external VTT file (recipe 0219)
+		const vttTracks = getSupplementaryVTTTracks(canvas);
+		if (vttTracks.length > 0) {
+			const vttText = await fetch(vttTracks[0].src).then((r) => r.text());
+			const { cues } = await parseText(vttText, { type: 'vtt' });
+			transcript = cues.map((cue) => cue.text).join(' ');
+		}
+	}
+}
+
+// Structured data: VideoObject with transcript for search engines and AI
+const jsonLd = {
+	"@context": "https://schema.org",
+	"@type": "VideoObject",
+	"name": manifest?.label?.en?.[0] ?? "Lunchroom Manners",
+	"description": "An educational film about lunchroom manners, with synchronized transcript. Demonstrates the IIIF Transcript Player component library.",
+	"thumbnailUrl": "https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.jpg",
+	"uploadDate": "2024-01-01",
+	"contentUrl": "https://fixtures.iiif.io/video/indiana/lunchroom_manners/high/lunchroom_manners-high.mp4",
+	"transcript": transcript,
+};
 ---
 
 <!doctype html>
@@ -15,6 +58,7 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 	</head>
 	<body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
 		<!-- Navigation -->
@@ -28,6 +72,7 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 					</div>
 					<div class="hidden md:flex items-center space-x-8">
 						<a href="#demo" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Demo</a>
+						<a href="#seo" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">SEO</a>
 						<a href="#getting-started" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Get Started</a>
 						<a href="#components" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Components</a>
 						<a href="#styling" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Styling</a>
@@ -111,10 +156,168 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 			</div>
 		</section>
 
+		<!-- SEO Structured Data Section -->
+		<section id="seo" class="py-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
+			<div class="max-w-4xl mx-auto">
+				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">003</div>
+				<h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">SEO: Structured Data from VTT</h2>
+				<p class="text-lg text-ink-600 mb-8 max-w-3xl font-serif leading-relaxed">
+					Transcript text is invisible to search engines when it only lives inside a VTT file. By parsing VTT at build time with
+					<a href="https://github.com/vidstack/captions" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">media-captions</a>,
+					you can inject the full transcript into <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">Schema.org/VideoObject</code> structured data — making every word indexable by Google, Bing, and AI systems.
+				</p>
+
+				<div class="bg-amber-50 border-l-4 border-amber-400 p-5 mb-8">
+					<p class="text-amber-900 font-serif">
+						<strong class="font-semibold">This page practices what it preaches.</strong>
+						View source on this page to see the <code class="font-mono text-sm bg-amber-100 px-1 py-0.5 rounded">&lt;script type="application/ld+json"&gt;</code>
+						in the <code class="font-mono text-sm bg-amber-100 px-1 py-0.5 rounded">&lt;head&gt;</code> — generated at build time from the same IIIF manifest that powers the interactive demo above.
+					</p>
+				</div>
+
+				<div class="space-y-10">
+					<!-- The pattern -->
+					<div class="border-l-4 border-terracotta-400 pl-8">
+						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">The Pattern: IIIF Manifest → Structured Data</h3>
+						<p class="text-ink-600 mb-4 font-serif">
+							In an Astro page, the frontmatter runs at build time on the server.
+							Fetch the same IIIF manifest the player uses, extract the transcript text, and inject it as
+							<code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">Schema.org</code> structured data.
+							The manifest is the single source of truth for both the player and search engines.
+						</p>
+						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
+							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-astro">{`---
+// Astro frontmatter — runs at build time
+import { parseText } from 'media-captions';
+import {
+  ManifestSchema, getFirstCanvas,
+  buildTranscriptAnnotations, getSupplementaryVTTTracks,
+} from '@umd-mith/svelte-iiif-transcript-player';
+
+const manifestUrl = 'https://example.org/manifest.json';
+
+// Fetch and validate the IIIF manifest
+const manifest = await fetch(manifestUrl).then(r => r.json());
+const { data } = ManifestSchema.safeParse(manifest);
+const canvas = data ? getFirstCanvas(data) : undefined;
+
+let transcript = '';
+if (canvas) {
+  // Path A: Transcript embedded as IIIF annotations
+  const annotations = buildTranscriptAnnotations(canvas);
+  if (annotations.length > 0) {
+    transcript = annotations.map(a => a.text).join(' ');
+  } else {
+    // Path B: Manifest references an external VTT file (recipe 0219)
+    const tracks = getSupplementaryVTTTracks(canvas);
+    if (tracks.length > 0) {
+      const vttText = await fetch(tracks[0].src).then(r => r.text());
+      const { cues } = await parseText(vttText, { type: 'vtt' });
+      transcript = cues.map(cue => cue.text).join(' ');
+    }
+  }
+}
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": data?.label?.en?.[0] ?? "Untitled",
+  "transcript": transcript,
+  // ... thumbnailUrl, uploadDate, contentUrl
+};
+---
+
+<head>
+  <script type="application/ld+json"
+    set:html={JSON.stringify(jsonLd)} />
+</head>`}</code></pre>
+						</div>
+						<p class="text-ink-500 text-sm mt-3 font-serif">
+							Path A handles manifests with embedded transcript annotations (like the
+							<a href="/svelte-iiif-transcript-player/avannotate-demo" class="text-terracotta-500 hover:text-terracotta-600 underline">AVAnnotate demo</a>).
+							Path B handles manifests that reference an external VTT file
+							(<a href="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">IIIF Cookbook recipe 0219</a>),
+							using <a href="https://github.com/vidstack/captions" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">media-captions</a> as a lightweight VTT parser.
+						</p>
+					</div>
+
+					<!-- Why media-captions -->
+					<div class="border-l-4 border-terracotta-400 pl-8">
+						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Why <code class="font-mono">media-captions</code>?</h3>
+						<p class="text-ink-600 mb-6 font-serif">
+							<a href="https://github.com/vidstack/captions" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">media-captions</a>
+							is the caption parsing library from the
+							<a href="https://vidstack.io" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Vidstack</a> project
+							(3,400+ GitHub stars). MIT licensed, actively maintained, and built specifically to address
+							the gaps in native browser caption support.
+						</p>
+						<div class="grid sm:grid-cols-2 gap-6">
+							<div class="bg-parchment-100 border border-ink-200 p-5">
+								<h4 class="font-semibold text-ink-900 mb-2">W3C WebVTT spec-compliant</h4>
+								<p class="text-ink-600 text-sm font-serif">
+									Follows the <a href="https://www.w3.org/TR/webvtt1/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">W3C WebVTT specification</a>
+									for parsing and rendering — correct cue settings, region positioning, and collision detection.
+									Not a regex approximation, but a proper spec implementation.
+								</p>
+							</div>
+							<div class="bg-parchment-100 border border-ink-200 p-5">
+								<h4 class="font-semibold text-ink-900 mb-2">Accessibility-driven</h4>
+								<p class="text-ink-600 text-sm font-serif">
+									Built to meet FCC Communications and Video Accessibility Act requirements.
+									Correct caption positioning matters for WCAG compliance — native browser <code class="font-mono text-xs">::cue</code> styling is too limited for
+									accessible overlay rendering.
+								</p>
+							</div>
+							<div class="bg-parchment-100 border border-ink-200 p-5">
+								<h4 class="font-semibold text-ink-900 mb-2">Same library, both sides</h4>
+								<p class="text-ink-600 text-sm font-serif">
+									Works in Astro frontmatter (Node/build time) and in Svelte components (browser/runtime).
+									One dependency for SEO extraction and interactive playback — no environment-specific forks.
+								</p>
+							</div>
+							<div class="bg-parchment-100 border border-ink-200 p-5">
+								<h4 class="font-semibold text-ink-900 mb-2">Multi-format, ~5kB</h4>
+								<p class="text-ink-600 text-sm font-serif">
+									Parses VTT, SRT, and SSA/ASS. TypeScript-native with proper <code class="font-mono text-xs">VTTCue</code> types.
+									Tree-shakes to just the parser you use. Zero dependencies.
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<!-- What search engines see -->
+					<div class="border-l-4 border-terracotta-400 pl-8">
+						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">What Search Engines See</h3>
+						<p class="text-ink-600 mb-4 font-serif">
+							Without structured data, crawlers see a <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">&lt;video&gt;</code> tag and a VTT URL — opaque binary content.
+							With the <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">transcript</code> property, every spoken word becomes indexable text:
+						</p>
+						<div class="bg-ink-900 border-2 border-ink-800 p-6 overflow-x-auto shadow-lg">
+							<pre class="text-sm font-mono text-parchment-100"><code>{`<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": "Lunchroom Manners",
+  "transcript": "Do you know the lunchroom rules? ..."
+}
+</script>`}</code></pre>
+						</div>
+						<p class="text-ink-500 text-sm mt-3 font-serif">
+							The <code class="font-mono text-xs">transcript</code> property is defined on
+							<a href="https://schema.org/AudioObject" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Schema.org/AudioObject</a>
+							and
+							<a href="https://schema.org/VideoObject" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Schema.org/VideoObject</a>
+							(inherited from MediaObject). Works for both audio and video content.
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<!-- Getting Started Section -->
 		<section id="getting-started" class="py-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
 			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">003</div>
+				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">004</div>
 				<h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">Getting Started</h2>
 				<p class="text-lg text-ink-600 mb-12 font-serif leading-relaxed">
 					Install the library and start building synchronized media experiences in minutes. No configuration required.
@@ -212,7 +415,7 @@ const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchro
 		<!-- Components Section -->
 		<section id="components" class="py-20 px-4 sm:px-6 lg:px-8 bg-parchment-50">
 			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">004</div>
+				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">005</div>
 				<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-6">Component API</h2>
 				<p class="text-lg text-ink-600 mb-12 font-serif leading-relaxed">
 					Composable building blocks for creating custom IIIF media player interfaces. All components are unstyled primitives with data-* attributes for styling.
