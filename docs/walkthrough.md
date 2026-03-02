@@ -76,8 +76,6 @@ dist/player/Viewer.svelte
 dist/player/Viewer.svelte.d.ts
 dist/sync/actors/scrollController.d.ts
 dist/sync/actors/scrollController.js
-dist/sync/actors/scrollObserver.d.ts
-dist/sync/actors/scrollObserver.js
 dist/sync/actors/videoController.d.ts
 dist/sync/actors/videoController.js
 dist/sync/annotationUtils.d.ts
@@ -389,9 +387,6 @@ grep -E '^\s{4}\w+:' src/lib/sync/syncMachine.ts
 				direction: null,
 				timestamp: 0
 				INITIALIZE: {
-				id: 'scrollObserver',
-				src: 'scrollObserver',
-				input: ({ context }) => ({
 				TRANSCRIPT_SCROLL: {
 				VIDEO_TIME_UPDATE: {
 				RESET: {
@@ -417,7 +412,7 @@ idle → ready ⇄ scrollDriven
 ```
 
 - **idle**: Waiting for `INITIALIZE` (happens when Transcript's `$effect` fires with a valid scroll container + media element + annotations).
-- **ready**: Invokes a `scrollObserver` actor. Listens for either `TRANSCRIPT_SCROLL` (user scrolled the transcript) or `VIDEO_TIME_UPDATE` (media playback advanced).
+- **ready**: Listens for either `TRANSCRIPT_SCROLL` (user scrolled the transcript) or `VIDEO_TIME_UPDATE` (media playback advanced). Scroll observation is handled by `SyncController.setupEventListeners()`.
 - **scrollDriven**: User scrolled the transcript → invoke `videoController` to seek the video to the matching time. Returns to `ready` when done.
 - **mediaDriven**: Video time changed → invoke `scrollController` to `scrollIntoView` the matching annotation element. Returns to `ready` when done.
 

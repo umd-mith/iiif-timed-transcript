@@ -26,7 +26,6 @@ pnpm run build
 ## Peer dependencies
 
 - `svelte ^5.0.0`
-- `xstate ^5.0.0`
 
 ## Quick Start
 
@@ -192,7 +191,7 @@ Display current time and duration.
 
 - `data-audio-control="time"` - Time display element
 
-**Format:** `MM:SS / MM:SS` (current / total)
+**Format:** `MM:SS / MM:SS` or `H:MM:SS / H:MM:SS` (current / total, with hours shown for durations >= 1 hour)
 
 ### Transcript Components
 
