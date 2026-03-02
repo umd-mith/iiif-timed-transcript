@@ -50,7 +50,7 @@
   tabindex={tabindex ?? 0}
 >
   <span class="timestamp">{formatTimestamp(annotation.startTime)}</span>
-  <p class="text">{annotation.text}</p>
+  <p class="text">{@html annotation.text}</p>
 </button>
 
 <style>
