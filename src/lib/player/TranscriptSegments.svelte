@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getContext } from "svelte";
+  import type { Snippet } from "svelte";
   import Segment from "../transcript/Segment.svelte";
   import { getNextIndex, focusSegmentAtIndex } from "../transcript/keyboardNav";
   import {
@@ -10,21 +11,25 @@
 
   interface Props {
     annotations?: Annotation[];
-    allowHtmlAnnotations?: boolean;
     activeAnnotationId?: string | null;
     highlightedIds?: Set<string>;
     currentMatchId?: string | null;
     onclick?: (annotation: Annotation) => void;
+    /**
+     * Optional snippet to customize how annotation text is rendered.
+     * Receives the annotation object. When omitted, renders plain text.
+     */
+    text?: Snippet<[{ annotation: Annotation }]>;
     class?: string;
   }
 
   let {
     annotations: annotationsProp,
-    allowHtmlAnnotations: allowHtmlAnnotationsProp,
     activeAnnotationId: activeAnnotationIdProp,
     highlightedIds: highlightedIdsProp,
     currentMatchId: currentMatchIdProp,
     onclick: onclickProp,
+    text,
     class: className = "",
   }: Props = $props();
 
@@ -36,11 +41,6 @@
   // Use context values when available, fall back to props
   const annotations = $derived(
     annotationsProp ?? transcriptCtx?.state.annotations ?? [],
-  );
-  const allowHtmlAnnotations = $derived(
-    allowHtmlAnnotationsProp ??
-      transcriptCtx?.state.allowHtmlAnnotations ??
-      false,
   );
   const activeAnnotationId = $derived(
     activeAnnotationIdProp ?? transcriptCtx?.state.activeAnnotationId ?? null,
@@ -91,7 +91,7 @@
     {#each annotations as annotation, i (annotation.id)}
       <Segment
         {annotation}
-        {allowHtmlAnnotations}
+        {text}
         isActive={activeAnnotationId === annotation.id}
         isHighlighted={highlightedIds.has(annotation.id) &&
           currentMatchId !== annotation.id}

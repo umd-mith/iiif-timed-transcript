@@ -2,7 +2,7 @@
   /**
    * Demo: HTML Annotations in Transcript
    *
-   * Sets allowHtmlAnnotations=true on Transcript to render annotation.text as HTML.
+   * Uses a `text` snippet on TranscriptSegments to render annotation.text as HTML.
    *
    * Manifest: unpublished manifest generated from WebVTT from History UnErased:
    * An Interview with Deb Fowler and Kathleen Barker, Scholarly Editing, vol 41, 2024, CC BY-NC-SA.
@@ -49,9 +49,14 @@
       <div
         class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-clip"
       >
-        <IIIFPlayer.Transcript {annotations} allowHtmlAnnotations={true}>
+        <IIIFPlayer.Transcript {annotations}>
           <IIIFPlayer.TranscriptSearch />
-          <IIIFPlayer.TranscriptSegments />
+          <IIIFPlayer.TranscriptSegments>
+            {#snippet text({ annotation })}
+              <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+              <p class="text">{@html annotation.text}</p>
+            {/snippet}
+          </IIIFPlayer.TranscriptSegments>
         </IIIFPlayer.Transcript>
       </div>
     </div>

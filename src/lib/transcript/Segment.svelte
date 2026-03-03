@@ -1,5 +1,6 @@
 <!-- src/lib/transcript/Segment.svelte -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import type { Annotation } from "../sync/types";
   import { formatTimestamp } from "./utils";
 
@@ -27,20 +28,20 @@
      */
     onclick?: () => void;
     /**
-     * Whether to render annotation.text as HTML.
-     * @default false
+     * Optional snippet to customize how annotation text is rendered.
+     * Receives the annotation object. When omitted, renders plain text.
      */
-    allowHtmlAnnotations?: boolean;
+    text?: Snippet<[{ annotation: Annotation }]> | undefined;
     tabindex?: number;
   }
 
   let {
     annotation,
     isActive = false,
-    allowHtmlAnnotations = false,
     isHighlighted = false,
     isCurrentMatch = false,
     onclick,
+    text,
     tabindex,
   }: Props = $props();
 </script>
@@ -56,9 +57,8 @@
   tabindex={tabindex ?? 0}
 >
   <span class="timestamp">{formatTimestamp(annotation.startTime)}</span>
-  {#if allowHtmlAnnotations}
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <p class="text">{@html annotation.text}</p>
+  {#if text}
+    {@render text({ annotation })}
   {:else}
     <p class="text">{annotation.text}</p>
   {/if}
