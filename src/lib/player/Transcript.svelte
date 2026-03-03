@@ -14,6 +14,9 @@
     /** Array of transcript annotations with timing and text */
     annotations?: Annotation[];
 
+    // A flag to allow rendering annotation text as HTML (if true, annotation.text will be rendered with {@html}
+    allowHtmlAnnotations?: boolean;
+
     // Sync configuration
     syncDebounceMs?: number;
     syncSettleMs?: number;
@@ -39,6 +42,7 @@
 
   let {
     annotations = [],
+    allowHtmlAnnotations = false,
     syncDebounceMs = 150,
     syncSettleMs = 100,
     syncPriorityLockDuration = 1000,
@@ -104,6 +108,7 @@
     get state() {
       return {
         annotations,
+        allowHtmlAnnotations,
         activeAnnotationId,
         searchMatches,
         currentMatchIndex,
@@ -235,7 +240,11 @@
     )}
     {#if activeAnnotation}
       <div aria-live="polite" aria-atomic="true" class="sr-only">
-        {activeAnnotation.text}
+        {#if allowHtmlAnnotations}
+          {@html activeAnnotation.text}
+        {:else}
+          {activeAnnotation.text}
+        {/if}
       </div>
     {/if}
   {/if}

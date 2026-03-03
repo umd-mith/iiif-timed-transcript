@@ -10,6 +10,7 @@
 
   interface Props {
     annotations?: Annotation[];
+    allowHtmlAnnotations?: boolean;
     activeAnnotationId?: string | null;
     highlightedIds?: Set<string>;
     currentMatchId?: string | null;
@@ -19,6 +20,7 @@
 
   let {
     annotations: annotationsProp,
+    allowHtmlAnnotations: allowHtmlAnnotationsProp,
     activeAnnotationId: activeAnnotationIdProp,
     highlightedIds: highlightedIdsProp,
     currentMatchId: currentMatchIdProp,
@@ -34,6 +36,9 @@
   // Use context values when available, fall back to props
   const annotations = $derived(
     annotationsProp ?? transcriptCtx?.state.annotations ?? [],
+  );
+  const allowHtmlAnnotations = $derived(
+    allowHtmlAnnotationsProp ?? transcriptCtx?.state.allowHtmlAnnotations ?? false,
   );
   const activeAnnotationId = $derived(
     activeAnnotationIdProp ?? transcriptCtx?.state.activeAnnotationId ?? null,
@@ -84,6 +89,7 @@
     {#each annotations as annotation, i (annotation.id)}
       <Segment
         {annotation}
+        allowHtmlAnnotations={allowHtmlAnnotations}
         isActive={activeAnnotationId === annotation.id}
         isHighlighted={highlightedIds.has(annotation.id) &&
           currentMatchId !== annotation.id}

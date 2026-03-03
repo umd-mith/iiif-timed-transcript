@@ -3,6 +3,7 @@ import type { Annotation } from "../sync/types";
 
 export interface TranscriptState {
   annotations: Annotation[];
+  allowHtmlAnnotations: boolean | null;
   activeAnnotationId: string | null;
   searchMatches: Annotation[];
   currentMatchIndex: number;

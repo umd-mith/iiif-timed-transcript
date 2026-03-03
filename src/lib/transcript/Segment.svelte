@@ -26,12 +26,18 @@
      * @default undefined
      */
     onclick?: () => void;
+    /**
+     * Whether to render annotation.text as HTML.
+     * @default false
+     */
+    allowHtmlAnnotations?: boolean;
     tabindex?: number;
   }
 
   let {
     annotation,
     isActive = false,
+    allowHtmlAnnotations = false,
     isHighlighted = false,
     isCurrentMatch = false,
     onclick,
@@ -50,7 +56,11 @@
   tabindex={tabindex ?? 0}
 >
   <span class="timestamp">{formatTimestamp(annotation.startTime)}</span>
-  <p class="text">{@html annotation.text}</p>
+  {#if allowHtmlAnnotations}
+    <p class="text">{@html annotation.text}</p>
+  {:else}
+    <p class="text">{annotation.text}</p>
+  {/if}
 </button>
 
 <style>
