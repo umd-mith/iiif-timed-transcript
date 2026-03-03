@@ -30,6 +30,15 @@
     /**
      * Optional snippet to customize how annotation text is rendered.
      * Receives the annotation object. When omitted, renders plain text.
+     *
+     * @example
+     * ```svelte
+     * <Segment {annotation}>
+     *   {#snippet text({ annotation })}
+     *     <p class="text">{@html annotation.text}</p>
+     *   {/snippet}
+     * </Segment>
+     * ```
      */
     text?: Snippet<[{ annotation: Annotation }]> | undefined;
     tabindex?: number;

@@ -18,6 +18,15 @@
     /**
      * Optional snippet to customize how annotation text is rendered.
      * Receives the annotation object. When omitted, renders plain text.
+     *
+     * @example
+     * ```svelte
+     * <IIIFPlayer.TranscriptSegments>
+     *   {#snippet text({ annotation })}
+     *     <p class="text">{@html annotation.text}</p>
+     *   {/snippet}
+     * </IIIFPlayer.TranscriptSegments>
+     * ```
      */
     text?: Snippet<[{ annotation: Annotation }]>;
     class?: string;
