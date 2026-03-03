@@ -10,6 +10,7 @@ export function createMockTranscriptContext(
   return {
     state: {
       annotations: [],
+      allowHtmlAnnotations: null,
       activeAnnotationId: null,
       searchMatches: [],
       currentMatchIndex: -1,

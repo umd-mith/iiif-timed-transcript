@@ -47,6 +47,7 @@ describe("transcript-context", () => {
     const mockContext: TranscriptContext = {
       state: {
         annotations: [{ id: "a1", startTime: 0, endTime: 5, text: "Hello" }],
+        allowHtmlAnnotations: null,
         activeAnnotationId: null,
         searchMatches: [],
         currentMatchIndex: -1,
@@ -87,6 +88,7 @@ describe("transcript-context", () => {
     // Type-level test: verify the interface shape compiles
     const state: TranscriptState = {
       annotations: [],
+      allowHtmlAnnotations: null,
       activeAnnotationId: null,
       searchMatches: [],
       currentMatchIndex: -1,
