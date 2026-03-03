@@ -1,0 +1,1105 @@
+{
+  "@context": [
+    "http://www.w3.org/ns/anno.jsonld",
+    "http://iiif.io/api/presentation/3/context.json"
+  ],
+  "id": "https://scholarlyediting.org",
+  "type": "Manifest",
+  "label": {
+    "en": ["historyunerased"]
+  },
+  "items": [
+    {
+      "id": "https://scholarlyediting.org",
+      "type": "Canvas",
+      "duration": 2449.98,
+      "items": [
+        {
+          "id": "https://scholarlyediting.org/page/audio",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://scholarlyediting.org/annotation/audio",
+              "type": "Annotation",
+              "motivation": "painting",
+              "body": {
+                "id": "https://scholarlyediting.org/audio/historyunerased.mp3",
+                "type": "Sound",
+                "format": "audio/mpeg"
+              },
+              "target": "https://scholarlyediting.org"
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "https://scholarlyediting.org/page/transcript",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-0",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: Thank you again for participating in this interview. Would you first describe, and introduce, the initiative <i>History UnErased</i> and the context of its founding, how and why?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=0,13.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-1",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: Sure, I will. I'll take the reins on that. I'm Deb Fowler. One of the co-founders, current Executive Director, and as I always like to share, former boots on the ground in the trenches classroom teacher, working with new immigrant and refugee populations here in the United States. But prior to that, I taught for several years in South Korea, teaching English as a foreign language.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=14,41.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-2",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "The impetus for founding <i>History UnErased</i> was really a long winding process for both myself and Miriam Morgenstern. As far as how we came to the why, and then the how, became even more complicated. But working with new immigrant and refugee populations of students at the high school level, it was, I could have up to 17 different countries represented in one classroom. And through this process of trying to help them access the English language\nto ensure they would be able to be successful in today's world, I would bring in content that\nwas reflective of their native countries, to broaden understanding of each other, but also to provide them with relatable content. And they just came alive with reflections of themselves in each other, and what they were learning and their stories.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=42,117.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-3",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "These young people were often coming from not only native countries that criminalize homosexuality, but they were coming from unspeakable grief. But they would arrive every day with this hunger and desire, and a particular grace that it was so beautiful and impacted me deeply. But irrespective of their degree of English proficiency, it was clear they were aching to be seen. And they would find multiple ways to share that with me, whether that was through incidental conversations, or grammar homework, indeed, through purposeful conversations of what they chose to write, what they doodled on their desks. And these stories became like this living, breathing thing that I felt a responsibility for, and ended up producing a documentary\nfilm, zero budget film, thanks to the high school with a then junior student, Connor Crosby.\nAnd the film, <i>Hard Truth, Levity, and Hope</i>, spotlighted six of our refugee students from Burma, Congo, Nepal, Iraq, and they held the cameras themselves and they took the cameras around following with them through their everyday lives. And the intention of this documentary\nwas to serve a purpose to highlight that not only were these young people in their families not taking anything from our society, but they were hungry to contribute and be a part of their new community.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=118,237.5"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-4",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "So, two years later he came back. And he shared with me that he had an idea for another film. And he wanted to work with me on this film. And he said that he was tired of the continued discrimination and prejudice against gay people, and he wanted to do something about it. And I stood up, gave him a hug, sat back down, and said, Connor, do you know that I'm gay? And he did not. So that's a wonderful piece of irony there. So we ended up interviewing students, teachers, parents, community members, to produce what became the documentary film, <i>Through Gay Eyes</i>. Through the process of creating this film, <i>Through Gay\nEyes</i>, and hearing in the editing booth over and over and over and over again, comments from teachers and students, that the absence of LGBTQ inclusion and visibility, and what they were learning in school, was doing harm. So my colleague at the time, Miriam Morgenstern, and I began having conversations about this absence. And we were both in a position through a combined decades of experience in the classroom, and hungry to do more and expand our influence, we spent about two years in the rabbit holes of research connecting with archivists and experts and people who could tell us, help us, know where to look for the primary sources.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=237.501,335"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-5",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "And that is how we connected with Kathleen Barker, my esteemed colleague who is here today with us. And one more important thing to note, in the why, is that so often education policy leaders are so far removed from the realities of classroom practice, that there is a chasm there, of not only an absence of communication, but an absence of understanding the implications and considerations of how to ensure the efficacy of policy. And Miriam and I understood that in order for teachers to be able to bring in LGBTQ inclusive academic content into the mainstream curriculum, they needed high quality content, and exceptional professional learning in an ongoing fashion. One and dones do not work. And we also knew that individual educators, doing this as an island in their classroom, was going to potentially cause more problems than solutions. And so we understood that a whole school partnership model was the ideal way to really ensure sustainability in perpetuity.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=335.001,430.049"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-6",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: Thank you for that background. We know you have a wonderful dynamic team of other educators, as you've mentioned, that are involved in this organization\nwith you. Can you tell us a little bit about them? And you've you mentioned, Kathleen, of course, but about their backgrounds and their focus areas?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=430.05,456.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-7",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: The people I have the privilege of working alongside every day are all phenomenal. When, and whenever, I have the chance to introduce people to <i>History UnErased</i> I feel so very proud to talk about our rockstar team and the wealth of experience and expertise, as well as good humor and kindness they contribute to our mission and work with K through 12 schools. And everyone on our team has come on board through serendipitous circumstances, which is a bonus. You can go to our About Us page on our website to meet them.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=457,494.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-8",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: Now, <i>History UnErased</i> is strongly rooted in primary sources, and in addition to amplifying individuals and narratives, the value of connecting individuals with original sources is also unique and compelling facet of your work. Would, you know, share a bit about the process of what's involved in curating the primary sources which inform your work, from the research process through their presentation in curriculum and curricula? As well as what are some of the indicators that you're looking for when identifying and communicating reputable sources? What are you doing to identify reputable versus non-reputable sources?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=495,547"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-9",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Kathleen Barker</b>: One of the challenges of doing research when you're looking at LGBTQ history just has to do with the fact that the way we talk about identity and LGBTQ identity is continually evolving. So the way we talk about LGBTQ identities today is not necessarily the way they talked about it 100 years ago or 200 years ago. Language evolves, terminology changes, so when you're looking at primary sources, you're not always looking at the same set of vocabulary, right. ",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=547.001,583"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-10",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "Another challenge is just the fact that unlike some identities, LGBTQ identity, isn't always visible, isn't always clearly visible, right. So you often have to look through primary sources, and look for kind of coded examples of LGBTQ identity. So there's a couple of ways we do this.\nOne of the first is that we rely on librarians and archivists and historians, who have done a lot\nof work into digging through sources and identifying individuals and events in their collections that connect to moments in LGBTQ history. So we know for example, archives, like the One Archive at USC [University of Southern California] Libraries, has curated an amazing collection of primary sources. The <i>Digital Transgender Archive</i> is another great place, wholly online, completely virtual, where we can find reputable sources. And even other repositories, for example, like the Schlesinger Library at Harvard, or the Library of Congress, have staff members, interns, educators, and historians working on curating collections that we know connect to LGBTQ history and individuals who identify as LGBTQ. ",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=583.001,670"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-11",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "But another challenge, just walking into any archive, can be the relationship. Do we know that\nfor certain? No, we can't be 100% sure, but it seems fairly clear, right? Unfortunately,\nthere were other people in the organization who thought that we just didn't know enough and we couldn't make that designation. So what do you do with this information, right? As someone\nwho comes into the archive looking to, you know, use that information to write about or share LGBTQ history. As I said, we rely on sometimes librarians and archivists to make the call.\nAnd if they decide it, the case isn't strong enough, then those materials might get hidden. So\nsometimes it just is doing a lot of digging and reading between the lines to figure out how\nsomeone felt about their identity and whether we can connect that to LGBTQ history and identities.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=670.001,741.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-12",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: And sometimes when we don't\nknow, for example, Sarah Rosetta. We are not, none of our curriculum offers any judgment, but just give students the primary sources to be a detective and discover for themselves. And if, it in through that process of, you know, as Kathleen mentioned, not assigning today's language to\nthe past, but providing sources for students to grapple with and make meaning from without us using any LGBTQ language.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=742,789.5"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-13",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: Well, along those lines, could you provide us with an example of a historic figure or a moment in history that you've unpacked through your research that you\nfound particularly compelling to the students?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=789.501,808"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-14",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Kathleen Barker</b>: Sure, there are so many examples. One particular example that I really love is from the era of the Harlem Renaissance, and that is an entertainer named Gladys Bentley. And Gladys Bentley moved to New York City as a teenager in the 1920s. And she became this just phenomenally prominent popular entertainer and celebrity during the Harlem Renaissance era. What's really fabulous about Gladys Bentley is that her signature look when she was performing was a top hat and tails. So she's just from the get go subverting gender norms of the time period.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=808.001,849"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-15",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "So she often performed at speakeasies. There was one particular place called Harry Hansberry's Clam House, which basically became her venue, was well known as a gathering\nplace for the LGBTQ community. But she performed at many of the popular Harlem venues of the time period. And so if you watch videos of, or hear recordings of Gladys’ performances, she had this really large booming voice and she played the piano. Her performances must have just been amazingly entertaining. She also was known for flirting with her audience during the performances, including a lot of women. She was in relationships with women during the time period. And all of this was well known out in the open, at least among the Harlem community. What's really fascinating though about Gladys and thinking about identity is the fact that by the\n1930s Gladys moves to Los Angeles. She continues to perform at a number of venues.\nWe know that she performed at a club called Mona's, in San Francisco, which was the nation's first openly lesbian club. And she performed there.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=849.001,923"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-16",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "But by the time we get to the 1940s, and the 1950s into the Cold War period, and the period\nof the Lavender Scare, Gladys kind of changes how she's presenting herself. She appears in a 1952 interview with Ebony Magazine where she claims that she has started taking female\nhormones that she's, she uses the quote, “that she has become a woman again.” And she's\npictured in every Ebony Magazine doing all these very stereotypical female tours, like\nvacuuming and doing the dishes. Just totally different from her Harlem Renaissance era persona. She also appears on an episode of <i>You Bet Your Life</i> with Groucho Marx in a dress and high heels, you know, very different from her tuxedo. And, you know, we love to present this case study to educators and to students, as Deb said, to really allow them to be\ndetectives and think about how Gladys’ identity changed during different periods of their life, and how that connects to things like the Harlem Renaissance, which was a period in which artists were really allowed to explore identity in a much more open way, versus, you know, the\n1950s, in this era where anyone who was perceived as being different could be persecuted,\nand how that affected the way Gladys presented herself. So she's just one of the many, many\nfascinating stories we like to share. I just like to share Gladys too, because her performances were amazing. She's one of those people that I wish I could go back in time and meet and watch perform.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=923.001,1030"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-17",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: Thank you very much. Now, your comments in these last two\nquestions draw attention to sort of critical issues regarding primary source literacy and sort of, you know, recovering individuals within history. I'm curious if you both would comment on, you\nknow, why is this important for K through 12 educators to be able to, you know, engage with these histories and pasts, and engage them in classroom environments.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1030.001,1071.329"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-18",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Kathleen Barker</b>: For starters, the history is much more interesting when you have all the pieces. I think it's important for students to know all of the pieces in order to understand the past and make decisions about the past and the present and the future. We also know that it's really important for students to see themselves, whether that's in literature or in the curriculum, and LGBTQ figures have often been left out of the curriculum. And so students are really missing out on seeing these vital figures from the past.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1071.33,1107"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-19",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "And, you know, we're not necessarily talking about, you know, or let me back up. You know, in some cases, we're talking about figures who were centrally involved in things like Civil Rights Movement, you know, Bayard  Rustin was an adviser to Martin Luther King, Jr., and was essentially responsible for planning the 1963 March on Washington for Jobs and Freedom.\nBut, you know, for decades, his work was, if not left out of the story of the Civil Rights Movement and the March, it was definitely underrepresented in histories. So you're, you know, for decades, right, students were learning the history of the Civil Rights Movement without\nthis really vital piece. Which I think is just one reason why it's so important.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1107.001,1168.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-20",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: Thank you very much.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1169,1171.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-21",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: All right. Well, obviously it's so important that this information gets to the students, but on a, on a practical note, can you give us some ideas about how teachers can\nincorporate these resources into their classroom instruction?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1172,1199.669"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-22",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Kathleen Barker</b>: One of the things that <i>History UnErased</i> aims to do is make it really easy for educators to incorporate LGBTQ history into what they're already teaching. We had a student once, a middle school student actually, in one of our programs, who said at the end of a program, “wait. this is just history, right?” And so we like to share with educators ways\nthat they can incorporate events and figures into their teaching as easily as possible.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1199.67,1234.5"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-23",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "So, one example, as I mentioned earlier, would be the Civil Rights Movement. If you're already\nteaching Martin Luther King, you're already teaching the Civil Rights Movement, you can Mention and you can include Bayard Rustin pretty easily into that narrative. Another example,\nwould be from the Civil War. So we have a wonderful unit on an individual who was born Sarah\nWakeman, who enlisted in the Union Army as Lyons Wakeman. And so if you're teaching the history of the Civil War, you can talk about different ways that men and women participated in the Civil War, what avenues for participation were even available to them, and incorporate Sarah or Lyons into your story.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1234.501,1283"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-24",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "Going even further back into colonial America, we use an example of an individual known as Thomas or Thomasine Hall to talk about gender and gender roles. How colonial society was very gendered? What kind of jobs you could do? What your economic value was, if you were an indentured servant like Thomas(ine) was? So hopefully, all sorts of easy ways to integrate with what someone is, the topics and the themes, and the time periods that people are already teaching.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1283.001,1321"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-25",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "And we at <i>History UnErased</i> provide all sorts of supports, not just the history background, but suggestions for activities and integration, really, to help educators, especially educators, who maybe didn't learn any of this content in their own education. To make it as easy as possible for them to jump right in and share this kind of information with their students.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1321.001,1348.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-26",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: Yeah, and also the training is so important, because as Kathleen mentioned, you know, this is new content to nearly everyone. And there's a lot of layers of complexity when we talk about LGBTQ inclusion in the mainstream curriculum. A lot of educators are, a lot, an overwhelming number, are concerned about saying the wrong\nthing, or getting it wrong. So, working with them first. And what we like to regard as the\nintellectual preparation to teach our curriculum is so critically important.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1349,1395.5"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-27",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "And you know, running through some authentic scenarios, digging into developmentally aligned\nlanguage and content, and unpacking, you know, some of the decisions that we made in the\nlanguage choice to help support educators and lots of different ways for teachers to, lots of\ndifferent methods and approaches that they could use, all framed within that contextualized\npedagogical approach. So not siloing the content as separate from, but weaving it in again, to what Kathleen was saying. But that is such a, that's the heartbeat, really, of what we\ndo, is that support for educators.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1395.501,1450"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-28",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: So I'm curious, could you speak to the challenges that you encounter in working to, to reach a wide audience and provide them with this information? And, you know, what are some of the strategies that you use in, in reaching a broad range of folks, you know,\nwhere they are?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1450.001,1470.72"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-29",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: What has been some of the challenges is that <i>History UnErased</i> is sometimes perceived as an advocacy organization, even though we are an education nonprofit, and the avenues for reaching educators K to 12, College of Ed folks, everybody really, has primarily been through our professional affiliations with conferences and various programming that we contribute to. And also, word of mouth. We are a bootstrapping nonprofit, and we do not market or advertise.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1475.85,1527"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-30",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "Ensuring that we convey, we demonstrate, we get the opportunity to demonstrate that what <i>History UnErased</i> offers is making educators’ lives a bit easier, while it's also improving the history and social studies education all students receive. But, getting that message\nthrough, is, it's a long prospecting process.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1527.001,1551.63"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-31",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Kathleen Barker</b>: But another challenge we've noticed just in talking with educators, and parents as well, is that a lot of people conflate LGBTQ history with sex ed, it's a history curriculum, it's right in the name. But a lot of people hear LGBTQ and the first thing they think of is, oh, this is about sex, sexual orientation, sexual identity. And that we'll be talking about, you know, topics that would be way more appropriate in a health class or a psychology class, or other things. So sometimes we have to, you know, start at the very beginning and tell our audience that this is about history.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1554.63,1598"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-32",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "We've had parents tell us that they were so relieved after they've met with us, to hear that what we're really talking about is history. So there's just a lot of misconceptions, I think\nout there, about what LGBTQ history might be.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1598.001,1612.68"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-33",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: As you mentioned, this curriculum is already in some of the school districts, so you're already working with the parents and the teachers and students. So, can you share some stories, or a story, with us about how the curriculum has impacted them, what they've said to you, what they've shared with you, about how it's actually impacting their learning or their lives?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1618.44,1646.55"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-34",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: So, there's a great story that I love, from when Miriam and I were beta testing some of the content we were developing while we were still in the classroom during that stretch of preparation to found the organization. And I introduced a unit on, a lesson on, by Bayard Rustin and the March on Washington. And one of my students, Mohammed, came up\nto me near the end of class, and he said, “I need to talk to you after class, Miss.” And I thought, oh, and I closed the door. And Mohammed said, “Miss, everybody in the world needs to learn about this, this can change the world.”",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1660.65,1709"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-35",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "And fast forward several years, I left the classroom, Mohammed had gone off to college. We had stayed in touch, and he reached out and he wanted to see me. And so we got together. And he said he wanted to share with me this one particular scenario that happened to him. He\nwas, he became very close with a couple of his friends from one of his college classes. And the\nthree of them did everything together. And one of the three came out to Mohammed and the\nother as gay, and the third young man completely disassociated from him because of that. But Mohammed said, “But Miss, because of what I learned in our class, I could understand him better, and we became even better friends.” And I love that example, because it speaks to\nthe immediate and lasting impact of just one lesson. Just one.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1709.001,1774"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-36",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "How the, you know, often times when there are conversations about bringing LGBTQ inclusive curriculum into the classroom, it's framed solely through the benefit for LGBTQ identifying students, but this is important for every single student. It impacts every single student because if they don't today, they will in future have someone in their life, a family member, co-worker\nfriend who does identify as LGBTQ, and it will make a difference.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1774.001,1813"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-37",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: Wow, great story. Thank you,\nDeb. Kathleen, do you have anything you want to add?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1813.001,1819"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-38",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Kathleen Barker</b>: Sure. A few months ago, Deb and I were presenting at a social studies conference. And we were talking about individuals who had disrupted gender norms over the course of history, and one of the, the people we were talking about was Pauli Murray. And Pauli Murray is another\nexample of a person who had tremendous influence in the Civil Rights Movement and the women's rights movement, but who is often not mentioned, or their role is often downplayed in\nhistory. And we were talking about Pauli Murray and all of their accomplishments. And when the\nsession was over, this teacher stood up and they were angry.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1819.001,1868.039"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-39",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "They were so angry because they had never learned about Pauli Murray. And this is someone\nwho had been teaching for something like 20 years, you know, had a background in history, and was just appalled that Pauli Murray had been left out of the story. And that, you know, in all of these years of education and professional development, and all of these things, this particular moment, this program, was the first time they were learning about Pauli Murray. And it was a really great reminder for us, again, that so many people don't learn this history. And so it's hard\nto teach it to your students if you don't know it yourself and you don't know where to begin.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1868.249,1911"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-40",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: Wow, that's great. That's a\ngreat story. Thank you.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1911.001,1916"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-41",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: Building on this question, other points that you’ve noted, you know, one of the characteristics of the the <i>History UnErased</i> curriculum is that it's highly interdisciplinary, but also reflects a concern with integrating multiple literacy approaches. So I'm\ncurious if you would provide some examples of this, or discuss some examples of, sort of interdisciplinary of your curriculum and strategies for integrating these multiple literacy approaches.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1916.001,1946.52"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-42",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Kathleen Barker</b>: Sure, so all of our <i>History UnErased</i> content, our curriculum,\nis really centered around this idea of being interdisciplinary, but also being intersectional. So we like to say that we're not just unerasing LGBTQ identities, but all sorts of identities. And so, a great example of this would be our Harlem Renaissance unit, where students have the opportunity to analyze all sorts of different kinds of primary sources. So, certainly plenty of written things. But we like to make sure there are visual sources in many of our units. Across the\ncurriculum. We also have oral histories so students can practice their listening skills. And we'd like to offer educators a range of opportunities to engage students. So, there are primary source analysis types of activities, traditional writing activities, but also opportunities for them to kind\nof get up out of their chairs. We have some great kinesthetic activities, where they can act\nout different scenes. We have dramatic readings where students can practice their theater\nskills. The Harlem Renaissance is a great fine arts connection.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=1948.65,2028.99"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-43",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "We have a wonderful unit on the history of HIV/AIDS in the 1980s, were students look at, first, the way that media impacted federal government funding during the early years of the HIV and AIDS crisis. But we also have some connections in that unit to math. We have a series of statistics that students can analyze and follow related to actual funding. So, a math teacher can come in and take that on. But we also talked to social studies and history teachers about using data and thinking about data literacy. How students can practice taking that data and visualizing it in different ways.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2028.991,2080.319"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-44",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: Thank you very much.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2080.32,2081.16"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-45",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: Okay, well, kind of zeroing in\non something you mentioned, Kathleen, you talked about social studies education, and that's, you know, an important part of K through 12 education, civics education. How does this\ncurriculum, and how can this curriculum and the resources expand and enhance a high quality social studies or civics education, that are offered to students?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2082.9,2113.86"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-46",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Kathleen Barker</b>: I can say from a student perspective, Deb and I were leading a very interesting training with a group of middle school students in New Jersey not too long ago. And as usual, Deb and I are presenting in Zoom, and the students are having this amazing conversation over in the chat, right, typing all this information in the chat. And one of the students mentioned in the chat, that you know, their teachers, often, I believe, the direct quote is\n“their teachers often dissed them for using social media as a source of information.” But this\nstudent pointed out that they needed to get the information from somewhere, and the teachers\nweren't teaching it. So where did they go?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2122.74,2170.5"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-47",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "Now, of course, as an educator, history educator, librarian, that just breaks my heart to think that they don't know where to go to get reliable information. But again, it was a good opportunity for us to point out that there are all sorts of reliable places, maybe more reliable than social media, to find some information. But it also points out again, just how important media is in helping people shape their identity in our society today. So it's not something we can ignore, but\nsomething we have to kind of work with. And going back to just the nature of our curriculum, helping students again, discern what is a good source? What is a less reputable source etc.? Right?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2170.501,2222.04"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-48",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: That's a great example.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2222.19,2223.36"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-49",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: Yeah, and I could add on to that, that in the efforts to expand high quality social studies, civics education, the centrality of that teacher’s relationship with the students in the classroom is really central to a truly educative process. And for that student having to resort to social media, where you have no idea where the material, it's not sourced, mostly, I would\nimagine, it's a dangerous prospect. The desperate need to elevate history and social studies as a critical core discipline is glaring right now, as well as the fact it's a glaring need for LGBTQ inclusion and intersectionality within history and social studies.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2225.76,2292.72"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-50",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "The National Council for the Social Studies asked <i>History UnErased</i> in 2018 to author their position statement on teaching LGBTQ history, and our previous board chair and myself authored this. It was unanimously approved in 2019, but within that position statement it\ncalls for a contextualized approach, and through the lens, not through the lens of oppression, but through the lens of accuracy and empowerment. And also some calls to action\nfor individual educators, but also for a collective idea of a response to do this, and that it\nis within our ethical and moral responsibility and opportunity to do so.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2293.2,2357.55"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-51",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: Thanks for sharing that. That is all the questions that I think we have. But thank you so much, both of you, for all the work that you do in this organization. on behalf of the children of the world. My name is Jenifer Ishee. I am the co-managing editor at <i>Scholarly Editing</i>, which is the annual publication for the Association for Documentary Editing, and work with Bob Riter in that capacity. I've worked in Special Collections for around five years and have degrees in history and library science. And so that's kind of what drew me to <i>Scholarly Editing</i>.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2361.63,2410.95"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/annotation/transcript-52",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: And my name is Robert Riter, I serve as co-managing editor of the, the journal with Jenifer. I teach in the School of Library Information Studies at the University of Alabama in the archival studies area. We work with a number of students, they're particularly interested in community based archival approaches, and with concerns which resonate \nwith many of the points that both of you commented on today.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=2413.11,2449.98"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

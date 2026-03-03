@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getContext } from "svelte";
+  import type { Snippet } from "svelte";
   import Segment from "../transcript/Segment.svelte";
   import { getNextIndex, focusSegmentAtIndex } from "../transcript/keyboardNav";
   import {
@@ -14,6 +15,20 @@
     highlightedIds?: Set<string>;
     currentMatchId?: string | null;
     onclick?: (annotation: Annotation) => void;
+    /**
+     * Optional snippet to customize how annotation text is rendered.
+     * Receives the annotation object. When omitted, renders plain text.
+     *
+     * @example
+     * ```svelte
+     * <IIIFPlayer.TranscriptSegments>
+     *   {#snippet text({ annotation })}
+     *     <p class="text">{@html annotation.text}</p>
+     *   {/snippet}
+     * </IIIFPlayer.TranscriptSegments>
+     * ```
+     */
+    text?: Snippet<[{ annotation: Annotation }]>;
     class?: string;
   }
 
@@ -23,6 +38,7 @@
     highlightedIds: highlightedIdsProp,
     currentMatchId: currentMatchIdProp,
     onclick: onclickProp,
+    text,
     class: className = "",
   }: Props = $props();
 
@@ -84,6 +100,7 @@
     {#each annotations as annotation, i (annotation.id)}
       <Segment
         {annotation}
+        {text}
         isActive={activeAnnotationId === annotation.id}
         isHighlighted={highlightedIds.has(annotation.id) &&
           currentMatchId !== annotation.id}

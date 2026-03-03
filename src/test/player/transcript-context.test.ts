@@ -47,6 +47,7 @@ describe("transcript-context", () => {
     const mockContext: TranscriptContext = {
       state: {
         annotations: [{ id: "a1", startTime: 0, endTime: 5, text: "Hello" }],
+
         activeAnnotationId: null,
         searchMatches: [],
         currentMatchIndex: -1,
