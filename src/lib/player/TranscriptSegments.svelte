@@ -38,7 +38,9 @@
     annotationsProp ?? transcriptCtx?.state.annotations ?? [],
   );
   const allowHtmlAnnotations = $derived(
-    allowHtmlAnnotationsProp ?? transcriptCtx?.state.allowHtmlAnnotations ?? false,
+    allowHtmlAnnotationsProp ??
+      transcriptCtx?.state.allowHtmlAnnotations ??
+      false,
   );
   const activeAnnotationId = $derived(
     activeAnnotationIdProp ?? transcriptCtx?.state.activeAnnotationId ?? null,
@@ -89,7 +91,7 @@
     {#each annotations as annotation, i (annotation.id)}
       <Segment
         {annotation}
-        allowHtmlAnnotations={allowHtmlAnnotations}
+        {allowHtmlAnnotations}
         isActive={activeAnnotationId === annotation.id}
         isHighlighted={highlightedIds.has(annotation.id) &&
           currentMatchId !== annotation.id}

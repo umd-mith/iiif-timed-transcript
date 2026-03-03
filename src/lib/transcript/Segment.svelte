@@ -57,6 +57,7 @@
 >
   <span class="timestamp">{formatTimestamp(annotation.startTime)}</span>
   {#if allowHtmlAnnotations}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
     <p class="text">{@html annotation.text}</p>
   {:else}
     <p class="text">{annotation.text}</p>

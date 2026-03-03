@@ -241,6 +241,7 @@
     {#if activeAnnotation}
       <div aria-live="polite" aria-atomic="true" class="sr-only">
         {#if allowHtmlAnnotations}
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html activeAnnotation.text}
         {:else}
           {activeAnnotation.text}
