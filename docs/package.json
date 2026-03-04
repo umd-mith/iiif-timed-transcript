@@ -14,9 +14,8 @@
     "@astrojs/svelte": "^7.2.5",
     "@astrojs/tailwind": "^6.0.2",
     "@umd-mith/svelte-iiif-transcript-player": "workspace:*",
-    "media-captions": "^0.0.18",
     "astro": "^5.17.1",
-    "phosphor-svelte": "^3.1.0",
+    "media-captions": "^0.0.18",
     "svelte": "^5.53.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3"
