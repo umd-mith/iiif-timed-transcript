@@ -13,10 +13,4 @@ export default defineConfig({
       applyBaseStyles: true,
     }),
   ],
-  vite: {
-    ssr: {
-      // Let Vite handle Svelte components from phosphor-svelte
-      noExternal: ["phosphor-svelte"],
-    },
-  },
 });
