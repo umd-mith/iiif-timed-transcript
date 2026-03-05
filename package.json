@@ -11,6 +11,9 @@
   ],
   "author": "Trevor Munoz <tmunoz@umd.edu>",
   "license": "BSD-3-Clause-Clear",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/umd-mith/svelte-iiif-transcript-player.git"
