@@ -1,5 +1,13 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.6.1
+
+### Patch Changes
+
+- - Use version-agnostic placeholders in README install examples
+  - Fix type inconsistency in test-utils `createContextCapture` cast
+  - Add XSS sanitization caution to `text` snippet JSDoc in Segment and TranscriptSegments
+
 ## 0.6.0
 
 ### Minor Changes
