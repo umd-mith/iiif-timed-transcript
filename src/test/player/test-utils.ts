@@ -42,6 +42,7 @@ export function createContextCapture(
         player: {
           state: PlayerState;
           actions: PlayerActions;
+          annotations: Annotation[];
           chapters: Chapter[];
           activeChapterId: string | null;
         };

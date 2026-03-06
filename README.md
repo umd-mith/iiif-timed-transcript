@@ -23,14 +23,14 @@ You need a GitHub personal access token (classic) with `read:packages` scope, se
 **2. Find the tarball URL**
 
 ```bash
-npm view @umd-mith/svelte-iiif-transcript-player@0.5.1 dist.tarball \
+npm view @umd-mith/svelte-iiif-transcript-player@<version> dist.tarball \
   --registry=https://npm.pkg.github.com
 ```
 
 This prints a URL like:
 
 ```
-https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/0.5.1/<sha>
+https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/<version>/<sha>
 ```
 
 **3. Add to package.json**
@@ -40,7 +40,7 @@ Use the tarball URL as the version in your `package.json`:
 ```json
 {
   "dependencies": {
-    "@umd-mith/svelte-iiif-transcript-player": "https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/0.5.1/<sha>"
+    "@umd-mith/svelte-iiif-transcript-player": "https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/<version>/<sha>"
   }
 }
 ```
