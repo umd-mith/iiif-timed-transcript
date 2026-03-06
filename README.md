@@ -2,17 +2,50 @@
 
 > IIIF-powered, transcript-synchronized media player for Svelte 5.
 
-**Status:** Early development (v0.1.0). API not stable.
+**Status:** Early development (v0.5.1). API not stable.
 
 ## Install
 
-> **Note:** This package is not yet published to npm. Use one of the methods below:
+### From GitHub Packages
 
-### Install from GitHub
+This package is published to [GitHub Packages](https://github.com/umd-mith/svelte-iiif-transcript-player/pkgs/npm/svelte-iiif-transcript-player), not npm. Its dependency `@umd-mith/iiif-media-parsers` _is_ on npm. Because both packages share the `@umd-mith` scope, you can't use scope-based registry config (e.g. `@umd-mith:registry=...`) — that would route _all_ `@umd-mith` packages to one registry. Instead, use a direct tarball URL.
+
+**1. Authenticate with GitHub Packages**
+
+Create or update `.npmrc` in your project root:
+
+```ini
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+You need a GitHub personal access token (classic) with `read:packages` scope, set as the `GITHUB_TOKEN` environment variable. Do **not** add `@umd-mith:registry=...` — this is intentional so that `@umd-mith/iiif-media-parsers` resolves from npm normally.
+
+**2. Find the tarball URL**
 
 ```bash
-pnpm add github:umd-mith/svelte-iiif-transcript-player
+npm view @umd-mith/svelte-iiif-transcript-player@0.5.1 dist.tarball \
+  --registry=https://npm.pkg.github.com
 ```
+
+This prints a URL like:
+
+```
+https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/0.5.1/<sha>
+```
+
+**3. Add to package.json**
+
+Use the tarball URL as the version in your `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@umd-mith/svelte-iiif-transcript-player": "https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/0.5.1/<sha>"
+  }
+}
+```
+
+Then run `pnpm install` (or your package manager of choice). The `@umd-mith/iiif-media-parsers` dependency will resolve from npm automatically — no extra config needed.
 
 ### Local Development
 
