@@ -17,6 +17,7 @@ import type {
 } from "./context";
 import type { HlsAdapter } from "../media/hlsUtils";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
+import type { Annotation } from "../sync/types";
 
 export interface PlayerStateManagerOptions {
   onRetry?: () => Promise<void>;
@@ -41,6 +42,7 @@ export class PlayerStateManager implements PlayerContext {
   mediaType = $state<"audio" | "video">("audio");
   mediaStrategy = $state<MediaStrategy>("native");
   hlsAdapter = $state.raw<HlsAdapter | null>(null);
+  annotations = $state<Annotation[]>([]);
   chapters = $state<Chapter[]>([]);
   tracks = $state<TrackDefinition[]>([]);
 

@@ -25,7 +25,6 @@
   let {
     manifestUrl,
     canvasIndex = 0,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- public API props, wired in future release
     annotations = [],
     initialTime,
     autoplay = false,
@@ -48,6 +47,7 @@
           player: {
             state: import("./context").PlayerState;
             actions: import("./context").PlayerActions;
+            annotations: Annotation[];
             chapters: import("@umd-mith/iiif-media-parsers").Chapter[];
             activeChapterId: string | null;
           };
@@ -84,6 +84,13 @@
     if (autoplay) {
       player.actions.play();
     }
+  });
+
+  // Sync annotations prop into player context.
+  // This bridges the prop→class-state boundary (same pattern as canvasIndex effect below,
+  // but without side effects — just a reactive assignment).
+  $effect(() => {
+    player.annotations = annotations;
   });
 
   // React to prop-driven canvas changes after manifest is loaded.
@@ -330,6 +337,7 @@
       player: {
         state: player.state,
         actions: player.actions,
+        annotations: player.annotations,
         chapters: player.chapters,
         activeChapterId: player.activeChapterId,
       },

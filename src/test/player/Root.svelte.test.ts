@@ -231,6 +231,56 @@ describe("Root component", () => {
     });
   });
 
+  describe("annotations prop", () => {
+    test("exposes annotations from prop via context", async () => {
+      mockFetchManifest(MANIFEST_WITHOUT_CHAPTERS);
+
+      const testAnnotations = [
+        { id: "a1", startTime: 0, endTime: 5, text: "First" },
+        { id: "a2", startTime: 5, endTime: 10, text: "Second" },
+      ];
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/annotations-test.json",
+          annotations: testAnnotations,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.annotations).toEqual(testAnnotations);
+      });
+    });
+
+    test("annotations defaults to empty array in context", async () => {
+      mockFetchManifest(MANIFEST_WITHOUT_CHAPTERS);
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/annotations-default.json",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.annotations).toEqual([]);
+      });
+    });
+  });
+
   describe("HLS detection", () => {
     test("sets mediaStrategy to hls-js for .m3u8 URLs when native not supported", async () => {
       mockFetchManifest(MANIFEST_WITH_HLS);
