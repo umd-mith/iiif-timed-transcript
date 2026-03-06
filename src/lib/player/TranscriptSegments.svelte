@@ -128,17 +128,15 @@
   // Container element ref for imperative API
   let containerEl: HTMLElement | undefined = $state();
 
-  // Roving tabindex state — tracks which segment index is in the tab order
-  let focusedIndex = $state(0);
-
-  // Guard against focusedIndex pointing beyond the array after annotations
-  // shrink. Cannot use $derived because focusedIndex is also mutated
-  // imperatively by keyboard navigation (see handleKeydown).
-  $effect(() => {
-    if (annotations.length > 0 && focusedIndex >= annotations.length) {
-      focusedIndex = 0;
-    }
-  });
+  // Roving tabindex: rawFocusedIndex holds the user's keyboard position,
+  // focusedIndex clamps it to valid bounds. Using $derived (not $effect)
+  // keeps the clamped value synchronous — no render frame where tabindex=0
+  // is missing. Only resets when the index exceeds the array, preserving
+  // position through changes that don't invalidate it (e.g. clearing a filter).
+  let rawFocusedIndex = $state(0);
+  const focusedIndex = $derived(
+    rawFocusedIndex >= annotations.length ? 0 : rawFocusedIndex,
+  );
 
   /**
    * Scroll a specific annotation into view.
@@ -196,7 +194,7 @@
     const nextIndex = getNextIndex(event.key, focusedIndex, annotations.length);
     if (nextIndex !== null) {
       event.preventDefault();
-      focusedIndex = nextIndex;
+      rawFocusedIndex = nextIndex;
       focusSegmentAtIndex(event.currentTarget as HTMLElement, nextIndex);
     }
   }
