@@ -1,10 +1,11 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount } from "svelte";
 import { flushSync } from "svelte";
 import type { Snippet } from "svelte";
 import Transcript from "../../lib/player/Transcript.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
 import TestTranscriptContextConsumer from "./TestTranscriptContextConsumer.svelte";
+import TestTranscriptWithSegments from "./TestTranscriptWithSegments.svelte";
 import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 import type { Annotation } from "../../lib/sync/types";
 import type { TranscriptContext } from "../../lib/player/transcript-context";
@@ -243,6 +244,124 @@ describe("Transcript", () => {
       capturedCtx!.actions.handleAnnotationClick(mockAnnotations[1]!);
 
       expect(playerCtx.actions.seekTo).toHaveBeenCalledWith(5); // startTime of a2
+    });
+
+    test("context actions include scrollToAnnotation", () => {
+      const playerCtx = createMockPlayerContext();
+      let capturedCtx: TranscriptContext | null = null;
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: playerCtx,
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+            children: (() => {
+              mount(TestTranscriptContextConsumer, {
+                target,
+                props: {
+                  onResult: (ctx: TranscriptContext) => {
+                    capturedCtx = ctx;
+                  },
+                },
+              });
+            }) as unknown as Snippet,
+          }),
+        },
+      });
+      flushSync();
+
+      expect(capturedCtx!.actions.scrollToAnnotation).toBeInstanceOf(Function);
+    });
+
+    test("scrollToAnnotation scrolls matching element into view", () => {
+      const playerCtx = createMockPlayerContext();
+      let capturedCtx: TranscriptContext | null = null;
+
+      // Use wrapper that properly composes Transcript + TranscriptSegments
+      // so segments render inside the scroll container
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: playerCtx,
+          children: createChildSnippet(target, TestTranscriptWithSegments, {
+            annotations: mockAnnotations,
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedCtx = ctx;
+            },
+          }),
+        },
+      });
+      flushSync();
+
+      // Mock scrollIntoView on the target element
+      const a2Element = target.querySelector(
+        '[data-annotation-id="a2"]',
+      ) as HTMLElement;
+      a2Element.scrollIntoView = vi.fn();
+
+      const result = capturedCtx!.actions.scrollToAnnotation("a2");
+
+      expect(result).toBe(true);
+      expect(a2Element.scrollIntoView).toHaveBeenCalledWith(
+        expect.objectContaining({ block: "center" }),
+      );
+    });
+
+    test("scrollToAnnotation returns false for missing annotation", () => {
+      const playerCtx = createMockPlayerContext();
+      let capturedCtx: TranscriptContext | null = null;
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: playerCtx,
+          children: createChildSnippet(target, TestTranscriptWithSegments, {
+            annotations: mockAnnotations,
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedCtx = ctx;
+            },
+          }),
+        },
+      });
+      flushSync();
+
+      const result = capturedCtx!.actions.scrollToAnnotation("nonexistent");
+
+      expect(result).toBe(false);
+    });
+
+    test("scrollToAnnotation accepts ScrollIntoViewOptions", () => {
+      const playerCtx = createMockPlayerContext();
+      let capturedCtx: TranscriptContext | null = null;
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: playerCtx,
+          children: createChildSnippet(target, TestTranscriptWithSegments, {
+            annotations: mockAnnotations,
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedCtx = ctx;
+            },
+          }),
+        },
+      });
+      flushSync();
+
+      const a1Element = target.querySelector(
+        '[data-annotation-id="a1"]',
+      ) as HTMLElement;
+      a1Element.scrollIntoView = vi.fn();
+
+      capturedCtx!.actions.scrollToAnnotation("a1", {
+        behavior: "instant",
+        block: "start",
+      });
+
+      expect(a1Element.scrollIntoView).toHaveBeenCalledWith(
+        expect.objectContaining({ behavior: "instant", block: "start" }),
+      );
     });
   });
 });

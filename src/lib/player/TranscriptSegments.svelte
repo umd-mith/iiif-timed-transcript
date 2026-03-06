@@ -46,6 +46,10 @@
      * Optional handler for keyboard events on the segments container.
      * Fires before built-in navigation. Call event.preventDefault() to suppress
      * built-in arrow/Home/End navigation.
+     *
+     * Note: When using the `segment` snippet, consumers can also attach keydown
+     * handlers directly on their custom elements. This prop is primarily useful
+     * for consumers using the default Segment rendering.
      */
     onkeydown?: (
       event: KeyboardEvent,
@@ -131,8 +135,12 @@
   /**
    * Scroll a specific annotation into view.
    * Returns true if the annotation was found, false otherwise.
+   * Respects prefers-reduced-motion by default; pass options to override.
    */
-  export function scrollToAnnotation(annotationId: string): boolean {
+  export function scrollToAnnotation(
+    annotationId: string,
+    options?: ScrollIntoViewOptions,
+  ): boolean {
     if (!containerEl) return false;
     const el = containerEl.querySelector(
       `[data-annotation-id="${annotationId}"]`,
@@ -143,11 +151,13 @@
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    el.scrollIntoView({
-      behavior: prefersReducedMotion ? "instant" : "smooth",
-      block: "center",
-      inline: "nearest",
-    });
+    el.scrollIntoView(
+      options ?? {
+        behavior: prefersReducedMotion ? "instant" : "smooth",
+        block: "center",
+        inline: "nearest",
+      },
+    );
     return true;
   }
 

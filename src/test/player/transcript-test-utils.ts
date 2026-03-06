@@ -20,6 +20,7 @@ export function createMockTranscriptContext(
     actions: {
       handleAnnotationClick: vi.fn(),
       handleMatchChange: vi.fn(),
+      scrollToAnnotation: vi.fn().mockReturnValue(false),
       ...overrides.actions,
     },
   };

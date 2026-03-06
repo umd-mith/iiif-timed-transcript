@@ -13,6 +13,15 @@ export interface TranscriptState {
 export interface TranscriptActions {
   handleAnnotationClick: (annotation: Annotation) => void;
   handleMatchChange: (matches: Annotation[], index: number) => void;
+  /**
+   * Scroll a specific annotation into view within the transcript panel.
+   * Returns true if the annotation was found, false otherwise.
+   * Respects prefers-reduced-motion by default.
+   */
+  scrollToAnnotation: (
+    annotationId: string,
+    options?: ScrollIntoViewOptions,
+  ) => boolean;
 }
 
 export interface TranscriptContext {
