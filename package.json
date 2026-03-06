@@ -56,7 +56,7 @@
     "changeset": "changeset",
     "release": "pnpm run build && changeset publish",
     "prepublishOnly": "pnpm run build && pnpm run test",
-    "prepare": "husky"
+    "prepare": "husky && pnpm run build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
