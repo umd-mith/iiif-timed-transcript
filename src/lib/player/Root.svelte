@@ -56,20 +56,6 @@
     >;
   } = $props();
 
-  // Warn about unimplemented props in development
-  if (import.meta.env?.DEV) {
-    if (initialTime != null) {
-      console.warn(
-        "[IIIFPlayer] initialTime prop is not yet implemented and will be ignored.",
-      );
-    }
-    if (autoplay) {
-      console.warn(
-        "[IIIFPlayer] autoplay prop is not yet implemented and will be ignored.",
-      );
-    }
-  }
-
   // Manifest data (stored outside PlayerStateManager since it's Root-specific)
   let manifestData = $state<{ validated: ManifestData; raw: unknown } | null>(
     null,
@@ -83,6 +69,22 @@
 
   // Provide context — the class instance satisfies PlayerContext
   setContext(PLAYER_CONTEXT_KEY, player);
+
+  // Apply initialTime (first canvas load only) and autoplay (every canvas load)
+  let initialTimeApplied = false;
+
+  $effect(() => {
+    if (!player.state.isReady) return;
+
+    if (initialTime != null && !initialTimeApplied) {
+      initialTimeApplied = true;
+      player.actions.seekTo(initialTime);
+    }
+
+    if (autoplay) {
+      player.actions.play();
+    }
+  });
 
   // React to prop-driven canvas changes after manifest is loaded.
   // This effect drives external side effects (media teardown/setup), not state derivation.

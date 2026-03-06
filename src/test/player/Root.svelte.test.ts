@@ -13,6 +13,7 @@ import {
   MANIFEST_MULTI_CANVAS,
   mockFetchManifest,
 } from "./test-fixtures";
+import { manifestCache } from "../../lib/player/manifestCache";
 
 describe("Root component", () => {
   let target: HTMLElement;
@@ -27,16 +28,19 @@ describe("Root component", () => {
     if (document.body.contains(target)) {
       document.body.removeChild(target);
     }
+    manifestCache.clear();
   });
 
   const mockManifest = {
     "@context": "http://iiif.io/api/presentation/3/context.json",
     id: "https://example.com/manifest",
     type: "Manifest",
+    label: { en: ["Test Manifest"] },
     items: [
       {
         id: "canvas1",
         type: "Canvas",
+        duration: 60,
         items: [
           {
             id: "page1",
@@ -155,7 +159,7 @@ describe("Root component", () => {
       mount(Root, {
         target,
         props: {
-          manifestUrl: "https://example.com/manifest.json",
+          manifestUrl: "https://example.com/chapters-with-structures.json",
           children: createContextCapture(target, (ctx) => {
             capturedCtx = ctx;
           }),
@@ -190,7 +194,7 @@ describe("Root component", () => {
       mount(Root, {
         target,
         props: {
-          manifestUrl: "https://example.com/manifest.json",
+          manifestUrl: "https://example.com/chapters-without-structures.json",
           children: createContextCapture(target, (ctx) => {
             capturedCtx = ctx;
           }),
@@ -213,7 +217,7 @@ describe("Root component", () => {
       mount(Root, {
         target,
         props: {
-          manifestUrl: "https://example.com/manifest.json",
+          manifestUrl: "https://example.com/active-chapter-id-null.json",
           children: createContextCapture(target, (ctx) => {
             capturedCtx = ctx;
           }),
@@ -351,6 +355,181 @@ describe("Root component", () => {
         expect(capturedCtx!.tracks).toBeDefined();
         expect(capturedCtx!.tracks).toEqual([]);
       });
+    });
+  });
+
+  describe("initialTime and autoplay", () => {
+    /**
+     * Helper: simulate media becoming ready by attaching a mock media element
+     * and setting isReady + duration, then flushing Svelte effects.
+     */
+    function simulateMediaReady(
+      ctx: PlayerContext,
+      duration: number = 90,
+    ): HTMLAudioElement {
+      const el = document.createElement("audio");
+      // Stub play() to return a resolved promise (browsers require user gesture)
+      el.play = vi.fn().mockResolvedValue(undefined);
+      ctx.mediaElement = el;
+      ctx.state.duration = duration;
+      ctx.state.isReady = true;
+      flushSync();
+      return el;
+    }
+
+    test("initialTime seeks to specified time after media ready", async () => {
+      mockFetchManifest(MANIFEST_WITH_CHAPTERS);
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/initial-time-test.json",
+          initialTime: 30,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBeTruthy();
+      });
+
+      const el = simulateMediaReady(capturedCtx!);
+
+      // seekTo should have set currentTime to 30
+      expect(el.currentTime).toBe(30);
+    });
+
+    test("initialTime does not re-apply after canvas switch", async () => {
+      mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/initial-time-no-reapply.json",
+          initialTime: 30,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBeTruthy();
+      });
+
+      // First canvas becomes ready — initialTime applied
+      const el1 = simulateMediaReady(capturedCtx!, 90);
+      expect(el1.currentTime).toBe(30);
+
+      // Switch to canvas 1 (resets isReady)
+      capturedCtx!.actions.switchCanvas(1);
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.canvasIndex).toBe(1);
+      });
+
+      // Second canvas becomes ready — initialTime should NOT re-apply
+      const el2 = simulateMediaReady(capturedCtx!, 120);
+      expect(el2.currentTime).toBe(0);
+    });
+
+    test("autoplay calls play after media ready", async () => {
+      mockFetchManifest(MANIFEST_WITH_CHAPTERS);
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/autoplay-test.json",
+          autoplay: true,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBeTruthy();
+      });
+
+      const el = simulateMediaReady(capturedCtx!);
+
+      expect(el.play).toHaveBeenCalled();
+    });
+
+    test("autoplay re-triggers after canvas switch", async () => {
+      mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/autoplay-canvas-switch.json",
+          autoplay: true,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBeTruthy();
+      });
+
+      // First canvas ready — autoplay fires
+      const el1 = simulateMediaReady(capturedCtx!);
+      expect(el1.play).toHaveBeenCalledTimes(1);
+
+      // Switch canvas
+      capturedCtx!.actions.switchCanvas(1);
+      await vi.waitFor(() => {
+        expect(capturedCtx!.canvasIndex).toBe(1);
+      });
+
+      // Second canvas ready — autoplay fires again
+      const el2 = simulateMediaReady(capturedCtx!, 120);
+      expect(el2.play).toHaveBeenCalledTimes(1);
+    });
+
+    test("initialTime and autoplay together: seeks then plays", async () => {
+      mockFetchManifest(MANIFEST_WITH_CHAPTERS);
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/both-props-test.json",
+          initialTime: 15,
+          autoplay: true,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBeTruthy();
+      });
+
+      const el = simulateMediaReady(capturedCtx!);
+
+      // Both should have fired
+      expect(el.currentTime).toBe(15);
+      expect(el.play).toHaveBeenCalled();
     });
   });
 

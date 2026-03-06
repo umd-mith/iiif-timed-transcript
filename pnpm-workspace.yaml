@@ -2,3 +2,5 @@ packages:
   - "."
   - "docs"
   - "astro-test"
+onlyBuiltDependencies:
+  - esbuild

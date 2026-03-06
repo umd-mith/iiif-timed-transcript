@@ -66,6 +66,7 @@ export const MANIFEST_WITHOUT_CHAPTERS = {
     {
       id: "https://example.com/canvas/1",
       type: "Canvas",
+      duration: 60,
       items: [
         {
           id: "https://example.com/canvas/1/page/1",
