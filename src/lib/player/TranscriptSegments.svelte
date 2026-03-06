@@ -108,6 +108,7 @@
       new Set<string>();
     if (!highlightedAnnotationId) return base;
     // Merge deep-link highlight with search highlights
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local computation, not reactive state
     const merged = new Set(base);
     merged.add(highlightedAnnotationId);
     return merged;
@@ -139,6 +140,7 @@
    */
   export function scrollToAnnotation(
     annotationId: string,
+    // eslint-disable-next-line no-undef
     options?: ScrollIntoViewOptions,
   ): boolean {
     if (!containerEl) return false;
@@ -206,7 +208,8 @@
   >
     {#each annotations as annotation, i (annotation.id)}
       {@const isActive = activeAnnotationId === annotation.id}
-      {@const isHighlighted = highlightedIds.has(annotation.id) && currentMatchId !== annotation.id}
+      {@const isHighlighted =
+        highlightedIds.has(annotation.id) && currentMatchId !== annotation.id}
       {@const isCurrentMatch = currentMatchId === annotation.id}
       {#if segment}
         {@render segment({

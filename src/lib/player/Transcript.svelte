@@ -110,6 +110,7 @@
    */
   function scrollToAnnotation(
     annotationId: string,
+    // eslint-disable-next-line no-undef
     options?: ScrollIntoViewOptions,
   ): boolean {
     if (!scrollContainer) return false;

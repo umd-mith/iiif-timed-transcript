@@ -57,7 +57,6 @@ export function createContextCapture(
  */
 export function createChildSnippet(
   target: HTMLElement,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ChildComponent: Component<any>,
   props: Record<string, unknown> = {},
 ): Snippet {

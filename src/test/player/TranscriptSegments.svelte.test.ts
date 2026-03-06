@@ -204,9 +204,7 @@ describe("TranscriptSegments", () => {
       expect(activeBadge).not.toBeNull();
 
       // data-state should be "active" on the correct segment
-      const activeSegment = target.querySelector(
-        '[data-annotation-id="a2"]',
-      );
+      const activeSegment = target.querySelector('[data-annotation-id="a2"]');
       expect(activeSegment?.getAttribute("data-state")).toBe("active");
     });
 
@@ -368,6 +366,28 @@ describe("TranscriptSegments", () => {
       const result = instance.scrollToAnnotation("nonexistent");
 
       expect(result).toBe(false);
+    });
+
+    test("accepts optional ScrollIntoViewOptions", () => {
+      const instance = mount(TranscriptSegments, {
+        target,
+        props: { annotations: mockAnnotations },
+      });
+      flushSync();
+
+      const a1Element = target.querySelector(
+        '[data-annotation-id="a1"]',
+      ) as HTMLElement;
+      a1Element.scrollIntoView = vi.fn();
+
+      instance.scrollToAnnotation("a1", {
+        behavior: "instant",
+        block: "start",
+      });
+
+      expect(a1Element.scrollIntoView).toHaveBeenCalledWith(
+        expect.objectContaining({ behavior: "instant", block: "start" }),
+      );
     });
   });
 
