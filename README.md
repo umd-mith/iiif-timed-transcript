@@ -2,7 +2,7 @@
 
 > IIIF-powered, transcript-synchronized media player for Svelte 5.
 
-**Status:** Early development (v0.5.1). API not stable.
+**Status:** Early development (v0.6.0). API not stable.
 
 ## Install
 
