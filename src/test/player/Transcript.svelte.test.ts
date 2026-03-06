@@ -67,6 +67,85 @@ describe("Transcript", () => {
     expect(emptyMessage?.textContent).toContain("No transcript available");
   });
 
+  describe("context annotations fallback", () => {
+    test("uses PlayerContext annotations when no annotations prop given", () => {
+      const contextAnnotations: Annotation[] = [
+        { id: "ctx1", startTime: 0, endTime: 5, text: "From context" },
+        { id: "ctx2", startTime: 5, endTime: 10, text: "Also from context" },
+      ];
+      const playerCtx = createMockPlayerContext({
+        annotations: contextAnnotations,
+      });
+      let capturedTranscriptCtx: TranscriptContext | null = null;
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: playerCtx,
+          children: createChildSnippet(target, Transcript, {
+            // No annotations prop — should fall back to context
+            children: (() => {
+              mount(TestTranscriptContextConsumer, {
+                target,
+                props: {
+                  onResult: (ctx: TranscriptContext) => {
+                    capturedTranscriptCtx = ctx;
+                  },
+                },
+              });
+            }) as unknown as Snippet,
+          }),
+        },
+      });
+      flushSync();
+
+      expect(capturedTranscriptCtx).not.toBeNull();
+      expect(capturedTranscriptCtx!.state.annotations).toEqual(
+        contextAnnotations,
+      );
+    });
+
+    test("prefers direct annotations prop over context annotations", () => {
+      const contextAnnotations: Annotation[] = [
+        { id: "ctx1", startTime: 0, endTime: 5, text: "From context" },
+      ];
+      const directAnnotations: Annotation[] = [
+        { id: "d1", startTime: 0, endTime: 3, text: "Direct prop" },
+        { id: "d2", startTime: 3, endTime: 6, text: "Also direct" },
+      ];
+      const playerCtx = createMockPlayerContext({
+        annotations: contextAnnotations,
+      });
+      let capturedTranscriptCtx: TranscriptContext | null = null;
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: playerCtx,
+          children: createChildSnippet(target, Transcript, {
+            annotations: directAnnotations,
+            children: (() => {
+              mount(TestTranscriptContextConsumer, {
+                target,
+                props: {
+                  onResult: (ctx: TranscriptContext) => {
+                    capturedTranscriptCtx = ctx;
+                  },
+                },
+              });
+            }) as unknown as Snippet,
+          }),
+        },
+      });
+      flushSync();
+
+      expect(capturedTranscriptCtx).not.toBeNull();
+      expect(capturedTranscriptCtx!.state.annotations).toEqual(
+        directAnnotations,
+      );
+    });
+  });
+
   describe("TranscriptContext provision", () => {
     test("provides TranscriptContext to children", () => {
       const playerCtx = createMockPlayerContext();

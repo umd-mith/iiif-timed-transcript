@@ -1,6 +1,7 @@
 import { getContext as svelteGetContext } from "svelte";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import type { HlsAdapter } from "../media/hlsUtils";
+import type { Annotation } from "../sync/types";
 
 export interface TrackDefinition {
   src: string;
@@ -51,6 +52,7 @@ export interface PlayerContext {
   mediaType: "audio" | "video";
   readonly mediaStrategy: MediaStrategy;
   readonly hlsAdapter: HlsAdapter | null;
+  readonly annotations: Annotation[];
   readonly chapters: Chapter[];
   readonly activeChapterId: string | null;
   readonly tracks: TrackDefinition[];

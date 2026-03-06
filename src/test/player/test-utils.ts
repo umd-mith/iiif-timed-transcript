@@ -6,6 +6,7 @@ import type {
   PlayerContext,
   PlayerState,
 } from "../../lib/player/context";
+import type { Annotation } from "../../lib/sync/types";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import TestContextConsumer from "./TestContextConsumer.svelte";
 
@@ -22,6 +23,7 @@ export function createContextCapture(
       player: {
         state: PlayerState;
         actions: PlayerActions;
+        annotations: Annotation[];
         chapters: Chapter[];
         activeChapterId: string | null;
       };
@@ -93,6 +95,7 @@ export function createMockPlayerContext(
     mediaType: "audio",
     mediaStrategy: "native",
     hlsAdapter: null,
+    annotations: [],
     chapters: [],
     activeChapterId: null,
     tracks: [],

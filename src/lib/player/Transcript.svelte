@@ -55,6 +55,11 @@
   const playerContext = getPlayerContext();
   const { actions } = playerContext;
 
+  // Fall back to context annotations when none provided directly
+  const resolvedAnnotations = $derived(
+    annotations.length > 0 ? annotations : playerContext.annotations,
+  );
+
   // Create viewer adapter for SyncController
   // This adapts the player context to the full IIIFMediaViewerRef interface
   const viewerAdapter: IIIFMediaViewerRef = {
@@ -103,7 +108,7 @@
   setContext(TRANSCRIPT_CONTEXT_KEY, {
     get state() {
       return {
-        annotations,
+        annotations: resolvedAnnotations,
         activeAnnotationId,
         searchMatches,
         currentMatchIndex,
@@ -135,7 +140,7 @@
   $effect(() => {
     // Capture reactive dependencies
     const container = scrollContainer;
-    const anns = annotations;
+    const anns = resolvedAnnotations;
     const mediaEl = playerContext.mediaElement;
 
     // Early return if requirements not met
@@ -188,7 +193,7 @@
     untrack(() => {
       if (onActiveAnnotationChange) {
         const active = id
-          ? (annotations.find((a) => a.id === id) ?? null)
+          ? (resolvedAnnotations.find((a) => a.id === id) ?? null)
           : null;
         onActiveAnnotationChange(active);
       }
@@ -217,7 +222,7 @@
   aria-label={ariaLabel}
   bind:this={scrollContainer}
 >
-  {#if annotations.length === 0}
+  {#if resolvedAnnotations.length === 0}
     <!-- Empty state -->
     {#if empty}
       {@render empty()}
@@ -230,7 +235,7 @@
 
   <!-- Screen reader announcements for active segment (user-initiated changes only) -->
   {#if announceActiveSegment && activeAnnotationId && lastInteractionWasUser}
-    {@const activeAnnotation = annotations.find(
+    {@const activeAnnotation = resolvedAnnotations.find(
       (a) => a.id === activeAnnotationId,
     )}
     {#if activeAnnotation}
