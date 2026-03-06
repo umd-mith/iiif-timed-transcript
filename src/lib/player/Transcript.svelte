@@ -106,7 +106,7 @@
 
   /**
    * Scroll a specific annotation into view within the transcript panel.
-   * Closes over scrollContainer so any child component can call it via context.
+   * Available to child components via TranscriptContext.actions.scrollToAnnotation.
    */
   function scrollToAnnotation(
     annotationId: string,
@@ -115,7 +115,7 @@
   ): boolean {
     if (!scrollContainer) return false;
     const el = scrollContainer.querySelector(
-      `[data-annotation-id="${annotationId}"]`,
+      `[data-annotation-id="${CSS.escape(annotationId)}"]`,
     );
     if (!el) return false;
 

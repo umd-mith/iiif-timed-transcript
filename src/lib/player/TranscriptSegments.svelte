@@ -11,7 +11,9 @@
 
   /**
    * Props passed to a custom segment snippet.
-   * Includes segmentAttrs for pit-of-success correctness.
+   * Includes a `segmentAttrs` spread object that bundles a11y attributes,
+   * data attributes, tabindex, and onclick — so consumers get correct
+   * behavior by default without manual wiring.
    */
   export interface SegmentSnippetProps {
     annotation: Annotation;
@@ -19,6 +21,7 @@
     isHighlighted: boolean;
     isCurrentMatch: boolean;
     index: number;
+    /** Spread onto your root element: `{...segmentAttrs}`. Provides a11y, keyboard nav, and click handling. */
     segmentAttrs: {
       "data-annotation-id": string;
       "data-state": "active" | "inactive";
@@ -26,7 +29,7 @@
       "data-current-match": "true" | undefined;
       "aria-current": "true" | undefined;
       role: "button";
-      tabindex: number;
+      tabindex: 0 | -1;
       onclick: () => void;
     };
   }
@@ -47,9 +50,11 @@
      * Fires before built-in navigation. Call event.preventDefault() to suppress
      * built-in arrow/Home/End navigation.
      *
-     * Note: When using the `segment` snippet, consumers can also attach keydown
-     * handlers directly on their custom elements. This prop is primarily useful
-     * for consumers using the default Segment rendering.
+     * This handler fires on the segments *container*, not on individual
+     * segments. It provides annotation context (focused annotation, index, full
+     * array) that a handler on an individual element would not have. When using
+     * the `segment` snippet, consumers may also add keydown handlers directly
+     * on their custom elements for segment-specific behavior.
      */
     onkeydown?: (
       event: KeyboardEvent,
@@ -126,7 +131,9 @@
   // Roving tabindex state — tracks which segment index is in the tab order
   let focusedIndex = $state(0);
 
-  // Reset focused index when annotations change
+  // Guard against focusedIndex pointing beyond the array after annotations
+  // shrink. Cannot use $derived because focusedIndex is also mutated
+  // imperatively by keyboard navigation (see handleKeydown).
   $effect(() => {
     if (annotations.length > 0 && focusedIndex >= annotations.length) {
       focusedIndex = 0;
@@ -145,7 +152,7 @@
   ): boolean {
     if (!containerEl) return false;
     const el = containerEl.querySelector(
-      `[data-annotation-id="${annotationId}"]`,
+      `[data-annotation-id="${CSS.escape(annotationId)}"]`,
     );
     if (!el) return false;
 
