@@ -24,7 +24,7 @@ describe("getPlayerContext", () => {
     expect(() => {
       mount(TestContextConsumer, { target, props: { onResult: () => {} } });
       flushSync();
-    }).toThrow("Player context not found");
+    }).toThrow();
   });
 
   test("returns context when available", () => {

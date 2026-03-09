@@ -1,7 +1,4 @@
-import {
-  getContext as svelteGetContext,
-  hasContext as svelteHasContext,
-} from "svelte";
+import { createContext } from "svelte";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import type { HlsAdapter } from "../media/hlsUtils";
 import type { Annotation } from "../sync/types";
@@ -65,17 +62,8 @@ export interface PlayerContext {
   actions: PlayerActions;
 }
 
-export const PLAYER_CONTEXT_KEY = "iiif-player";
-
-export function getPlayerContext(): PlayerContext {
-  const ctx = svelteGetContext<PlayerContext>(PLAYER_CONTEXT_KEY);
-  if (!ctx) {
-    throw new Error(
-      "Player context not found. Component must be child of IIIFPlayer.Root",
-    );
-  }
-  return ctx;
-}
+export const [getPlayerContext, setPlayerContext] =
+  createContext<PlayerContext>();
 
 /**
  * Returns the player context if called inside IIIFPlayer.Root, or null otherwise.
@@ -90,6 +78,9 @@ export function getPlayerContext(): PlayerContext {
  * ```
  */
 export function tryGetPlayerContext(): PlayerContext | null {
-  if (!svelteHasContext(PLAYER_CONTEXT_KEY)) return null;
-  return svelteGetContext<PlayerContext>(PLAYER_CONTEXT_KEY);
+  try {
+    return getPlayerContext();
+  } catch {
+    return null;
+  }
 }

@@ -1,9 +1,9 @@
 <!-- src/lib/player/Transcript.svelte -->
 <script lang="ts">
-  import { untrack, setContext } from "svelte";
+  import { untrack } from "svelte";
   import { getPlayerContext } from "./context";
   import {
-    TRANSCRIPT_CONTEXT_KEY,
+    setTranscriptContext,
     type TranscriptContext,
   } from "./transcript-context";
   import type { Annotation, IIIFMediaViewerRef } from "../sync/types";
@@ -134,7 +134,7 @@
   }
 
   // Provide TranscriptContext for compound children (TranscriptSearch, TranscriptSegments)
-  setContext(TRANSCRIPT_CONTEXT_KEY, {
+  setTranscriptContext({
     get state() {
       return {
         annotations: resolvedAnnotations,

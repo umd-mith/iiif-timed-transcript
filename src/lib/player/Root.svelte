@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { setContext, onMount, untrack } from "svelte";
-  import { PLAYER_CONTEXT_KEY, type CanvasInfo } from "./context";
+  import { onMount, untrack } from "svelte";
+  import { setPlayerContext, type CanvasInfo } from "./context";
   import { PlayerStateManager } from "./PlayerState.svelte";
   import {
     getFirstCanvas,
@@ -68,7 +68,7 @@
   });
 
   // Provide context — the class instance satisfies PlayerContext
-  setContext(PLAYER_CONTEXT_KEY, player);
+  setPlayerContext(player);
 
   // Apply initialTime (first canvas load only) and autoplay (every canvas load)
   let initialTimeApplied = false;

@@ -1,4 +1,4 @@
-import { getContext as svelteGetContext } from "svelte";
+import { createContext } from "svelte";
 import type { Annotation } from "../sync/types";
 
 export interface TranscriptState {
@@ -29,14 +29,19 @@ export interface TranscriptContext {
   actions: TranscriptActions;
 }
 
-export const TRANSCRIPT_CONTEXT_KEY = "iiif-transcript";
+export const [getTranscriptContext, setTranscriptContext] =
+  createContext<TranscriptContext>();
 
-export function getTranscriptContext(): TranscriptContext {
-  const ctx = svelteGetContext<TranscriptContext>(TRANSCRIPT_CONTEXT_KEY);
-  if (!ctx) {
-    throw new Error(
-      "Transcript context not found. Component must be child of IIIFPlayer.Transcript",
-    );
+/**
+ * Returns the transcript context if called inside IIIFPlayer.Transcript, or null otherwise.
+ *
+ * Must be called during component initialization (top-level `<script>`),
+ * not inside event handlers, `$effect`, or async callbacks.
+ */
+export function tryGetTranscriptContext(): TranscriptContext | null {
+  try {
+    return getTranscriptContext();
+  } catch {
+    return null;
   }
-  return ctx;
 }

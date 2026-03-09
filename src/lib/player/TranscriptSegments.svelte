@@ -1,12 +1,8 @@
 <script lang="ts">
-  import { getContext } from "svelte";
   import type { Snippet } from "svelte";
   import Segment from "../transcript/Segment.svelte";
   import { getNextIndex, focusSegmentAtIndex } from "../transcript/keyboardNav";
-  import {
-    TRANSCRIPT_CONTEXT_KEY,
-    type TranscriptContext,
-  } from "./transcript-context";
+  import { tryGetTranscriptContext } from "./transcript-context";
   import type { Annotation } from "../sync/types";
 
   /**
@@ -95,9 +91,7 @@
   }: Props = $props();
 
   // Try to read TranscriptContext (available when inside Transcript)
-  const transcriptCtx = getContext<TranscriptContext | undefined>(
-    TRANSCRIPT_CONTEXT_KEY,
-  );
+  const transcriptCtx = tryGetTranscriptContext();
 
   // Use context values when available, fall back to props
   const annotations = $derived(
