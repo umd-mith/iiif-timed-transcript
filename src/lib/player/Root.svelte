@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
-  import { setPlayerContext, type CanvasInfo } from "./context";
+  import { setPlayerContext, type CanvasInfo, type PlayerRef } from "./context";
   import { PlayerStateManager } from "./PlayerState.svelte";
   import {
     getFirstCanvas,
@@ -30,6 +30,7 @@
     autoplay = false,
     hlsConstructor,
     onCanvasChange,
+    onPlayerInit,
     class: className = "",
     children,
   }: {
@@ -40,6 +41,8 @@
     autoplay?: boolean;
     hlsConstructor?: HlsConstructor;
     onCanvasChange?: (index: number, canvas: CanvasInfo) => void;
+    /** Called once after manifest loads and first canvas is parsed. `state.isReady` is false at this point. */
+    onPlayerInit?: (player: PlayerRef) => void;
     class?: string;
     children?: import("svelte").Snippet<
       [
@@ -72,6 +75,7 @@
 
   // Apply initialTime (first canvas load only) and autoplay (every canvas load)
   let initialTimeApplied = false;
+  let initFired = false;
 
   $effect(() => {
     if (!player.state.isReady) return;
@@ -156,7 +160,7 @@
     return { validated: validationResult.data, raw: manifest };
   }
 
-  // Phase 1: Fetch manifest — runs once per manifestUrl
+  // Fetch manifest — called on mount and on retry
   async function fetchManifestData() {
     try {
       let manifestPromise = manifestCache.get(manifestUrl);
@@ -174,6 +178,21 @@
       player.state.error =
         error instanceof Error ? error : new Error(String(error));
       player.state.isReady = false;
+      return;
+    }
+
+    // Fire init callback outside the manifest try/catch so consumer
+    // errors don't corrupt manifest state or cache
+    if (!initFired && !player.state.error) {
+      initFired = true;
+      try {
+        onPlayerInit?.(player);
+      } catch (callbackError) {
+        console.error(
+          "[IIIFPlayer] onPlayerInit callback threw:",
+          callbackError,
+        );
+      }
     }
   }
 

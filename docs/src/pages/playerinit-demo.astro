@@ -1,0 +1,134 @@
+---
+import PlayerInitDemo from '../components/PlayerInitDemo.svelte';
+
+const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>onPlayerInit Demo - IIIF Transcript Player</title>
+		<meta name="description" content="Demonstration of the onPlayerInit callback for accessing player state outside the Root subtree. Shows a sibling dashboard reading PlayerRef reactively." />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+	</head>
+	<body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
+		<!-- Navigation -->
+		<nav class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div class="flex items-center justify-between h-16">
+					<div class="flex items-center">
+						<a href="." class="text-xl font-serif font-bold text-ink-900 tracking-tight">
+							IIIF Transcript Player
+						</a>
+					</div>
+					<div class="hidden md:flex items-center space-x-8">
+						<a href="." class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Home</a>
+						<a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
+							GitHub
+						</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<!-- Hero -->
+		<section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
+			<div class="max-w-4xl mx-auto">
+				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">DEMO</div>
+				<h1 class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight">
+					External Player Access
+				</h1>
+				<p class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed">
+					This demo shows the <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">onPlayerInit</code> callback, which provides a reactive <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">PlayerRef</code> for accessing player state from <strong>outside</strong> the <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">Root</code> subtree.
+				</p>
+				<p class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed">
+					The "External Dashboard" panel on the right is a <em>sibling</em> of the player, not a child — it cannot use <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">getPlayerContext()</code>. Instead, <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">onPlayerInit</code> bridges the gap by providing a <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">PlayerRef</code> that stays reactive because it's backed by Svelte 5's <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">$state</code> and <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">$derived</code> internally.
+				</p>
+
+				<!-- How it works -->
+				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">How it works</h3>
+					<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<script>
+  import { IIIFPlayer, type PlayerRef } from '@umd-mith/svelte-iiif-transcript-player';
+
+  let player = $state<PlayerRef | null>(null);
+</script>
+
+<!-- onPlayerInit fires once after manifest loads -->
+<IIIFPlayer.Root {manifestUrl} onPlayerInit={(ref) => player = ref}>
+  <IIIFPlayer.Viewer />
+  <IIIFPlayer.Controls>...</IIIFPlayer.Controls>
+</IIIFPlayer.Root>
+
+<!-- Sibling component reads PlayerRef reactively -->
+{#if player}
+  <p>Time: {player.state.currentTime}</p>
+  <button onclick={() => player.actions.seekTo(0)}>Restart</button>
+{/if}`}</code></pre>
+				</div>
+
+				<div class="flex flex-wrap items-center gap-6 text-sm text-ink-500 border-t border-l-4 border-terracotta-300 pt-6 pl-6">
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">External state access</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Reactive PlayerRef</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Sibling orchestration</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Actions from outside</span>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Live Demo -->
+		<section class="py-16 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200">
+			<div class="max-w-7xl mx-auto">
+				<div class="mb-8">
+					<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4">
+						Lunchroom Manners (IIIF Cookbook)
+					</h2>
+					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
+						The player on the left is wrapped in <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">IIIFPlayer.Root</code>. The dashboard on the right is a <em>sibling</em> that reads state and fires actions via the <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">PlayerRef</code> received from <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">onPlayerInit</code>.
+					</p>
+				</div>
+
+				<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
+					<PlayerInitDemo client:load {manifestUrl} />
+				</div>
+
+				<div class="mt-6 text-sm text-ink-500">
+					<p>
+						Source manifest:
+						<a href={manifestUrl} target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline break-all">
+							{manifestUrl}
+						</a>
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Footer -->
+		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
+			<div class="max-w-7xl mx-auto text-center">
+				<p class="mb-4">
+					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
+				</p>
+				<p class="text-sm">
+					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
+				</p>
+			</div>
+		</footer>
+	</body>
+</html>

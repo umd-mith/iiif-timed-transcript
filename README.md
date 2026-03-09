@@ -122,6 +122,7 @@ Top-level context provider that manages player state and coordinates all child c
 - `annotations?: Annotation[]` - Transcript annotations (passed through to children)
 - `initialTime?: number` - Start playback at specific time in seconds
 - `autoplay?: boolean` - Auto-play media on load (default: false)
+- `onPlayerInit?: (player: PlayerRef) => void` - Callback fired once after manifest loads and first canvas is parsed. See [Accessing player state outside Root](#accessing-player-state-outside-root)
 - `class?: string` - CSS class for the root container
 
 **Context Provided:**
@@ -335,6 +336,48 @@ interface PlayerContext {
   mediaType: "audio" | "video";
 }
 ```
+
+## Accessing player state outside Root
+
+Consumers needing player state in sibling components or parent-level orchestration can use the `onPlayerInit` callback.
+
+```svelte
+<script lang="ts">
+  import {
+    IIIFPlayer,
+    type PlayerRef,
+  } from "@umd-mith/svelte-iiif-transcript-player";
+
+  let player = $state<PlayerRef | null>(null);
+
+  const isPlaying = $derived(player?.state.isPlaying ?? false);
+  const isAudio = $derived(player?.mediaType === "audio");
+</script>
+
+<IIIFPlayer.Root
+  {manifestUrl}
+  onPlayerInit={(p) => {
+    player = p;
+  }}
+>
+  <IIIFPlayer.Viewer />
+  <IIIFPlayer.Controls>
+    <IIIFPlayer.PlayButton />
+    <IIIFPlayer.Progress />
+  </IIIFPlayer.Controls>
+</IIIFPlayer.Root>
+
+<!-- Sibling components outside Root's subtree -->
+<TranscriptPanel annotations={player?.annotations ?? []} {isPlaying} />
+```
+
+**Notes:**
+
+- `onPlayerInit` fires once after manifest first loads successfully and first canvas is parsed. If loading fails, the callback does not fire
+- `state.isReady` is `false` at init time — use `$derived` to react to media readiness
+- The ref is reactive (built on `$state` internally)
+- `PlayerRef` fields: `state`, `actions`, `annotations`, `chapters`, `activeChapterId`, `canvasIndex`, `canvasCount`, `canvases`, `mediaType`
+- For components inside Root's subtree, use `getPlayerContext()` or `tryGetPlayerContext()` instead
 
 ## Using `annotation.metadata`
 

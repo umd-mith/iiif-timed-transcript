@@ -1,7 +1,7 @@
 import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
 import { PlayerStateManager } from "../../lib/player/PlayerState.svelte";
-import type { PlayerContext } from "../../lib/player/context";
+import type { PlayerContext, PlayerRef } from "../../lib/player/context";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 
 // Helper to create a mock HTMLMediaElement with the subset of APIs we need
@@ -231,6 +231,18 @@ describe("PlayerStateManager", () => {
       expect(el.play).toHaveBeenCalled();
     });
 
+    test("play warns when mediaElement is null", async () => {
+      const manager = new PlayerStateManager();
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      await manager.actions.play();
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        "[IIIFPlayer] Cannot play: media not ready",
+      );
+      warnSpy.mockRestore();
+    });
+
     test("pause delegates to mediaElement.pause()", () => {
       const manager = new PlayerStateManager();
       const el = createMockMediaElement();
@@ -275,6 +287,20 @@ describe("PlayerStateManager", () => {
       // If PlayerStateManager doesn't satisfy PlayerContext, TypeScript will error.
       const manager: PlayerContext = new PlayerStateManager();
       expect(manager).toBeDefined();
+    });
+
+    test("PlayerStateManager satisfies PlayerRef interface", () => {
+      const manager = new PlayerStateManager();
+      const ref: PlayerRef = manager;
+      expect(ref.state).toBeDefined();
+      expect(ref.actions).toBeDefined();
+      expect(ref.canvasIndex).toBe(0);
+      expect(ref.canvasCount).toBe(0);
+      expect(ref.canvases).toEqual([]);
+      expect(ref.annotations).toEqual([]);
+      expect(ref.chapters).toEqual([]);
+      expect(ref.activeChapterId).toBeNull();
+      expect(ref.mediaType).toBe("audio");
     });
   });
 });

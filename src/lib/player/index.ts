@@ -73,6 +73,7 @@ export type {
   MediaStrategy,
   CanvasInfo,
   TrackDefinition,
+  PlayerRef,
 } from "./context";
 export type {
   TranscriptContext,
