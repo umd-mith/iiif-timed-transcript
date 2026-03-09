@@ -42,9 +42,9 @@ export class PlayerStateManager implements PlayerContext {
   mediaType = $state<"audio" | "video">("audio");
   mediaStrategy = $state<MediaStrategy>("native");
   hlsAdapter = $state.raw<HlsAdapter | null>(null);
-  annotations = $state<Annotation[]>([]);
-  chapters = $state<Chapter[]>([]);
-  tracks = $state<TrackDefinition[]>([]);
+  annotations = $state.raw<Annotation[]>([]);
+  chapters = $state.raw<Chapter[]>([]);
+  tracks = $state.raw<TrackDefinition[]>([]);
 
   // Canvas navigation
   canvasIndex = $state(0);
