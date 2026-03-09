@@ -343,17 +343,22 @@ Consumers needing player state in sibling components or parent-level orchestrati
 
 ```svelte
 <script lang="ts">
-  import { IIIFPlayer, type PlayerRef } from "@umd-mith/svelte-iiif-transcript-player";
+  import {
+    IIIFPlayer,
+    type PlayerRef,
+  } from "@umd-mith/svelte-iiif-transcript-player";
 
   let player = $state<PlayerRef | null>(null);
 
   const isPlaying = $derived(player?.state.isPlaying ?? false);
-  const isAudio = $derived(player?.mediaType === 'audio');
+  const isAudio = $derived(player?.mediaType === "audio");
 </script>
 
 <IIIFPlayer.Root
   {manifestUrl}
-  onPlayerInit={(p) => { player = p; }}
+  onPlayerInit={(p) => {
+    player = p;
+  }}
 >
   <IIIFPlayer.Viewer />
   <IIIFPlayer.Controls>

@@ -34,9 +34,7 @@
   );
   let progressPercent = $derived(
     player && player.state.duration > 0
-      ? Math.round(
-          (player.state.currentTime / player.state.duration) * 100,
-        )
+      ? Math.round((player.state.currentTime / player.state.duration) * 100)
       : 0,
   );
 
@@ -76,9 +74,7 @@
       class="bg-gray-50 rounded-lg shadow-md border border-ink-200 flex flex-col overflow-clip"
     >
       <div class="px-4 py-3 border-b border-ink-200 bg-white">
-        <h3
-          class="text-sm font-semibold text-ink-700 uppercase tracking-wider"
-        >
+        <h3 class="text-sm font-semibold text-ink-700 uppercase tracking-wider">
           External Dashboard
         </h3>
         <p class="text-xs text-ink-400 mt-0.5">
@@ -88,8 +84,11 @@
 
       {#if player?.state.error}
         <div class="p-4">
-          <div class="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-            <strong>Error:</strong> {player.state.error.message}
+          <div
+            class="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm"
+          >
+            <strong>Error:</strong>
+            {player.state.error.message}
           </div>
         </div>
       {:else if player}
@@ -146,7 +145,9 @@
 
           <!-- External controls (using actions from PlayerRef) -->
           <div class="pt-3 border-t border-ink-200">
-            <p class="text-xs text-ink-400 mb-2 uppercase tracking-wider font-semibold">
+            <p
+              class="text-xs text-ink-400 mb-2 uppercase tracking-wider font-semibold"
+            >
               External Controls
             </p>
             <div class="flex gap-2">

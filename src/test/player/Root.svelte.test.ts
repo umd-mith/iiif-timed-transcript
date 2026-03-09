@@ -987,9 +987,7 @@ describe("Root component", () => {
     test("does not corrupt state when onPlayerInit callback throws", async () => {
       mockFetchManifest(MANIFEST_WITH_CHAPTERS);
 
-      const errorSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const onPlayerInit = vi.fn(() => {
         throw new Error("consumer bug");
       });

@@ -85,6 +85,7 @@ async function fetchManifestData() {
 ```
 
 **Behaviors:**
+
 - Fires exactly once per Root mount instance — after manifest fetch and first canvas load succeed. `initFired` is component-local state, so consumers who remount Root (e.g., `{#key canvasIndex}` around Root) get a fresh callback on each mount. This is correct: each mount is a new player with its own manifest parse and media element.
 - Does not fire on canvas switches within a single mount. Canvas changes are observable reactively through the ref.
 - Does not fire on failed loads. If manifest fetch fails and the consumer calls `retry()`, the callback fires on the first successful retry (guarded by `initFired`).
@@ -98,20 +99,25 @@ async function fetchManifestData() {
 
 ```svelte
 <script lang="ts">
-  import { IIIFPlayer, type PlayerRef } from "@umd-mith/svelte-iiif-transcript-player";
+  import {
+    IIIFPlayer,
+    type PlayerRef,
+  } from "@umd-mith/svelte-iiif-transcript-player";
 
   let player = $state<PlayerRef | null>(null);
 
   const isPlaying = $derived(player?.state.isPlaying ?? false);
-  const isAudio = $derived(player?.mediaType === 'audio');
+  const isAudio = $derived(player?.mediaType === "audio");
   const canvasLabel = $derived(
-    player ? player.canvases[player.canvasIndex]?.label : ''
+    player ? player.canvases[player.canvasIndex]?.label : "",
   );
 </script>
 
 <IIIFPlayer.Root
   {manifestUrl}
-  onPlayerInit={(p) => { player = p; }}
+  onPlayerInit={(p) => {
+    player = p;
+  }}
 >
   <IIIFPlayer.Viewer />
   <IIIFPlayer.Controls>
@@ -121,7 +127,7 @@ async function fetchManifestData() {
 </IIIFPlayer.Root>
 
 <TranscriptPanel annotations={player?.annotations ?? []} {isPlaying} />
-<AudioPlayerControls {isPlaying} mediaType={isAudio ? 'audio' : 'video'} />
+<AudioPlayerControls {isPlaying} mediaType={isAudio ? "audio" : "video"} />
 ```
 
 Reactivity works because the ref is the `PlayerStateManager` instance, which uses `$state` and `$derived` internally. Any `$derived` chain built on `player?.state.currentTime` updates automatically.
@@ -149,8 +155,8 @@ One new export from `src/lib/index.ts`: the `PlayerRef` type.
 ### Compile-time: type satisfaction
 
 ```ts
-import type { PlayerRef } from './context';
-import { PlayerStateManager } from './PlayerState.svelte';
+import type { PlayerRef } from "./context";
+import { PlayerStateManager } from "./PlayerState.svelte";
 
 const _typeCheck: PlayerRef = new PlayerStateManager();
 ```
@@ -160,12 +166,14 @@ Fails at build time if `PlayerStateManager` drifts from `PlayerRef`.
 ### Component test: callback fires with correct ref
 
 ```ts
-test('calls onPlayerInit after manifest loads', async () => {
+test("calls onPlayerInit after manifest loads", async () => {
   let receivedRef: PlayerRef | null = null;
 
   render(Root, {
-    manifestUrl: '/test-manifest.json',
-    onPlayerInit: (player) => { receivedRef = player; },
+    manifestUrl: "/test-manifest.json",
+    onPlayerInit: (player) => {
+      receivedRef = player;
+    },
   });
 
   await waitFor(() => expect(receivedRef).not.toBeNull());
@@ -180,14 +188,15 @@ test('calls onPlayerInit after manifest loads', async () => {
 ### Component test: fires at most once on retry
 
 ```ts
-test('calls onPlayerInit only once on retry', async () => {
+test("calls onPlayerInit only once on retry", async () => {
   const initSpy = vi.fn();
 
-  fetchMock.mockRejectOnce(new Error('network'))
-           .mockResolvedOnce(validManifest);
+  fetchMock
+    .mockRejectOnce(new Error("network"))
+    .mockResolvedOnce(validManifest);
 
   render(Root, {
-    manifestUrl: '/test-manifest.json',
+    manifestUrl: "/test-manifest.json",
     onPlayerInit: initSpy,
   });
 
@@ -207,10 +216,10 @@ test('calls onPlayerInit only once on retry', async () => {
 
 ## Changes summary
 
-| File | Change |
-|------|--------|
-| `src/lib/player/context.ts` | Add `PlayerRef` interface |
+| File                         | Change                                                          |
+| ---------------------------- | --------------------------------------------------------------- |
+| `src/lib/player/context.ts`  | Add `PlayerRef` interface                                       |
 | `src/lib/player/Root.svelte` | Add `onPlayerInit` prop, `initFired` guard, callback invocation |
-| `src/lib/index.ts` | Export `PlayerRef` type |
-| `README.md` | New "Accessing player state outside Root" section |
-| Tests | Type satisfaction check, callback firing tests |
+| `src/lib/index.ts`           | Export `PlayerRef` type                                         |
+| `README.md`                  | New "Accessing player state outside Root" section               |
+| Tests                        | Type satisfaction check, callback firing tests                  |
