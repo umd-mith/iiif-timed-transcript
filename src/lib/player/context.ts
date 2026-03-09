@@ -80,7 +80,13 @@ export const [getPlayerContext, setPlayerContext] =
 export function tryGetPlayerContext(): PlayerContext | null {
   try {
     return getPlayerContext();
-  } catch {
+  } catch (error) {
+    // Only suppress "context not found" (component not inside Root).
+    // Let lifecycle errors propagate so developers get a clear stack trace
+    // when calling this outside component initialization.
+    if (error instanceof Error && !error.message.includes("missing_context")) {
+      throw error;
+    }
     return null;
   }
 }

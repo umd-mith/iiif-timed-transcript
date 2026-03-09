@@ -41,7 +41,10 @@ export const [getTranscriptContext, setTranscriptContext] =
 export function tryGetTranscriptContext(): TranscriptContext | null {
   try {
     return getTranscriptContext();
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && !error.message.includes("missing_context")) {
+      throw error;
+    }
     return null;
   }
 }
