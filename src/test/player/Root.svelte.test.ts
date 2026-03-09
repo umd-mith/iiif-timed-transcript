@@ -983,5 +983,47 @@ describe("Root component", () => {
       // Still only called once
       expect(onPlayerInit).toHaveBeenCalledOnce();
     });
+
+    test("does not corrupt state when onPlayerInit callback throws", async () => {
+      mockFetchManifest(MANIFEST_WITH_CHAPTERS);
+
+      const errorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const onPlayerInit = vi.fn(() => {
+        throw new Error("consumer bug");
+      });
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/init-callback-throws.json",
+          onPlayerInit,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(onPlayerInit).toHaveBeenCalledOnce();
+      });
+
+      // Callback threw, but player should NOT be in an error state
+      expect(capturedCtx!.state.error).toBeNull();
+      // Manifest cache should NOT be corrupted (no alert shown)
+      expect(target.querySelector("[role='alert']")).toBeNull();
+      // Player loaded successfully despite callback error
+      expect(capturedCtx!.canvases).toHaveLength(1);
+      expect(capturedCtx!.mediaType).toBe("audio");
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        "[IIIFPlayer] onPlayerInit callback threw:",
+        expect.any(Error),
+      );
+      errorSpy.mockRestore();
+    });
   });
 });

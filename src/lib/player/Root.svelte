@@ -160,7 +160,7 @@
     return { validated: validationResult.data, raw: manifest };
   }
 
-  // Phase 1: Fetch manifest — runs once per manifestUrl
+  // Fetch manifest — called on mount and on retry
   async function fetchManifestData() {
     try {
       let manifestPromise = manifestCache.get(manifestUrl);
@@ -173,16 +173,26 @@
       player.canvases = buildCanvasInfoList(manifestData.validated);
 
       loadCanvas(player.canvasIndex);
-
-      if (!initFired) {
-        initFired = true;
-        onPlayerInit?.(player);
-      }
     } catch (error) {
       manifestCache.delete(manifestUrl);
       player.state.error =
         error instanceof Error ? error : new Error(String(error));
       player.state.isReady = false;
+      return;
+    }
+
+    // Fire init callback outside the manifest try/catch so consumer
+    // errors don't corrupt manifest state or cache
+    if (!initFired && !player.state.error) {
+      initFired = true;
+      try {
+        onPlayerInit?.(player);
+      } catch (callbackError) {
+        console.error(
+          "[IIIFPlayer] onPlayerInit callback threw:",
+          callbackError,
+        );
+      }
     }
   }
 
