@@ -343,7 +343,7 @@ Consumers needing player state in sibling components or parent-level orchestrati
 
 ```svelte
 <script lang="ts">
-  import IIIFPlayer, { type PlayerRef } from 'svelte-iiif-transcript-player';
+  import { IIIFPlayer, type PlayerRef } from "@umd-mith/svelte-iiif-transcript-player";
 
   let player = $state<PlayerRef | null>(null);
 
