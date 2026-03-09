@@ -85,13 +85,11 @@
   function navigatePrevious() {
     if (matches.length === 0) return;
     currentIndex = currentIndex <= 0 ? matches.length - 1 : currentIndex - 1;
-    onmatchchange?.(matches, currentIndex);
   }
 
   function navigateNext() {
     if (matches.length === 0) return;
     currentIndex = currentIndex >= matches.length - 1 ? 0 : currentIndex + 1;
-    onmatchchange?.(matches, currentIndex);
   }
 
   // Match count display
