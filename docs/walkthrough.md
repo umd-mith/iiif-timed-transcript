@@ -290,38 +290,29 @@ export type { MergedParagraph, MergeConfig } from "./transcript/paragraphMerger"
 
 The key insight is the two-layer context design. Let's look at how Root sets up the player context:
 
-```bash
-grep -n 'setContext\|getContext\|PLAYER_CONTEXT\|TRANSCRIPT_CONTEXT' src/lib/player/context.ts src/lib/player/transcript-context.ts src/lib/player/Root.svelte src/lib/player/Transcript.svelte src/lib/player/TranscriptSegments.svelte src/lib/player/TranscriptSearch.svelte 2>/dev/null
+Both contexts use Svelte 5's `createContext<T>()` which returns a type-safe `[get, set]` pair with an auto-generated key — no string constants needed:
+
+```typescript
+// context.ts — player context
+export const [getPlayerContext, setPlayerContext] = createContext<PlayerContext>();
+
+// transcript-context.ts — transcript context
+export const [getTranscriptContext, setTranscriptContext] = createContext<TranscriptContext>();
 ```
 
-```output
-src/lib/player/context.ts:1:import { getContext as svelteGetContext } from 'svelte';
-src/lib/player/context.ts:28:export const PLAYER_CONTEXT_KEY = 'iiif-player';
-src/lib/player/context.ts:31:	const ctx = svelteGetContext<PlayerContext>(PLAYER_CONTEXT_KEY);
-src/lib/player/transcript-context.ts:1:import { getContext as svelteGetContext } from 'svelte';
-src/lib/player/transcript-context.ts:23:export const TRANSCRIPT_CONTEXT_KEY = 'iiif-transcript';
-src/lib/player/transcript-context.ts:26:	const ctx = svelteGetContext<TranscriptContext>(TRANSCRIPT_CONTEXT_KEY);
-src/lib/player/Root.svelte:2:	import { setContext, onMount } from 'svelte';
-src/lib/player/Root.svelte:3:	import { PLAYER_CONTEXT_KEY, type PlayerState } from './context';
-src/lib/player/Root.svelte:80:	setContext(PLAYER_CONTEXT_KEY, {
-src/lib/player/Transcript.svelte:3:	import { untrack, setContext } from 'svelte';
-src/lib/player/Transcript.svelte:5:	import { TRANSCRIPT_CONTEXT_KEY, type TranscriptContext } from './transcript-context';
-src/lib/player/Transcript.svelte:94:	setContext(TRANSCRIPT_CONTEXT_KEY, {
-src/lib/player/TranscriptSegments.svelte:2:	import { getContext } from 'svelte';
-src/lib/player/TranscriptSegments.svelte:4:	import { TRANSCRIPT_CONTEXT_KEY, type TranscriptContext } from './transcript-context';
-src/lib/player/TranscriptSegments.svelte:26:	const transcriptCtx = getContext<TranscriptContext | undefined>(TRANSCRIPT_CONTEXT_KEY);
-src/lib/player/TranscriptSearch.svelte:2:	import { getContext } from 'svelte';
-src/lib/player/TranscriptSearch.svelte:4:	import { TRANSCRIPT_CONTEXT_KEY, type TranscriptContext } from './transcript-context';
-src/lib/player/TranscriptSearch.svelte:24:	const transcriptCtx = getContext<TranscriptContext | undefined>(TRANSCRIPT_CONTEXT_KEY);
-```
+Providers call the setter during component init:
+- **Root.svelte** calls `setPlayerContext(player)` where `player` is a `PlayerStateManager` instance
+- **Transcript.svelte** calls `setTranscriptContext({...})` with reactive getters for state
 
-Two context keys, two providers:
+Consumers call the getter — or use `tryGetPlayerContext()` / `tryGetTranscriptContext()` for optional access that returns `null` instead of throwing.
 
-1. **`Root` → `iiif-player`** (PlayerContext): media state (`currentTime`, `duration`, `isPlaying`), `mediaElement` ref, and actions (`play`, `pause`, `seekTo`, `setPlaybackRate`). Every component under Root reads this.
+Two contexts, two providers:
 
-2. **`Transcript` → `iiif-transcript`** (TranscriptContext): annotations array, `activeAnnotationId`, search state (`searchMatches`, `currentMatchIndex`, `highlightedIds`), and actions (`handleAnnotationClick`, `handleMatchChange`). Only TranscriptSearch and TranscriptSegments read this.
+1. **Root → PlayerContext**: media state (`currentTime`, `duration`, `isPlaying`), `mediaElement` ref, and actions (`play`, `pause`, `seekTo`, `setPlaybackRate`). Every component under Root reads this.
 
-Both TranscriptSearch and TranscriptSegments use an interesting fallback pattern — they check for context first, then fall back to direct props. This means they can work both inside `<Transcript>` (compound mode) and standalone (advanced mode where you wire everything yourself).
+2. **Transcript → TranscriptContext**: annotations array, `activeAnnotationId`, search state (`searchMatches`, `currentMatchIndex`, `highlightedIds`), and actions (`handleAnnotationClick`, `handleMatchChange`). Only TranscriptSearch and TranscriptSegments read this.
+
+Both TranscriptSearch and TranscriptSegments use the `tryGetTranscriptContext()` fallback pattern — they check for context first, then fall back to direct props. This means they can work both inside `<Transcript>` (compound mode) and standalone (advanced mode where you wire everything yourself).
 
 ## The sync engine
 
