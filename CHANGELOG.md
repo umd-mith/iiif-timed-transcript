@@ -1,5 +1,20 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.9.0
+
+### Minor Changes
+
+- **`onPlayerInit` callback and `PlayerRef` type** — new callback fires after manifest fetch and first canvas parse, providing a curated `PlayerRef` handle for external orchestration (state, actions, annotations, chapters, canvas info) without exposing internal implementation details (#26)
+- **`tryGetPlayerContext()` utility** — returns `null` instead of throwing when used outside `IIIFPlayer.Root`, enabling dual-mode components that work with or without the player context (#24)
+
+### Patch Changes
+
+- Remove dead `Panel.svelte` and its tests (superseded by compound component API)
+- Fix `Search.svelte` double-firing `onmatchchange` on navigation
+- Switch `annotations`, `chapters`, `tracks` to `$state.raw` for reduced proxy overhead
+- Remove redundant `xstate` from `devDependencies`
+- Add Search navigation and callback test coverage (#27)
+
 ## 0.7.0
 
 ### Minor Changes
