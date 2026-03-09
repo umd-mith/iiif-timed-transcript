@@ -41,6 +41,7 @@
     autoplay?: boolean;
     hlsConstructor?: HlsConstructor;
     onCanvasChange?: (index: number, canvas: CanvasInfo) => void;
+    /** Called once after manifest loads and first canvas is parsed. `state.isReady` is false at this point. */
     onPlayerInit?: (player: PlayerRef) => void;
     class?: string;
     children?: import("svelte").Snippet<

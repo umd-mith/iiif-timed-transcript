@@ -72,8 +72,8 @@ export interface PlayerContext {
  * At runtime this is the PlayerStateManager instance — reactivity works because
  * the class uses $state and $derived internally.
  *
- * Consumers needing excluded fields should use getPlayerContext() from inside
- * the Root subtree instead.
+ * Consumers needing excluded fields should use getPlayerContext() (or
+ * tryGetPlayerContext() for optional access) from inside the Root subtree.
  */
 export interface PlayerRef {
   readonly state: PlayerState;

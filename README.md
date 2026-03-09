@@ -368,7 +368,7 @@ Consumers needing player state in sibling components or parent-level orchestrati
 
 **Notes:**
 
-- `onPlayerInit` fires once after manifest loads and first canvas is parsed
+- `onPlayerInit` fires once after manifest first loads successfully and first canvas is parsed. If loading fails, the callback does not fire
 - `state.isReady` is `false` at init time — use `$derived` to react to media readiness
 - The ref is reactive (built on `$state` internally)
 - `PlayerRef` fields: `state`, `actions`, `annotations`, `chapters`, `activeChapterId`, `canvasIndex`, `canvasCount`, `canvases`, `mediaType`
