@@ -877,5 +877,111 @@ describe("Root component", () => {
       // Not yet media-ready at init time
       expect(ref.state.isReady).toBe(false);
     });
+
+    test("does not fire onPlayerInit when manifest fetch fails", async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+      });
+
+      const onPlayerInit = vi.fn();
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/init-callback-fail.json",
+          onPlayerInit,
+          children: createContextCapture(target, () => {}),
+        },
+      });
+
+      // Wait for error state to appear
+      await vi.waitFor(() => {
+        expect(target.querySelector("[role='alert']")).not.toBeNull();
+      });
+
+      expect(onPlayerInit).not.toHaveBeenCalled();
+    });
+
+    test("fires onPlayerInit once on successful retry after failure", async () => {
+      const onPlayerInit = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      // First call fails, second succeeds
+      (globalThis.fetch as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          statusText: "Server Error",
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => MANIFEST_WITH_CHAPTERS,
+        });
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/init-callback-retry.json",
+          onPlayerInit,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      // Wait for error state
+      await vi.waitFor(() => {
+        expect(target.querySelector("[role='alert']")).not.toBeNull();
+      });
+      expect(onPlayerInit).not.toHaveBeenCalled();
+
+      // Trigger retry
+      capturedCtx!.actions.retry();
+
+      // Wait for successful init
+      await vi.waitFor(() => {
+        expect(onPlayerInit).toHaveBeenCalledOnce();
+      });
+
+      // Verify ref shape
+      const ref = onPlayerInit.mock.calls[0][0];
+      expect(ref.canvases).toHaveLength(1);
+      expect(ref.mediaType).toBe("audio");
+    });
+
+    test("does not re-fire onPlayerInit on canvas switch", async () => {
+      mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+      const onPlayerInit = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/init-callback-canvas-switch.json",
+          onPlayerInit,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(onPlayerInit).toHaveBeenCalledOnce();
+      });
+
+      // Switch canvas
+      capturedCtx!.actions.switchCanvas(1);
+
+      // Give time for any potential re-fire
+      await vi.waitFor(() => {
+        expect(capturedCtx!.canvasIndex).toBe(1);
+      });
+
+      // Still only called once
+      expect(onPlayerInit).toHaveBeenCalledOnce();
+    });
   });
 });
