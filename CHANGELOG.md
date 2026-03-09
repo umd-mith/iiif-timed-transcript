@@ -1,5 +1,20 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.7.0
+
+### Minor Changes
+
+- **Segment extension points** — consumers can now fully customize segment rendering via a `segment` snippet prop, which receives annotation data and a `segmentAttrs` spread object for pit-of-success correctness (a11y, keyboard nav, click handling included by default) (#22)
+- **`onkeydown` extensibility** — new `onkeydown` prop on TranscriptSegments fires before built-in navigation with full annotation context; call `preventDefault()` to suppress built-in arrow/Home/End nav
+- **`highlightedAnnotationId` prop** — supports deep-link highlighting that merges cleanly with search highlights
+- **`scrollToAnnotation` imperative API** — accepts optional `ScrollIntoViewOptions` and respects `prefers-reduced-motion` by default; wired through TranscriptContext
+- **Roving tabindex refactored to `$derived`** — replaced `$effect`-based focusedIndex with synchronous `$derived` clamping, eliminating render frames with missing tabindex
+
+### Patch Changes
+
+- Input-element guard prevents keyboard nav from hijacking typing in inputs, textareas, and contenteditable elements inside the segments container
+- `keyboardNav.ts` `getNextIndex` now returns `null` (instead of current index) for unrecognized keys
+
 ## 0.6.1
 
 ### Patch Changes
