@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
-  import { setPlayerContext, type CanvasInfo } from "./context";
+  import { setPlayerContext, type CanvasInfo, type PlayerRef } from "./context";
   import { PlayerStateManager } from "./PlayerState.svelte";
   import {
     getFirstCanvas,
@@ -30,6 +30,7 @@
     autoplay = false,
     hlsConstructor,
     onCanvasChange,
+    onPlayerInit,
     class: className = "",
     children,
   }: {
@@ -40,6 +41,7 @@
     autoplay?: boolean;
     hlsConstructor?: HlsConstructor;
     onCanvasChange?: (index: number, canvas: CanvasInfo) => void;
+    onPlayerInit?: (player: PlayerRef) => void;
     class?: string;
     children?: import("svelte").Snippet<
       [
@@ -72,6 +74,7 @@
 
   // Apply initialTime (first canvas load only) and autoplay (every canvas load)
   let initialTimeApplied = false;
+  let initFired = false;
 
   $effect(() => {
     if (!player.state.isReady) return;
@@ -169,6 +172,11 @@
       player.canvases = buildCanvasInfoList(manifestData.validated);
 
       loadCanvas(player.canvasIndex);
+
+      if (!initFired) {
+        initFired = true;
+        onPlayerInit?.(player);
+      }
     } catch (error) {
       manifestCache.delete(manifestUrl);
       player.state.error =

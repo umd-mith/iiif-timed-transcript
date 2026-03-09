@@ -845,4 +845,37 @@ describe("Root component", () => {
       });
     });
   });
+
+  describe("onPlayerInit callback", () => {
+    test("fires onPlayerInit after manifest loads with populated ref", async () => {
+      mockFetchManifest(MANIFEST_WITH_CHAPTERS);
+
+      const onPlayerInit = vi.fn();
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/init-callback-basic.json",
+          onPlayerInit,
+          children: createContextCapture(target, () => {}),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(onPlayerInit).toHaveBeenCalledOnce();
+      });
+
+      const ref = onPlayerInit.mock.calls[0][0];
+      expect(ref.state).toBeDefined();
+      expect(ref.actions).toBeDefined();
+      expect(ref.canvases).toHaveLength(1);
+      expect(ref.mediaType).toBe("audio");
+      expect(ref.chapters).toHaveLength(2);
+      expect(ref.annotations).toEqual([]);
+      expect(ref.canvasIndex).toBe(0);
+      expect(ref.canvasCount).toBe(1);
+      // Not yet media-ready at init time
+      expect(ref.state.isReady).toBe(false);
+    });
+  });
 });
