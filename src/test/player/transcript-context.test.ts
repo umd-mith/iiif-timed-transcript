@@ -2,10 +2,9 @@ import { describe, test, expect, vi, afterEach } from "vitest";
 import { mount } from "svelte";
 import { flushSync } from "svelte";
 import type { Snippet } from "svelte";
-import {
-  TRANSCRIPT_CONTEXT_KEY,
-  type TranscriptContext,
-  type TranscriptState,
+import type {
+  TranscriptContext,
+  TranscriptState,
 } from "../../lib/player/transcript-context";
 
 // We need test helpers to mount components that call setContext/getContext
@@ -21,12 +20,6 @@ describe("transcript-context", () => {
     }
   });
 
-  test("TRANSCRIPT_CONTEXT_KEY is a unique string", () => {
-    expect(TRANSCRIPT_CONTEXT_KEY).toBe("iiif-transcript");
-    // Must differ from player context key
-    expect(TRANSCRIPT_CONTEXT_KEY).not.toBe("iiif-player");
-  });
-
   test("getTranscriptContext throws when no context available", () => {
     target = document.createElement("div");
     document.body.appendChild(target);
@@ -37,7 +30,7 @@ describe("transcript-context", () => {
         props: { onResult: () => {} },
       });
       flushSync();
-    }).toThrow("Transcript context not found");
+    }).toThrow();
   });
 
   test("getTranscriptContext returns context when provided", () => {

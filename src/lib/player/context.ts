@@ -1,4 +1,4 @@
-import { getContext as svelteGetContext } from "svelte";
+import { createContext } from "svelte";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import type { HlsAdapter } from "../media/hlsUtils";
 import type { Annotation } from "../sync/types";
@@ -62,14 +62,31 @@ export interface PlayerContext {
   actions: PlayerActions;
 }
 
-export const PLAYER_CONTEXT_KEY = "iiif-player";
+export const [getPlayerContext, setPlayerContext] =
+  createContext<PlayerContext>();
 
-export function getPlayerContext(): PlayerContext {
-  const ctx = svelteGetContext<PlayerContext>(PLAYER_CONTEXT_KEY);
-  if (!ctx) {
-    throw new Error(
-      "Player context not found. Component must be child of IIIFPlayer.Root",
-    );
+/**
+ * Returns the player context if called inside IIIFPlayer.Root, or null otherwise.
+ *
+ * Must be called during component initialization (top-level `<script>`),
+ * not inside event handlers, `$effect`, or async callbacks.
+ *
+ * Useful for dual-mode components that work both with and without the player:
+ * ```svelte
+ * const player = tryGetPlayerContext();
+ * const isPlaying = $derived(player ? player.state.isPlaying : isPlayingProp);
+ * ```
+ */
+export function tryGetPlayerContext(): PlayerContext | null {
+  try {
+    return getPlayerContext();
+  } catch (error) {
+    // Only suppress "context not found" (component not inside Root).
+    // Let lifecycle errors propagate so developers get a clear stack trace
+    // when calling this outside component initialization.
+    if (error instanceof Error && !error.message.includes("missing_context")) {
+      throw error;
+    }
+    return null;
   }
-  return ctx;
 }

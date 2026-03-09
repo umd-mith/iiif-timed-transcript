@@ -62,8 +62,8 @@ export const IIIFPlayer: {
   CanvasNav,
 };
 
-// Export context accessor for custom child components
-export { getPlayerContext } from "./context";
+// Export player context accessors for custom child components
+export { getPlayerContext, tryGetPlayerContext } from "./context";
 
 // Export types
 export type {
