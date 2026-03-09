@@ -231,6 +231,18 @@ describe("PlayerStateManager", () => {
       expect(el.play).toHaveBeenCalled();
     });
 
+    test("play warns when mediaElement is null", async () => {
+      const manager = new PlayerStateManager();
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      await manager.actions.play();
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        "[IIIFPlayer] Cannot play: media not ready",
+      );
+      warnSpy.mockRestore();
+    });
+
     test("pause delegates to mediaElement.pause()", () => {
       const manager = new PlayerStateManager();
       const el = createMockMediaElement();

@@ -68,9 +68,11 @@ export class PlayerStateManager implements PlayerContext {
   // Actions (arrow functions to preserve `this` when destructured)
   actions: PlayerActions = {
     play: async () => {
-      if (this.mediaElement) {
-        await this.mediaElement.play();
+      if (!this.mediaElement) {
+        console.warn("[IIIFPlayer] Cannot play: media not ready");
+        return;
       }
+      await this.mediaElement.play();
     },
     pause: () => {
       this.mediaElement?.pause();
