@@ -32,7 +32,7 @@
  * </IIIFPlayer.Root>
  * ```
  */
-export { IIIFPlayer, getPlayerContext } from "./player";
+export { IIIFPlayer, getPlayerContext, tryGetPlayerContext } from "./player";
 export type {
   PlayerContext,
   PlayerState,

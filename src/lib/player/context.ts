@@ -1,4 +1,7 @@
-import { getContext as svelteGetContext } from "svelte";
+import {
+  getContext as svelteGetContext,
+  hasContext as svelteHasContext,
+} from "svelte";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import type { HlsAdapter } from "../media/hlsUtils";
 import type { Annotation } from "../sync/types";
@@ -72,4 +75,21 @@ export function getPlayerContext(): PlayerContext {
     );
   }
   return ctx;
+}
+
+/**
+ * Returns the player context if called inside IIIFPlayer.Root, or null otherwise.
+ *
+ * Must be called during component initialization (top-level `<script>`),
+ * not inside event handlers, `$effect`, or async callbacks.
+ *
+ * Useful for dual-mode components that work both with and without the player:
+ * ```svelte
+ * const player = tryGetPlayerContext();
+ * const isPlaying = $derived(player ? player.state.isPlaying : isPlayingProp);
+ * ```
+ */
+export function tryGetPlayerContext(): PlayerContext | null {
+  if (!svelteHasContext(PLAYER_CONTEXT_KEY)) return null;
+  return svelteGetContext<PlayerContext>(PLAYER_CONTEXT_KEY);
 }
