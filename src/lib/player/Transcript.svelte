@@ -104,6 +104,35 @@
     return searchMatches[currentMatchIndex]?.id ?? null;
   });
 
+  /**
+   * Scroll a specific annotation into view within the transcript panel.
+   * Available to child components via TranscriptContext.actions.scrollToAnnotation.
+   */
+  function scrollToAnnotation(
+    annotationId: string,
+    // eslint-disable-next-line no-undef
+    options?: ScrollIntoViewOptions,
+  ): boolean {
+    if (!scrollContainer) return false;
+    const el = scrollContainer.querySelector(
+      `[data-annotation-id="${CSS.escape(annotationId)}"]`,
+    );
+    if (!el) return false;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    el.scrollIntoView(
+      options ?? {
+        behavior: prefersReducedMotion ? "instant" : "smooth",
+        block: "center",
+        inline: "nearest",
+      },
+    );
+    return true;
+  }
+
   // Provide TranscriptContext for compound children (TranscriptSearch, TranscriptSegments)
   setContext(TRANSCRIPT_CONTEXT_KEY, {
     get state() {
@@ -119,6 +148,7 @@
     actions: {
       handleAnnotationClick,
       handleMatchChange,
+      scrollToAnnotation,
     },
   } satisfies TranscriptContext);
 

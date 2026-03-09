@@ -6,9 +6,10 @@
    * transcript data directly from the IIIF manifest's canvas.annotations —
    * the feature added for GitHub issue #2.
    *
-   * Uses a custom segment renderer (AVAnnotateSegments) instead of the
-   * built-in TranscriptSegments to display richer metadata: speaker names,
-   * category tags, and interactive tag filtering.
+   * Uses the `segment` snippet on TranscriptSegments to render richer metadata:
+   * speaker names, category tags, and interactive tag filtering — while
+   * delegating a11y attributes and state management to the library via
+   * the `segmentAttrs` spread.
    */
   import { onMount } from "svelte";
   import {
@@ -18,7 +19,6 @@
     buildTranscriptAnnotations,
     type Annotation,
   } from "@umd-mith/svelte-iiif-transcript-player";
-  import AVAnnotateSegments from "./AVAnnotateSegments.svelte";
   import BufferingOverlay from "./BufferingOverlay.svelte";
 
   // Props
@@ -28,7 +28,7 @@
     manifestUrl: string;
   } = $props();
 
-  // Known category tags (matching AVAnnotateSegments color map)
+  // Known category tags for color coding
   const categoryNames = [
     "Speaking",
     "Reading",
@@ -64,6 +64,15 @@
     return [...new Set(allTags.filter((t) => !cats.has(t)))];
   });
 
+  // Filter annotations by active tags
+  const filteredAnnotations = $derived.by(() => {
+    if (activeTags.length === 0) return annotations;
+    return annotations.filter((a) => {
+      const tags = getCategoryTags(a);
+      return tags.some((t) => activeTags.includes(t));
+    });
+  });
+
   function toggleTag(tag: string) {
     if (activeTags.includes(tag)) {
       activeTags = activeTags.filter((t) => t !== tag);
@@ -76,8 +85,49 @@
     activeTags = [];
   }
 
-  // Tag color classes (matching AVAnnotateSegments)
-  const tagStyles: Record<string, string> = {
+  // Tag color classes
+  const tagColors: Record<
+    string,
+    { bg: string; text: string; border: string }
+  > = {
+    Speaking: {
+      bg: "bg-blue-50",
+      text: "text-blue-700",
+      border: "border-blue-200",
+    },
+    Reading: {
+      bg: "bg-violet-50",
+      text: "text-violet-700",
+      border: "border-violet-200",
+    },
+    Transcription: {
+      bg: "bg-emerald-50",
+      text: "text-emerald-700",
+      border: "border-emerald-200",
+    },
+    Situational: {
+      bg: "bg-orange-50",
+      text: "text-orange-700",
+      border: "border-orange-200",
+    },
+    Audience: {
+      bg: "bg-pink-50",
+      text: "text-pink-700",
+      border: "border-pink-200",
+    },
+    Notes: {
+      bg: "bg-gray-100",
+      text: "text-gray-600",
+      border: "border-gray-200",
+    },
+    Social: {
+      bg: "bg-amber-50",
+      text: "text-amber-700",
+      border: "border-amber-200",
+    },
+  };
+
+  const tagStyleClasses: Record<string, string> = {
     Speaking: "bg-blue-50 text-blue-700 border-blue-200",
     Reading: "bg-violet-50 text-violet-700 border-violet-200",
     Transcription: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -86,6 +136,37 @@
     Notes: "bg-gray-100 text-gray-600 border-gray-200",
     Social: "bg-amber-50 text-amber-700 border-amber-200",
   };
+
+  const defaultColor = {
+    bg: "bg-gray-100",
+    text: "text-gray-600",
+    border: "border-gray-200",
+  };
+
+  function formatTimestamp(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  }
+
+  function getTags(annotation: Annotation): string[] {
+    return (annotation.metadata?.tags as string[]) ?? [];
+  }
+
+  /** Extract speaker name — tags that look like proper names (not category labels) */
+  function getSpeaker(annotation: Annotation): string | null {
+    const tags = getTags(annotation);
+    const cats = new Set(categoryNames);
+    const speaker = tags.find((t) => !cats.has(t));
+    return speaker ?? null;
+  }
+
+  /** Category tags only (not speaker names) */
+  function getCategoryTags(annotation: Annotation): string[] {
+    const tags = getTags(annotation);
+    const cats = new Set(categoryNames);
+    return tags.filter((t) => cats.has(t));
+  }
 
   onMount(async () => {
     try {
@@ -185,7 +266,8 @@
               {#each availableTags as tag (tag)}
                 {@const isActive = activeTags.includes(tag)}
                 {@const style =
-                  tagStyles[tag] ?? "bg-gray-100 text-gray-600 border-gray-200"}
+                  tagStyleClasses[tag] ??
+                  "bg-gray-100 text-gray-600 border-gray-200"}
                 <button
                   type="button"
                   class="tag-filter-btn border {style}"
@@ -200,13 +282,51 @@
           </div>
         </div>
 
-        <!-- Right: Transcript Panel with custom segments -->
+        <!-- Right: Transcript Panel with custom segment rendering -->
         <div
           class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-clip"
         >
           <IIIFPlayer.Transcript {annotations}>
             <IIIFPlayer.TranscriptSearch />
-            <AVAnnotateSegments {activeTags} />
+            <IIIFPlayer.TranscriptSegments annotations={filteredAnnotations}>
+              {#snippet segment({
+                annotation,
+                isActive,
+                isHighlighted,
+                isCurrentMatch,
+                segmentAttrs,
+              })}
+                {@const speaker = getSpeaker(annotation)}
+                {@const categories = getCategoryTags(annotation)}
+                <button
+                  {...segmentAttrs}
+                  class="segment"
+                  class:active={isActive}
+                  class:highlighted={isHighlighted}
+                  class:current-match={isCurrentMatch}
+                >
+                  <div class="segment-header">
+                    <span class="timestamp"
+                      >{formatTimestamp(annotation.startTime)}</span
+                    >
+                    {#if speaker}
+                      <span class="speaker">{speaker}</span>
+                    {/if}
+                  </div>
+                  <p class="text">{annotation.text}</p>
+                  {#if categories.length > 0}
+                    <div class="tag-row">
+                      {#each categories as tag (tag)}
+                        {@const color = tagColors[tag] ?? defaultColor}
+                        <span class="tag {color.bg} {color.text} {color.border}"
+                          >{tag}</span
+                        >
+                      {/each}
+                    </div>
+                  {/if}
+                </button>
+              {/snippet}
+            </IIIFPlayer.TranscriptSegments>
           </IIIFPlayer.Transcript>
         </div>
       </div>
@@ -235,9 +355,97 @@
     box-shadow: 0 0 0 2px rgba(194, 65, 12, 0.3);
   }
 
+  /* Custom segment rendering via the segment snippet */
+  .segment {
+    all: unset;
+    display: block;
+    width: 100%;
+    cursor: pointer;
+    padding: 0.75rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.375rem;
+    border-left: 3px solid transparent;
+    transition:
+      background-color 150ms,
+      border-color 150ms;
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  .segment:hover {
+    background-color: #f3f4f6;
+  }
+
+  .segment:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  .segment.active {
+    background-color: #dbeafe;
+    border-left-color: var(--color-terracotta-500, #c2410c);
+  }
+
+  .segment.highlighted {
+    background-color: #fef9c3;
+  }
+
+  .segment.current-match {
+    background-color: #fef08a;
+    border-left-color: #eab308;
+  }
+
+  .segment-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .timestamp {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6b7280;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .speaker {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .text {
+    margin: 0;
+    color: #1f2937;
+    line-height: 1.5;
+    font-size: 0.9375rem;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.375rem;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0.0625rem 0.375rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    border-width: 1px;
+    border-style: solid;
+  }
+
   /* Transcript panel and search styling */
   :global(.avannotate-demo .transcript-panel) {
     @apply flex-1 flex flex-col overflow-y-auto;
+  }
+
+  :global(.avannotate-demo .segments-container) {
+    @apply p-4;
   }
 
   :global(.avannotate-demo input[type="search"]) {

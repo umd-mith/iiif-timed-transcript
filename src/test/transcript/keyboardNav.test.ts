@@ -46,6 +46,23 @@ describe("focusSegmentAtIndex", () => {
     document.body.removeChild(container);
   });
 
+  it("focuses non-button elements with data-annotation-id", () => {
+    const container = document.createElement("div");
+    const div0 = document.createElement("div");
+    div0.dataset.annotationId = "a1";
+    div0.tabIndex = 0;
+    const div1 = document.createElement("div");
+    div1.dataset.annotationId = "a2";
+    div1.tabIndex = -1;
+    container.append(div0, div1);
+    document.body.appendChild(container);
+
+    focusSegmentAtIndex(container, 1);
+    expect(document.activeElement).toBe(div1);
+
+    document.body.removeChild(container);
+  });
+
   it("does nothing for out-of-bounds index", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);

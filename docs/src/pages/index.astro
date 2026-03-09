@@ -504,20 +504,26 @@ const jsonLd = {
 					<div class="border-l-4 border-terracotta-500 pl-6">
 						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">Custom Segment Rendering</h3>
 						<p class="text-ink-600 mb-4">
-							Use the segment snippet to customize how transcript segments are rendered. Access annotation metadata for speakers, confidence scores, etc.
+							Use the <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">segment</code> snippet on <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">TranscriptSegments</code> for full control over how each segment renders. The <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">segmentAttrs</code> spread provides all a11y attributes, data attributes, tabindex, and click handling automatically.
 						</p>
 						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
 							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<IIIFPlayer.Transcript {annotations}>
-  {#snippet segment({ annotation, isActive, onClick })}
-    <button data-annotation-id={annotation.id} onclick={onClick}>
-      {#if annotation.metadata?.speaker}
-        <strong>{annotation.metadata.speaker}:</strong>
-      {/if}
-      <span class:active={isActive}>{annotation.text}</span>
-    </button>
-  {/snippet}
+  <IIIFPlayer.TranscriptSearch />
+  <IIIFPlayer.TranscriptSegments>
+    {#snippet segment({ annotation, isActive, segmentAttrs })}
+      <button {...segmentAttrs}>
+        {#if annotation.metadata?.speaker}
+          <strong>{annotation.metadata.speaker}:</strong>
+        {/if}
+        <span class:active={isActive}>{annotation.text}</span>
+      </button>
+    {/snippet}
+  </IIIFPlayer.TranscriptSegments>
 </IIIFPlayer.Transcript>`}</code></pre>
 						</div>
+						<p class="text-ink-500 text-sm mt-3 font-serif">
+							The <code class="font-mono text-xs">segmentAttrs</code> object includes <code class="font-mono text-xs">data-annotation-id</code>, <code class="font-mono text-xs">data-state</code>, <code class="font-mono text-xs">aria-current</code>, <code class="font-mono text-xs">role</code>, <code class="font-mono text-xs">tabindex</code>, and <code class="font-mono text-xs">onclick</code> — so you never need to wire those up manually. See the <a href="/svelte-iiif-transcript-player/avannotate-demo" class="text-terracotta-500 hover:text-terracotta-600 underline">AVAnnotate demo</a> for a full example with speaker tags and filtering.
+						</p>
 					</div>
 				</div>
 			</div>

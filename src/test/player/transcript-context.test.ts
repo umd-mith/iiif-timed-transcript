@@ -57,6 +57,7 @@ describe("transcript-context", () => {
       actions: {
         handleAnnotationClick: vi.fn(),
         handleMatchChange: vi.fn(),
+        scrollToAnnotation: vi.fn().mockReturnValue(false),
       },
     };
 

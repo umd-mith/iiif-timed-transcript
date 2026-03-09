@@ -45,6 +45,7 @@ export type {
   TranscriptState,
   TranscriptActions,
 } from "./player";
+export type { SegmentSnippetProps } from "./player/TranscriptSegments.svelte";
 export type { TrackDefinition } from "./player";
 
 // ============================================================================

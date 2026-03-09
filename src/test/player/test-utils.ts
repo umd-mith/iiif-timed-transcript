@@ -57,7 +57,7 @@ export function createContextCapture(
  */
 export function createChildSnippet(
   target: HTMLElement,
-  ChildComponent: Component,
+  ChildComponent: Component<any>,
   props: Record<string, unknown> = {},
 ): Snippet {
   return ((_anchor: Node) => {

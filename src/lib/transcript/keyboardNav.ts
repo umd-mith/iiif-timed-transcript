@@ -31,7 +31,7 @@ export function focusSegmentAtIndex(
   index: number,
 ): void {
   const buttons = container.querySelectorAll<HTMLElement>(
-    "button[data-annotation-id]",
+    "[data-annotation-id]",
   );
   buttons[index]?.focus();
 }
