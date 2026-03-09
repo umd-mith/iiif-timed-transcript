@@ -62,6 +62,31 @@ export interface PlayerContext {
   actions: PlayerActions;
 }
 
+/**
+ * Curated player reference for external orchestration.
+ *
+ * Exposes orchestration-relevant fields (state, actions, content metadata,
+ * canvas navigation) while excluding internal wiring (mediaElement, hlsAdapter,
+ * mediaStrategy, tracks, mediaUrl).
+ *
+ * At runtime this is the PlayerStateManager instance — reactivity works because
+ * the class uses $state and $derived internally.
+ *
+ * Consumers needing excluded fields should use getPlayerContext() from inside
+ * the Root subtree instead.
+ */
+export interface PlayerRef {
+  readonly state: PlayerState;
+  readonly actions: PlayerActions;
+  readonly annotations: Annotation[];
+  readonly chapters: Chapter[];
+  readonly activeChapterId: string | null;
+  readonly canvasIndex: number;
+  readonly canvasCount: number;
+  readonly canvases: CanvasInfo[];
+  readonly mediaType: "audio" | "video";
+}
+
 export const [getPlayerContext, setPlayerContext] =
   createContext<PlayerContext>();
 
