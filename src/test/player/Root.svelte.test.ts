@@ -865,7 +865,7 @@ describe("Root component", () => {
         expect(onPlayerInit).toHaveBeenCalledOnce();
       });
 
-      const ref = onPlayerInit.mock.calls[0][0];
+      const ref = onPlayerInit.mock.calls[0]![0];
       expect(ref.state).toBeDefined();
       expect(ref.actions).toBeDefined();
       expect(ref.canvases).toHaveLength(1);
@@ -946,7 +946,7 @@ describe("Root component", () => {
       });
 
       // Verify ref shape
-      const ref = onPlayerInit.mock.calls[0][0];
+      const ref = onPlayerInit.mock.calls[0]![0];
       expect(ref.canvases).toHaveLength(1);
       expect(ref.mediaType).toBe("audio");
     });
