@@ -294,16 +294,13 @@ Both contexts use Svelte 5's `createContext<T>()` which returns a type-safe `[ge
 
 ```typescript
 // context.ts — player context
-export const [getPlayerContext, setPlayerContext] =
-  createContext<PlayerContext>();
+export const [getPlayerContext, setPlayerContext] = createContext<PlayerContext>();
 
 // transcript-context.ts — transcript context
-export const [getTranscriptContext, setTranscriptContext] =
-  createContext<TranscriptContext>();
+export const [getTranscriptContext, setTranscriptContext] = createContext<TranscriptContext>();
 ```
 
 Providers call the setter during component init:
-
 - **Root.svelte** calls `setPlayerContext(player)` where `player` is a `PlayerStateManager` instance
 - **Transcript.svelte** calls `setTranscriptContext({...})` with reactive getters for state
 
