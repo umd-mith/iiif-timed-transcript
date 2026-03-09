@@ -39,6 +39,7 @@ export type {
   PlayerActions,
   MediaStrategy,
   CanvasInfo,
+  PlayerRef,
 } from "./player";
 export type {
   TranscriptContext,
