@@ -1,5 +1,15 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.10.0
+
+### Minor Changes
+
+- **Export `SegmentAttrs` type** — consumers building custom segment renderers can now import `SegmentAttrs` directly instead of using `SegmentSnippetProps['segmentAttrs']` indexed access (#30)
+
+### Patch Changes
+
+- **Fix unhandled `play()` rejections** — `actions.play()` now catches `NotAllowedError` (autoplay policy) and routes it through `state.error`, consistent with existing error paths. Benign `AbortError` (play interrupted by pause/seek) is silently ignored (#28)
+
 ## 0.9.0
 
 ### Minor Changes
