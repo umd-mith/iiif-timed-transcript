@@ -103,17 +103,17 @@ pnpm run build
 
 Top-level context provider. Fetches the IIIF manifest, parses canvases, and coordinates all child components via Svelte context.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `manifestUrl` | `string` | required | IIIF Presentation 3.0 manifest URL |
-| `canvasIndex` | `number` | `0` | Canvas to display |
-| `annotations` | `Annotation[]` | `[]` | Transcript annotations (passed through to context) |
-| `initialTime` | `number` | — | Start playback at this time (seconds) |
-| `autoplay` | `boolean` | `false` | Auto-play media on load |
-| `hlsConstructor` | `HlsConstructor` | — | Custom `hls.js` constructor (bypasses dynamic import) |
-| `onCanvasChange` | `(index: number, canvas: CanvasInfo) => void` | — | Calls when canvas switches |
-| `onPlayerInit` | `(player: PlayerRef) => void` | — | Runs once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root) |
-| `class` | `string` | `""` | CSS class for root container |
+| Prop             | Type                                          | Default  | Description                                                                                                     |
+| ---------------- | --------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
+| `manifestUrl`    | `string`                                      | required | IIIF Presentation 3.0 manifest URL                                                                              |
+| `canvasIndex`    | `number`                                      | `0`      | Canvas to display                                                                                               |
+| `annotations`    | `Annotation[]`                                | `[]`     | Transcript annotations (passed through to context)                                                              |
+| `initialTime`    | `number`                                      | —        | Start playback at this time (seconds)                                                                           |
+| `autoplay`       | `boolean`                                     | `false`  | Auto-play media on load                                                                                         |
+| `hlsConstructor` | `HlsConstructor`                              | —        | Custom `hls.js` constructor (bypasses dynamic import)                                                           |
+| `onCanvasChange` | `(index: number, canvas: CanvasInfo) => void` | —        | Calls when canvas switches                                                                                      |
+| `onPlayerInit`   | `(player: PlayerRef) => void`                 | —        | Runs once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root) |
+| `class`          | `string`                                      | `""`     | CSS class for root container                                                                                    |
 
 **Children snippet:**
 
@@ -133,21 +133,21 @@ Root passes `{ player }` to its children snippet with `state`, `actions`, `annot
 
 Renders the media element (`<audio>` or `<video>`) for the current canvas. Auto-wires HLS when the media strategy requires it.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `controls` | `boolean` | `false` | Show native media controls |
-| `crossOrigin` | `'anonymous' \| 'use-credentials'` | — | CORS setting |
-| `preload` | `'auto' \| 'metadata' \| 'none'` | `'auto'` | Preload strategy |
-| `tracks` | `TrackDefinition[]` | `[]` | Caption/subtitle tracks (overrides auto-discovered tracks from manifest) |
-| `class` | `string` | `""` | CSS class |
+| Prop          | Type                               | Default  | Description                                                              |
+| ------------- | ---------------------------------- | -------- | ------------------------------------------------------------------------ |
+| `controls`    | `boolean`                          | `false`  | Show native media controls                                               |
+| `crossOrigin` | `'anonymous' \| 'use-credentials'` | —        | CORS setting                                                             |
+| `preload`     | `'auto' \| 'metadata' \| 'none'`   | `'auto'` | Preload strategy                                                         |
+| `tracks`      | `TrackDefinition[]`                | `[]`     | Caption/subtitle tracks (overrides auto-discovered tracks from manifest) |
+| `class`       | `string`                           | `""`     | CSS class                                                                |
 
 #### `IIIFPlayer.Controls`
 
 Pass-through container for control components. Use for layout.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `class` | `string` | `""` | CSS class |
+| Prop    | Type     | Default | Description |
+| ------- | -------- | ------- | ----------- |
+| `class` | `string` | `""`    | CSS class   |
 
 **Data attribute:** `data-audio-controls`
 
@@ -171,10 +171,10 @@ Seekable range input (`<input type="range">`).
 
 Skip forward or backward.
 
-| Prop | Type | Description |
-|------|------|-------------|
+| Prop      | Type     | Description                           |
+| --------- | -------- | ------------------------------------- |
 | `seconds` | `number` | Seconds to skip (negative for rewind) |
-| `class` | `string` | CSS class |
+| `class`   | `string` | CSS class                             |
 
 **Data attribute:** `data-audio-button="skip"`
 
@@ -182,10 +182,10 @@ Skip forward or backward.
 
 Playback rate selector (`<select>`).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| Prop    | Type       | Default                        | Description     |
+| ------- | ---------- | ------------------------------ | --------------- |
 | `rates` | `number[]` | `[0.5, 0.75, 1, 1.25, 1.5, 2]` | Available rates |
-| `class` | `string` | `""` | CSS class |
+| `class` | `string`   | `""`                           | CSS class       |
 
 **Data attribute:** `data-audio-control="speed"`
 
@@ -202,18 +202,18 @@ Displays current time and duration as `MM:SS / MM:SS` (or `H:MM:SS` for duration
 
 Synchronized transcript panel. Manages bidirectional scroll↔media sync via an XState-based `SyncController`. Provides `TranscriptContext` to compound children.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `annotations` | `Annotation[]` | `[]` | Transcript segments (falls back to Root context annotations) |
-| `syncDebounceMs` | `number` | `150` | Scroll debounce (ms) |
-| `syncSettleMs` | `number` | `100` | Settle delay after scroll (ms) |
-| `syncPriorityLockDuration` | `number` | `1000` | Priority lock duration (ms) |
-| `ariaLabel` | `string` | `"Media transcript"` | Region label |
-| `announceActiveSegment` | `boolean` | `true` | Screen reader announcements for active segment |
-| `onActiveAnnotationChange` | `(annotation: Annotation \| null) => void` | — | Calls when active segment changes |
-| `onSegmentClick` | `(annotation: Annotation, event: { preventDefault: () => void }) => void` | — | Intercept clicks; call `preventDefault()` synchronously to suppress default seek |
-| `empty` | `Snippet` | — | Custom empty state |
-| `class` | `string` | `""` | CSS class |
+| Prop                       | Type                                                                      | Default              | Description                                                                      |
+| -------------------------- | ------------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------- |
+| `annotations`              | `Annotation[]`                                                            | `[]`                 | Transcript segments (falls back to Root context annotations)                     |
+| `syncDebounceMs`           | `number`                                                                  | `150`                | Scroll debounce (ms)                                                             |
+| `syncSettleMs`             | `number`                                                                  | `100`                | Settle delay after scroll (ms)                                                   |
+| `syncPriorityLockDuration` | `number`                                                                  | `1000`               | Priority lock duration (ms)                                                      |
+| `ariaLabel`                | `string`                                                                  | `"Media transcript"` | Region label                                                                     |
+| `announceActiveSegment`    | `boolean`                                                                 | `true`               | Screen reader announcements for active segment                                   |
+| `onActiveAnnotationChange` | `(annotation: Annotation \| null) => void`                                | —                    | Calls when active segment changes                                                |
+| `onSegmentClick`           | `(annotation: Annotation, event: { preventDefault: () => void }) => void` | —                    | Intercept clicks; call `preventDefault()` synchronously to suppress default seek |
+| `empty`                    | `Snippet`                                                                 | —                    | Custom empty state                                                               |
+| `class`                    | `string`                                                                  | `""`                 | CSS class                                                                        |
 
 **Children:** Use `TranscriptSearch` and `TranscriptSegments` as compound children. Without children, renders the empty state.
 
@@ -221,39 +221,39 @@ Synchronized transcript panel. Manages bidirectional scroll↔media sync via an 
 
 Search input for filtering transcript segments. **Dual-mode:** reads from `TranscriptContext` inside `Transcript`, or accepts props directly when used standalone.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `annotations` | `Annotation[]` | from context | Annotations to search |
-| `placeholder` | `string` | `"Search transcript..."` | Input placeholder |
-| `debounceMs` | `number` | `150` | Input debounce (ms) |
-| `onmatchchange` | `(matches: Annotation[], index: number) => void` | from context | Match change callback |
-| `class` | `string` | `""` | CSS class |
+| Prop            | Type                                             | Default                  | Description           |
+| --------------- | ------------------------------------------------ | ------------------------ | --------------------- |
+| `annotations`   | `Annotation[]`                                   | from context             | Annotations to search |
+| `placeholder`   | `string`                                         | `"Search transcript..."` | Input placeholder     |
+| `debounceMs`    | `number`                                         | `150`                    | Input debounce (ms)   |
+| `onmatchchange` | `(matches: Annotation[], index: number) => void` | from context             | Match change callback |
+| `class`         | `string`                                         | `""`                     | CSS class             |
 
 #### `IIIFPlayer.TranscriptSegments`
 
 Renders transcript segments with active/search highlighting and roving tabindex keyboard navigation. **Dual-mode:** reads from `TranscriptContext` inside `Transcript`, or accepts props directly.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `annotations` | `Annotation[]` | from context | Annotations to display |
-| `activeAnnotationId` | `string \| null` | from context | Currently active annotation |
-| `highlightedIds` | `Set<string>` | from context | Search-highlighted annotation IDs |
-| `currentMatchId` | `string \| null` | from context | Current search match (stronger highlight) |
-| `highlightedAnnotationId` | `string \| null` | `null` | Deep-link highlight (merged with search highlights) |
-| `onclick` | `(annotation: Annotation) => void` | from context | Segment click handler |
-| `onkeydown` | `(event: KeyboardEvent, context: { annotation, index, annotations }) => void` | — | Keyboard handler on container; call `preventDefault()` to suppress built-in Arrow/Home/End navigation |
-| `segment` | `Snippet<[SegmentSnippetProps]>` | — | Full custom segment rendering (see [Custom segment snippets](#custom-segment-snippets)) |
-| `text` | `Snippet<[{ annotation: Annotation }]>` | — | Custom text rendering only |
-| `class` | `string` | `""` | CSS class |
+| Prop                      | Type                                                                          | Default      | Description                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------- |
+| `annotations`             | `Annotation[]`                                                                | from context | Annotations to display                                                                                |
+| `activeAnnotationId`      | `string \| null`                                                              | from context | Currently active annotation                                                                           |
+| `highlightedIds`          | `Set<string>`                                                                 | from context | Search-highlighted annotation IDs                                                                     |
+| `currentMatchId`          | `string \| null`                                                              | from context | Current search match (stronger highlight)                                                             |
+| `highlightedAnnotationId` | `string \| null`                                                              | `null`       | Deep-link highlight (merged with search highlights)                                                   |
+| `onclick`                 | `(annotation: Annotation) => void`                                            | from context | Segment click handler                                                                                 |
+| `onkeydown`               | `(event: KeyboardEvent, context: { annotation, index, annotations }) => void` | —            | Keyboard handler on container; call `preventDefault()` to suppress built-in Arrow/Home/End navigation |
+| `segment`                 | `Snippet<[SegmentSnippetProps]>`                                              | —            | Full custom segment rendering (see [Custom segment snippets](#custom-segment-snippets))               |
+| `text`                    | `Snippet<[{ annotation: Annotation }]>`                                       | —            | Custom text rendering only                                                                            |
+| `class`                   | `string`                                                                      | `""`         | CSS class                                                                                             |
 
 **Data attributes on each segment:**
 
-| Attribute | Values | Description |
-|-----------|--------|-------------|
-| `data-annotation-id` | segment ID | Unique identifier |
-| `data-state` | `"active"` \| `"inactive"` | Playback state |
-| `data-highlighted` | `"true"` or absent | Matches search query |
-| `data-current-match` | `"true"` or absent | Focused search match |
+| Attribute            | Values                     | Description          |
+| -------------------- | -------------------------- | -------------------- |
+| `data-annotation-id` | segment ID                 | Unique identifier    |
+| `data-state`         | `"active"` \| `"inactive"` | Playback state       |
+| `data-highlighted`   | `"true"` or absent         | Matches search query |
+| `data-current-match` | `"true"` or absent         | Focused search match |
 
 ### Navigation Components
 
@@ -261,14 +261,15 @@ Renders transcript segments with active/search highlighting and roving tabindex 
 
 Displays chapter markers from the IIIF manifest's Range structures. Clicking a chapter seeks to its start time.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `onActiveChapterChange` | `(chapter: Chapter \| null) => void` | — | Calls when active chapter changes |
-| `chapter` | `Snippet<[{ chapter: Chapter, isActive: boolean, onClick: () => void }]>` | — | Custom chapter rendering |
-| `empty` | `Snippet` | — | Custom empty state |
-| `class` | `string` | `""` | CSS class |
+| Prop                    | Type                                                                      | Default | Description                       |
+| ----------------------- | ------------------------------------------------------------------------- | ------- | --------------------------------- |
+| `onActiveChapterChange` | `(chapter: Chapter \| null) => void`                                      | —       | Calls when active chapter changes |
+| `chapter`               | `Snippet<[{ chapter: Chapter, isActive: boolean, onClick: () => void }]>` | —       | Custom chapter rendering          |
+| `empty`                 | `Snippet`                                                                 | —       | Custom empty state                |
+| `class`                 | `string`                                                                  | `""`    | CSS class                         |
 
 **Data attributes (default rendering):**
+
 - `data-chapter-id` — chapter identifier
 - `data-state="active|inactive"` — current chapter state
 
@@ -276,14 +277,15 @@ Displays chapter markers from the IIIF manifest's Range structures. Clicking a c
 
 Multi-canvas navigation. Hides itself when the manifest contains a single canvas.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `onCanvasChange` | `(canvas: CanvasInfo) => void` | — | Calls when user selects a canvas |
-| `canvas` | `Snippet<[{ canvas: CanvasInfo, isActive: boolean, onClick: () => void }]>` | — | Custom canvas rendering |
-| `empty` | `Snippet` | — | Custom empty state |
-| `class` | `string` | `""` | CSS class |
+| Prop             | Type                                                                        | Default | Description                      |
+| ---------------- | --------------------------------------------------------------------------- | ------- | -------------------------------- |
+| `onCanvasChange` | `(canvas: CanvasInfo) => void`                                              | —       | Calls when user selects a canvas |
+| `canvas`         | `Snippet<[{ canvas: CanvasInfo, isActive: boolean, onClick: () => void }]>` | —       | Custom canvas rendering          |
+| `empty`          | `Snippet`                                                                   | —       | Custom empty state               |
+| `class`          | `string`                                                                    | `""`    | CSS class                        |
 
 **Data attributes (default rendering):**
+
 - `data-canvas-index` — canvas position
 - `data-state="active|inactive"` — current canvas state
 
@@ -293,15 +295,15 @@ All components ship **unstyled** with semantic HTML and `data-*` attributes for 
 
 ### Styling Targets
 
-| Area | Selector | Notes |
-|------|----------|-------|
-| Transcript segments | `[data-annotation-id]` | Use `[data-state="active"]` for highlighting |
-| Player controls | `[data-audio-button]`, `[data-audio-progress]`, `[data-audio-control]` | |
-| Search input | `input[type="search"]` | Inside `.transcript-search-sticky` |
-| Chapter markers | `[data-chapter-id]` | Use `[data-state="active"]` |
-| Canvas nav | `[data-canvas-index]` | Use `[data-state="active"]` |
-| Scroll container | `.transcript-panel` | The sync engine's scroll target |
-| Segments container | `.segments-container` | Wraps all segments |
+| Area                | Selector                                                               | Notes                                        |
+| ------------------- | ---------------------------------------------------------------------- | -------------------------------------------- |
+| Transcript segments | `[data-annotation-id]`                                                 | Use `[data-state="active"]` for highlighting |
+| Player controls     | `[data-audio-button]`, `[data-audio-progress]`, `[data-audio-control]` |                                              |
+| Search input        | `input[type="search"]`                                                 | Inside `.transcript-search-sticky`           |
+| Chapter markers     | `[data-chapter-id]`                                                    | Use `[data-state="active"]`                  |
+| Canvas nav          | `[data-canvas-index]`                                                  | Use `[data-state="active"]`                  |
+| Scroll container    | `.transcript-panel`                                                    | The sync engine's scroll target              |
+| Segments container  | `.segments-container`                                                  | Wraps all segments                           |
 
 ### Example: Active Segment Highlighting
 
@@ -343,7 +345,7 @@ All components ship **unstyled** with semantic HTML and `data-*` attributes for 
 interface Annotation {
   id: string;
   startTime: number; // seconds
-  endTime: number;   // seconds
+  endTime: number; // seconds
   text: string;
   metadata?: Record<string, unknown>;
 }
@@ -396,7 +398,13 @@ The `segment` snippet on `TranscriptSegments` gives full control over rendering.
 
 ```svelte
 <IIIFPlayer.TranscriptSegments>
-  {#snippet segment({ annotation, isActive, isHighlighted, isCurrentMatch, segmentAttrs })}
+  {#snippet segment({
+    annotation,
+    isActive,
+    isHighlighted,
+    isCurrentMatch,
+    segmentAttrs,
+  })}
     <div {...segmentAttrs} class="my-segment" class:active={isActive}>
       <span class="timestamp">{annotation.startTime}</span>
       <p>{annotation.text}</p>
@@ -573,9 +581,15 @@ The compound components work in Astro islands. Create a Svelte wrapper component
 ```svelte
 <!-- src/components/Player.svelte -->
 <script lang="ts">
-  import { IIIFPlayer, type Annotation } from "@umd-mith/svelte-iiif-transcript-player";
+  import {
+    IIIFPlayer,
+    type Annotation,
+  } from "@umd-mith/svelte-iiif-transcript-player";
 
-  let { manifestUrl, annotations }: { manifestUrl: string; annotations: Annotation[] } = $props();
+  let {
+    manifestUrl,
+    annotations,
+  }: { manifestUrl: string; annotations: Annotation[] } = $props();
 </script>
 
 <IIIFPlayer.Root {manifestUrl} canvasIndex={0}>
