@@ -187,8 +187,7 @@
   }
 
   /* Active segment highlighting */
-  .iiif-transcript-demo
-    :global([data-annotation-id][data-state="active"]) {
+  .iiif-transcript-demo :global([data-annotation-id][data-state="active"]) {
     background-color: #bee3f8;
     border-left: 4px solid #3182ce;
   }

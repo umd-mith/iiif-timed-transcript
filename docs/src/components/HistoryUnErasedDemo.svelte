@@ -131,22 +131,16 @@
     @apply bg-gray-100;
   }
 
-  :global(
-    .historyunerased-demo [data-annotation-id][data-state="active"]
-  ) {
+  :global(.historyunerased-demo [data-annotation-id][data-state="active"]) {
     @apply bg-blue-100 border-l-4 border-terracotta-500;
   }
 
-  :global(
-    .historyunerased-demo
-      [data-annotation-id][data-highlighted="true"]
-  ) {
+  :global(.historyunerased-demo [data-annotation-id][data-highlighted="true"]) {
     @apply bg-yellow-100;
   }
 
   :global(
-    .historyunerased-demo
-      [data-annotation-id][data-current-match="true"]
+    .historyunerased-demo [data-annotation-id][data-current-match="true"]
   ) {
     @apply bg-yellow-200 border-l-4 border-yellow-500;
   }
@@ -187,9 +181,7 @@
     @apply px-4 py-3 bg-terracotta-500 hover:bg-terracotta-600 text-white rounded-full transition-colors;
   }
 
-  :global(
-    .historyunerased-demo input[type="range"][data-audio-progress]
-  ) {
+  :global(.historyunerased-demo input[type="range"][data-audio-progress]) {
     @apply w-full mb-3 h-2 cursor-pointer accent-terracotta-500;
   }
 

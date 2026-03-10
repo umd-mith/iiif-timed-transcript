@@ -59,9 +59,7 @@ describe("Transcript.Segment", () => {
     mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
     flushSync();
 
-    const segment = target.querySelector(
-      "[data-annotation-id]",
-    ) as HTMLElement;
+    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
     segment.click();
 
     expect(onclick).toHaveBeenCalledTimes(1);
@@ -75,9 +73,7 @@ describe("Transcript.Segment", () => {
     mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
     flushSync();
 
-    const segment = target.querySelector(
-      "[data-annotation-id]",
-    ) as HTMLElement;
+    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
     segment.dispatchEvent(
       new KeyboardEvent("keydown", {
         key: "Enter",
@@ -97,9 +93,7 @@ describe("Transcript.Segment", () => {
     mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
     flushSync();
 
-    const segment = target.querySelector(
-      "[data-annotation-id]",
-    ) as HTMLElement;
+    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
     segment.dispatchEvent(
       new KeyboardEvent("keydown", {
         key: " ",

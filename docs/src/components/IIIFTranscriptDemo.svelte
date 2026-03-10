@@ -110,16 +110,12 @@
   }
 
   /* Active segment (playing) - brand color */
-  :global(
-    .iiif-transcript-demo [data-annotation-id][data-state="active"]
-  ) {
+  :global(.iiif-transcript-demo [data-annotation-id][data-state="active"]) {
     @apply bg-blue-100 border-l-4 border-terracotta-500;
   }
 
   /* Search match - yellow highlight */
-  :global(
-    .iiif-transcript-demo [data-annotation-id][data-highlighted="true"]
-  ) {
+  :global(.iiif-transcript-demo [data-annotation-id][data-highlighted="true"]) {
     @apply bg-yellow-100;
   }
 

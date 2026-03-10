@@ -74,9 +74,7 @@
   }
 
   /* Active segment (playing) - brand color */
-  :global(
-    .html-annotations-demo [data-annotation-id][data-state="active"]
-  ) {
+  :global(.html-annotations-demo [data-annotation-id][data-state="active"]) {
     @apply bg-blue-100 border-l-4 border-terracotta-500;
   }
 
