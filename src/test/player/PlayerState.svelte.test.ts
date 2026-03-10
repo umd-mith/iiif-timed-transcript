@@ -263,6 +263,19 @@ describe("PlayerStateManager", () => {
       expect(manager.state.error).toBeNull();
     });
 
+    test("play wraps non-Error rejection in Error", async () => {
+      const manager = new PlayerStateManager();
+      const el = createMockMediaElement({
+        play: vi.fn().mockRejectedValue("string error") as unknown as () => Promise<void>,
+      });
+      manager.mediaElement = el;
+
+      await manager.actions.play();
+
+      expect(manager.state.error).toBeInstanceOf(Error);
+      expect(manager.state.error!.message).toBe("string error");
+    });
+
     test("play warns when mediaElement is null", async () => {
       const manager = new PlayerStateManager();
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});

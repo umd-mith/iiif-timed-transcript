@@ -11,6 +11,7 @@
    * data attributes, tabindex, and onclick — so consumers get correct
    * behavior by default without manual wiring.
    */
+
   /** Attributes bundled for custom segment root elements. Spread with `{...segmentAttrs}`. */
   export type SegmentAttrs = {
     "data-annotation-id": string;
