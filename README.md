@@ -6,15 +6,63 @@ The compound component API lets you assemble custom player layouts from small, f
 
 ## What this library provides
 
-- **13 composable components** under a single `IIIFPlayer` namespace (Root, Viewer, Controls, PlayButton, Progress, Skip, Speed, Time, Transcript, TranscriptSearch, TranscriptSegments, Chapters, CanvasNav)
 - **Bidirectional sync** — clicking a transcript segment seeks the media; media playback scrolls the transcript (XState 5 state machine)
 - **Full-text search** across transcript segments with match-by-match navigation
 - **Multi-canvas support** — switch between canvases in a manifest, with chapter markers per canvas
 - **HLS adaptive streaming** — auto-detects HLS URLs and uses `hls.js` when available (Safari uses native HLS)
 - **Custom segment rendering** via Svelte 5 snippets and a `segmentAttrs` spread for accessibility
-- **Dual-mode components** — `TranscriptSearch` and `TranscriptSegments` work inside `Transcript` (via context) or standalone (via props)
 - **Unstyled by default** — all components expose `data-*` attributes for CSS targeting; bring your own styles
-- **IIIF utilities** — re-exports parsing functions from `@umd-mith/iiif-media-parsers` plus Zod validators for manifests
+
+## Install
+
+### From GitHub Packages
+
+This package lives on [GitHub Packages](https://github.com/umd-mith/svelte-iiif-transcript-player/pkgs/npm/svelte-iiif-transcript-player), while its dependency `@umd-mith/iiif-media-parsers` lives on npm. Because both share the `@umd-mith` scope, scope-based registry config (e.g. `@umd-mith:registry=...`) would route _all_ `@umd-mith` packages to one registry. Use a direct tarball URL instead.
+
+**1. Authenticate with GitHub Packages**
+
+Create or update `.npmrc` in your project root:
+
+```ini
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+You need a GitHub personal access token (classic) with `read:packages` scope, set as the `GITHUB_TOKEN` environment variable. Omit `@umd-mith:registry=...` so that `@umd-mith/iiif-media-parsers` resolves from npm normally.
+
+**2. Find the tarball URL**
+
+```bash
+npm view @umd-mith/svelte-iiif-transcript-player@<version> dist.tarball \
+  --registry=https://npm.pkg.github.com
+```
+
+**3. Add to package.json**
+
+Use the tarball URL as the version:
+
+```json
+{
+  "dependencies": {
+    "@umd-mith/svelte-iiif-transcript-player": "https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/<version>/<sha>"
+  }
+}
+```
+
+Then run `pnpm install` (or your package manager). The `@umd-mith/iiif-media-parsers` dependency resolves from npm.
+
+### Peer Dependencies
+
+- `svelte ^5.0.0`
+- `hls.js` (optional — needed only for HLS streams on non-Safari browsers)
+
+### Local Development
+
+```bash
+git clone https://github.com/umd-mith/svelte-iiif-transcript-player.git
+cd svelte-iiif-transcript-player
+pnpm install
+pnpm run build
+```
 
 ## Quick Start
 
@@ -45,57 +93,6 @@ The compound component API lets you assemble custom player layouts from small, f
     <IIIFPlayer.TranscriptSegments />
   </IIIFPlayer.Transcript>
 </IIIFPlayer.Root>
-```
-
-## Install
-
-### From GitHub Packages
-
-This package is published to [GitHub Packages](https://github.com/umd-mith/svelte-iiif-transcript-player/pkgs/npm/svelte-iiif-transcript-player), not npm. Its dependency `@umd-mith/iiif-media-parsers` _is_ on npm. Because both packages share the `@umd-mith` scope, you can't use scope-based registry config (e.g. `@umd-mith:registry=...`) — that would route _all_ `@umd-mith` packages to one registry. Instead, use a direct tarball URL.
-
-**1. Authenticate with GitHub Packages**
-
-Create or update `.npmrc` in your project root:
-
-```ini
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-You need a GitHub personal access token (classic) with `read:packages` scope, set as the `GITHUB_TOKEN` environment variable. Do **not** add `@umd-mith:registry=...` — this is intentional so that `@umd-mith/iiif-media-parsers` resolves from npm normally.
-
-**2. Find the tarball URL**
-
-```bash
-npm view @umd-mith/svelte-iiif-transcript-player@<version> dist.tarball \
-  --registry=https://npm.pkg.github.com
-```
-
-**3. Add to package.json**
-
-Use the tarball URL as the version:
-
-```json
-{
-  "dependencies": {
-    "@umd-mith/svelte-iiif-transcript-player": "https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/<version>/<sha>"
-  }
-}
-```
-
-Then run `pnpm install` (or your package manager). The `@umd-mith/iiif-media-parsers` dependency resolves from npm automatically.
-
-### Peer Dependencies
-
-- `svelte ^5.0.0`
-- `hls.js` (optional — needed only for HLS streams on non-Safari browsers)
-
-### Local Development
-
-```bash
-git clone https://github.com/umd-mith/svelte-iiif-transcript-player.git
-cd svelte-iiif-transcript-player
-pnpm install
-pnpm run build
 ```
 
 ## Component API Reference
@@ -277,7 +274,7 @@ Displays chapter markers from the IIIF manifest's Range structures. Clicking a c
 
 #### `IIIFPlayer.CanvasNav`
 
-Multi-canvas navigation. Hidden when the manifest has only one canvas.
+Multi-canvas navigation. Hides itself when the manifest contains a single canvas.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
@@ -354,13 +351,13 @@ interface Annotation {
 
 ### Parsing Annotations
 
-The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) provides utilities for parsing IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`).
+The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) parses IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`) and types (`Chapter`, `SpeakerSegment`, `TemporalFragment`, `SpatialFragment`, `ParsedAnnotationTarget`).
 
 For a working example of parsing VTT into `Annotation[]`, see [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte).
 
 ### Using `annotation.metadata`
 
-The `metadata` field (`Record<string, unknown>`) carries consumer-specific data. Library components don't read metadata — access it in custom segment snippets.
+The `metadata` field (`Record<string, unknown>`) carries consumer-specific data. Library components ignore metadata; access it in custom segment snippets.
 
 **Speaker labels:**
 
@@ -395,7 +392,7 @@ const paragraphs = mergeIntoParagraphs(annotations, { speakers });
 
 ### Custom Segment Snippets
 
-The `segment` snippet on `TranscriptSegments` gives full control over rendering. It receives a `segmentAttrs` spread object that bundles `data-*` attributes, `aria-current`, `role`, `tabindex`, and `onclick` — spread it onto your root element for correct behavior:
+The `segment` snippet on `TranscriptSegments` gives full control over rendering. It receives a `segmentAttrs` spread object bundling `data-*` attributes, `aria-current`, `role`, `tabindex`, and `onclick` -- spread it onto your root element for correct behavior:
 
 ```svelte
 <IIIFPlayer.TranscriptSegments>
@@ -411,7 +408,7 @@ The `segment` snippet on `TranscriptSegments` gives full control over rendering.
 </IIIFPlayer.TranscriptSegments>
 ```
 
-The `text` snippet is a lighter alternative when you only need to customize text rendering (timestamps and wrapper element stay default):
+The `text` snippet customizes text rendering alone, keeping the default timestamps and wrapper element:
 
 ```svelte
 <IIIFPlayer.TranscriptSegments>
@@ -421,7 +418,7 @@ The `text` snippet is a lighter alternative when you only need to customize text
 </IIIFPlayer.TranscriptSegments>
 ```
 
-> **Caution:** If using `{@html}`, ensure annotation text is sanitized to prevent XSS. Default rendering escapes text automatically.
+> **Caution:** When using `{@html}`, sanitize annotation text to prevent XSS. Default rendering escapes text automatically.
 
 ### Accessing Player State Outside Root
 
@@ -461,14 +458,14 @@ Use `onPlayerInit` to get a reactive `PlayerRef` in sibling or parent components
 
 **Notes:**
 
-- `onPlayerInit` fires once after manifest loads and first canvas is parsed. If loading fails, the callback does not fire
-- `state.isReady` is `false` at init time — use `$derived` to react to media readiness
+- `onPlayerInit` fires once after manifest loads and first canvas parses. Loading failure suppresses the callback
+- `state.isReady` is `false` at init time -- use `$derived` to react when the media becomes ready
 - The ref is reactive (built on `$state` internally)
-- For components inside Root's subtree, use `getPlayerContext()` or `tryGetPlayerContext()` instead
+- Components inside Root's subtree should use `getPlayerContext()` or `tryGetPlayerContext()` instead
 
-### Dual-Mode Components with `tryGetPlayerContext()`
+## Building Dual-Mode Components
 
-`TranscriptSearch` and `TranscriptSegments` detect whether they're inside an `IIIFPlayer.Root` and adapt automatically. Build your own dual-mode components the same way:
+`TranscriptSearch` and `TranscriptSegments` detect whether they're inside an `IIIFPlayer.Root` and adapt automatically. Build your own dual-mode components the same way with `tryGetPlayerContext()`:
 
 ```svelte
 <script lang="ts">
@@ -481,7 +478,7 @@ Use `onPlayerInit` to get a reactive `PlayerRef` in sibling or parent components
 </script>
 ```
 
-`tryGetPlayerContext()` must be called during component initialization (top-level `<script>`), not inside event handlers, `$effect`, or async callbacks.
+Call `tryGetPlayerContext()` during component initialization (top-level `<script>`), never inside event handlers, `$effect`, or async callbacks. It returns `PlayerContext | null` — `null` when the component renders outside a Root.
 
 ## TypeScript Types
 
@@ -521,12 +518,21 @@ interface PlayerRef {
   readonly mediaType: "audio" | "video";
 }
 
-interface PlayerContext extends PlayerRef {
+interface PlayerContext {
+  state: PlayerState;
   mediaElement: HTMLMediaElement | null;
   mediaUrl: string;
+  mediaType: "audio" | "video";
   readonly mediaStrategy: MediaStrategy;
   readonly hlsAdapter: HlsAdapter | null;
+  readonly annotations: Annotation[];
+  readonly chapters: Chapter[];
+  readonly activeChapterId: string | null;
   readonly tracks: TrackDefinition[];
+  readonly canvasIndex: number;
+  readonly canvasCount: number;
+  readonly canvases: CanvasInfo[];
+  actions: PlayerActions;
 }
 
 interface CanvasInfo {
@@ -556,31 +562,54 @@ interface SegmentSnippetProps {
 }
 ```
 
-All types are exported from the package entry point.
+The package entry point exports all types.
 
 ## Framework Integration
 
 ### Using with Astro
 
-The compound components work in Astro islands. Place `client:load` on the `IIIFPlayer.Root` — child components inside share its hydration context automatically:
+The compound components work in Astro islands. Create a Svelte wrapper component, then mount it as an island with `client:load`:
+
+```svelte
+<!-- src/components/Player.svelte -->
+<script lang="ts">
+  import { IIIFPlayer, type Annotation } from "@umd-mith/svelte-iiif-transcript-player";
+
+  let { manifestUrl, annotations }: { manifestUrl: string; annotations: Annotation[] } = $props();
+</script>
+
+<IIIFPlayer.Root {manifestUrl} canvasIndex={0}>
+  <IIIFPlayer.Viewer />
+  <IIIFPlayer.Controls>
+    <IIIFPlayer.PlayButton />
+    <IIIFPlayer.Progress />
+    <IIIFPlayer.Time />
+  </IIIFPlayer.Controls>
+  <IIIFPlayer.Transcript {annotations}>
+    <IIIFPlayer.TranscriptSearch />
+    <IIIFPlayer.TranscriptSegments />
+  </IIIFPlayer.Transcript>
+</IIIFPlayer.Root>
+```
 
 ```astro
 ---
-import IIIFTranscriptDemo from '../components/IIIFTranscriptDemo.svelte';
+// src/pages/index.astro
+import Player from '../components/Player.svelte';
 ---
 
-<IIIFTranscriptDemo client:load manifestUrl="..." vttUrl="..." />
+<Player client:load manifestUrl="https://example.org/manifest.json" annotations={[...]} />
 ```
 
 **Key points:**
 
-- Each `client:*` directive creates a separate island. Components inside the same Root share context — do not add separate `client:*` directives on nested Svelte components
-- Only JSON-serializable props work across island boundaries. The compound component pattern handles this internally
-- See [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte) for a working example
+- `client:load` on the wrapper creates one Svelte island. All compound components inside share Root's context — no separate `client:*` directives on children
+- Only JSON-serializable props cross island boundaries. The compound component pattern handles this internally
+- See [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte) for a full working example
 
 ## Demo / Docs Site
 
-The docs site is an Astro project in `docs/`. To run locally:
+The docs site is an Astro project in `docs/`. Run locally:
 
 ```bash
 cd docs
@@ -588,11 +617,11 @@ pnpm install
 pnpm run dev
 ```
 
-Opens at `http://localhost:4321/svelte-iiif-transcript-player` with live demos using real IIIF manifests.
+Opens at `http://localhost:4321/svelte-iiif-transcript-player` with live demos against real IIIF manifests.
 
 ## Browser Support
 
-Tested in modern evergreen browsers. Requires:
+Targets modern evergreen browsers. Requires:
 
 - Native ES modules
 - `<video>` / `<audio>` elements
@@ -604,7 +633,7 @@ HLS streaming requires either Safari (native) or `hls.js` (other browsers).
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
+Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
 
 For AI-assisted contributions, include commit trailers:
 
