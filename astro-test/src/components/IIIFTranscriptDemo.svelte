@@ -171,7 +171,7 @@
   }
 
   /* Style transcript segments (library provides unstyled buttons) */
-  .iiif-transcript-demo :global(button[data-annotation-id]) {
+  .iiif-transcript-demo :global([data-annotation-id]) {
     padding: 0.75rem;
     margin-bottom: 0.5rem;
     border-radius: 4px;
@@ -182,18 +182,17 @@
     background: white;
   }
 
-  .iiif-transcript-demo :global(button[data-annotation-id]:hover) {
+  .iiif-transcript-demo :global([data-annotation-id]:hover) {
     background-color: #edf2f7;
   }
 
   /* Active segment highlighting */
-  .iiif-transcript-demo
-    :global(button[data-annotation-id][data-state="active"]) {
+  .iiif-transcript-demo :global([data-annotation-id][data-state="active"]) {
     background-color: #bee3f8;
     border-left: 4px solid #3182ce;
   }
 
-  .iiif-transcript-demo :global(button[data-annotation-id] .timestamp) {
+  .iiif-transcript-demo :global([data-annotation-id] .timestamp) {
     font-size: 0.75rem;
     color: #718096;
     font-weight: 600;
@@ -201,7 +200,7 @@
     margin-bottom: 0.25rem;
   }
 
-  .iiif-transcript-demo :global(button[data-annotation-id] .text) {
+  .iiif-transcript-demo :global([data-annotation-id] .text) {
     margin: 0;
     color: #2d3748;
     line-height: 1.5;

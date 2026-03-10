@@ -59,8 +59,48 @@ describe("Transcript.Segment", () => {
     mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
     flushSync();
 
-    const button = target.querySelector("button") as HTMLButtonElement;
-    button.click();
+    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
+    segment.click();
+
+    expect(onclick).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onclick on Enter key", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    const onclick = vi.fn();
+    mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
+    flushSync();
+
+    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
+    segment.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    expect(onclick).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onclick on Space key", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    const onclick = vi.fn();
+    mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
+    flushSync();
+
+    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
+    segment.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: " ",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
 
     expect(onclick).toHaveBeenCalledTimes(1);
   });

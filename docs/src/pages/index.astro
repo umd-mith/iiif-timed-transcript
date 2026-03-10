@@ -542,7 +542,7 @@ const jsonLd = {
 						<h3 class="text-2xl font-semibold text-ink-900 mb-4">Transcript Segment Highlighting</h3>
 						<div class="bg-parchment-50 rounded-lg p-6 border border-ink-200">
 							<pre class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Target transcript segments via data attributes */
-button[data-annotation-id] {
+[data-annotation-id] {
   padding: 0.75rem;
   margin-bottom: 0.5rem;
   border-radius: 0.25rem;
@@ -550,34 +550,34 @@ button[data-annotation-id] {
   text-align: left;
 }
 
-button[data-annotation-id]:hover {
+[data-annotation-id]:hover {
   background-color: #f3f4f6;
 }
 
 /* Active segment highlighting */
-button[data-annotation-id][data-state='active'] {
+[data-annotation-id][data-state='active'] {
   background-color: #bae6fd;
   border-left: 4px solid #0ea5e9;
 }
 
 /* Search match highlighting */
-button[data-annotation-id][data-highlighted='true'] {
+[data-annotation-id][data-highlighted='true'] {
   background-color: #fef9c3;
 }
 
 /* Current search match (stronger) */
-button[data-annotation-id][data-current-match='true'] {
+[data-annotation-id][data-current-match='true'] {
   background-color: #fde68a;
   border-left: 4px solid #eab308;
 }
 
-button[data-annotation-id] .timestamp {
+[data-annotation-id] .timestamp {
   font-size: 0.75rem;
   color: #6b7280;
   font-weight: 600;
 }
 
-button[data-annotation-id] .text {
+[data-annotation-id] .text {
   color: #1f2937;
   line-height: 1.5;
 }`}</code></pre>

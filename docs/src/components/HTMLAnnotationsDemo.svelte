@@ -65,40 +65,38 @@
 
 <style>
   /* Tailwind-based styling for transcript segments */
-  :global(.html-annotations-demo button[data-annotation-id]) {
+  :global(.html-annotations-demo [data-annotation-id]) {
     @apply p-3 mb-2 rounded transition-colors text-left;
   }
 
-  :global(.html-annotations-demo button[data-annotation-id]:hover) {
+  :global(.html-annotations-demo [data-annotation-id]:hover) {
     @apply bg-gray-100;
   }
 
   /* Active segment (playing) - brand color */
-  :global(
-    .html-annotations-demo button[data-annotation-id][data-state="active"]
-  ) {
+  :global(.html-annotations-demo [data-annotation-id][data-state="active"]) {
     @apply bg-blue-100 border-l-4 border-terracotta-500;
   }
 
   /* Search match - yellow highlight */
   :global(
-    .html-annotations-demo button[data-annotation-id][data-highlighted="true"]
+    .html-annotations-demo [data-annotation-id][data-highlighted="true"]
   ) {
     @apply bg-yellow-100;
   }
 
   /* Current search match - stronger yellow */
   :global(
-    .html-annotations-demo button[data-annotation-id][data-current-match="true"]
+    .html-annotations-demo [data-annotation-id][data-current-match="true"]
   ) {
     @apply bg-yellow-200 border-l-4 border-yellow-500;
   }
 
-  :global(.html-annotations-demo button[data-annotation-id] .timestamp) {
+  :global(.html-annotations-demo [data-annotation-id] .timestamp) {
     @apply text-xs text-gray-600 font-semibold block mb-1;
   }
 
-  :global(.html-annotations-demo button[data-annotation-id] .text) {
+  :global(.html-annotations-demo [data-annotation-id] .text) {
     @apply text-gray-800 leading-relaxed;
   }
 

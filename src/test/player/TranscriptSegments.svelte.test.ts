@@ -161,7 +161,7 @@ describe("TranscriptSegments", () => {
       });
       flushSync();
 
-      // Custom segment class should be rendered (not default Segment.svelte button)
+      // Custom segment class should be rendered (not default Segment.svelte)
       const customSegments = target.querySelectorAll(".custom-segment");
       expect(customSegments).toHaveLength(3);
 
@@ -169,7 +169,7 @@ describe("TranscriptSegments", () => {
       const first = customSegments[0]!;
       expect(first.getAttribute("data-annotation-id")).toBe("a1");
       expect(first.getAttribute("data-state")).toBe("inactive");
-      expect(first.getAttribute("role")).toBe("button");
+      expect(first.getAttribute("role")).toBeNull();
       expect(first.getAttribute("tabindex")).not.toBeNull();
     });
 

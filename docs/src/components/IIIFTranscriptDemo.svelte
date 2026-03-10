@@ -101,40 +101,36 @@
 
 <style>
   /* Tailwind-based styling for transcript segments */
-  :global(.iiif-transcript-demo button[data-annotation-id]) {
+  :global(.iiif-transcript-demo [data-annotation-id]) {
     @apply p-3 mb-2 rounded transition-colors text-left;
   }
 
-  :global(.iiif-transcript-demo button[data-annotation-id]:hover) {
+  :global(.iiif-transcript-demo [data-annotation-id]:hover) {
     @apply bg-gray-100;
   }
 
   /* Active segment (playing) - brand color */
-  :global(
-    .iiif-transcript-demo button[data-annotation-id][data-state="active"]
-  ) {
+  :global(.iiif-transcript-demo [data-annotation-id][data-state="active"]) {
     @apply bg-blue-100 border-l-4 border-terracotta-500;
   }
 
   /* Search match - yellow highlight */
-  :global(
-    .iiif-transcript-demo button[data-annotation-id][data-highlighted="true"]
-  ) {
+  :global(.iiif-transcript-demo [data-annotation-id][data-highlighted="true"]) {
     @apply bg-yellow-100;
   }
 
   /* Current search match - stronger yellow */
   :global(
-    .iiif-transcript-demo button[data-annotation-id][data-current-match="true"]
+    .iiif-transcript-demo [data-annotation-id][data-current-match="true"]
   ) {
     @apply bg-yellow-200 border-l-4 border-yellow-500;
   }
 
-  :global(.iiif-transcript-demo button[data-annotation-id] .timestamp) {
+  :global(.iiif-transcript-demo [data-annotation-id] .timestamp) {
     @apply text-xs text-gray-600 font-semibold block mb-1;
   }
 
-  :global(.iiif-transcript-demo button[data-annotation-id] .text) {
+  :global(.iiif-transcript-demo [data-annotation-id] .text) {
     @apply text-gray-800 leading-relaxed;
   }
 

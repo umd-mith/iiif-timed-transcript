@@ -156,9 +156,21 @@ cat src/lib/index.ts
  * </IIIFPlayer.Root>
  * ```
  */
-export { IIIFPlayer } from "./player";
-export type { PlayerContext, PlayerState, PlayerActions } from "./player";
+export { IIIFPlayer, getPlayerContext, tryGetPlayerContext } from "./player";
+export type {
+  PlayerContext,
+  PlayerState,
+  PlayerActions,
+  MediaStrategy,
+  CanvasInfo,
+  PlayerRef,
+} from "./player";
 export type { TranscriptContext, TranscriptState, TranscriptActions } from "./player";
+export type {
+  SegmentAttrs,
+  SegmentSnippetProps,
+} from "./player/TranscriptSegments.svelte";
+export type { TrackDefinition } from "./player";
 
 // ============================================================================
 // IIIF Utilities (LDA-1964)
@@ -616,7 +628,7 @@ Accessibility basics are solid:
 - Transcript panel has `role="region"` with `aria-label="Media transcript"`
 - Screen reader live region (`aria-live="polite"`) exists for announcing active segment changes
 - Search container has `role="search"`
-- Each segment is a `<button>` (keyboard-accessible by default)
+- Each segment is keyboard-accessible via `tabindex` and Enter/Space activation
 
 ## Taking a screenshot of the demo
 
