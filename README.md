@@ -1,6 +1,6 @@
 # @umd-mith/svelte-iiif-transcript-player
 
-Composable Svelte 5 components for building media players with synchronized transcripts from [IIIF](https://iiif.io/) manifests. Designed for digital humanities projects, oral history archives, and anywhere time-based annotations meet audio/video.
+Svelte 5 components that synchronize media playback with timed transcripts from [IIIF](https://iiif.io/) manifests. Designed for digital humanities projects, oral history archives, and anywhere time-based annotations meet audio/video.
 
 The compound component API lets you assemble custom player layouts from small, focused pieces — controls, transcript panel, chapter navigation, canvas switching — while a bidirectional sync engine keeps the transcript scroll position and media playback in lockstep.
 
@@ -17,7 +17,7 @@ The compound component API lets you assemble custom player layouts from small, f
 
 ### From GitHub Packages
 
-This package lives on [GitHub Packages](https://github.com/umd-mith/svelte-iiif-transcript-player/pkgs/npm/svelte-iiif-transcript-player), while its dependency `@umd-mith/iiif-media-parsers` lives on npm. Because both share the `@umd-mith` scope, scope-based registry config (e.g. `@umd-mith:registry=...`) would route _all_ `@umd-mith` packages to one registry. Use a direct tarball URL instead.
+Install via direct tarball URL from [GitHub Packages](https://github.com/umd-mith/svelte-iiif-transcript-player/pkgs/npm/svelte-iiif-transcript-player). Scope-based registry config (`@umd-mith:registry=...`) would route _all_ `@umd-mith` packages to GitHub, breaking `@umd-mith/iiif-media-parsers` which lives on npm.
 
 **1. Authenticate with GitHub Packages**
 
@@ -351,7 +351,7 @@ interface Annotation {
 
 ### Parsing Annotations
 
-The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) parses IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`) and types (`Chapter`, `SpeakerSegment`, `TemporalFragment`, `SpatialFragment`, `ParsedAnnotationTarget`).
+The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) parses IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`) and types (`Chapter`, `SpeakerSegment`, `TemporalFragment`, `SpatialFragment`, `ParsedAnnotationTarget`) so consumers need only one import source.
 
 For a working example of parsing VTT into `Annotation[]`, see [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte).
 
@@ -392,7 +392,7 @@ const paragraphs = mergeIntoParagraphs(annotations, { speakers });
 
 ### Custom Segment Snippets
 
-The `segment` snippet on `TranscriptSegments` gives full control over rendering. It receives a `segmentAttrs` spread object bundling `data-*` attributes, `aria-current`, `role`, `tabindex`, and `onclick` -- spread it onto your root element for correct behavior:
+The `segment` snippet on `TranscriptSegments` gives full control over rendering. It receives a `segmentAttrs` object that bundles `data-*` attributes, `aria-current`, `role`, `tabindex`, and `onclick`. Spread it onto your root element for correct behavior:
 
 ```svelte
 <IIIFPlayer.TranscriptSegments>
@@ -458,10 +458,10 @@ Use `onPlayerInit` to get a reactive `PlayerRef` in sibling or parent components
 
 **Notes:**
 
-- `onPlayerInit` fires once after manifest loads and first canvas parses. Loading failure suppresses the callback
-- `state.isReady` is `false` at init time -- use `$derived` to react when the media becomes ready
-- The ref is reactive (built on `$state` internally)
-- Components inside Root's subtree should use `getPlayerContext()` or `tryGetPlayerContext()` instead
+- Fires once after manifest loads and first canvas parses; loading failure suppresses the callback
+- Returns `state.isReady === false` at init time; use `$derived` to react when the media becomes ready
+- Stays reactive after init because the ref builds on `$state` internally
+- Serves components outside Root's subtree; components inside should use `getPlayerContext()` or `tryGetPlayerContext()` instead
 
 ## Building Dual-Mode Components
 
