@@ -1,5 +1,17 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.12.0
+
+### Breaking Changes
+
+- **Remove `role="button"` from `SegmentAttrs`** — default segments now render as `<div>` instead of `<button>`, with Enter/Space key activation added for accessibility. Consumers using the `segment` snippet who spread `segmentAttrs` no longer receive `role: "button"`. Update CSS selectors from `button[data-annotation-id]` to `[data-annotation-id]` (#31)
+
+### Patch Changes
+
+- **Comprehensive README revision** — fix 14 factual errors, document Chapters and CanvasNav components, add PlayerContext/PlayerRef type references, correct children snippet fields (#36)
+- **Update demo CSS selectors** — all demo components and walkthrough updated to use element-agnostic `[data-annotation-id]` selectors (#33)
+- **Add HistoryUnErasedDemo** — new demo component showcasing custom segment snippets with `segmentAttrs` spread
+
 ## 0.11.0
 
 ### Breaking Changes
