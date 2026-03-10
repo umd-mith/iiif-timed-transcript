@@ -2,7 +2,7 @@
 
 Svelte 5 components that synchronize media playback with timed transcripts from [IIIF](https://iiif.io/) manifests. Designed for digital humanities projects, oral history archives, and anywhere time-based annotations meet audio/video.
 
-The compound component API lets you assemble custom player layouts from small, focused pieces — controls, transcript panel, chapter navigation, canvas switching — while a bidirectional sync engine keeps the transcript scroll position and media playback in lockstep.
+The compound component API lets you compose custom player layouts from small, focused pieces — controls, transcript panel, chapter navigation, canvas switching — while a bidirectional sync engine keeps the transcript scroll position and media playback in sync.
 
 ## What this library provides
 
@@ -111,8 +111,8 @@ Top-level context provider. Fetches the IIIF manifest, parses canvases, and coor
 | `initialTime` | `number` | — | Start playback at this time (seconds) |
 | `autoplay` | `boolean` | `false` | Auto-play media on load |
 | `hlsConstructor` | `HlsConstructor` | — | Custom `hls.js` constructor (bypasses dynamic import) |
-| `onCanvasChange` | `(index: number, canvas: CanvasInfo) => void` | — | Fires when canvas switches |
-| `onPlayerInit` | `(player: PlayerRef) => void` | — | Fires once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root) |
+| `onCanvasChange` | `(index: number, canvas: CanvasInfo) => void` | — | Calls when canvas switches |
+| `onPlayerInit` | `(player: PlayerRef) => void` | — | Runs once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root) |
 | `class` | `string` | `""` | CSS class for root container |
 
 **Children snippet:**
@@ -210,7 +210,7 @@ Synchronized transcript panel. Manages bidirectional scroll↔media sync via an 
 | `syncPriorityLockDuration` | `number` | `1000` | Priority lock duration (ms) |
 | `ariaLabel` | `string` | `"Media transcript"` | Region label |
 | `announceActiveSegment` | `boolean` | `true` | Screen reader announcements for active segment |
-| `onActiveAnnotationChange` | `(annotation: Annotation \| null) => void` | — | Fires when active segment changes |
+| `onActiveAnnotationChange` | `(annotation: Annotation \| null) => void` | — | Calls when active segment changes |
 | `onSegmentClick` | `(annotation: Annotation, event: { preventDefault: () => void }) => void` | — | Intercept clicks; call `preventDefault()` synchronously to suppress default seek |
 | `empty` | `Snippet` | — | Custom empty state |
 | `class` | `string` | `""` | CSS class |
@@ -263,7 +263,7 @@ Displays chapter markers from the IIIF manifest's Range structures. Clicking a c
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `onActiveChapterChange` | `(chapter: Chapter \| null) => void` | — | Fires when active chapter changes |
+| `onActiveChapterChange` | `(chapter: Chapter \| null) => void` | — | Calls when active chapter changes |
 | `chapter` | `Snippet<[{ chapter: Chapter, isActive: boolean, onClick: () => void }]>` | — | Custom chapter rendering |
 | `empty` | `Snippet` | — | Custom empty state |
 | `class` | `string` | `""` | CSS class |
@@ -278,7 +278,7 @@ Multi-canvas navigation. Hides itself when the manifest contains a single canvas
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `onCanvasChange` | `(canvas: CanvasInfo) => void` | — | Fires when user selects a canvas |
+| `onCanvasChange` | `(canvas: CanvasInfo) => void` | — | Calls when user selects a canvas |
 | `canvas` | `Snippet<[{ canvas: CanvasInfo, isActive: boolean, onClick: () => void }]>` | — | Custom canvas rendering |
 | `empty` | `Snippet` | — | Custom empty state |
 | `class` | `string` | `""` | CSS class |
@@ -357,7 +357,7 @@ For a working example of parsing VTT into `Annotation[]`, see [`docs/src/compone
 
 ### Using `annotation.metadata`
 
-The `metadata` field (`Record<string, unknown>`) carries consumer-specific data. Library components ignore metadata; access it in custom segment snippets.
+The `metadata` field (`Record<string, unknown>`) holds consumer-specific data. Library components ignore metadata; access it in custom segment snippets.
 
 **Speaker labels:**
 
@@ -458,7 +458,7 @@ Use `onPlayerInit` to get a reactive `PlayerRef` in sibling or parent components
 
 **Notes:**
 
-- Fires once after manifest loads and first canvas parses; loading failure suppresses the callback
+- Runs once after manifest loads and first canvas parses; loading failure suppresses the callback
 - Returns `state.isReady === false` at init time; use `$derived` to react when the media becomes ready
 - Stays reactive after init because the ref builds on `$state` internally
 - Serves components outside Root's subtree; components inside should use `getPlayerContext()` or `tryGetPlayerContext()` instead
