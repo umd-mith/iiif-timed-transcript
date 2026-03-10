@@ -1,5 +1,15 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.11.0
+
+### Breaking Changes
+
+- **Remove sync internals from public API** — `SyncController`, `IIIFMediaViewerRef`, `SyncContext`, `SyncEvent`, `SyncPriority`, `SyncConfig`, and `DEFAULT_SYNC_CONFIG` are no longer exported. These were internal to the sync layer and only consumed by `Transcript.svelte`. Use `PlayerRef` and `tryGetPlayerContext()` for external player control (#32)
+
+### Retained Exports
+
+- `Annotation` type, `getActiveAnnotation`, `timeToScrollProgress`, `scrollProgressToTime` remain available as standalone utilities
+
 ## 0.10.0
 
 ### Minor Changes
