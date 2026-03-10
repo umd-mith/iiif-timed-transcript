@@ -19,9 +19,9 @@
     "data-highlighted": "true" | undefined;
     "data-current-match": "true" | undefined;
     "aria-current": "true" | undefined;
-    role: "button";
     tabindex: 0 | -1;
     onclick: () => void;
+    onkeydown: (event: KeyboardEvent) => void;
   };
 
   export interface SegmentSnippetProps {
@@ -227,9 +227,14 @@
             "data-highlighted": isHighlighted ? "true" : undefined,
             "data-current-match": isCurrentMatch ? "true" : undefined,
             "aria-current": isActive ? "true" : undefined,
-            role: "button",
             tabindex: i === focusedIndex ? 0 : -1,
             onclick: () => onclick?.(annotation),
+            onkeydown: (event: KeyboardEvent) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onclick?.(annotation);
+              }
+            },
           },
         })}
       {:else}

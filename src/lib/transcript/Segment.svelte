@@ -58,13 +58,19 @@
   }: Props = $props();
 </script>
 
-<button
-  type="button"
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
+<div
   data-annotation-id={annotation.id}
   data-state={isActive ? "active" : "inactive"}
   data-highlighted={isHighlighted ? "true" : undefined}
   data-current-match={isCurrentMatch ? "true" : undefined}
   {onclick}
+  onkeydown={(event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onclick?.();
+    }
+  }}
   aria-current={isActive ? "true" : undefined}
   tabindex={tabindex ?? 0}
 >
@@ -74,23 +80,23 @@
   {:else}
     <p class="text">{annotation.text}</p>
   {/if}
-</button>
+</div>
 
 <style>
   /* Unstyled - consumers use data attributes for styling */
-  button {
+  div {
     all: unset;
     display: block;
     width: 100%;
     cursor: pointer;
   }
 
-  button:focus {
+  div:focus {
     outline: 2px solid currentColor;
     outline-offset: 2px;
   }
 
-  button:focus:not(:focus-visible) {
+  div:focus:not(:focus-visible) {
     outline: none;
   }
 </style>
