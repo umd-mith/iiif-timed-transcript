@@ -231,6 +231,57 @@ describe("PlayerStateManager", () => {
       expect(el.play).toHaveBeenCalled();
     });
 
+    test("play catches NotAllowedError and sets state.error", async () => {
+      const manager = new PlayerStateManager();
+      const notAllowed = new DOMException(
+        "play() request was interrupted",
+        "NotAllowedError",
+      );
+      const el = createMockMediaElement({
+        play: vi
+          .fn()
+          .mockRejectedValue(notAllowed) as unknown as () => Promise<void>,
+      });
+      manager.mediaElement = el;
+
+      await manager.actions.play();
+
+      expect(manager.state.error).toBe(notAllowed);
+    });
+
+    test("play silently ignores AbortError", async () => {
+      const manager = new PlayerStateManager();
+      const abortError = new DOMException(
+        "The play() request was interrupted by a call to pause()",
+        "AbortError",
+      );
+      const el = createMockMediaElement({
+        play: vi
+          .fn()
+          .mockRejectedValue(abortError) as unknown as () => Promise<void>,
+      });
+      manager.mediaElement = el;
+
+      await manager.actions.play();
+
+      expect(manager.state.error).toBeNull();
+    });
+
+    test("play wraps non-Error rejection in Error", async () => {
+      const manager = new PlayerStateManager();
+      const el = createMockMediaElement({
+        play: vi
+          .fn()
+          .mockRejectedValue("string error") as unknown as () => Promise<void>,
+      });
+      manager.mediaElement = el;
+
+      await manager.actions.play();
+
+      expect(manager.state.error).toBeInstanceOf(Error);
+      expect(manager.state.error!.message).toBe("string error");
+    });
+
     test("play warns when mediaElement is null", async () => {
       const manager = new PlayerStateManager();
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
