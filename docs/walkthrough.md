@@ -243,24 +243,11 @@ export {
 } from "./iiif/cache";
 
 // ============================================================================
-// Bidirectional Sync (LDA-1968)
+// Sync Utilities
 // ============================================================================
 
-// SyncController class
-export { SyncController } from "./sync/SyncController.svelte";
-
 // Types
-export type {
-  SyncConfig,
-  Annotation,
-  IIIFMediaViewerRef,
-  SyncContext,
-  SyncEvent,
-  SyncPriority,
-} from "./sync/types";
-
-// Configuration
-export { DEFAULT_SYNC_CONFIG } from "./sync/config";
+export type { Annotation } from "./sync/types";
 
 // Utility functions
 export {
