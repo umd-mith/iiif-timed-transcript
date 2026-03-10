@@ -1,14 +1,23 @@
 # @umd-mith/svelte-iiif-transcript-player
 
-> IIIF-powered, transcript-synchronized media player for Svelte 5.
+Svelte 5 components that synchronize media playback with timed transcripts from [IIIF](https://iiif.io/) manifests. Designed for digital humanities projects, oral history archives, and anywhere time-based annotations meet audio/video.
 
-**Status:** Early development (v0.6.0). API not stable.
+The compound component API lets you compose custom player layouts from small, focused pieces — controls, transcript panel, chapter navigation, canvas switching — while a bidirectional sync engine keeps the transcript scroll position and media playback in sync.
+
+## What this library provides
+
+- **Bidirectional sync** — clicking a transcript segment seeks the media; media playback scrolls the transcript (XState 5 state machine)
+- **Full-text search** across transcript segments with match-by-match navigation
+- **Multi-canvas support** — switch between canvases in a manifest, with chapter markers per canvas
+- **HLS adaptive streaming** — auto-detects HLS URLs and uses `hls.js` when available (Safari uses native HLS)
+- **Custom segment rendering** via Svelte 5 snippets and a `segmentAttrs` spread for accessibility
+- **Unstyled by default** — all components expose `data-*` attributes for CSS targeting; bring your own styles
 
 ## Install
 
 ### From GitHub Packages
 
-This package is published to [GitHub Packages](https://github.com/umd-mith/svelte-iiif-transcript-player/pkgs/npm/svelte-iiif-transcript-player), not npm. Its dependency `@umd-mith/iiif-media-parsers` _is_ on npm. Because both packages share the `@umd-mith` scope, you can't use scope-based registry config (e.g. `@umd-mith:registry=...`) — that would route _all_ `@umd-mith` packages to one registry. Instead, use a direct tarball URL.
+Install via direct tarball URL from [GitHub Packages](https://github.com/umd-mith/svelte-iiif-transcript-player/pkgs/npm/svelte-iiif-transcript-player). Scope-based registry config (`@umd-mith:registry=...`) would route _all_ `@umd-mith` packages to GitHub, breaking `@umd-mith/iiif-media-parsers` which lives on npm.
 
 **1. Authenticate with GitHub Packages**
 
@@ -18,7 +27,7 @@ Create or update `.npmrc` in your project root:
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
-You need a GitHub personal access token (classic) with `read:packages` scope, set as the `GITHUB_TOKEN` environment variable. Do **not** add `@umd-mith:registry=...` — this is intentional so that `@umd-mith/iiif-media-parsers` resolves from npm normally.
+You need a GitHub personal access token (classic) with `read:packages` scope, set as the `GITHUB_TOKEN` environment variable. Omit `@umd-mith:registry=...` so that `@umd-mith/iiif-media-parsers` resolves from npm normally.
 
 **2. Find the tarball URL**
 
@@ -27,15 +36,9 @@ npm view @umd-mith/svelte-iiif-transcript-player@<version> dist.tarball \
   --registry=https://npm.pkg.github.com
 ```
 
-This prints a URL like:
-
-```
-https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/<version>/<sha>
-```
-
 **3. Add to package.json**
 
-Use the tarball URL as the version in your `package.json`:
+Use the tarball URL as the version:
 
 ```json
 {
@@ -45,7 +48,12 @@ Use the tarball URL as the version in your `package.json`:
 }
 ```
 
-Then run `pnpm install` (or your package manager of choice). The `@umd-mith/iiif-media-parsers` dependency will resolve from npm automatically — no extra config needed.
+Then run `pnpm install` (or your package manager). The `@umd-mith/iiif-media-parsers` dependency resolves from npm.
+
+### Peer Dependencies
+
+- `svelte ^5.0.0`
+- `hls.js` (optional — needed only for HLS streams on non-Safari browsers)
 
 ### Local Development
 
@@ -56,15 +64,7 @@ pnpm install
 pnpm run build
 ```
 
-## Peer dependencies
-
-- `svelte ^5.0.0`
-
 ## Quick Start
-
-### Compound Component API
-
-Build custom IIIF media players with composable components:
 
 ```svelte
 <script>
@@ -95,50 +95,35 @@ Build custom IIIF media players with composable components:
 </IIIFPlayer.Root>
 ```
 
-## Demo / Docs Site
-
-The docs site is an Astro project in `docs/`. To run locally:
-
-```bash
-cd docs
-pnpm install
-pnpm run dev
-```
-
-Opens at `http://localhost:4321/svelte-iiif-transcript-player` with a live demo using a real IIIF manifest.
-
 ## Component API Reference
 
 ### Core Components
 
 #### `IIIFPlayer.Root`
 
-Top-level context provider that manages player state and coordinates all child components.
+Top-level context provider. Fetches the IIIF manifest, parses canvases, and coordinates all child components via Svelte context.
 
-**Props:**
+| Prop             | Type                                          | Default  | Description                                                                                                     |
+| ---------------- | --------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
+| `manifestUrl`    | `string`                                      | required | IIIF Presentation 3.0 manifest URL                                                                              |
+| `canvasIndex`    | `number`                                      | `0`      | Canvas to display                                                                                               |
+| `annotations`    | `Annotation[]`                                | `[]`     | Transcript annotations (passed through to context)                                                              |
+| `initialTime`    | `number`                                      | —        | Start playback at this time (seconds)                                                                           |
+| `autoplay`       | `boolean`                                     | `false`  | Auto-play media on load                                                                                         |
+| `hlsConstructor` | `HlsConstructor`                              | —        | Custom `hls.js` constructor (bypasses dynamic import)                                                           |
+| `onCanvasChange` | `(index: number, canvas: CanvasInfo) => void` | —        | Calls when canvas switches                                                                                      |
+| `onPlayerInit`   | `(player: PlayerRef) => void`                 | —        | Runs once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root) |
+| `class`          | `string`                                      | `""`     | CSS class for root container                                                                                    |
 
-- `manifestUrl: string` - IIIF Presentation 3.0 manifest URL
-- `canvasIndex?: number` - Canvas index to display (default: 0)
-- `annotations?: Annotation[]` - Transcript annotations (passed through to children)
-- `initialTime?: number` - Start playback at specific time in seconds
-- `autoplay?: boolean` - Auto-play media on load (default: false)
-- `onPlayerInit?: (player: PlayerRef) => void` - Callback fired once after manifest loads and first canvas is parsed. See [Accessing player state outside Root](#accessing-player-state-outside-root)
-- `class?: string` - CSS class for the root container
+**Children snippet:**
 
-**Context Provided:**
-
-- Player state (`isPlaying`, `isBuffering`, `currentTime`, `duration`, `playbackRate`, `isReady`, `error`)
-- Actions (`play`, `pause`, `seekTo`, `setPlaybackRate`, `retry`)
-- Media element reference, media URL, media type
-
-**Children Snippet:**
-
-Root passes `{ player: { state, actions } }` to its children snippet, allowing direct access to player state:
+Root passes `{ player }` to its children snippet with `state`, `actions`, `annotations`, `chapters`, and `activeChapterId`:
 
 ```svelte
 <IIIFPlayer.Root {manifestUrl}>
   {#snippet children({ player })}
     <p>Time: {player.state.currentTime}</p>
+    <p>Chapter: {player.activeChapterId}</p>
     <button onclick={() => player.actions.seekTo(0)}>Restart</button>
   {/snippet}
 </IIIFPlayer.Root>
@@ -146,148 +131,215 @@ Root passes `{ player: { state, actions } }` to its children snippet, allowing d
 
 #### `IIIFPlayer.Viewer`
 
-Renders the IIIF media resource (video/audio) from the current canvas.
+Renders the media element (`<audio>` or `<video>`) for the current canvas. Auto-wires HLS when the media strategy requires it.
 
-**Props:**
-
-- `controls?: boolean` - Show native media controls (default: false)
-- `crossOrigin?: 'anonymous' | 'use-credentials'` - CORS setting for media element
-- `preload?: 'auto' | 'metadata' | 'none'` - Media preload strategy (default: 'auto')
-- `class?: string` - CSS class for the media element
+| Prop          | Type                               | Default  | Description                                                              |
+| ------------- | ---------------------------------- | -------- | ------------------------------------------------------------------------ |
+| `controls`    | `boolean`                          | `false`  | Show native media controls                                               |
+| `crossOrigin` | `'anonymous' \| 'use-credentials'` | —        | CORS setting                                                             |
+| `preload`     | `'auto' \| 'metadata' \| 'none'`   | `'auto'` | Preload strategy                                                         |
+| `tracks`      | `TrackDefinition[]`                | `[]`     | Caption/subtitle tracks (overrides auto-discovered tracks from manifest) |
+| `class`       | `string`                           | `""`     | CSS class                                                                |
 
 #### `IIIFPlayer.Controls`
 
-Container for player control components. Pass-through component for layout.
+Pass-through container for control components. Use for layout.
 
-**Props:**
+| Prop    | Type     | Default | Description |
+| ------- | -------- | ------- | ----------- |
+| `class` | `string` | `""`    | CSS class   |
 
-- `class?: string` - CSS class for styling
-
-**Slots:** Default slot for control components
+**Data attribute:** `data-audio-controls`
 
 ### Control Components
 
 #### `IIIFPlayer.PlayButton`
 
-Toggle play/pause button. Shows "Play", "Pause", or "Loading..." based on state.
+Toggle play/pause. Shows "Play", "Pause", or "Loading..." based on player state.
 
-**Props:**
-
-- `class?: string` - CSS class
-
-**Data Attributes:**
-
-- `data-audio-button="play-pause"` - Button identifier
+- **Data attribute:** `data-audio-button="play-pause"`
+- **Prop:** `class?: string`
 
 #### `IIIFPlayer.Progress`
 
-Seekable progress bar (`<input type="range">`).
+Seekable range input (`<input type="range">`).
 
-**Props:**
-
-- `class?: string` - CSS class
-
-**Data Attributes:**
-
-- `data-audio-progress` - Progress bar element
+- **Data attribute:** `data-audio-progress`
+- **Prop:** `class?: string`
 
 #### `IIIFPlayer.Skip`
 
-Skip forward/backward button.
+Skip forward or backward.
 
-**Props:**
+| Prop      | Type     | Description                           |
+| --------- | -------- | ------------------------------------- |
+| `seconds` | `number` | Seconds to skip (negative for rewind) |
+| `class`   | `string` | CSS class                             |
 
-- `seconds: number` - Amount to skip (negative for rewind)
-- `class?: string` - CSS class
-
-**Data Attributes:**
-
-- `data-audio-button="skip"` - Button identifier
+**Data attribute:** `data-audio-button="skip"`
 
 #### `IIIFPlayer.Speed`
 
-Playback speed selector.
+Playback rate selector (`<select>`).
 
-**Props:**
+| Prop    | Type       | Default                        | Description     |
+| ------- | ---------- | ------------------------------ | --------------- |
+| `rates` | `number[]` | `[0.5, 0.75, 1, 1.25, 1.5, 2]` | Available rates |
+| `class` | `string`   | `""`                           | CSS class       |
 
-- `rates?: number[]` - Available playback rates (default: [0.5, 0.75, 1, 1.25, 1.5, 2])
-- `class?: string` - CSS class
+**Data attribute:** `data-audio-control="speed"`
 
 #### `IIIFPlayer.Time`
 
-Display current time and duration.
+Displays current time and duration as `MM:SS / MM:SS` (or `H:MM:SS` for durations >= 1 hour).
 
-**Props:**
-
-- `class?: string` - CSS class
-
-**Data Attributes:**
-
-- `data-audio-control="time"` - Time display element
-
-**Format:** `MM:SS / MM:SS` or `H:MM:SS / H:MM:SS` (current / total, with hours shown for durations >= 1 hour)
+- **Data attribute:** `data-audio-control="time"`
+- **Prop:** `class?: string`
 
 ### Transcript Components
 
 #### `IIIFPlayer.Transcript`
 
-Bidirectional synchronized transcript panel with search.
+Synchronized transcript panel. Manages bidirectional scroll↔media sync via an XState-based `SyncController`. Provides `TranscriptContext` to compound children.
 
-**Props:**
+| Prop                       | Type                                                                      | Default              | Description                                                                      |
+| -------------------------- | ------------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------- |
+| `annotations`              | `Annotation[]`                                                            | `[]`                 | Transcript segments (falls back to Root context annotations)                     |
+| `syncDebounceMs`           | `number`                                                                  | `150`                | Scroll debounce (ms)                                                             |
+| `syncSettleMs`             | `number`                                                                  | `100`                | Settle delay after scroll (ms)                                                   |
+| `syncPriorityLockDuration` | `number`                                                                  | `1000`               | Priority lock duration (ms)                                                      |
+| `ariaLabel`                | `string`                                                                  | `"Media transcript"` | Region label                                                                     |
+| `announceActiveSegment`    | `boolean`                                                                 | `true`               | Screen reader announcements for active segment                                   |
+| `onActiveAnnotationChange` | `(annotation: Annotation \| null) => void`                                | —                    | Calls when active segment changes                                                |
+| `onSegmentClick`           | `(annotation: Annotation, event: { preventDefault: () => void }) => void` | —                    | Intercept clicks; call `preventDefault()` synchronously to suppress default seek |
+| `empty`                    | `Snippet`                                                                 | —                    | Custom empty state                                                               |
+| `class`                    | `string`                                                                  | `""`                 | CSS class                                                                        |
 
-- `annotations?: Annotation[]` - Transcript segments with timing (default: [])
-- `syncDebounceMs?: number` - Scroll debounce in ms (default: 150)
-- `syncSettleMs?: number` - Settle delay after scroll in ms (default: 100)
-- `syncPriorityLockDuration?: number` - Priority lock duration in ms (default: 1000)
-- `ariaLabel?: string` - Region label (default: "Media transcript")
-- `announceActiveSegment?: boolean` - Screen reader announcements for active segment (default: true)
-- `onActiveAnnotationChange?: (annotation: Annotation | null) => void` - Active segment callback
-- `onSegmentClick?: (annotation: Annotation, event: { preventDefault: () => void }) => void` - Intercept segment clicks (call `preventDefault()` synchronously to suppress default seek)
-- `empty?: Snippet` - Custom empty state when no annotations
-- `class?: string` - CSS class
-
-**Children:** Use `TranscriptSearch` and `TranscriptSegments` as compound children. Without children, shows empty state.
-
-**Context Used:** Player state from `IIIFPlayer.Root`
-**Context Provided:** TranscriptContext (annotations, search state, active annotation) for compound children
+**Children:** Use `TranscriptSearch` and `TranscriptSegments` as compound children. Without children, renders the empty state.
 
 #### `IIIFPlayer.TranscriptSearch`
 
-Search UI for filtering transcript segments. Reads from TranscriptContext when inside Transcript, or accepts props directly.
+Search input for filtering transcript segments. **Dual-mode:** reads from `TranscriptContext` inside `Transcript`, or accepts props directly when used standalone.
 
-**Props (optional, overrides context):**
-
-- `annotations?: Annotation[]` - Annotations to search
-- `placeholder?: string` - Input placeholder (default: "Search transcript...")
-- `debounceMs?: number` - Input debounce in ms (default: 150)
-- `onmatchchange?: (matches: Annotation[], index: number) => void` - Match change callback
-- `class?: string` - CSS class
+| Prop            | Type                                             | Default                  | Description           |
+| --------------- | ------------------------------------------------ | ------------------------ | --------------------- |
+| `annotations`   | `Annotation[]`                                   | from context             | Annotations to search |
+| `placeholder`   | `string`                                         | `"Search transcript..."` | Input placeholder     |
+| `debounceMs`    | `number`                                         | `150`                    | Input debounce (ms)   |
+| `onmatchchange` | `(matches: Annotation[], index: number) => void` | from context             | Match change callback |
+| `class`         | `string`                                         | `""`                     | CSS class             |
 
 #### `IIIFPlayer.TranscriptSegments`
 
-Renders the list of transcript segments with active highlighting. Reads from TranscriptContext when inside Transcript, or accepts props directly.
+Renders transcript segments with active/search highlighting and roving tabindex keyboard navigation. **Dual-mode:** reads from `TranscriptContext` inside `Transcript`, or accepts props directly.
 
-**Props (optional, overrides context):**
+| Prop                      | Type                                                                          | Default      | Description                                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------- |
+| `annotations`             | `Annotation[]`                                                                | from context | Annotations to display                                                                                |
+| `activeAnnotationId`      | `string \| null`                                                              | from context | Currently active annotation                                                                           |
+| `highlightedIds`          | `Set<string>`                                                                 | from context | Search-highlighted annotation IDs                                                                     |
+| `currentMatchId`          | `string \| null`                                                              | from context | Current search match (stronger highlight)                                                             |
+| `highlightedAnnotationId` | `string \| null`                                                              | `null`       | Deep-link highlight (merged with search highlights)                                                   |
+| `onclick`                 | `(annotation: Annotation) => void`                                            | from context | Segment click handler                                                                                 |
+| `onkeydown`               | `(event: KeyboardEvent, context: { annotation, index, annotations }) => void` | —            | Keyboard handler on container; call `preventDefault()` to suppress built-in Arrow/Home/End navigation |
+| `segment`                 | `Snippet<[SegmentSnippetProps]>`                                              | —            | Full custom segment rendering (see [Custom segment snippets](#custom-segment-snippets))               |
+| `text`                    | `Snippet<[{ annotation: Annotation }]>`                                       | —            | Custom text rendering only                                                                            |
+| `class`                   | `string`                                                                      | `""`         | CSS class                                                                                             |
 
-- `annotations?: Annotation[]` - Annotations to display
-- `activeAnnotationId?: string | null` - Currently active annotation
-- `highlightedIds?: Set<string>` - Set of search-highlighted annotation IDs
-- `currentMatchId?: string | null` - Current search match for stronger highlight
-- `onclick?: (annotation: Annotation) => void` - Segment click handler
-- `class?: string` - CSS class
+**Data attributes on each segment:**
 
-**Data Attributes (on each Segment):**
+| Attribute            | Values                     | Description          |
+| -------------------- | -------------------------- | -------------------- |
+| `data-annotation-id` | segment ID                 | Unique identifier    |
+| `data-state`         | `"active"` \| `"inactive"` | Playback state       |
+| `data-highlighted`   | `"true"` or absent         | Matches search query |
+| `data-current-match` | `"true"` or absent         | Focused search match |
 
-- `data-annotation-id` - Segment ID
-- `data-state="active|inactive"` - Active segment state
-- `data-highlighted="true"` - Present when segment matches search query
-- `data-current-match="true"` - Present on the focused search match
+### Navigation Components
 
-### TypeScript Types
+#### `IIIFPlayer.Chapters`
 
-#### `Annotation`
+Displays chapter markers from the IIIF manifest's Range structures. Clicking a chapter seeks to its start time.
 
-Transcript segment with timing information.
+| Prop                    | Type                                                                      | Default | Description                       |
+| ----------------------- | ------------------------------------------------------------------------- | ------- | --------------------------------- |
+| `onActiveChapterChange` | `(chapter: Chapter \| null) => void`                                      | —       | Calls when active chapter changes |
+| `chapter`               | `Snippet<[{ chapter: Chapter, isActive: boolean, onClick: () => void }]>` | —       | Custom chapter rendering          |
+| `empty`                 | `Snippet`                                                                 | —       | Custom empty state                |
+| `class`                 | `string`                                                                  | `""`    | CSS class                         |
+
+**Data attributes (default rendering):**
+
+- `data-chapter-id` — chapter identifier
+- `data-state="active|inactive"` — current chapter state
+
+#### `IIIFPlayer.CanvasNav`
+
+Multi-canvas navigation. Hides itself when the manifest contains a single canvas.
+
+| Prop             | Type                                                                        | Default | Description                      |
+| ---------------- | --------------------------------------------------------------------------- | ------- | -------------------------------- |
+| `onCanvasChange` | `(canvas: CanvasInfo) => void`                                              | —       | Calls when user selects a canvas |
+| `canvas`         | `Snippet<[{ canvas: CanvasInfo, isActive: boolean, onClick: () => void }]>` | —       | Custom canvas rendering          |
+| `empty`          | `Snippet`                                                                   | —       | Custom empty state               |
+| `class`          | `string`                                                                    | `""`    | CSS class                        |
+
+**Data attributes (default rendering):**
+
+- `data-canvas-index` — canvas position
+- `data-state="active|inactive"` — current canvas state
+
+## Styling
+
+All components ship **unstyled** with semantic HTML and `data-*` attributes for CSS hooks.
+
+### Styling Targets
+
+| Area                | Selector                                                               | Notes                                        |
+| ------------------- | ---------------------------------------------------------------------- | -------------------------------------------- |
+| Transcript segments | `[data-annotation-id]`                                                 | Use `[data-state="active"]` for highlighting |
+| Player controls     | `[data-audio-button]`, `[data-audio-progress]`, `[data-audio-control]` |                                              |
+| Search input        | `input[type="search"]`                                                 | Inside `.transcript-search-sticky`           |
+| Chapter markers     | `[data-chapter-id]`                                                    | Use `[data-state="active"]`                  |
+| Canvas nav          | `[data-canvas-index]`                                                  | Use `[data-state="active"]`                  |
+| Scroll container    | `.transcript-panel`                                                    | The sync engine's scroll target              |
+| Segments container  | `.segments-container`                                                  | Wraps all segments                           |
+
+### Example: Active Segment Highlighting
+
+```css
+[data-annotation-id] {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+[data-annotation-id]:hover {
+  background-color: #f3f4f6;
+}
+
+[data-annotation-id][data-state="active"] {
+  background-color: #bae6fd;
+  border-left: 4px solid #0ea5e9;
+}
+
+[data-annotation-id][data-highlighted="true"] {
+  background-color: #fef9c3;
+}
+
+[data-annotation-id][data-current-match="true"] {
+  background-color: #fde68a;
+  border-left: 4px solid #f59e0b;
+}
+```
+
+## Annotations
+
+### The `Annotation` Type
 
 ```typescript
 interface Annotation {
@@ -295,51 +347,90 @@ interface Annotation {
   startTime: number; // seconds
   endTime: number; // seconds
   text: string;
-  metadata?: Record<string, unknown>; // Your custom data
+  metadata?: Record<string, unknown>;
 }
 ```
 
-**Parsing Annotations:**
+### Parsing Annotations
 
-The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) provides utilities for parsing IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`).
+The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) parses IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`) and types (`Chapter`, `SpeakerSegment`, `TemporalFragment`, `SpatialFragment`, `ParsedAnnotationTarget`) so consumers need only one import source.
 
-For a working example of parsing VTT into `Annotation[]`, see `docs/src/components/IIIFTranscriptDemo.svelte`.
+For a working example of parsing VTT into `Annotation[]`, see [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte).
 
-#### `PlayerContext`
+### Using `annotation.metadata`
 
-Internal context type (exposed for advanced use cases). Defined in `src/lib/player/context.ts`.
+The `metadata` field (`Record<string, unknown>`) holds consumer-specific data. Library components ignore metadata; access it in custom segment snippets.
 
-```typescript
-interface PlayerState {
-  isPlaying: boolean;
-  isBuffering: boolean;
-  currentTime: number;
-  duration: number;
-  playbackRate: number;
-  isReady: boolean;
-  error: Error | null;
-}
+**Speaker labels:**
 
-interface PlayerActions {
-  play: () => Promise<void>;
-  pause: () => void;
-  seekTo: (time: number) => void;
-  setPlaybackRate: (rate: number) => void;
-  retry: () => Promise<void>;
-}
-
-interface PlayerContext {
-  state: PlayerState;
-  actions: PlayerActions;
-  mediaElement: HTMLMediaElement | null;
-  mediaUrl: string;
-  mediaType: "audio" | "video";
-}
+```svelte
+<IIIFPlayer.TranscriptSegments {annotations}>
+  {#snippet segment({ annotation, segmentAttrs })}
+    <div {...segmentAttrs}>
+      {#if annotation.metadata?.speaker}
+        <strong>{annotation.metadata.speaker}:</strong>
+      {/if}
+      <span>{annotation.text}</span>
+    </div>
+  {/snippet}
+</IIIFPlayer.TranscriptSegments>
 ```
 
-## Accessing player state outside Root
+### Paragraph Merging
 
-Consumers needing player state in sibling components or parent-level orchestration can use the `onPlayerInit` callback.
+```ts
+import { mergeIntoParagraphs } from "@umd-mith/svelte-iiif-transcript-player";
+
+const speakers = new Map(
+  annotations
+    .filter((a) => a.metadata?.speaker)
+    .map((a) => [a.id, a.metadata!.speaker as string]),
+);
+
+const paragraphs = mergeIntoParagraphs(annotations, { speakers });
+```
+
+## Advanced Patterns
+
+### Custom Segment Snippets
+
+The `segment` snippet on `TranscriptSegments` gives full control over rendering. It receives a `segmentAttrs` object that bundles `data-*` attributes, `aria-current`, `role`, `tabindex`, and `onclick`. Spread it onto your root element for correct behavior:
+
+```svelte
+<IIIFPlayer.TranscriptSegments>
+  {#snippet segment({
+    annotation,
+    isActive,
+    isHighlighted,
+    isCurrentMatch,
+    segmentAttrs,
+  })}
+    <div {...segmentAttrs} class="my-segment" class:active={isActive}>
+      <span class="timestamp">{annotation.startTime}</span>
+      <p>{annotation.text}</p>
+      {#if annotation.metadata?.confidence != null && annotation.metadata.confidence < 0.5}
+        <span class="badge">Low confidence</span>
+      {/if}
+    </div>
+  {/snippet}
+</IIIFPlayer.TranscriptSegments>
+```
+
+The `text` snippet customizes text rendering alone, keeping the default timestamps and wrapper element:
+
+```svelte
+<IIIFPlayer.TranscriptSegments>
+  {#snippet text({ annotation })}
+    <p>{@html sanitize(annotation.text)}</p>
+  {/snippet}
+</IIIFPlayer.TranscriptSegments>
+```
+
+> **Caution:** When using `{@html}`, sanitize annotation text to prevent XSS. Default rendering escapes text automatically.
+
+### Accessing Player State Outside Root
+
+Use `onPlayerInit` to get a reactive `PlayerRef` in sibling or parent components:
 
 ```svelte
 <script lang="ts">
@@ -367,175 +458,196 @@ Consumers needing player state in sibling components or parent-level orchestrati
   </IIIFPlayer.Controls>
 </IIIFPlayer.Root>
 
-<!-- Sibling components outside Root's subtree -->
-<TranscriptPanel annotations={player?.annotations ?? []} {isPlaying} />
+<!-- Sibling components outside Root -->
+{#if player}
+  <p>{player.canvases.length} canvases, currently on #{player.canvasIndex}</p>
+{/if}
 ```
 
 **Notes:**
 
-- `onPlayerInit` fires once after manifest first loads successfully and first canvas is parsed. If loading fails, the callback does not fire
-- `state.isReady` is `false` at init time — use `$derived` to react to media readiness
-- The ref is reactive (built on `$state` internally)
-- `PlayerRef` fields: `state`, `actions`, `annotations`, `chapters`, `activeChapterId`, `canvasIndex`, `canvasCount`, `canvases`, `mediaType`
-- For components inside Root's subtree, use `getPlayerContext()` or `tryGetPlayerContext()` instead
+- Runs once after manifest loads and first canvas parses; loading failure suppresses the callback
+- Returns `state.isReady === false` at init time; use `$derived` to react when the media becomes ready
+- Stays reactive after init because the ref builds on `$state` internally
+- Serves components outside Root's subtree; components inside should use `getPlayerContext()` or `tryGetPlayerContext()` instead
 
-## Using `annotation.metadata`
+## Building Dual-Mode Components
 
-The `Annotation` type includes an optional `metadata` field (`Record<string, unknown>`) for consumer-specific data. The library components don't read metadata directly — instead, you access it in custom segment snippets.
-
-### Speaker labels
+`TranscriptSearch` and `TranscriptSegments` detect whether they're inside an `IIIFPlayer.Root` and adapt automatically. Build your own dual-mode components the same way with `tryGetPlayerContext()`:
 
 ```svelte
-<script>
-  import { IIIFPlayer } from "@umd-mith/svelte-iiif-transcript-player";
+<script lang="ts">
+  import { tryGetPlayerContext } from "@umd-mith/svelte-iiif-transcript-player";
+
+  let { isPlaying: isPlayingProp = false }: { isPlaying?: boolean } = $props();
+
+  const player = tryGetPlayerContext(); // PlayerContext | null
+  const isPlaying = $derived(player ? player.state.isPlaying : isPlayingProp);
+</script>
+```
+
+Call `tryGetPlayerContext()` during component initialization (top-level `<script>`), never inside event handlers, `$effect`, or async callbacks. It returns `PlayerContext | null` — `null` when the component renders outside a Root.
+
+## TypeScript Types
+
+### Exported Types
+
+```typescript
+// Player
+interface PlayerState {
+  isPlaying: boolean;
+  isBuffering: boolean;
+  currentTime: number;
+  duration: number;
+  playbackRate: number;
+  isReady: boolean;
+  error: Error | null;
+}
+
+interface PlayerActions {
+  play: () => Promise<void>;
+  pause: () => void;
+  seekTo: (time: number) => void;
+  setPlaybackRate: (rate: number) => void;
+  retry: () => Promise<void>;
+  seekToChapter: (chapter: Chapter) => void;
+  switchCanvas: (index: number) => void;
+}
+
+interface PlayerRef {
+  readonly state: PlayerState;
+  readonly actions: PlayerActions;
+  readonly annotations: Annotation[];
+  readonly chapters: Chapter[];
+  readonly activeChapterId: string | null;
+  readonly canvasIndex: number;
+  readonly canvasCount: number;
+  readonly canvases: CanvasInfo[];
+  readonly mediaType: "audio" | "video";
+}
+
+interface PlayerContext {
+  state: PlayerState;
+  mediaElement: HTMLMediaElement | null;
+  mediaUrl: string;
+  mediaType: "audio" | "video";
+  readonly mediaStrategy: MediaStrategy;
+  readonly hlsAdapter: HlsAdapter | null;
+  readonly annotations: Annotation[];
+  readonly chapters: Chapter[];
+  readonly activeChapterId: string | null;
+  readonly tracks: TrackDefinition[];
+  readonly canvasIndex: number;
+  readonly canvasCount: number;
+  readonly canvases: CanvasInfo[];
+  actions: PlayerActions;
+}
+
+interface CanvasInfo {
+  index: number;
+  id: string;
+  label: string;
+  duration?: number;
+  mediaType: "audio" | "video";
+}
+
+type MediaStrategy = "native" | "hls-js";
+
+// Transcript
+interface TranscriptContext {
+  state: TranscriptState;
+  actions: TranscriptActions;
+}
+
+// Segments
+interface SegmentSnippetProps {
+  annotation: Annotation;
+  isActive: boolean;
+  isHighlighted: boolean;
+  isCurrentMatch: boolean;
+  index: number;
+  segmentAttrs: SegmentAttrs;
+}
+```
+
+The package entry point exports all types.
+
+## Framework Integration
+
+### Using with Astro
+
+The compound components work in Astro islands. Create a Svelte wrapper component, then mount it as an island with `client:load`:
+
+```svelte
+<!-- src/components/Player.svelte -->
+<script lang="ts">
+  import {
+    IIIFPlayer,
+    type Annotation,
+  } from "@umd-mith/svelte-iiif-transcript-player";
+
+  let {
+    manifestUrl,
+    annotations,
+  }: { manifestUrl: string; annotations: Annotation[] } = $props();
 </script>
 
-<IIIFPlayer.Transcript {annotations}>
-  {#snippet segment({ annotation, isActive, onClick })}
-    <button data-annotation-id={annotation.id} onclick={onClick}>
-      {#if annotation.metadata?.speaker}
-        <strong>{annotation.metadata.speaker}:</strong>
-      {/if}
-      <span class:active={isActive}>{annotation.text}</span>
-    </button>
-  {/snippet}
-</IIIFPlayer.Transcript>
+<IIIFPlayer.Root {manifestUrl} canvasIndex={0}>
+  <IIIFPlayer.Viewer />
+  <IIIFPlayer.Controls>
+    <IIIFPlayer.PlayButton />
+    <IIIFPlayer.Progress />
+    <IIIFPlayer.Time />
+  </IIIFPlayer.Controls>
+  <IIIFPlayer.Transcript {annotations}>
+    <IIIFPlayer.TranscriptSearch />
+    <IIIFPlayer.TranscriptSegments />
+  </IIIFPlayer.Transcript>
+</IIIFPlayer.Root>
 ```
-
-### Review flags
-
-```svelte
-{#snippet segment({ annotation, isActive, onClick })}
-  <div
-    data-annotation-id={annotation.id}
-    onclick={onClick}
-    class:needs-review={annotation.metadata?.reviewStatus === "needs-review"}
-  >
-    {annotation.text}
-    {#if annotation.metadata?.confidence != null && annotation.metadata.confidence < 0.5}
-      <span class="low-confidence-badge">Low confidence</span>
-    {/if}
-  </div>
-{/snippet}
-```
-
-### Paragraph merging with speakers
-
-```ts
-import { mergeIntoParagraphs } from "@umd-mith/svelte-iiif-transcript-player";
-
-// Build a speaker map from metadata
-const speakers = new Map(
-  annotations
-    .filter((a) => a.metadata?.speaker)
-    .map((a) => [a.id, a.metadata!.speaker as string]),
-);
-
-const paragraphs = mergeIntoParagraphs(annotations, { speakers });
-```
-
-## Using with Astro
-
-The compound components work seamlessly in Astro islands with proper hydration directives:
 
 ```astro
 ---
-import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
-
-const manifestUrl = 'https://example.org/manifest.json';
-const annotations = [...]; // Your VTT parsing logic
+// src/pages/index.astro
+import Player from '../components/Player.svelte';
 ---
 
-<div class="media-player">
-  <IIIFPlayer.Root client:load {manifestUrl} canvasIndex={0}>
-    <!-- Media viewer needs immediate initialization -->
-    <IIIFPlayer.Viewer />
-
-    <!-- Controls should respond immediately -->
-    <IIIFPlayer.Controls>
-      <IIIFPlayer.PlayButton />
-      <IIIFPlayer.Progress />
-      <IIIFPlayer.Skip seconds={-10} />
-      <IIIFPlayer.Skip seconds={30} />
-      <IIIFPlayer.Speed />
-      <IIIFPlayer.Time />
-    </IIIFPlayer.Controls>
-
-    <!-- Transcript shares Root's context — no separate hydration directive needed -->
-    <IIIFPlayer.Transcript {annotations}>
-      <IIIFPlayer.TranscriptSearch />
-      <IIIFPlayer.TranscriptSegments />
-    </IIIFPlayer.Transcript>
-  </IIIFPlayer.Root>
-</div>
+<Player client:load manifestUrl="https://example.org/manifest.json" annotations={[...]} />
 ```
 
-### Hydration Directive Choices
+**Key points:**
 
-- `IIIFPlayer.Root` → `client:load` - Controls media element, needs immediate initialization
-- Child components inside Root share its hydration context — do not add separate `client:*` directives on nested Svelte components (they only work on top-level Astro islands)
+- `client:load` on the wrapper creates one Svelte island. All compound components inside share Root's context — no separate `client:*` directives on children
+- Only JSON-serializable props cross island boundaries. The compound component pattern handles this internally
+- See [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte) for a full working example
 
-### Common Pitfalls with Astro
+## Demo / Docs Site
 
-- **Island isolation**: Each `client:*` directive creates a separate island. Components inside the same `IIIFPlayer.Root` share context automatically
-- **Props serialization**: Only JSON-serializable props work across islands. The compound component pattern handles this internally via context
-- **Reference implementation**: See [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte) for a working example
+The docs site is an Astro project in `docs/`. Run locally:
 
-## Styling
-
-All components ship **unstyled** with semantic HTML and `data-*` attributes for styling hooks. Bring your own CSS.
-
-### What You Need to Style
-
-- **Transcript segments**: Target `button[data-annotation-id]` and use `data-state="active"` for highlighting
-- **Player controls**: Use `data-audio-button`, `data-audio-progress`, `data-audio-control` attributes
-- **Search UI**: Target `input[type="search"]` inside `.search-container`
-- **Layout**: Components don't enforce layout — use flexbox/grid as needed
-
-### Example: Active Segment Highlighting
-
-```css
-/* Transcript segment buttons */
-button[data-annotation-id] {
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  border: none;
-  background: white;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-button[data-annotation-id]:hover {
-  background-color: #f3f4f6;
-}
-
-/* Active segment gets blue highlight */
-button[data-annotation-id][data-state="active"] {
-  background-color: #bae6fd;
-  border-left: 4px solid #0ea5e9;
-}
+```bash
+cd docs
+pnpm install
+pnpm run dev
 ```
 
-### No CSS Variables (Yet)
-
-The library currently doesn't use CSS custom properties. You control all styling via your own CSS. If you need themeable defaults, open an issue to discuss design token integration.
+Opens at `http://localhost:4321/svelte-iiif-transcript-player` with live demos against real IIIF manifests.
 
 ## Browser Support
 
-- **Modern browsers**: Chrome 90+, Firefox 88+, Safari 15+, Edge 90+
-- **Requires**: Native ESM, `<video>`/`<audio>` elements, Proxy support
-- **Svelte 5**: Requires Svelte 5.0+ (runes, snippets)
-- **XState 5**: State machine for playback sync
+Targets modern evergreen browsers. Requires:
 
-**Known limitations:**
+- Native ES modules
+- `<video>` / `<audio>` elements
+- `Proxy` (Svelte 5 reactivity)
+- Svelte 5.0+
+- XState 5 (bundled)
 
-- No IE11 support (Svelte 5 requirement)
-- Safari < 15 lacks some IIIF Presentation 3.0 features
+HLS streaming requires either Safari (native) or `hls.js` (other browsers).
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
+Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
 
 For AI-assisted contributions, include commit trailers:
 
@@ -545,4 +657,4 @@ Assisted-by: Claude <noreply@anthropic.com>
 
 ## License
 
-BSD 3-Clause Clear - see [LICENSE](LICENSE) for details.
+BSD 3-Clause Clear — see [LICENSE](LICENSE) for details.
