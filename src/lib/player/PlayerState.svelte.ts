@@ -72,7 +72,14 @@ export class PlayerStateManager implements PlayerContext {
         console.warn("[IIIFPlayer] Cannot play: media not ready");
         return;
       }
-      await this.mediaElement.play();
+      try {
+        await this.mediaElement.play();
+      } catch (error) {
+        // AbortError is benign — play() interrupted by pause/seek, expected during normal usage
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        this.state.error =
+          error instanceof Error ? error : new Error(String(error));
+      }
     },
     pause: () => {
       this.mediaElement?.pause();

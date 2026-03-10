@@ -11,6 +11,18 @@
    * data attributes, tabindex, and onclick — so consumers get correct
    * behavior by default without manual wiring.
    */
+  /** Attributes bundled for custom segment root elements. Spread with `{...segmentAttrs}`. */
+  export type SegmentAttrs = {
+    "data-annotation-id": string;
+    "data-state": "active" | "inactive";
+    "data-highlighted": "true" | undefined;
+    "data-current-match": "true" | undefined;
+    "aria-current": "true" | undefined;
+    role: "button";
+    tabindex: 0 | -1;
+    onclick: () => void;
+  };
+
   export interface SegmentSnippetProps {
     annotation: Annotation;
     isActive: boolean;
@@ -18,16 +30,7 @@
     isCurrentMatch: boolean;
     index: number;
     /** Spread onto your root element: `{...segmentAttrs}`. Provides a11y, keyboard nav, and click handling. */
-    segmentAttrs: {
-      "data-annotation-id": string;
-      "data-state": "active" | "inactive";
-      "data-highlighted": "true" | undefined;
-      "data-current-match": "true" | undefined;
-      "aria-current": "true" | undefined;
-      role: "button";
-      tabindex: 0 | -1;
-      onclick: () => void;
-    };
+    segmentAttrs: SegmentAttrs;
   }
 
   interface Props {
