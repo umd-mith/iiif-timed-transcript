@@ -76,7 +76,8 @@ export class PlayerStateManager implements PlayerContext {
         await this.mediaElement.play();
       } catch (error) {
         // AbortError is benign — play() interrupted by pause/seek, expected during normal usage
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
         this.state.error =
           error instanceof Error ? error : new Error(String(error));
       }

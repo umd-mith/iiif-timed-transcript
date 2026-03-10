@@ -238,7 +238,9 @@ describe("PlayerStateManager", () => {
         "NotAllowedError",
       );
       const el = createMockMediaElement({
-        play: vi.fn().mockRejectedValue(notAllowed) as unknown as () => Promise<void>,
+        play: vi
+          .fn()
+          .mockRejectedValue(notAllowed) as unknown as () => Promise<void>,
       });
       manager.mediaElement = el;
 
@@ -254,7 +256,9 @@ describe("PlayerStateManager", () => {
         "AbortError",
       );
       const el = createMockMediaElement({
-        play: vi.fn().mockRejectedValue(abortError) as unknown as () => Promise<void>,
+        play: vi
+          .fn()
+          .mockRejectedValue(abortError) as unknown as () => Promise<void>,
       });
       manager.mediaElement = el;
 
@@ -266,7 +270,9 @@ describe("PlayerStateManager", () => {
     test("play wraps non-Error rejection in Error", async () => {
       const manager = new PlayerStateManager();
       const el = createMockMediaElement({
-        play: vi.fn().mockRejectedValue("string error") as unknown as () => Promise<void>,
+        play: vi
+          .fn()
+          .mockRejectedValue("string error") as unknown as () => Promise<void>,
       });
       manager.mediaElement = el;
 
