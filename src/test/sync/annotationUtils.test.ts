@@ -74,14 +74,42 @@ describe("annotationUtils", () => {
       expect(result).toBeNull();
     });
 
-    it("returns first annotation when multiple overlap (should not happen)", () => {
+    it("returns narrowest annotation when multiple overlap", () => {
+      const overlapping: Annotation[] = [
+        { id: "a1", startTime: 0, endTime: 10, text: "First" }, // 10s span
+        { id: "a2", startTime: 5, endTime: 8, text: "Second" }, // 3s span — narrower
+      ];
+      const result = getActiveAnnotation(6, overlapping);
+      expect(result?.id).toBe("a2");
+    });
+
+    it("returns first match when overlapping annotations have equal span", () => {
       const overlapping: Annotation[] = [
         { id: "a1", startTime: 0, endTime: 10, text: "First" },
-        { id: "a2", startTime: 5, endTime: 15, text: "Second" }, // Overlaps!
+        { id: "a2", startTime: 5, endTime: 15, text: "Second" },
       ];
       const result = getActiveAnnotation(7, overlapping);
-      // find() returns first match
+      // Both have 10s span — first in array wins for stable highlighting
       expect(result?.id).toBe("a1");
+    });
+
+    it("handles diarization overlaps (issue #40 SSCCE)", () => {
+      const annotations: Annotation[] = [
+        { id: "544", startTime: 3717.56, endTime: 3722.45, text: "last question" },
+        { id: "545", startTime: 3722.45, endTime: 3723.80, text: "home mean to you?" },
+        { id: "546", startTime: 3723.00, endTime: 3729.85, text: "I think home is the foundation" },
+        { id: "547", startTime: 3723.00, endTime: 3836.01, text: "All right. That was all the questions" },
+        { id: "548", startTime: 3729.99, endTime: 3739.17, text: "denominator for who we are" },
+      ];
+
+      // At 3735s: only seg 548 covers this time
+      expect(getActiveAnnotation(3735, annotations)?.id).toBe("548");
+
+      // At 3730s: segs 547 and 548 both match — 548 is narrower (9.18s vs 113.01s)
+      expect(getActiveAnnotation(3730, annotations)?.id).toBe("548");
+
+      // At 3800s: only seg 547 covers this time
+      expect(getActiveAnnotation(3800, annotations)?.id).toBe("547");
     });
   });
 

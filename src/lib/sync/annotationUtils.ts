@@ -8,10 +8,10 @@ import type { Annotation } from "./types";
 
 /**
  * Get the annotation that should be active at a given time.
- * Uses binary search for O(log n) performance on sorted annotations.
+ * When multiple annotations overlap, returns the narrowest (most specific) match.
  *
  * @param time - Current playback time in seconds
- * @param annotations - Array of annotations sorted by startTime (REQUIRED)
+ * @param annotations - Array of annotations sorted by startTime
  * @returns The active annotation, or null if none
  */
 export function getActiveAnnotation(
@@ -23,34 +23,37 @@ export function getActiveAnnotation(
 
 /**
  * Get the active annotation and its index at a given time.
- * Uses binary search for O(log n) performance on sorted annotations.
- *
- * Used internally by the sync machine to avoid a redundant O(n) findIndex
- * after the binary search.
+ * Uses linear scan with narrowest-span tiebreaker to handle overlapping
+ * annotations (common in speaker diarization). When spans are equal,
+ * the first match in array order wins for stable highlighting.
  *
  * @param time - Current playback time in seconds
- * @param annotations - Array of annotations sorted by startTime (REQUIRED)
+ * @param annotations - Array of annotations sorted by startTime
  * @returns Object with annotation and index, or null if none active
  */
 export function getActiveAnnotationWithIndex(
   time: number,
   annotations: Annotation[],
 ): { annotation: Annotation; index: number } | null {
-  let lo = 0;
-  let hi = annotations.length - 1;
+  let best: { annotation: Annotation; index: number } | null = null;
+  let bestSpan = Infinity;
 
-  while (lo <= hi) {
-    const mid = (lo + hi) >>> 1;
-    const ann = annotations[mid]!;
-    if (time < ann.startTime) {
-      hi = mid - 1;
-    } else if (time >= ann.endTime) {
-      lo = mid + 1;
-    } else {
-      return { annotation: ann, index: mid };
+  for (let i = 0; i < annotations.length; i++) {
+    const ann = annotations[i]!;
+
+    // Annotations are sorted by startTime — once we pass the current time,
+    // no further annotations can contain it.
+    if (ann.startTime > time) break;
+
+    if (time >= ann.startTime && time < ann.endTime) {
+      const span = ann.endTime - ann.startTime;
+      if (span < bestSpan) {
+        best = { annotation: ann, index: i };
+        bestSpan = span;
+      }
     }
   }
-  return null;
+  return best;
 }
 
 /**
