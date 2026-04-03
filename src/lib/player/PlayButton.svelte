@@ -17,9 +17,11 @@
   const { state, actions } = getPlayerContext();
 
   const label = $derived(
-    state.isBuffering ? (loading ?? "Loading...") :
-    state.isPlaying   ? (pause  ?? "Pause")        :
-                        (play   ?? "Play")
+    state.isBuffering
+      ? (loading ?? "Loading...")
+      : state.isPlaying
+        ? (pause ?? "Pause")
+        : (play ?? "Play"),
   );
 
   const labelIsSnippet = $derived(typeof label === "function");
