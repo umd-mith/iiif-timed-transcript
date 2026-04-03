@@ -281,10 +281,10 @@
     const Dash =
       dashConstructor ??
       (await import("dashjs")
-        .then(
-          (m) =>
-            ((m.default ?? m) as unknown as { MediaPlayer: () => DashConstructor })
-              .MediaPlayer(),
+        .then((m) =>
+          (
+            m as unknown as { MediaPlayer: () => DashConstructor }
+          ).MediaPlayer(),
         )
         .catch(() => {
           console.warn(
