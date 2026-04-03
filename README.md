@@ -428,6 +428,19 @@ The `text` snippet customizes text rendering alone, keeping the default timestam
 
 > **Caution:** When using `{@html}`, sanitize annotation text to prevent XSS. Default rendering escapes text automatically.
 
+#### Focus management: roving tabindex
+
+`segmentAttrs` includes a `tabindex` value (0 or -1) that implements **roving tabindex** for keyboard navigation. The keyboard-focused segment receives `tabindex="0"` while all others get `tabindex="-1"`, so <kbd>Tab</kbd> moves focus directly to that segment.
+
+If you wrap segments in a container with `role="listbox"`, do **not** add `aria-activedescendant` on the container — it conflicts with roving tabindex. These are two mutually exclusive focus management strategies defined by WAI-ARIA:
+
+| Pattern                         | How focus moves                               | Who manages it            |
+| ------------------------------- | --------------------------------------------- | ------------------------- |
+| **Roving tabindex** (used here) | Focus moves to the element via `tabindex="0"` | `segmentAttrs` handles it |
+| **`aria-activedescendant`**     | Container keeps focus, points to active item  | You'd manage it yourself  |
+
+Mixing both sends conflicting signals to assistive technology. Since `segmentAttrs` already handles roving tabindex, just spread it and let it work.
+
 ### Accessing Player State Outside Root
 
 Use `onPlayerInit` to get a reactive `PlayerRef` in sibling or parent components:
