@@ -18,8 +18,8 @@
 
   const label = $derived(
     state.isBuffering ? (loading ?? "Loading...") :
-    state.isPlaying   ? (pause  ?? "Pause!")       :
-                        (play   ?? "Play!")
+    state.isPlaying   ? (pause  ?? "Pause")        :
+                        (play   ?? "Play")
   );
 
   const labelIsSnippet = $derived(typeof label === "function");
