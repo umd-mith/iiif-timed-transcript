@@ -91,10 +91,19 @@
 
     adapter.attach(el, ctx.mediaUrl, {
       onError: (data: unknown) => {
-        const errorData = data as { fatal?: boolean; type?: string };
+        const errorData = data as {
+          fatal?: boolean;
+          type?: string;
+          details?: string;
+        };
         if (errorData.fatal) {
           ctx.state.error = new Error(
             `HLS error: ${errorData.type || "unknown"}`,
+          );
+          ctx.state.isReady = false;
+        } else {
+          console.warn(
+            `[IIIFPlayer] Non-fatal HLS error: ${errorData.type || "unknown"} (${errorData.details || "no details"})`,
           );
         }
       },
