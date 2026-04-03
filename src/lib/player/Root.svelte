@@ -289,13 +289,8 @@
     const handleRateChange = () => {
       player.state.playbackRate = el.playbackRate;
     };
-    const handleError = () => {
-      const mediaError = el.error;
-      if (mediaError) {
-        player.state.error = new Error(`Media error (code ${mediaError.code})`);
-        player.state.isReady = false;
-      }
-    };
+    // Media error handling is in Viewer.svelte's onerror handler,
+    // which provides user-friendly messages and sets isReady = false.
     const handleWaiting = () => {
       player.state.isBuffering = true;
     };
@@ -308,7 +303,6 @@
     el.addEventListener("timeupdate", handleTimeUpdate);
     el.addEventListener("durationchange", handleDurationChange);
     el.addEventListener("ratechange", handleRateChange);
-    el.addEventListener("error", handleError);
     el.addEventListener("waiting", handleWaiting);
     el.addEventListener("canplay", handleCanPlay);
 
@@ -318,7 +312,6 @@
       el.removeEventListener("timeupdate", handleTimeUpdate);
       el.removeEventListener("durationchange", handleDurationChange);
       el.removeEventListener("ratechange", handleRateChange);
-      el.removeEventListener("error", handleError);
       el.removeEventListener("waiting", handleWaiting);
       el.removeEventListener("canplay", handleCanPlay);
     };

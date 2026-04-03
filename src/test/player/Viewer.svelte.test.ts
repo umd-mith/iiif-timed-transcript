@@ -598,7 +598,7 @@ describe("Viewer", () => {
       expect(mockContext.state.error?.message).toContain("not supported");
     });
 
-    test("provides user-friendly messages for each error code", () => {
+    test("provides user-friendly message for decode error (code 3)", () => {
       target = document.createElement("div");
       document.body.appendChild(target);
 
@@ -618,7 +618,6 @@ describe("Viewer", () => {
 
       const audio = target.querySelector("audio") as HTMLAudioElement;
 
-      // Test decode error (code 3)
       Object.defineProperty(audio, "error", {
         value: { code: 3, message: "" },
         configurable: true,
@@ -629,6 +628,99 @@ describe("Viewer", () => {
       expect(mockContext.state.error?.message).toBe(
         "This media file could not be played. The file may be damaged.",
       );
+    });
+
+    test("ignores MEDIA_ERR_ABORTED (code 1) — triggered by canvas switching", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/audio.mp3",
+        mediaType: "audio",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer),
+        },
+      });
+      flushSync();
+
+      const audio = target.querySelector("audio") as HTMLAudioElement;
+
+      Object.defineProperty(audio, "error", {
+        value: { code: 1, message: "" },
+        configurable: true,
+      });
+      audio.dispatchEvent(new Event("error"));
+      flushSync();
+
+      expect(mockContext.state.error).toBeNull();
+    });
+
+    test("falls back to generic message for unknown error codes", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/audio.mp3",
+        mediaType: "audio",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer),
+        },
+      });
+      flushSync();
+
+      const audio = target.querySelector("audio") as HTMLAudioElement;
+
+      Object.defineProperty(audio, "error", {
+        value: { code: 99, message: "" },
+        configurable: true,
+      });
+      audio.dispatchEvent(new Event("error"));
+      flushSync();
+
+      expect(mockContext.state.error?.message).toBe(
+        "Media playback failed (code 99).",
+      );
+    });
+
+    test("sets isReady to false on media error", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/audio.mp3",
+        mediaType: "audio",
+        state: { isReady: true },
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer),
+        },
+      });
+      flushSync();
+
+      const audio = target.querySelector("audio") as HTMLAudioElement;
+
+      Object.defineProperty(audio, "error", {
+        value: { code: 2, message: "" },
+        configurable: true,
+      });
+      audio.dispatchEvent(new Event("error"));
+      flushSync();
+
+      expect(mockContext.state.isReady).toBe(false);
     });
   });
 
