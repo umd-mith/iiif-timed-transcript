@@ -88,7 +88,7 @@
   $effect(() => {
     const el = localMediaElement;
     const adapter = ctx.hlsAdapter;
-    if (!el || !adapter) return;
+    if (!el || !adapter || ctx.mediaStrategy !== "hls-js") return;
 
     adapter.attach(el, ctx.mediaUrl, {
       onError: (data: unknown) => {
@@ -119,7 +119,7 @@
   $effect(() => {
     const el = localMediaElement;
     const adapter = ctx.dashAdapter;
-    if (!el || !adapter) return;
+    if (!el || !adapter || ctx.mediaStrategy !== "dash-js") return;
 
     // dash.js only fires ERROR events after internal recovery fails,
     // so all errors are effectively fatal. The error field is either a

@@ -265,15 +265,15 @@
       hlsConstructor ??
       (await import("hls.js")
         .then((m) => m.default as unknown as HlsConstructor)
-        .catch(() => {
-          console.warn(
-            "[IIIFPlayer] HLS stream detected but hls.js is not installed. " +
-              "Install it with: npm install hls.js",
-          );
-          return null;
-        }));
-    if (Hls) {
+        .catch(() => null));
+    if (Hls && player.mediaStrategy === "hls-js") {
       player.hlsAdapter = createHlsAdapter(Hls);
+    } else if (!Hls && player.mediaStrategy === "hls-js") {
+      player.state.error = new Error(
+        "HLS stream detected but hls.js is not installed. " +
+          "Install it with: npm install hls.js",
+      );
+      player.state.isReady = false;
     }
   }
 
@@ -287,15 +287,15 @@
           };
           return mod.MediaPlayer();
         })
-        .catch(() => {
-          console.warn(
-            "[IIIFPlayer] DASH stream detected but dashjs is not installed. " +
-              "Install it with: npm install dashjs",
-          );
-          return null;
-        }));
-    if (Dash) {
+        .catch(() => null));
+    if (Dash && player.mediaStrategy === "dash-js") {
       player.dashAdapter = createDashAdapter(Dash);
+    } else if (!Dash && player.mediaStrategy === "dash-js") {
+      player.state.error = new Error(
+        "DASH stream detected but dashjs is not installed. " +
+          "Install it with: npm install dashjs",
+      );
+      player.state.isReady = false;
     }
   }
 
