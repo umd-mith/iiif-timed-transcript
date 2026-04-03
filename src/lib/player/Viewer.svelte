@@ -24,8 +24,9 @@
   const effectiveTracks = $derived(tracks.length > 0 ? tracks : ctx.tracks);
 
   // When hls-js strategy, src is managed by the adapter, not via attribute
+  // When an adapter manages the source (HLS or DASH), don't set src attribute
   const mediaSrc = $derived(
-    ctx.mediaStrategy === "hls-js" ? undefined : ctx.mediaUrl,
+    ctx.mediaStrategy === "native" ? ctx.mediaUrl : undefined,
   );
 
   // Dev warning: video without captions (WCAG 1.2.2) — warn once per mediaUrl
@@ -104,6 +105,39 @@
         } else {
           console.warn(
             `[IIIFPlayer] Non-fatal HLS error: ${errorData.type || "unknown"} (${errorData.details || "no details"})`,
+          );
+        }
+      },
+    });
+
+    return () => {
+      adapter.detach();
+    };
+  });
+
+  // DASH adapter wiring: attach when strategy is dash-js and adapter exists
+  $effect(() => {
+    const el = localMediaElement;
+    const adapter = ctx.dashAdapter;
+    if (!el || !adapter) return;
+
+    adapter.attach(el, ctx.mediaUrl, {
+      onError: (data: unknown) => {
+        const errorData = data as {
+          error?: string;
+          event?: { type?: string };
+        };
+        const isFatal =
+          errorData.error === "download" ||
+          errorData.error === "mediasource";
+        if (isFatal) {
+          ctx.state.error = new Error(
+            `DASH error: ${errorData.error || "unknown"}`,
+          );
+          ctx.state.isReady = false;
+        } else {
+          console.warn(
+            `[IIIFPlayer] Non-fatal DASH error: ${errorData.error || "unknown"}`,
           );
         }
       },

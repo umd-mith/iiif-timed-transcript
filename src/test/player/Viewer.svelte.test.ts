@@ -315,6 +315,73 @@ describe("Viewer", () => {
     // Explicitly testing unmount via removeChild is unreliable in Svelte's test environment.
   });
 
+  describe("DASH adapter wiring", () => {
+    test("attaches adapter when mediaStrategy is dash-js", async () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockAdapter = {
+        attach: vi.fn(),
+        detach: vi.fn(),
+        isSupported: () => true,
+      };
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/stream.mpd",
+        mediaType: "video",
+        mediaStrategy: "dash-js",
+        dashAdapter: mockAdapter,
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer),
+        },
+      });
+      flushSync();
+
+      await vi.waitFor(() => {
+        expect(mockAdapter.attach).toHaveBeenCalledWith(
+          expect.any(HTMLVideoElement),
+          "https://example.com/stream.mpd",
+          expect.objectContaining({ onError: expect.any(Function) }),
+        );
+      });
+    });
+
+    test("does not set src attribute when mediaStrategy is dash-js", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockAdapter = {
+        attach: vi.fn(),
+        detach: vi.fn(),
+        isSupported: () => true,
+      };
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/stream.mpd",
+        mediaType: "video",
+        mediaStrategy: "dash-js",
+        dashAdapter: mockAdapter,
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer),
+        },
+      });
+      flushSync();
+
+      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      expect(videoElement?.getAttribute("src")).toBeNull();
+    });
+  });
+
   describe("caption tracks", () => {
     test("renders track elements inside video when tracks prop is provided", () => {
       target = document.createElement("div");
