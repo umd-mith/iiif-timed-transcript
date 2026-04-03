@@ -260,11 +260,36 @@
     }
   }
 
+  function isHlsConstructorLike(obj: unknown): obj is HlsConstructor {
+    return (
+      typeof obj === "function" &&
+      "isSupported" in obj &&
+      typeof (obj as Record<string, unknown>).isSupported === "function"
+    );
+  }
+
+  function isDashConstructorLike(obj: unknown): obj is DashConstructor {
+    return (
+      obj !== null &&
+      typeof obj === "object" &&
+      "create" in obj &&
+      typeof (obj as Record<string, unknown>).create === "function"
+    );
+  }
+
   async function resolveHlsAdapter() {
     const Hls =
       hlsConstructor ??
       (await import("hls.js")
-        .then((m) => m.default as unknown as HlsConstructor)
+        .then((m) => {
+          const candidate = m.default;
+          if (!isHlsConstructorLike(candidate)) {
+            throw new Error(
+              "hls.js module does not export expected HLS constructor",
+            );
+          }
+          return candidate;
+        })
         .catch(() => null));
     if (Hls && player.mediaStrategy === "hls-js") {
       player.hlsAdapter = createHlsAdapter(Hls);
@@ -282,10 +307,24 @@
       dashConstructor ??
       (await import("dashjs")
         .then((m) => {
-          const mod = (m.default ?? m) as unknown as {
-            MediaPlayer: () => DashConstructor;
-          };
-          return mod.MediaPlayer();
+          const mod = ("default" in m ? m.default : m) ?? m;
+          if (
+            !mod ||
+            typeof mod !== "object" ||
+            !("MediaPlayer" in mod) ||
+            typeof (mod as Record<string, unknown>).MediaPlayer !== "function"
+          ) {
+            throw new Error(
+              "dashjs module does not export expected MediaPlayer factory",
+            );
+          }
+          const factory = (mod as { MediaPlayer: () => unknown }).MediaPlayer();
+          if (!isDashConstructorLike(factory)) {
+            throw new Error(
+              "dashjs MediaPlayer() did not return expected constructor",
+            );
+          }
+          return factory;
         })
         .catch(() => null));
     if (Dash && player.mediaStrategy === "dash-js") {
