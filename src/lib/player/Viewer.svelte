@@ -76,7 +76,8 @@
     if (err?.code === 1) return;
 
     const message = err?.code
-      ? MEDIA_ERROR_MESSAGES[err.code] ?? `Media playback failed (code ${err.code}).`
+      ? (MEDIA_ERROR_MESSAGES[err.code] ??
+        `Media playback failed (code ${err.code}).`)
       : "Media playback failed.";
     ctx.state.error = new Error(message);
     ctx.state.isReady = false;
