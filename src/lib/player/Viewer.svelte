@@ -58,6 +58,31 @@
     };
   });
 
+  // Native media error handler — unifies with HLS errors under ctx.state.error.
+  // Messages are written for end users in plain language.
+  const MEDIA_ERROR_MESSAGES: Record<number, string> = {
+    2: "Unable to load media. Check your network connection and try again.",
+    3: "This media file could not be played. The file may be damaged.",
+    4: "This media format is not supported by your browser.",
+  };
+
+  function handleMediaError(e: Event) {
+    const el = e.currentTarget as HTMLMediaElement;
+    const err = el.error;
+
+    // Code 1 (MEDIA_ERR_ABORTED) is intentional — triggered by src changes
+    // during canvas switching, not a real error. Same pattern as AbortError
+    // filtering in PlayerState.svelte.ts.
+    if (err?.code === 1) return;
+
+    const message = err?.code
+      ? (MEDIA_ERROR_MESSAGES[err.code] ??
+        `Media playback failed (code ${err.code}).`)
+      : "Media playback failed.";
+    ctx.state.error = new Error(message);
+    ctx.state.isReady = false;
+  }
+
   // HLS adapter wiring: attach when strategy is hls-js and adapter exists
   $effect(() => {
     const el = localMediaElement;
@@ -66,10 +91,19 @@
 
     adapter.attach(el, ctx.mediaUrl, {
       onError: (data: unknown) => {
-        const errorData = data as { fatal?: boolean; type?: string };
+        const errorData = data as {
+          fatal?: boolean;
+          type?: string;
+          details?: string;
+        };
         if (errorData.fatal) {
           ctx.state.error = new Error(
             `HLS error: ${errorData.type || "unknown"}`,
+          );
+          ctx.state.isReady = false;
+        } else {
+          console.warn(
+            `[IIIFPlayer] Non-fatal HLS error: ${errorData.type || "unknown"} (${errorData.details || "no details"})`,
           );
         }
       },
@@ -90,6 +124,7 @@
       {preload}
       crossorigin={crossOrigin || undefined}
       class={className}
+      onerror={handleMediaError}
     ></audio>
   {:else if ctx.mediaType === "video"}
     <video
@@ -100,6 +135,7 @@
       crossorigin={crossOrigin || undefined}
       class={className}
       style="width: 100%;"
+      onerror={handleMediaError}
     >
       {#each effectiveTracks as track, i (track.src)}
         <track
