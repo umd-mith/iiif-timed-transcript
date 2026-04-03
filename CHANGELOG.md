@@ -1,5 +1,18 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.13.0
+
+### Minor Changes
+
+- 4aefbe5: Add customizable labels to PlayButton via `play`, `pause`, and `loading` props that accept a string or Svelte snippet
+
+### Patch Changes
+
+- **Fix overlapping annotation lookup** — replace binary search with linear scan + narrowest-span tiebreaker in `getActiveAnnotation`. Fixes wrong segment highlighting for speaker diarization data with overlapping timestamps (#40)
+- **Document roving tabindex pattern** — explain focus management in `segmentAttrs` to prevent `aria-activedescendant` conflicts (#41)
+- **Wire native media error handling** — add `onerror` handlers to `<audio>`/`<video>` elements with user-friendly error messages. Remove duplicate error handler from Root.svelte. Filter `MEDIA_ERR_ABORTED` during canvas switching (#43)
+- **Log non-fatal HLS errors** — non-fatal HLS errors now emit `console.warn` instead of being silently swallowed
+
 ## 0.12.0
 
 ### Breaking Changes
