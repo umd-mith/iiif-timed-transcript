@@ -131,25 +131,24 @@
     const adapter = ctx.dashAdapter;
     if (!el || !adapter) return;
 
+    // dash.js only fires ERROR events after internal recovery fails,
+    // so all errors are effectively fatal. The error field is either a
+    // string (e.g. "download", "capability") or an object with code/message.
     adapter.attach(el, ctx.mediaUrl, {
       onError: (data: unknown) => {
         const errorData = data as {
-          error?: string;
-          event?: { type?: string };
+          error?: string | { code: number; message: string };
         };
-        const isFatal =
-          errorData.error === "download" ||
-          errorData.error === "mediasource";
-        if (isFatal) {
-          ctx.state.error = new Error(
-            `DASH error: ${errorData.error || "unknown"}`,
-          );
-          ctx.state.isReady = false;
+        let message: string;
+        if (typeof errorData.error === "string") {
+          message = errorData.error;
+        } else if (errorData.error && typeof errorData.error === "object") {
+          message = errorData.error.message || `code ${errorData.error.code}`;
         } else {
-          console.warn(
-            `[IIIFPlayer] Non-fatal DASH error: ${errorData.error || "unknown"}`,
-          );
+          message = "unknown";
         }
+        ctx.state.error = new Error(`DASH playback failed: ${message}`);
+        ctx.state.isReady = false;
       },
     });
 

@@ -281,11 +281,8 @@
     const Dash =
       dashConstructor ??
       (await import("dashjs")
-        .then((m) =>
-          (
-            m as unknown as { MediaPlayer: () => DashConstructor }
-          ).MediaPlayer(),
-        )
+        // dashjs 5.x is ESM-only with a named `MediaPlayer` factory export.
+        .then((m) => m.MediaPlayer())
         .catch(() => {
           console.warn(
             "[IIIFPlayer] DASH stream detected but dashjs is not installed. " +
@@ -357,9 +354,11 @@
   // Cleanup on unmount — capture current element and adapter
   $effect(() => {
     const el = player.mediaElement;
-    const adapter = player.hlsAdapter;
+    const hlsAdapter = player.hlsAdapter;
+    const dashAdapter = player.dashAdapter;
     return () => {
-      adapter?.detach();
+      hlsAdapter?.detach();
+      dashAdapter?.detach();
       if (el) {
         el.pause();
         el.src = "";
