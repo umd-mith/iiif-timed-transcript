@@ -97,11 +97,36 @@ describe("annotationUtils", () => {
 
     it("handles diarization overlaps (issue #40 SSCCE)", () => {
       const annotations: Annotation[] = [
-        { id: "544", startTime: 3717.56, endTime: 3722.45, text: "last question" },
-        { id: "545", startTime: 3722.45, endTime: 3723.80, text: "home mean to you?" },
-        { id: "546", startTime: 3723.00, endTime: 3729.85, text: "I think home is the foundation" },
-        { id: "547", startTime: 3723.00, endTime: 3836.01, text: "All right. That was all the questions" },
-        { id: "548", startTime: 3729.99, endTime: 3739.17, text: "denominator for who we are" },
+        {
+          id: "544",
+          startTime: 3717.56,
+          endTime: 3722.45,
+          text: "last question",
+        },
+        {
+          id: "545",
+          startTime: 3722.45,
+          endTime: 3723.8,
+          text: "home mean to you?",
+        },
+        {
+          id: "546",
+          startTime: 3723.0,
+          endTime: 3729.85,
+          text: "I think home is the foundation",
+        },
+        {
+          id: "547",
+          startTime: 3723.0,
+          endTime: 3836.01,
+          text: "All right. That was all the questions",
+        },
+        {
+          id: "548",
+          startTime: 3729.99,
+          endTime: 3739.17,
+          text: "denominator for who we are",
+        },
       ];
 
       // At 3735s: only seg 548 covers this time
@@ -127,8 +152,8 @@ describe("annotationUtils", () => {
   describe("getActiveAnnotationWithIndex", () => {
     it("returns correct index for overlapping annotations", () => {
       const annotations: Annotation[] = [
-        { id: "broad", startTime: 0, endTime: 20, text: "Broad" },   // index 0
-        { id: "narrow", startTime: 5, endTime: 8, text: "Narrow" },  // index 1
+        { id: "broad", startTime: 0, endTime: 20, text: "Broad" }, // index 0
+        { id: "narrow", startTime: 5, endTime: 8, text: "Narrow" }, // index 1
       ];
       const result = getActiveAnnotationWithIndex(6, annotations);
       expect(result?.annotation.id).toBe("narrow");
@@ -137,11 +162,36 @@ describe("annotationUtils", () => {
 
     it("returns correct index in diarization data", () => {
       const annotations: Annotation[] = [
-        { id: "544", startTime: 3717.56, endTime: 3722.45, text: "last question" },
-        { id: "545", startTime: 3722.45, endTime: 3723.80, text: "home mean to you?" },
-        { id: "546", startTime: 3723.00, endTime: 3729.85, text: "I think home is the foundation" },
-        { id: "547", startTime: 3723.00, endTime: 3836.01, text: "All right. That was all the questions" },
-        { id: "548", startTime: 3729.99, endTime: 3739.17, text: "denominator for who we are" },
+        {
+          id: "544",
+          startTime: 3717.56,
+          endTime: 3722.45,
+          text: "last question",
+        },
+        {
+          id: "545",
+          startTime: 3722.45,
+          endTime: 3723.8,
+          text: "home mean to you?",
+        },
+        {
+          id: "546",
+          startTime: 3723.0,
+          endTime: 3729.85,
+          text: "I think home is the foundation",
+        },
+        {
+          id: "547",
+          startTime: 3723.0,
+          endTime: 3836.01,
+          text: "All right. That was all the questions",
+        },
+        {
+          id: "548",
+          startTime: 3729.99,
+          endTime: 3739.17,
+          text: "denominator for who we are",
+        },
       ];
 
       // At 3730s: seg 548 wins (narrower) — verify it returns index 4

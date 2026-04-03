@@ -434,10 +434,10 @@ The `text` snippet customizes text rendering alone, keeping the default timestam
 
 If you wrap segments in a container with `role="listbox"`, do **not** add `aria-activedescendant` on the container — it conflicts with roving tabindex. These are two mutually exclusive focus management strategies defined by WAI-ARIA:
 
-| Pattern | How focus moves | Who manages it |
-|---------|----------------|----------------|
+| Pattern                         | How focus moves                               | Who manages it            |
+| ------------------------------- | --------------------------------------------- | ------------------------- |
 | **Roving tabindex** (used here) | Focus moves to the element via `tabindex="0"` | `segmentAttrs` handles it |
-| **`aria-activedescendant`** | Container keeps focus, points to active item | You'd manage it yourself |
+| **`aria-activedescendant`**     | Container keeps focus, points to active item  | You'd manage it yourself  |
 
 Mixing both sends conflicting signals to assistive technology. Since `segmentAttrs` already handles roving tabindex, just spread it and let it work.
 
