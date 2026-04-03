@@ -31,9 +31,10 @@ describe("annotationUtils", () => {
       expect(result?.id).toBe("a2");
     });
 
-    it("returns null when time exactly at endTime (boundary)", () => {
+    it("at boundary, matches annotation whose startTime equals the time (half-open interval)", () => {
+      // time=5 is endTime of a1 and startTime of a2
+      // [startTime, endTime) means a1 excludes 5, a2 includes 5
       const result = getActiveAnnotation(5, mockAnnotations);
-      // Note: time < endTime, so time === endTime returns next annotation
       expect(result?.id).toBe("a2");
     });
 

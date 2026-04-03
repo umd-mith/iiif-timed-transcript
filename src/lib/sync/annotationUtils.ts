@@ -77,7 +77,7 @@ export function timeToScrollProgress(time: number, duration: number): number {
  * corresponds to the actual annotation content, not the full video duration.
  *
  * @param scrollProgress - Scroll position from 0 to 1
- * @param annotations - Array of annotations with time ranges (REQUIRED)
+ * @param annotations - Array of annotations with time ranges
  * @returns Mapped time in seconds
  *
  * @example
