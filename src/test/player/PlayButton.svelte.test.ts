@@ -127,6 +127,69 @@ describe("PlayButton", () => {
     expect(button?.textContent).toContain("Loading");
   });
 
+  test("shows custom string for play prop", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    const ctx = createMockPlayerContext({ state: { isPlaying: false } });
+
+    mount(TestContextProvider, {
+      target,
+      props: {
+        context: ctx,
+        children: createChildSnippet(target, PlayButton, { play: "Start!" }),
+      },
+    });
+    flushSync();
+
+    const button = target.querySelector("button");
+    expect(button?.textContent).toContain("Start!");
+  });
+
+  test("shows custom string for pause prop", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    const ctx = createMockPlayerContext({
+      state: { isPlaying: true, isReady: true },
+    });
+
+    mount(TestContextProvider, {
+      target,
+      props: {
+        context: ctx,
+        children: createChildSnippet(target, PlayButton, { pause: "Stop!" }),
+      },
+    });
+    flushSync();
+
+    const button = target.querySelector("button");
+    expect(button?.textContent).toContain("Stop!");
+  });
+
+  test("shows custom string for loading prop", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    const ctx = createMockPlayerContext({
+      state: { isBuffering: true, isReady: true, isPlaying: false },
+    });
+
+    mount(TestContextProvider, {
+      target,
+      props: {
+        context: ctx,
+        children: createChildSnippet(target, PlayButton, {
+          loading: "Buffering...",
+        }),
+      },
+    });
+    flushSync();
+
+    const button = target.querySelector("button");
+    expect(button?.textContent).toContain("Buffering...");
+  });
+
   test("is disabled when media not ready", () => {
     target = document.createElement("div");
     document.body.appendChild(target);

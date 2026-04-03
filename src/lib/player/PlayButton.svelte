@@ -1,13 +1,30 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { getPlayerContext } from "./context";
 
   let {
     class: className = "",
+    loading,
+    pause,
+    play,
   }: {
     class?: string;
+    loading?: Snippet | string;
+    pause?: Snippet | string;
+    play?: Snippet | string;
   } = $props();
 
   const { state, actions } = getPlayerContext();
+
+  const label = $derived(
+    state.isBuffering
+      ? (loading ?? "Loading...")
+      : state.isPlaying
+        ? (pause ?? "Pause")
+        : (play ?? "Play"),
+  );
+
+  const labelIsSnippet = $derived(typeof label === "function");
 
   function handleClick() {
     if (state.isPlaying) {
@@ -25,5 +42,9 @@
   onclick={handleClick}
   class={className}
 >
-  {state.isBuffering ? "Loading..." : state.isPlaying ? "Pause" : "Play"}
+  {#if labelIsSnippet}
+    {@render (label as Snippet)()}
+  {:else}
+    {label}
+  {/if}
 </button>
