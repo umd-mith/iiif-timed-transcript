@@ -430,7 +430,7 @@ The `text` snippet customizes text rendering alone, keeping the default timestam
 
 #### Focus management: roving tabindex
 
-`segmentAttrs` includes a `tabindex` value (0 or -1) that implements **roving tabindex** for keyboard navigation. The active segment receives `tabindex="0"` while all others get `tabindex="-1"`, so <kbd>Tab</kbd> moves focus directly to the active segment.
+`segmentAttrs` includes a `tabindex` value (0 or -1) that implements **roving tabindex** for keyboard navigation. The keyboard-focused segment receives `tabindex="0"` while all others get `tabindex="-1"`, so <kbd>Tab</kbd> moves focus directly to that segment.
 
 If you wrap segments in a container with `role="listbox"`, do **not** add `aria-activedescendant` on the container — it conflicts with roving tabindex. These are two mutually exclusive focus management strategies defined by WAI-ARIA:
 

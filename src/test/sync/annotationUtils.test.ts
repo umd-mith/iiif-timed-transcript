@@ -2,6 +2,7 @@
 import { describe, it, expect } from "vitest";
 import {
   getActiveAnnotation,
+  getActiveAnnotationWithIndex,
   timeToScrollProgress,
   scrollProgressToTime,
 } from "../../lib/sync/annotationUtils";
@@ -110,6 +111,42 @@ describe("annotationUtils", () => {
 
       // At 3800s: only seg 547 covers this time
       expect(getActiveAnnotation(3800, annotations)?.id).toBe("547");
+    });
+
+    it("selects narrowest match when its startTime equals the query time", () => {
+      const annotations: Annotation[] = [
+        { id: "broad", startTime: 0, endTime: 20, text: "Broad" },
+        { id: "narrow", startTime: 5, endTime: 8, text: "Narrow" },
+      ];
+      // time === narrow's startTime — early-break must not skip it
+      expect(getActiveAnnotation(5, annotations)?.id).toBe("narrow");
+    });
+  });
+
+  describe("getActiveAnnotationWithIndex", () => {
+    it("returns correct index for overlapping annotations", () => {
+      const annotations: Annotation[] = [
+        { id: "broad", startTime: 0, endTime: 20, text: "Broad" },   // index 0
+        { id: "narrow", startTime: 5, endTime: 8, text: "Narrow" },  // index 1
+      ];
+      const result = getActiveAnnotationWithIndex(6, annotations);
+      expect(result?.annotation.id).toBe("narrow");
+      expect(result?.index).toBe(1);
+    });
+
+    it("returns correct index in diarization data", () => {
+      const annotations: Annotation[] = [
+        { id: "544", startTime: 3717.56, endTime: 3722.45, text: "last question" },
+        { id: "545", startTime: 3722.45, endTime: 3723.80, text: "home mean to you?" },
+        { id: "546", startTime: 3723.00, endTime: 3729.85, text: "I think home is the foundation" },
+        { id: "547", startTime: 3723.00, endTime: 3836.01, text: "All right. That was all the questions" },
+        { id: "548", startTime: 3729.99, endTime: 3739.17, text: "denominator for who we are" },
+      ];
+
+      // At 3730s: seg 548 wins (narrower) — verify it returns index 4
+      const result = getActiveAnnotationWithIndex(3730, annotations);
+      expect(result?.annotation.id).toBe("548");
+      expect(result?.index).toBe(4);
     });
   });
 
