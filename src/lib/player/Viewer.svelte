@@ -75,6 +75,16 @@
     // filtering in PlayerState.svelte.ts.
     if (err?.code === 1) return;
 
+    // Code 3 (MEDIA_ERR_DECODE) can be transient for large files — browsers
+    // fire it during initial buffering but the media may still be playable.
+    // If metadata already loaded (duration > 0), treat as non-fatal.
+    if (err?.code === 3 && el.duration > 0 && !Number.isNaN(el.duration)) {
+      console.warn(
+        `[IIIFPlayer] Transient decode error ignored (duration=${el.duration}s already loaded)`,
+      );
+      return;
+    }
+
     const message = err?.code
       ? (MEDIA_ERROR_MESSAGES[err.code] ??
         `Media playback failed (code ${err.code}).`)

@@ -598,7 +598,7 @@ describe("Viewer", () => {
       expect(mockContext.state.error?.message).toContain("not supported");
     });
 
-    test("provides user-friendly message for decode error (code 3)", () => {
+    test("treats decode error (code 3) as fatal when no metadata loaded", () => {
       target = document.createElement("div");
       document.body.appendChild(target);
 
@@ -618,6 +618,7 @@ describe("Viewer", () => {
 
       const audio = target.querySelector("audio") as HTMLAudioElement;
 
+      // duration defaults to NaN when no metadata loaded
       Object.defineProperty(audio, "error", {
         value: { code: 3, message: "" },
         configurable: true,
@@ -628,6 +629,42 @@ describe("Viewer", () => {
       expect(mockContext.state.error?.message).toBe(
         "This media file could not be played. The file may be damaged.",
       );
+    });
+
+    test("ignores transient decode error (code 3) when metadata already loaded", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/audio.mp3",
+        mediaType: "audio",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer),
+        },
+      });
+      flushSync();
+
+      const audio = target.querySelector("audio") as HTMLAudioElement;
+
+      // Simulate metadata already loaded (duration is set)
+      Object.defineProperty(audio, "duration", {
+        value: 5102,
+        configurable: true,
+      });
+      Object.defineProperty(audio, "error", {
+        value: { code: 3, message: "" },
+        configurable: true,
+      });
+      audio.dispatchEvent(new Event("error"));
+      flushSync();
+
+      expect(mockContext.state.error).toBeNull();
+      expect(mockContext.state.isReady).not.toBe(false);
     });
 
     test("ignores MEDIA_ERR_ABORTED (code 1) — triggered by canvas switching", () => {
