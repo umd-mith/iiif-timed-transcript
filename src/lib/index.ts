@@ -185,3 +185,6 @@ export {
   createHlsAdapter,
 } from "./media/hlsUtils";
 export type { HlsConstructor, HlsAdapter } from "./media/hlsUtils";
+
+export { isDashUrl, createDashAdapter } from "./media/dashUtils";
+export type { DashConstructor, DashAdapter } from "./media/dashUtils";

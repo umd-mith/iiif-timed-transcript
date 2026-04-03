@@ -96,6 +96,7 @@ export function createMockPlayerContext(
     mediaType: "audio",
     mediaStrategy: "native",
     hlsAdapter: null,
+    dashAdapter: null,
     annotations: [],
     chapters: [],
     activeChapterId: null,
