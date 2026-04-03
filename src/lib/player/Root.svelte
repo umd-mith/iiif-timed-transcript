@@ -281,11 +281,12 @@
     const Dash =
       dashConstructor ??
       (await import("dashjs")
-        .then((m) =>
-          (
-            m as unknown as { MediaPlayer: () => DashConstructor }
-          ).MediaPlayer(),
-        )
+        .then((m) => {
+          const mod = (m.default ?? m) as unknown as {
+            MediaPlayer: () => DashConstructor;
+          };
+          return mod.MediaPlayer();
+        })
         .catch(() => {
           console.warn(
             "[IIIFPlayer] DASH stream detected but dashjs is not installed. " +
@@ -357,9 +358,11 @@
   // Cleanup on unmount — capture current element and adapter
   $effect(() => {
     const el = player.mediaElement;
-    const adapter = player.hlsAdapter;
+    const hlsAdapter = player.hlsAdapter;
+    const dashAdapter = player.dashAdapter;
     return () => {
-      adapter?.detach();
+      hlsAdapter?.detach();
+      dashAdapter?.detach();
       if (el) {
         el.pause();
         el.src = "";

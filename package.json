@@ -37,10 +37,14 @@
     "LICENSE"
   ],
   "peerDependencies": {
+    "dashjs": "^5.0.0",
     "hls.js": "^1.5.0",
     "svelte": "^5.0.0"
   },
   "peerDependenciesMeta": {
+    "dashjs": {
+      "optional": true
+    },
     "hls.js": {
       "optional": true
     }
