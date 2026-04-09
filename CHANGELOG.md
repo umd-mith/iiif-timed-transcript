@@ -1,5 +1,19 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.14.0
+
+### Minor Changes
+
+- b2c42d5: BREAKING: `buildTranscriptAnnotations()` now returns `{ annotations, skipped }` instead of `Annotation[]`. Annotations without temporal fragments are skipped with structured diagnostics instead of silently defaulting to time 0. Also adds support for AVAnnotate point-in-time annotations (`#t=95,95`) via iiif-media-parsers 0.3.2.
+
+### Patch Changes
+
+- ffefd18: Fix regression: treat MEDIA_ERR_DECODE as transient when metadata already loaded
+
+  MEDIA_ERR_DECODE (code 3) can fire transiently during initial buffering of large files.
+  If the media element already has a valid duration, the decode error is a false alarm.
+  Previously this permanently blocked playback, breaking large WAV files that played fine in 0.12.0.
+
 ## 0.13.1
 
 ### Patch Changes
