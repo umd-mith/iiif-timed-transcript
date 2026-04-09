@@ -18,8 +18,9 @@ let transcript = '';
 let annotations: Annotation[] = [];
 if (canvas) {
 	// Path A: Annotations embedded directly in the manifest
-	annotations = buildTranscriptAnnotations(canvas);
-  transcript = annotations.map((a) => a.text).join(' ');
+	const result = buildTranscriptAnnotations(canvas);
+	annotations = result.annotations;
+	transcript = annotations.map((a) => a.text).join(' ');
 }
 
 // Structured data: VideoObject with transcript for search engines and AI

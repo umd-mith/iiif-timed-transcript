@@ -14,7 +14,11 @@ import {
   parseAnnotationTarget,
   parseRanges,
 } from "@umd-mith/iiif-media-parsers";
-import type { Annotation } from "../sync/types";
+import type {
+  Annotation,
+  TranscriptAnnotationResult,
+  SkippedAnnotation,
+} from "../sync/types";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 
 /**
@@ -615,45 +619,75 @@ export function getSupplementaryTextualBodies(
 }
 
 /**
- * Builds transcript-ready `Annotation[]` from supplementary annotations.
+ * Builds transcript-ready annotations from supplementary annotations on a canvas.
  *
  * Combines body extraction, target parsing (`#t=start,end`), and
  * tag→metadata mapping into the format expected by the transcript UI.
  *
  * - Multiple text bodies on one annotation are joined with a space
  * - Tags are placed in `metadata.tags: string[]`
- * - Annotations without text bodies are skipped (e.g., VTT external resources)
  * - `end` defaults to `start` when absent (point-in-time annotations)
+ *
+ * Annotations are skipped (with diagnostic reasons in `skipped`) when:
+ * - No TextualBody present (e.g., VTT external resources)
+ * - Target has no temporal fragment (`#t=...`), so cannot be placed on timeline
+ * - Target could not be parsed at all
  *
  * @param canvas - IIIF canvas with supplementary annotations
  * @param motivationFilter - Optional motivation filter
- * @returns Array of `Annotation` objects ready for transcript display
+ * @returns Object with `annotations` array and `skipped` diagnostics
  */
 export function buildTranscriptAnnotations(
   canvas: CanvasData,
   motivationFilter?: string | string[],
-): Annotation[] {
+): TranscriptAnnotationResult {
   const grouped = getSupplementaryTextualBodies(canvas, motivationFilter);
-  const result: Annotation[] = [];
+  const annotations: Annotation[] = [];
+  const skipped: SkippedAnnotation[] = [];
   const seenIds = new Set<string>();
 
   for (const item of grouped) {
     // Must have at least one text body to build a transcript annotation
-    if (item.textBodies.length === 0) continue;
+    if (item.textBodies.length === 0) {
+      skipped.push({
+        annotationId: item.annotationId,
+        reason: "no-text-body",
+        target: item.target,
+      });
+      continue;
+    }
 
     const parsed = parseAnnotationTarget(
       item.target as Parameters<typeof parseAnnotationTarget>[0],
     );
-    const start = parsed?.temporal?.start ?? 0;
-    const end = parsed?.temporal?.end ?? start;
 
+    if (!parsed) {
+      skipped.push({
+        annotationId: item.annotationId,
+        reason: "parse-failed",
+        target: item.target,
+      });
+      continue;
+    }
+
+    if (!parsed.temporal) {
+      skipped.push({
+        annotationId: item.annotationId,
+        reason: "no-temporal-fragment",
+        target: item.target,
+      });
+      continue;
+    }
+
+    const start = parsed.temporal.start;
+    const end = parsed.temporal.end ?? start;
     const text = item.textBodies.map((b) => b.value).join(" ");
 
     // AVAnnotate manifests reuse the AnnotationPage URL as every annotation's
     // id, so we deduplicate by appending a suffix when collisions occur.
     let id = item.annotationId;
     if (seenIds.has(id)) {
-      id = `${id}-${result.length}`;
+      id = `${id}-${annotations.length}`;
     }
     seenIds.add(id);
 
@@ -670,10 +704,10 @@ export function buildTranscriptAnnotations(
       };
     }
 
-    result.push(annotation);
+    annotations.push(annotation);
   }
 
-  return result;
+  return { annotations, skipped };
 }
 
 // ============================================================================

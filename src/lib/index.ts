@@ -149,7 +149,12 @@ export {
 // ============================================================================
 
 // Types
-export type { Annotation } from "./sync/types";
+export type {
+  Annotation,
+  TranscriptAnnotationResult,
+  SkippedAnnotation,
+  SkipReason,
+} from "./sync/types";
 
 // Utility functions
 export {

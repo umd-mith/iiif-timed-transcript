@@ -158,6 +158,42 @@ export interface IIIFMediaViewerRef {
 }
 
 /**
+ * Reason an annotation was skipped during transcript building.
+ *
+ * - `no-text-body`: Annotation had no TextualBody (e.g., VTT external resource)
+ * - `no-temporal-fragment`: Target URI lacked a `#t=` fragment, so cannot be
+ *    placed on the transcript timeline
+ * - `parse-failed`: Target was present but could not be parsed (null, empty,
+ *    unrecognized format)
+ */
+export type SkipReason = "no-text-body" | "no-temporal-fragment" | "parse-failed";
+
+/**
+ * Diagnostic record for an annotation that was skipped during transcript building.
+ */
+export interface SkippedAnnotation {
+  /** The annotation's original id */
+  annotationId: string;
+  /** Why the annotation was skipped */
+  reason: SkipReason;
+  /** The raw target value, for debugging */
+  target?: unknown;
+}
+
+/**
+ * Result of building transcript annotations from a canvas.
+ *
+ * Separates successfully parsed annotations from skipped ones,
+ * giving callers structured diagnostics without console noise.
+ */
+export interface TranscriptAnnotationResult {
+  /** Annotations ready for transcript display */
+  annotations: Annotation[];
+  /** Annotations that were skipped, with reasons */
+  skipped: SkippedAnnotation[];
+}
+
+/**
  * Strategy for handling annotation clicks.
  * Determines how the system responds to user interaction.
  */
