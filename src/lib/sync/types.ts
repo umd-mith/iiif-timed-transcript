@@ -166,7 +166,10 @@ export interface IIIFMediaViewerRef {
  * - `parse-failed`: Target was present but could not be parsed (null, empty,
  *    unrecognized format)
  */
-export type SkipReason = "no-text-body" | "no-temporal-fragment" | "parse-failed";
+export type SkipReason =
+  | "no-text-body"
+  | "no-temporal-fragment"
+  | "parse-failed";
 
 /**
  * Diagnostic record for an annotation that was skipped during transcript building.

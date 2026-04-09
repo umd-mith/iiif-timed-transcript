@@ -1155,7 +1155,9 @@ describe("buildTranscriptAnnotations", () => {
     expect(annotations).toHaveLength(1);
     expect(annotations[0]!.startTime).toBe(95);
     expect(annotations[0]!.endTime).toBe(95);
-    expect(annotations[0]!.text).toBe('There is an extended o sound in "move."');
+    expect(annotations[0]!.text).toBe(
+      'There is an extended o sound in "move."',
+    );
     expect(annotations[0]!.metadata).toEqual({ tags: ["Social"] });
   });
 

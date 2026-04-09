@@ -53,8 +53,8 @@
         throw new Error("No canvas found in manifest");
       }
 
-      const result = buildTranscriptAnnotations(canvas);
-      annotations = result.annotations;
+      const built = buildTranscriptAnnotations(canvas);
+      annotations = built.annotations;
       annotationCount = annotations.length;
       isLoading = false;
     } catch (error) {
