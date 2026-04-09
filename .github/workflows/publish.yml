@@ -19,9 +19,11 @@ jobs:
         with:
           node-version: "22"
           cache: "pnpm"
-          registry-url: "https://npm.pkg.github.com"
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm publish --no-git-checks --ignore-scripts
+      - run: |
+          echo "@umd-mith:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN" >> .npmrc
+          pnpm publish --no-git-checks --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
