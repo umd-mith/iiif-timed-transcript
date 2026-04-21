@@ -15,7 +15,10 @@ import type {
   SyncContext,
 } from "./types.js";
 import { DEFAULT_SYNC_CONFIG } from "./config.js";
-import { scrollProgressToTime, getActiveAnnotation } from "./annotationUtils.js";
+import {
+  scrollProgressToTime,
+  getActiveAnnotation,
+} from "./annotationUtils.js";
 
 /**
  * Type alias for SyncController's XState actor

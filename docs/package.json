@@ -1,7 +1,7 @@
 {
   "name": "svelte-iiif-transcript-player-docs",
   "type": "module",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",

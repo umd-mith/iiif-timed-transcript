@@ -32,7 +32,11 @@
  * </IIIFPlayer.Root>
  * ```
  */
-export { IIIFPlayer, getPlayerContext, tryGetPlayerContext } from "./player/index.js";
+export {
+  IIIFPlayer,
+  getPlayerContext,
+  tryGetPlayerContext,
+} from "./player/index.js";
 export type {
   PlayerContext,
   PlayerState,
