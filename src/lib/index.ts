@@ -32,7 +32,7 @@
  * </IIIFPlayer.Root>
  * ```
  */
-export { IIIFPlayer, getPlayerContext, tryGetPlayerContext } from "./player";
+export { IIIFPlayer, getPlayerContext, tryGetPlayerContext } from "./player/index.js";
 export type {
   PlayerContext,
   PlayerState,
@@ -40,24 +40,24 @@ export type {
   MediaStrategy,
   CanvasInfo,
   PlayerRef,
-} from "./player";
+} from "./player/index.js";
 export type {
   TranscriptContext,
   TranscriptState,
   TranscriptActions,
-} from "./player";
+} from "./player/index.js";
 export type {
   SegmentAttrs,
   SegmentSnippetProps,
 } from "./player/TranscriptSegments.svelte";
-export type { TrackDefinition } from "./player";
+export type { TrackDefinition } from "./player/index.js";
 
 // ============================================================================
 // IIIF Utilities (LDA-1964)
 // ============================================================================
 
 // Types
-export type { KeyFrame } from "./iiif/types";
+export type { KeyFrame } from "./iiif/types.js";
 
 // Re-export types from @umd-mith/iiif-media-parsers
 export type {
@@ -99,7 +99,7 @@ export {
   type ChoiceBodyData,
   type AnnotationBodyData,
   type AnnotationPageData,
-} from "./iiif/validators";
+} from "./iiif/validators.js";
 
 // Helper functions
 export {
@@ -134,7 +134,7 @@ export {
   buildCanvasInfoList,
   filterChaptersForCanvas,
   type SupplementaryTextualContent,
-} from "./iiif/helpers";
+} from "./iiif/helpers.js";
 
 // Cache
 export {
@@ -142,7 +142,7 @@ export {
   type IIIFCacheConfig,
   type CacheMetrics,
   type CacheLogger,
-} from "./iiif/cache";
+} from "./iiif/cache.js";
 
 // ============================================================================
 // Sync Utilities
@@ -154,14 +154,14 @@ export type {
   TranscriptAnnotationResult,
   SkippedAnnotation,
   SkipReason,
-} from "./sync/types";
+} from "./sync/types.js";
 
 // Utility functions
 export {
   getActiveAnnotation,
   timeToScrollProgress,
   scrollProgressToTime,
-} from "./sync/annotationUtils";
+} from "./sync/annotationUtils.js";
 
 // ============================================================================
 // Transcript Utilities (LDA-1967)
@@ -170,15 +170,15 @@ export {
 // Use IIIFPlayer.Transcript, IIIFPlayer.TranscriptSearch, IIIFPlayer.TranscriptSegments instead.
 
 // Utility functions remain exported for advanced use cases
-export { formatTimestamp, getAnnotationById } from "./transcript/utils";
-export { getNextIndex, focusSegmentAtIndex } from "./transcript/keyboardNav";
+export { formatTimestamp, getAnnotationById } from "./transcript/utils.js";
+export { getNextIndex, focusSegmentAtIndex } from "./transcript/keyboardNav.js";
 
 // Paragraph merging utility
-export { mergeIntoParagraphs } from "./transcript/paragraphMerger";
+export { mergeIntoParagraphs } from "./transcript/paragraphMerger.js";
 export type {
   MergedParagraph,
   MergeConfig,
-} from "./transcript/paragraphMerger";
+} from "./transcript/paragraphMerger.js";
 
 // ============================================================================
 // Media Utilities
@@ -188,5 +188,5 @@ export {
   isHlsUrl,
   isHlsNativelySupported,
   createHlsAdapter,
-} from "./media/hlsUtils";
-export type { HlsConstructor, HlsAdapter } from "./media/hlsUtils";
+} from "./media/hlsUtils.js";
+export type { HlsConstructor, HlsAdapter } from "./media/hlsUtils.js";

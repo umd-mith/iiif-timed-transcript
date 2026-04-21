@@ -4,7 +4,7 @@
  * Pure utility functions for annotation time-mapping operations.
  */
 
-import type { Annotation } from "./types";
+import type { Annotation } from "./types.js";
 
 /**
  * Get the annotation that should be active at a given time.

@@ -7,9 +7,9 @@ import type {
   AnnotationBodyData,
   TextualBodyData,
   ChoiceBodyData,
-} from "./validators";
-import type { TrackDefinition } from "../player/context";
-import type { CanvasInfo } from "../player/context";
+} from "./validators.js";
+import type { TrackDefinition } from "../player/context.js";
+import type { CanvasInfo } from "../player/context.js";
 import {
   parseAnnotationTarget,
   parseRanges,
@@ -18,7 +18,7 @@ import type {
   Annotation,
   TranscriptAnnotationResult,
   SkippedAnnotation,
-} from "../sync/types";
+} from "../sync/types.js";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 
 /**

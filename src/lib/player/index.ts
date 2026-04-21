@@ -63,7 +63,7 @@ export const IIIFPlayer: {
 };
 
 // Export player context accessors for custom child components
-export { getPlayerContext, tryGetPlayerContext } from "./context";
+export { getPlayerContext, tryGetPlayerContext } from "./context.js";
 
 // Export types
 export type {
@@ -74,9 +74,9 @@ export type {
   CanvasInfo,
   TrackDefinition,
   PlayerRef,
-} from "./context";
+} from "./context.js";
 export type {
   TranscriptContext,
   TranscriptState,
   TranscriptActions,
-} from "./transcript-context";
+} from "./transcript-context.js";

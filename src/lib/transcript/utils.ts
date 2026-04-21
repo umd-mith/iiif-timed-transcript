@@ -1,4 +1,4 @@
-import type { Annotation } from "../sync/types";
+import type { Annotation } from "../sync/types.js";
 
 /**
  * Format time in seconds to MM:SS or H:MM:SS display

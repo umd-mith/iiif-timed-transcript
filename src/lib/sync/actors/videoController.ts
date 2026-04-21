@@ -6,7 +6,7 @@
  */
 
 import { fromPromise } from "xstate";
-import type { IIIFMediaViewerRef } from "../types";
+import type { IIIFMediaViewerRef } from "../types.js";
 
 /**
  * Input configuration for the videoController actor.
