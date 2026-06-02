@@ -86,6 +86,61 @@ export function getThumbnail(resource: {
 }
 
 /**
+ * Extracts the first painting image URL from an auxiliary canvas
+ * (placeholderCanvas / accompanyingCanvas). A body counts as an image when
+ * its `type` is "Image" or its `format` starts with "image/".
+ */
+function extractAuxImageUrl(
+  aux: NonNullable<CanvasData["placeholderCanvas"]>,
+): string | undefined {
+  for (const page of aux.items || []) {
+    for (const annotation of page.items || []) {
+      const body = annotation.body;
+      const bodies = Array.isArray(body) ? body : body ? [body] : [];
+      for (const candidate of bodies) {
+        if (typeof candidate !== "object" || candidate === null) continue;
+        const resource = candidate as {
+          id?: string;
+          type?: string;
+          format?: string;
+        };
+        if (
+          resource.id &&
+          (resource.type === "Image" || resource.format?.startsWith("image/"))
+        ) {
+          return resource.id;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Resolves a poster image URL for a canvas from its IIIF placeholderCanvas,
+ * falling back to accompanyingCanvas. Returns undefined when neither yields an
+ * image.
+ *
+ * Sibling of {@link getThumbnail}: both extract a representative image URL, but
+ * this returns the spec-correct "before playback" poster (IIIF
+ * placeholderCanvas) rather than a navigation thumbnail.
+ *
+ * @param canvas - IIIF canvas
+ * @returns Poster image URL or undefined
+ */
+export function getPosterUrl(canvas: CanvasData): string | undefined {
+  if (canvas.placeholderCanvas) {
+    const url = extractAuxImageUrl(canvas.placeholderCanvas);
+    if (url) return url;
+  }
+  if (canvas.accompanyingCanvas) {
+    const url = extractAuxImageUrl(canvas.accompanyingCanvas);
+    if (url) return url;
+  }
+  return undefined;
+}
+
+/**
  * Gets all canvases from a manifest
  * @param manifest - IIIF manifest
  * @returns Array of canvas objects

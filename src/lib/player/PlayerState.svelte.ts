@@ -41,6 +41,7 @@ export class PlayerStateManager implements PlayerContext {
   mediaElement = $state.raw<HTMLMediaElement | null>(null);
   mediaUrl = $state("");
   mediaType = $state<"audio" | "video">("audio");
+  posterUrl = $state<string | undefined>(undefined);
   mediaStrategy = $state<MediaStrategy>("native");
   hlsAdapter = $state.raw<HlsAdapter | null>(null);
   dashAdapter = $state.raw<DashAdapter | null>(null);
