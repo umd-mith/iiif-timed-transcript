@@ -485,4 +485,49 @@ describe("CanvasSchema poster canvases", () => {
       canvas.accompanyingCanvas?.items?.[0]?.items?.[0]?.body,
     ).toMatchObject({ id: "https://example.org/cover.png", type: "Image" });
   });
+
+  it("degrades a malformed placeholderCanvas to undefined without failing the manifest", () => {
+    // A placeholderCanvas whose annotation omits required motivation/target
+    // (and uses a service serialized in 2.x @id/@type style) must NOT fail
+    // the whole manifest — it should degrade to no poster. Before this guard,
+    // adding placeholder/accompanying to the schema made a bad poster fatal.
+    const manifest = manifestWithCanvasExtras({
+      placeholderCanvas: {
+        id: "https://example.org/canvas/1/placeholder",
+        type: "Canvas",
+        width: 640,
+        height: 360,
+        items: [
+          {
+            id: "https://example.org/canvas/1/placeholder/page",
+            type: "AnnotationPage",
+            items: [
+              {
+                // missing `motivation` and `target` — invalid per AnnotationSchema
+                id: "https://example.org/canvas/1/placeholder/anno",
+                body: {
+                  id: "https://example.org/poster.png",
+                  type: "Image",
+                  service: [
+                    {
+                      "@id": "https://example.org/iiif/poster",
+                      "@type": "ImageService3",
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    // Must not throw, and the main canvas must survive intact.
+    const result = ManifestSchema.parse(manifest);
+    const canvas = result.items[0]!;
+    expect(canvas.placeholderCanvas).toBeUndefined();
+    expect(canvas.items?.[0]?.items?.[0]?.body).toMatchObject({
+      id: "https://example.org/video.mp4",
+    });
+  });
 });

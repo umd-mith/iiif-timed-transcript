@@ -247,12 +247,17 @@ const CanvasSchema = z
       .array(AnnotationPageSchema)
       .optional()
       .describe("Supplementary annotation pages (non-painting)"),
-    placeholderCanvas: AuxiliaryCanvasSchema.optional().describe(
-      "Canvas shown before playback (IIIF placeholderCanvas) — poster source",
-    ),
-    accompanyingCanvas: AuxiliaryCanvasSchema.optional().describe(
-      "Canvas shown during playback (IIIF accompanyingCanvas)",
-    ),
+    // `.catch(undefined)`: a malformed placeholder/accompanying canvas must
+    // degrade to "no poster", never fail the whole manifest. These are
+    // optional enrichment, not load-bearing content.
+    placeholderCanvas: AuxiliaryCanvasSchema.optional()
+      .catch(undefined)
+      .describe(
+        "Canvas shown before playback (IIIF placeholderCanvas) — poster source",
+      ),
+    accompanyingCanvas: AuxiliaryCanvasSchema.optional()
+      .catch(undefined)
+      .describe("Canvas shown during playback (IIIF accompanyingCanvas)"),
   })
   .describe("IIIF canvas")
   .refine(
