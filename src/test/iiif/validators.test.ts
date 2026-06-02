@@ -15,6 +15,7 @@ import {
   ChoiceBodySchema,
   AnnotationBodySchema,
   ExternalResourceSchema,
+  ManifestSchema,
 } from "../../lib/iiif/validators";
 
 describe("IIIF Annotation Body Schemas", () => {
@@ -377,6 +378,156 @@ describe("IIIF Annotation Body Schemas", () => {
 
       const result = AnnotationBodySchema.safeParse(body);
       expect(result.success).toBe(true);
+    });
+  });
+});
+
+describe("CanvasSchema poster canvases", () => {
+  function manifestWithCanvasExtras(extras: Record<string, unknown>) {
+    return {
+      "@context": "http://iiif.io/api/presentation/3/context.json",
+      id: "https://example.org/manifest",
+      type: "Manifest",
+      label: { en: ["Test"] },
+      items: [
+        {
+          id: "https://example.org/canvas/1",
+          type: "Canvas",
+          width: 640,
+          height: 360,
+          duration: 100,
+          items: [
+            {
+              id: "https://example.org/canvas/1/page",
+              type: "AnnotationPage",
+              items: [
+                {
+                  id: "https://example.org/canvas/1/anno",
+                  type: "Annotation",
+                  motivation: "painting",
+                  body: {
+                    id: "https://example.org/video.mp4",
+                    type: "Video",
+                    format: "video/mp4",
+                    duration: 100,
+                  },
+                  target: "https://example.org/canvas/1",
+                },
+              ],
+            },
+          ],
+          ...extras,
+        },
+      ],
+    };
+  }
+
+  function imageAuxCanvas(suffix: string, imageId: string) {
+    return {
+      id: `https://example.org/canvas/1/${suffix}`,
+      type: "Canvas",
+      width: 640,
+      height: 360,
+      items: [
+        {
+          id: `https://example.org/canvas/1/${suffix}/page`,
+          type: "AnnotationPage",
+          items: [
+            {
+              id: `https://example.org/canvas/1/${suffix}/anno`,
+              type: "Annotation",
+              motivation: "painting",
+              body: {
+                id: imageId,
+                type: "Image",
+                format: "image/png",
+                width: 640,
+                height: 360,
+              },
+              target: `https://example.org/canvas/1/${suffix}`,
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  it("should preserve placeholderCanvas with its image body after parsing", () => {
+    const manifest = manifestWithCanvasExtras({
+      placeholderCanvas: imageAuxCanvas(
+        "placeholder",
+        "https://example.org/poster.png",
+      ),
+    });
+
+    const result = ManifestSchema.parse(manifest);
+    const canvas = result.items[0]!;
+
+    expect(canvas.placeholderCanvas).toBeDefined();
+    expect(
+      canvas.placeholderCanvas?.items?.[0]?.items?.[0]?.body,
+    ).toMatchObject({ id: "https://example.org/poster.png", type: "Image" });
+  });
+
+  it("should preserve accompanyingCanvas with its image body after parsing", () => {
+    const manifest = manifestWithCanvasExtras({
+      accompanyingCanvas: imageAuxCanvas(
+        "accompanying",
+        "https://example.org/cover.png",
+      ),
+    });
+
+    const result = ManifestSchema.parse(manifest);
+    const canvas = result.items[0]!;
+
+    expect(canvas.accompanyingCanvas).toBeDefined();
+    expect(
+      canvas.accompanyingCanvas?.items?.[0]?.items?.[0]?.body,
+    ).toMatchObject({ id: "https://example.org/cover.png", type: "Image" });
+  });
+
+  it("degrades a malformed placeholderCanvas to undefined without failing the manifest", () => {
+    // A placeholderCanvas whose annotation omits required motivation/target
+    // (and uses a service serialized in 2.x @id/@type style) must NOT fail
+    // the whole manifest — it should degrade to no poster. Before this guard,
+    // adding placeholder/accompanying to the schema made a bad poster fatal.
+    const manifest = manifestWithCanvasExtras({
+      placeholderCanvas: {
+        id: "https://example.org/canvas/1/placeholder",
+        type: "Canvas",
+        width: 640,
+        height: 360,
+        items: [
+          {
+            id: "https://example.org/canvas/1/placeholder/page",
+            type: "AnnotationPage",
+            items: [
+              {
+                // missing `motivation` and `target` — invalid per AnnotationSchema
+                id: "https://example.org/canvas/1/placeholder/anno",
+                body: {
+                  id: "https://example.org/poster.png",
+                  type: "Image",
+                  service: [
+                    {
+                      "@id": "https://example.org/iiif/poster",
+                      "@type": "ImageService3",
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    // Must not throw, and the main canvas must survive intact.
+    const result = ManifestSchema.parse(manifest);
+    const canvas = result.items[0]!;
+    expect(canvas.placeholderCanvas).toBeUndefined();
+    expect(canvas.items?.[0]?.items?.[0]?.body).toMatchObject({
+      id: "https://example.org/video.mp4",
     });
   });
 });

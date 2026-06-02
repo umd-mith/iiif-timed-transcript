@@ -38,7 +38,7 @@ const ServiceReferenceSchema = z
       .describe("Service type (ImageService3, AuthCookieService1, etc.)"),
     profile: z.string().optional().describe("Service profile level"),
   })
-  .passthrough() // Allow additional service-specific properties
+  .loose() // Allow additional service-specific properties
   .describe("IIIF service reference");
 
 /**
@@ -104,7 +104,7 @@ const SelectorSchema = z
     value: z.string().optional().describe("Selector value"),
     conformsTo: z.string().optional().describe("Selector specification URI"),
   })
-  .passthrough() // Allow additional selector-specific properties
+  .loose() // Allow additional selector-specific properties
   .describe("W3C Web Annotation Selector");
 
 /**
@@ -204,6 +204,22 @@ export const AnnotationPageSchema = z
   })
   .describe("IIIF annotation page");
 
+// Auxiliary canvas schema for placeholderCanvas / accompanyingCanvas.
+// These are full Canvases per the spec, but we only need their painting
+// annotations (to extract a poster image), so this is a lightweight subset.
+const AuxiliaryCanvasSchema = z
+  .object({
+    id: IIIFIdentifier,
+    type: z.literal("Canvas"),
+    width: z.number().positive().optional(),
+    height: z.number().positive().optional(),
+    items: z
+      .array(AnnotationPageSchema)
+      .optional()
+      .describe("Array of annotation pages"),
+  })
+  .describe("IIIF auxiliary canvas (placeholder/accompanying)");
+
 // Canvas schema with comprehensive validation
 const CanvasSchema = z
   .object({
@@ -231,6 +247,17 @@ const CanvasSchema = z
       .array(AnnotationPageSchema)
       .optional()
       .describe("Supplementary annotation pages (non-painting)"),
+    // `.catch(undefined)`: a malformed placeholder/accompanying canvas must
+    // degrade to "no poster", never fail the whole manifest. These are
+    // optional enrichment, not load-bearing content.
+    placeholderCanvas: AuxiliaryCanvasSchema.optional()
+      .catch(undefined)
+      .describe(
+        "Canvas shown before playback (IIIF placeholderCanvas) — poster source",
+      ),
+    accompanyingCanvas: AuxiliaryCanvasSchema.optional()
+      .catch(undefined)
+      .describe("Canvas shown during playback (IIIF accompanyingCanvas)"),
   })
   .describe("IIIF canvas")
   .refine(

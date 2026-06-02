@@ -1024,4 +1024,116 @@ describe("Root component", () => {
       errorSpy.mockRestore();
     });
   });
+
+  describe("poster resolution", () => {
+    function videoManifest(extras: Record<string, unknown>) {
+      return {
+        "@context": "http://iiif.io/api/presentation/3/context.json",
+        id: "https://example.com/manifest",
+        type: "Manifest",
+        label: { en: ["Poster Test"] },
+        items: [
+          {
+            id: "https://example.com/canvas/1",
+            type: "Canvas",
+            width: 640,
+            height: 360,
+            duration: 100,
+            items: [
+              {
+                id: "https://example.com/canvas/1/page",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/1/anno",
+                    type: "Annotation",
+                    motivation: "painting",
+                    body: {
+                      id: "https://example.com/video.mp4",
+                      type: "Video",
+                      format: "video/mp4",
+                      duration: 100,
+                    },
+                    target: "https://example.com/canvas/1",
+                  },
+                ],
+              },
+            ],
+            ...extras,
+          },
+        ],
+      };
+    }
+
+    const placeholderCanvas = {
+      id: "https://example.com/canvas/1/placeholder",
+      type: "Canvas",
+      width: 640,
+      height: 360,
+      items: [
+        {
+          id: "https://example.com/canvas/1/placeholder/page",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.com/canvas/1/placeholder/anno",
+              type: "Annotation",
+              motivation: "painting",
+              body: {
+                id: "https://example.com/poster.png",
+                type: "Image",
+                format: "image/png",
+                width: 640,
+                height: 360,
+              },
+              target: "https://example.com/canvas/1/placeholder",
+            },
+          ],
+        },
+      ],
+    };
+
+    test("populates context posterUrl from placeholderCanvas", async () => {
+      mockFetchManifest(videoManifest({ placeholderCanvas }));
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/poster-placeholder.json",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.posterUrl).toBe("https://example.com/poster.png");
+      });
+    });
+
+    test("leaves context posterUrl undefined when no placeholder/accompanying canvas", async () => {
+      mockFetchManifest(videoManifest({}));
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/poster-none.json",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBe("https://example.com/video.mp4");
+      });
+      expect(capturedCtx!.posterUrl).toBeUndefined();
+    });
+  });
 });

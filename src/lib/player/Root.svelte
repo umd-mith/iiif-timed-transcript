@@ -5,6 +5,7 @@
   import {
     getFirstCanvas,
     getPrimaryResource,
+    getPosterUrl,
     isAudioCanvas,
     isVideoCanvas,
     getSupplementaryVTTTracks,
@@ -135,6 +136,7 @@
 
     // Clear mediaUrl to trigger Viewer unmount
     player.mediaUrl = "";
+    player.posterUrl = undefined;
 
     // Update active index and load new canvas
     player.canvasIndex = index;
@@ -231,6 +233,11 @@
       }
 
       player.mediaUrl = primaryResource.id;
+
+      // Resolve poster image from IIIF placeholderCanvas/accompanyingCanvas.
+      // Consumed by <video poster> in Viewer (video canvases only); the
+      // explicit `poster` prop on Viewer takes precedence over this.
+      player.posterUrl = getPosterUrl(canvas);
 
       // Determine media strategy for HLS streams
       if (isHlsUrl(primaryResource.id, primaryResource.format)) {

@@ -109,6 +109,7 @@ export {
 export {
   getLabel,
   getThumbnail,
+  getPosterUrl,
   getCanvases,
   getFirstCanvas,
   getManifests,

@@ -6,15 +6,19 @@
     controls = false,
     crossOrigin,
     preload = "auto",
-    tracks = [],
     poster,
+    tracks = [],
     class: className = "",
   }: {
     controls?: boolean;
     crossOrigin?: "anonymous" | "use-credentials";
     preload?: "auto" | "metadata" | "none";
-    tracks?: TrackDefinition[];
+    /**
+     * Poster image for video (the still shown before playback). Overrides the
+     * IIIF-derived poster. Pass "" to suppress the derived poster entirely.
+     */
     poster?: string;
+    tracks?: TrackDefinition[];
     class?: string;
   } = $props();
 
@@ -24,6 +28,10 @@
 
   // Merge tracks: explicit prop overrides auto-discovered context tracks
   const effectiveTracks = $derived(tracks.length > 0 ? tracks : ctx.tracks);
+
+  // Explicit poster prop overrides the IIIF-derived poster from context.
+  // `poster=""` suppresses the derived poster (empty string is not nullish).
+  const resolvedPoster = $derived(poster ?? ctx.posterUrl);
 
   // When hls-js strategy, src is managed by the adapter, not via attribute
   // When an adapter manages the source (HLS or DASH), don't set src attribute
@@ -175,9 +183,9 @@
     <video
       bind:this={localMediaElement}
       src={mediaSrc}
+      poster={resolvedPoster || undefined}
       {controls}
       {preload}
-      {poster}
       crossorigin={crossOrigin || undefined}
       class={className}
       style="width: 100%;"

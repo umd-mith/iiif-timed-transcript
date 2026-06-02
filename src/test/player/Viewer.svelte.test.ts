@@ -828,30 +828,6 @@ describe("Viewer", () => {
     });
   });
 
-  test("sets poster attribute on video element", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    const mockContext = createMockPlayerContext({
-      mediaUrl: "https://example.com/video.mp4",
-      mediaType: "video",
-    });
-
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: mockContext,
-        children: createChildSnippet(target, Viewer, {
-          poster: "https://example.com/poster.jpg",
-        }),
-      },
-    });
-    flushSync();
-
-    const videoElement = target.querySelector("video") as HTMLVideoElement;
-    expect(videoElement?.poster).toBe("https://example.com/poster.jpg");
-  });
-
   test("sets preload on video elements too", () => {
     target = document.createElement("div");
     document.body.appendChild(target);
@@ -872,5 +848,127 @@ describe("Viewer", () => {
 
     const videoElement = target.querySelector("video") as HTMLVideoElement;
     expect(videoElement?.preload).toBe("auto");
+  });
+
+  describe("poster", () => {
+    test("sets the video poster attribute from the poster prop", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer, {
+            poster: "https://example.com/poster.png",
+          }),
+        },
+      });
+      flushSync();
+
+      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      expect(videoElement?.poster).toBe("https://example.com/poster.png");
+    });
+
+    test("uses context posterUrl when no poster prop is given", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        posterUrl: "https://example.com/derived.png",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer),
+        },
+      });
+      flushSync();
+
+      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      expect(videoElement?.poster).toBe("https://example.com/derived.png");
+    });
+
+    test("poster prop overrides context posterUrl", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        posterUrl: "https://example.com/derived.png",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer, {
+            poster: "https://example.com/explicit.png",
+          }),
+        },
+      });
+      flushSync();
+
+      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      expect(videoElement?.poster).toBe("https://example.com/explicit.png");
+    });
+
+    test("does not set a poster attribute on audio elements", () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/audio.mp3",
+        mediaType: "audio",
+        posterUrl: "https://example.com/derived.png",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer, {
+            poster: "https://example.com/explicit.png",
+          }),
+        },
+      });
+      flushSync();
+
+      const audioElement = target.querySelector("audio");
+      expect(audioElement?.getAttribute("poster")).toBeNull();
+    });
+
+    test('poster="" suppresses the IIIF-derived poster', () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        posterUrl: "https://example.com/derived.png",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer, { poster: "" }),
+        },
+      });
+      flushSync();
+
+      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      expect(videoElement?.getAttribute("poster")).toBeNull();
+    });
   });
 });
