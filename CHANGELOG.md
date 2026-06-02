@@ -1,5 +1,15 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.15.0
+
+### Minor Changes
+
+- 2c60daf: Add poster image support for video canvases. `IIIFPlayer.Viewer` now accepts a `poster` prop (passed to the native `<video poster>` attribute), and when omitted the poster is auto-derived from the IIIF manifest's `placeholderCanvas`, falling back to `accompanyingCanvas`. A new `getPosterUrl(canvas)` helper is exported for resolving a canvas's poster URL directly.
+
+### Patch Changes
+
+- 7718317: Accessibility: the default transcript segment now exposes `role="button"` (it already had click/keyboard activation and `aria-current`). The segments container is a labelled `role="group"` — read-first semantics, since a transcript is primarily readable text rather than a row of action controls — and its roving-tabindex arrow-key navigation remains as a progressive keyboard enhancement. Resolves the `a11y_no_static_element_interactions` and `a11y_no_noninteractive_tabindex` warnings; the container's keydown handler carries a scoped `svelte-ignore` for `a11y_no_noninteractive_element_interactions`. The custom-segment `segmentAttrs` API is unchanged (still role-free — consumers own their element semantics).
+
 ## 0.14.1
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # svelte-iiif-transcript-player-docs
 
+## 0.0.7
+
+### Patch Changes
+
+- Updated dependencies [2c60daf]
+- Updated dependencies [7718317]
+  - @umd-mith/svelte-iiif-transcript-player@0.15.0
+
 ## 0.0.6
 
 ### Patch Changes
