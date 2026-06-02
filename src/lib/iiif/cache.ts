@@ -1,5 +1,5 @@
 import QuickLRU from "quick-lru";
-import type { ManifestData } from "./validators";
+import type { ManifestData } from "./validators.js";
 
 /**
  * Logger interface for cache events

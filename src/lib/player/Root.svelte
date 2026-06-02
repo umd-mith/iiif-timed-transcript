@@ -281,12 +281,8 @@
     const Dash =
       dashConstructor ??
       (await import("dashjs")
-        .then((m) => {
-          const mod = (m.default ?? m) as unknown as {
-            MediaPlayer: () => DashConstructor;
-          };
-          return mod.MediaPlayer();
-        })
+        // dashjs 5.x is ESM-only with a named `MediaPlayer` factory export.
+        .then((m) => m.MediaPlayer())
         .catch(() => {
           console.warn(
             "[IIIFPlayer] DASH stream detected but dashjs is not installed. " +

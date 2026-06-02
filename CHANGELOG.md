@@ -1,5 +1,39 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+## 0.14.1
+
+### Patch Changes
+
+- 03643c9: Add explicit `.js` / `/index.js` extensions to all internal relative imports so the package's `dist/` output conforms to the Node ESM spec (directory imports and extensionless specifiers are not permitted in Node ESM).
+
+  This fixes `ERR_UNSUPPORTED_DIR_IMPORT` and `ERR_MODULE_NOT_FOUND` errors seen when the package is resolved by Node's native resolver — for example during Astro SSR prerendering, or when another Vite plugin (such as `@tailwindcss/vite` v4, which transitively registers a Node ESM loader hook via `@tailwindcss/node`) forwards resolution to Node's defaults.
+
+  No API changes. Consumers using `ssr.noExternal: ['@umd-mith/svelte-iiif-transcript-player']` in their Vite/Astro config remain the recommended pattern for SSR contexts.
+
+## 0.14.0
+
+### Minor Changes
+
+- b2c42d5: BREAKING: `buildTranscriptAnnotations()` now returns `{ annotations, skipped }` instead of `Annotation[]`. Annotations without temporal fragments are skipped with structured diagnostics instead of silently defaulting to time 0. Also adds support for AVAnnotate point-in-time annotations (`#t=95,95`) via iiif-media-parsers 0.3.2.
+
+### Patch Changes
+
+- ffefd18: Fix regression: treat MEDIA_ERR_DECODE as transient when metadata already loaded
+
+  MEDIA_ERR_DECODE (code 3) can fire transiently during initial buffering of large files.
+  If the media element already has a valid duration, the decode error is a false alarm.
+  Previously this permanently blocked playback, breaking large WAV files that played fine in 0.12.0.
+
+## 0.13.1
+
+### Patch Changes
+
+- ffefd18: Fix regression: treat MEDIA_ERR_DECODE as transient when metadata already loaded
+
+  MEDIA_ERR_DECODE (code 3) can fire transiently during initial buffering of large files.
+  If the media element already has a valid duration, the decode error is a false alarm.
+  Previously this permanently blocked playback, breaking large WAV files that played fine in 0.12.0.
+
 ## 0.13.0
 
 ### Minor Changes

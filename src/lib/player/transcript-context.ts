@@ -1,5 +1,5 @@
 import { createContext } from "svelte";
-import type { Annotation } from "../sync/types";
+import type { Annotation } from "../sync/types.js";
 
 export interface TranscriptState {
   annotations: Annotation[];

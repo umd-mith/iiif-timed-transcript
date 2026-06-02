@@ -1,8 +1,8 @@
 import { createContext } from "svelte";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
-import type { HlsAdapter } from "../media/hlsUtils";
-import type { DashAdapter } from "../media/dashUtils";
-import type { Annotation } from "../sync/types";
+import type { HlsAdapter } from "../media/hlsUtils.js";
+import type { DashAdapter } from "../media/dashUtils.js";
+import type { Annotation } from "../sync/types.js";
 
 export interface TrackDefinition {
   src: string;

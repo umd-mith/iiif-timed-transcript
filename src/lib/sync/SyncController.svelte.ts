@@ -7,15 +7,18 @@
 
 import { createActor } from "xstate";
 import type { Actor } from "xstate";
-import { syncMachine } from "./syncMachine";
+import { syncMachine } from "./syncMachine.js";
 import type {
   SyncConfig,
   IIIFMediaViewerRef,
   Annotation,
   SyncContext,
-} from "./types";
-import { DEFAULT_SYNC_CONFIG } from "./config";
-import { scrollProgressToTime, getActiveAnnotation } from "./annotationUtils";
+} from "./types.js";
+import { DEFAULT_SYNC_CONFIG } from "./config.js";
+import {
+  scrollProgressToTime,
+  getActiveAnnotation,
+} from "./annotationUtils.js";
 
 /**
  * Type alias for SyncController's XState actor

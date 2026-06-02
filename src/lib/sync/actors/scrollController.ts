@@ -6,7 +6,7 @@
  */
 
 import { fromPromise } from "xstate";
-import type { Annotation } from "../types";
+import type { Annotation } from "../types.js";
 
 /**
  * Input configuration for the scrollController actor.

@@ -720,6 +720,27 @@ const lakelandVttAnnotation = {
   target: "https://example.org/canvas/1",
 };
 
+/** AVAnnotate point-in-time annotation (#t=95,95 — equal start and end) */
+const avAnnotatePointAnnotation = {
+  id: "https://AVAnnotate.github.io/voices/canvas/3/page1",
+  type: "Annotation" as const,
+  motivation: ["commenting", "tagging"],
+  body: [
+    {
+      type: "TextualBody" as const,
+      value: 'There is an extended o sound in "move."',
+      format: "text/plain",
+      purpose: "commenting",
+    },
+    {
+      type: "TextualBody" as const,
+      value: "Social",
+      purpose: "tagging",
+    },
+  ],
+  target: "https://example.org/canvas/1#t=95,95",
+};
+
 /** Point-in-time annotation (#t=3 — start only, no end) */
 const pointInTimeAnnotation = {
   id: "https://example.org/annotation/point",
@@ -989,7 +1010,7 @@ describe("getSupplementaryTextualBodies", () => {
 });
 
 describe("buildTranscriptAnnotations", () => {
-  it("should build Annotation[] from AVAnnotate multi-body pattern", () => {
+  it("should return annotations and skipped arrays", () => {
     const canvas = createSupplementaryCanvas([
       {
         id: "https://example.org/page/supp",
@@ -1000,8 +1021,10 @@ describe("buildTranscriptAnnotations", () => {
 
     const result = buildTranscriptAnnotations(canvas);
 
-    expect(result).toHaveLength(1);
-    expect(result[0]).toEqual({
+    expect(result).toHaveProperty("annotations");
+    expect(result).toHaveProperty("skipped");
+    expect(result.annotations).toHaveLength(1);
+    expect(result.annotations[0]).toEqual({
       id: "https://example.org/annotation/av-1",
       startTime: 0,
       endTime: 5.2,
@@ -1019,13 +1042,13 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas);
+    const { annotations } = buildTranscriptAnnotations(canvas);
 
-    expect(result).toHaveLength(2);
-    expect(result[0]!.startTime).toBe(0);
-    expect(result[0]!.endTime).toBe(5.2);
-    expect(result[1]!.startTime).toBe(5.2);
-    expect(result[1]!.endTime).toBe(12);
+    expect(annotations).toHaveLength(2);
+    expect(annotations[0]!.startTime).toBe(0);
+    expect(annotations[0]!.endTime).toBe(5.2);
+    expect(annotations[1]!.startTime).toBe(5.2);
+    expect(annotations[1]!.endTime).toBe(12);
   });
 
   it("should join multiple text bodies with space", () => {
@@ -1037,9 +1060,9 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas);
+    const { annotations } = buildTranscriptAnnotations(canvas);
 
-    expect(result[0]!.text).toBe(
+    expect(annotations[0]!.text).toBe(
       "Can you tell us about growing up? A second thought on this.",
     );
   });
@@ -1053,9 +1076,9 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas);
+    const { annotations } = buildTranscriptAnnotations(canvas);
 
-    expect(result[0]!.metadata).toEqual({ tags: ["Narrator"] });
+    expect(annotations[0]!.metadata).toEqual({ tags: ["Narrator"] });
   });
 
   it("should omit metadata when no tags", () => {
@@ -1078,13 +1101,15 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas);
+    const { annotations } = buildTranscriptAnnotations(canvas);
 
-    expect(result).toHaveLength(1);
-    expect(result[0]!.metadata).toBeUndefined();
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]!.metadata).toBeUndefined();
   });
 
-  it("should return empty array for canvas with no supplementary text content", () => {
+  it("should return empty result for canvas with only VTT annotations", () => {
+    // VTT annotations (type: "Text") are filtered out upstream by
+    // getSupplementaryTextualBodies — they never reach the skip logic
     const canvas = createSupplementaryCanvas([
       {
         id: "https://example.org/page/supp",
@@ -1093,9 +1118,10 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas);
+    const { annotations, skipped } = buildTranscriptAnnotations(canvas);
 
-    expect(result).toEqual([]);
+    expect(annotations).toEqual([]);
+    expect(skipped).toEqual([]);
   });
 
   it("should handle point-in-time annotations (start only, no end)", () => {
@@ -1107,15 +1133,35 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas);
+    const { annotations } = buildTranscriptAnnotations(canvas);
 
     // #t=3 → temporal: { start: 3 } (no end), builder defaults end to start
-    expect(result).toHaveLength(1);
-    expect(result[0]!.startTime).toBe(3);
-    expect(result[0]!.endTime).toBe(3);
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]!.startTime).toBe(3);
+    expect(annotations[0]!.endTime).toBe(3);
   });
 
-  it("should default start/end to 0 when target has no temporal fragment", () => {
+  it("should handle AVAnnotate equal start/end pattern: #t=95,95", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [avAnnotatePointAnnotation],
+      },
+    ]);
+
+    const { annotations } = buildTranscriptAnnotations(canvas);
+
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]!.startTime).toBe(95);
+    expect(annotations[0]!.endTime).toBe(95);
+    expect(annotations[0]!.text).toBe(
+      'There is an extended o sound in "move."',
+    );
+    expect(annotations[0]!.metadata).toEqual({ tags: ["Social"] });
+  });
+
+  it("should skip annotations without temporal fragment and report reason", () => {
     const canvas = createSupplementaryCanvas([
       {
         id: "https://example.org/page/supp",
@@ -1135,10 +1181,15 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas);
+    const { annotations, skipped } = buildTranscriptAnnotations(canvas);
 
-    expect(result[0]!.startTime).toBe(0);
-    expect(result[0]!.endTime).toBe(0);
+    expect(annotations).toHaveLength(0);
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]).toEqual({
+      annotationId: "https://example.org/annotation/no-time",
+      reason: "no-temporal-fragment",
+      target: "https://example.org/canvas/1",
+    });
   });
 
   it("should respect motivation filter", () => {
@@ -1150,11 +1201,11 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas, "supplementing");
+    const { annotations } = buildTranscriptAnnotations(canvas, "supplementing");
 
     // Only pointInTimeAnnotation has motivation "supplementing"
-    expect(result).toHaveLength(1);
-    expect(result[0]!.id).toBe(pointInTimeAnnotation.id);
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]!.id).toBe(pointInTimeAnnotation.id);
   });
 
   it("should generate unique IDs when annotations share the same id (AVAnnotate pattern)", () => {
@@ -1171,14 +1222,14 @@ describe("buildTranscriptAnnotations", () => {
       },
     ]);
 
-    const result = buildTranscriptAnnotations(canvas);
+    const { annotations } = buildTranscriptAnnotations(canvas);
 
-    expect(result).toHaveLength(2);
+    expect(annotations).toHaveLength(2);
     // First gets the original id, second gets a suffixed id
-    expect(result[0]!.id).toBe(sharedId);
-    expect(result[1]!.id).toBe(`${sharedId}-1`);
+    expect(annotations[0]!.id).toBe(sharedId);
+    expect(annotations[1]!.id).toBe(`${sharedId}-1`);
     // All IDs must be unique
-    const ids = result.map((a) => a.id);
+    const ids = annotations.map((a) => a.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 });

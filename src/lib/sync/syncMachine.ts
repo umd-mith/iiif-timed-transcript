@@ -17,14 +17,14 @@
  */
 
 import { setup, assign } from "xstate";
-import type { SyncContext, SyncEvent, SyncPriority } from "./types";
-import { videoController } from "./actors/videoController";
-import { scrollController } from "./actors/scrollController";
+import type { SyncContext, SyncEvent, SyncPriority } from "./types.js";
+import { videoController } from "./actors/videoController.js";
+import { scrollController } from "./actors/scrollController.js";
 import {
   getActiveAnnotation,
   getActiveAnnotationWithIndex,
   scrollProgressToTime,
-} from "./annotationUtils";
+} from "./annotationUtils.js";
 
 /**
  * Create initial context for the sync machine.

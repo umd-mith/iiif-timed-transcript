@@ -8,8 +8,8 @@ importers:
   .:
     dependencies:
       "@umd-mith/iiif-media-parsers":
-        specifier: ^0.3.1
-        version: 0.3.1
+        specifier: ^0.3.2
+        version: 0.3.2
       quick-lru:
         specifier: ^7.3.0
         version: 7.3.0
@@ -2078,10 +2078,10 @@ packages:
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
 
-  "@umd-mith/iiif-media-parsers@0.3.1":
+  "@umd-mith/iiif-media-parsers@0.3.2":
     resolution:
       {
-        integrity: sha512-3kGwtRn/c3ZLKK1rKEnrR6DgFoE1vwQY/BYbvyj47JkqQWT3VUPyUIwOW19SrZNxx6D8eS6uUQ88Mzo3PiDjBg==,
+        integrity: sha512-BE2R/iNTA005ZwBqu6/WSsJ9PFyf9kNA2F664NFSuwM9PLSprLqvzwbdVgg0UMrE8XyitNvBC1Cv4Tlr/M/yxw==,
       }
     engines: { node: ">=20.0.0" }
 
@@ -7408,7 +7408,7 @@ snapshots:
       "@typescript-eslint/types": 8.56.1
       eslint-visitor-keys: 5.0.1
 
-  "@umd-mith/iiif-media-parsers@0.3.1": {}
+  "@umd-mith/iiif-media-parsers@0.3.2": {}
 
   "@ungap/structured-clone@1.3.0": {}
 

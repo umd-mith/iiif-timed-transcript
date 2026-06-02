@@ -1,4 +1,4 @@
-import type { ManifestData } from "../iiif/validators";
+import type { ManifestData } from "../iiif/validators.js";
 
 /**
  * Module-level cache for manifest fetches.

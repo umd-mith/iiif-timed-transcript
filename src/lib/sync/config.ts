@@ -4,7 +4,7 @@
  * Default configuration values for the bidirectional sync system.
  */
 
-import type { SyncConfig } from "./types";
+import type { SyncConfig } from "./types.js";
 
 /**
  * Default configuration values.

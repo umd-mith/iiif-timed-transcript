@@ -1,6 +1,6 @@
 {
   "name": "@umd-mith/svelte-iiif-transcript-player",
-  "version": "0.13.0",
+  "version": "0.14.1",
   "description": "Svelte 5 component library for synchronized IIIF media playback with transcript navigation",
   "keywords": [
     "svelte",
@@ -93,7 +93,7 @@
     "vitest-browser-svelte": "^2.0.2"
   },
   "dependencies": {
-    "@umd-mith/iiif-media-parsers": "^0.3.1",
+    "@umd-mith/iiif-media-parsers": "^0.3.2",
     "quick-lru": "^7.3.0",
     "xstate": "^5.0.0",
     "zod": "^4.3.6"

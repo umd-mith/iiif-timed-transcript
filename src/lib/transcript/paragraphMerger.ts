@@ -1,4 +1,4 @@
-import type { Annotation } from "../sync/types";
+import type { Annotation } from "../sync/types.js";
 
 export interface MergedParagraph {
   /** Positional identifier within a single merge result (e.g., "para-0"). Not stable across different inputs — IDs shift if annotations are filtered and re-merged. */

@@ -21,7 +21,7 @@ const canvas = manifest ? getFirstCanvas(manifest) : undefined;
 let transcript = '';
 if (canvas) {
 	// Path A: Annotations embedded directly in the manifest
-	const annotations = buildTranscriptAnnotations(canvas);
+	const { annotations } = buildTranscriptAnnotations(canvas);
 	if (annotations.length > 0) {
 		transcript = annotations.map((a) => a.text).join(' ');
 	} else {
@@ -207,7 +207,7 @@ const canvas = data ? getFirstCanvas(data) : undefined;
 let transcript = '';
 if (canvas) {
   // Path A: Transcript embedded as IIIF annotations
-  const annotations = buildTranscriptAnnotations(canvas);
+  const { annotations } = buildTranscriptAnnotations(canvas);
   if (annotations.length > 0) {
     transcript = annotations.map(a => a.text).join(' ');
   } else {

@@ -14,11 +14,11 @@ import type {
   MediaStrategy,
   TrackDefinition,
   CanvasInfo,
-} from "./context";
-import type { HlsAdapter } from "../media/hlsUtils";
-import type { DashAdapter } from "../media/dashUtils";
+} from "./context.js";
+import type { HlsAdapter } from "../media/hlsUtils.js";
+import type { DashAdapter } from "../media/dashUtils.js";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
-import type { Annotation } from "../sync/types";
+import type { Annotation } from "../sync/types.js";
 
 export interface PlayerStateManagerOptions {
   onRetry?: () => Promise<void>;

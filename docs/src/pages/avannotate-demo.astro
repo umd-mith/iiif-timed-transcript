@@ -62,8 +62,9 @@ const { data } = ManifestSchema.safeParse(manifest);
 
 // 2. Extract transcript annotations from canvas.annotations
 const canvas = getFirstCanvas(data);
-const annotations = buildTranscriptAnnotations(canvas);
-// → Annotation[] with text, timing, and metadata.tags from W3C purpose:"tagging" bodies
+const { annotations, skipped } = buildTranscriptAnnotations(canvas);
+// → annotations[] with text, timing, and metadata.tags
+// → skipped[] with reasons for any annotations that couldn't be placed on the timeline
 
 // 3. Pass to the player — works identically to VTT-sourced annotations
 <IIIFPlayer.Transcript {annotations}>
