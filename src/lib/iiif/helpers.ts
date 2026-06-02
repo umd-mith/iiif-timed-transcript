@@ -86,9 +86,38 @@ export function getThumbnail(resource: {
 }
 
 /**
+ * Returns the image URL of a single annotation body, or undefined. A body
+ * counts as an image when its `type` is "Image" or its `format` starts with
+ * "image/". Descends into Choice bodies, returning the first image alternative
+ * (mirrors getTextualBodies' Choice handling).
+ */
+function imageUrlFromBody(candidate: unknown): string | undefined {
+  if (typeof candidate !== "object" || candidate === null) return undefined;
+  const resource = candidate as {
+    id?: string;
+    type?: string;
+    format?: string;
+    items?: unknown[];
+  };
+  if (resource.type === "Choice" && Array.isArray(resource.items)) {
+    for (const item of resource.items) {
+      const url = imageUrlFromBody(item);
+      if (url) return url;
+    }
+    return undefined;
+  }
+  if (
+    resource.id &&
+    (resource.type === "Image" || resource.format?.startsWith("image/"))
+  ) {
+    return resource.id;
+  }
+  return undefined;
+}
+
+/**
  * Extracts the first painting image URL from an auxiliary canvas
- * (placeholderCanvas / accompanyingCanvas). A body counts as an image when
- * its `type` is "Image" or its `format` starts with "image/".
+ * (placeholderCanvas / accompanyingCanvas).
  */
 function extractAuxImageUrl(
   aux: NonNullable<CanvasData["placeholderCanvas"]>,
@@ -98,18 +127,8 @@ function extractAuxImageUrl(
       const body = annotation.body;
       const bodies = Array.isArray(body) ? body : body ? [body] : [];
       for (const candidate of bodies) {
-        if (typeof candidate !== "object" || candidate === null) continue;
-        const resource = candidate as {
-          id?: string;
-          type?: string;
-          format?: string;
-        };
-        if (
-          resource.id &&
-          (resource.type === "Image" || resource.format?.startsWith("image/"))
-        ) {
-          return resource.id;
-        }
+        const url = imageUrlFromBody(candidate);
+        if (url) return url;
       }
     }
   }
