@@ -201,10 +201,17 @@
 {#if annotations.length === 0}
   <p class="empty-message">No segments available.</p>
 {:else}
+  <!--
+    Toolbar pattern (WAI-ARIA APG): a set of action controls (segments seek the
+    media) navigated with roving tabindex + arrow keys. `toolbar` is the
+    interactive composite role that legitimizes the keydown handler; it carries
+    no selection semantics (unlike listbox/radiogroup, which imply selection).
+  -->
   <div
     class="segments-container {className}"
-    role="group"
+    role="toolbar"
     aria-label="Transcript segments"
+    aria-orientation="vertical"
     tabindex="-1"
     onkeydown={handleKeydown}
     bind:this={containerEl}

@@ -40,6 +40,18 @@ describe("TranscriptSegments", () => {
     expect(container).not.toBeNull();
   });
 
+  test("container uses toolbar role with vertical orientation (a11y)", () => {
+    mount(TranscriptSegments, {
+      target,
+      props: { annotations: mockAnnotations },
+    });
+    flushSync();
+
+    const container = target.querySelector(".segments-container");
+    expect(container?.getAttribute("role")).toBe("toolbar");
+    expect(container?.getAttribute("aria-orientation")).toBe("vertical");
+  });
+
   test("renders all segments with props", () => {
     mount(TranscriptSegments, {
       target,

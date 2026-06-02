@@ -138,4 +138,15 @@ describe("Transcript.Segment", () => {
     const button = target.querySelector('[data-state="inactive"]');
     expect(button).not.toBeNull();
   });
+
+  it("exposes role=button on the interactive segment (a11y)", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    mount(Segment, { target, props: { annotation: mockAnnotation } });
+    flushSync();
+
+    const segment = target.querySelector("[data-annotation-id]");
+    expect(segment?.getAttribute("role")).toBe("button");
+  });
 });
