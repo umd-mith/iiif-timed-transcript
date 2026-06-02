@@ -52,6 +52,8 @@ export interface PlayerContext {
   mediaElement: HTMLMediaElement | null;
   mediaUrl: string;
   mediaType: "audio" | "video";
+  /** Resolved poster image URL for the current canvas (placeholderCanvas → accompanyingCanvas), or undefined. */
+  posterUrl: string | undefined;
   readonly mediaStrategy: MediaStrategy;
   readonly hlsAdapter: HlsAdapter | null;
   readonly dashAdapter: DashAdapter | null;

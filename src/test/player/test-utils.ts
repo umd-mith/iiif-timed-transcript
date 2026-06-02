@@ -94,6 +94,7 @@ export function createMockPlayerContext(
     mediaElement: null,
     mediaUrl: "https://example.com/media.mp3",
     mediaType: "audio",
+    posterUrl: undefined,
     mediaStrategy: "native",
     hlsAdapter: null,
     dashAdapter: null,

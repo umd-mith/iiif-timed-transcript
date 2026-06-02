@@ -23,9 +23,9 @@ attribute; the browser handles rendering and clears it on play.
 ## Background: IIIF and posters
 
 IIIF Presentation API 3.0 has a native concept for this. `placeholderCanvas`
-is *"a single Canvas that provides additional content for use **before** the
-main content ... is rendered"* — the spec's own example is "a film poster to
-attract user attention." `accompanyingCanvas` is shown *during* playback (e.g.
+is _"a single Canvas that provides additional content for use **before** the
+main content ... is rendered"_ — the spec's own example is "a film poster to
+attract user attention." `accompanyingCanvas` is shown _during_ playback (e.g.
 album art over audio). Both are full Canvas objects containing an
 `AnnotationPage → painting Annotation → Image` body; the image URL must be
 extracted from `body.id`, not read as a bare string.

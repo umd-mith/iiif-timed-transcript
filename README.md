@@ -133,13 +133,16 @@ Root passes `{ player }` to its children snippet with `state`, `actions`, `annot
 
 Renders the media element (`<audio>` or `<video>`) for the current canvas. Auto-wires HLS when the media strategy requires it.
 
-| Prop          | Type                               | Default  | Description                                                              |
-| ------------- | ---------------------------------- | -------- | ------------------------------------------------------------------------ |
-| `controls`    | `boolean`                          | `false`  | Show native media controls                                               |
-| `crossOrigin` | `'anonymous' \| 'use-credentials'` | —        | CORS setting                                                             |
-| `preload`     | `'auto' \| 'metadata' \| 'none'`   | `'auto'` | Preload strategy                                                         |
-| `tracks`      | `TrackDefinition[]`                | `[]`     | Caption/subtitle tracks (overrides auto-discovered tracks from manifest) |
-| `class`       | `string`                           | `""`     | CSS class                                                                |
+| Prop          | Type                               | Default  | Description                                                                                                 |
+| ------------- | ---------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `controls`    | `boolean`                          | `false`  | Show native media controls                                                                                  |
+| `crossOrigin` | `'anonymous' \| 'use-credentials'` | —        | CORS setting                                                                                                |
+| `preload`     | `'auto' \| 'metadata' \| 'none'`   | `'auto'` | Preload strategy                                                                                            |
+| `poster`      | `string`                           | —        | Poster image for video (shown before playback). Overrides the IIIF-derived poster; pass `""` to suppress it |
+| `tracks`      | `TrackDefinition[]`                | `[]`     | Caption/subtitle tracks (overrides auto-discovered tracks from manifest)                                    |
+| `class`       | `string`                           | `""`     | CSS class                                                                                                   |
+
+When `poster` is omitted, the player automatically derives one from the current canvas's IIIF [`placeholderCanvas`](https://iiif.io/api/presentation/3.0/#placeholdercanvas), falling back to [`accompanyingCanvas`](https://iiif.io/api/presentation/3.0/#accompanyingcanvas). Poster images apply to video canvases only.
 
 #### `IIIFPlayer.Controls`
 

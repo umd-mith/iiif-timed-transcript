@@ -6,6 +6,7 @@ import {
   isValidIIIFResource,
   getCanvasDimensions,
   getThumbnail,
+  getPosterUrl,
   extractIdentifierFromUrl,
   hasMotivation,
   getSupplementaryAnnotations,
@@ -1635,5 +1636,136 @@ describe("filterChaptersForCanvas", () => {
     const labels = result.map((ch) => ch.label);
     expect(labels).toContain("Scene 1");
     expect(labels).toContain("Scene 2");
+  });
+});
+
+describe("getPosterUrl", () => {
+  // Builds an auxiliary canvas (placeholder/accompanying) whose painting
+  // annotation carries an image body. `body` may be a single object or array.
+  function auxCanvas(
+    id: string,
+    body: unknown,
+  ): NonNullable<CanvasData["placeholderCanvas"]> {
+    return {
+      id,
+      type: "Canvas",
+      width: 640,
+      height: 360,
+      items: [
+        {
+          id: `${id}/page`,
+          type: "AnnotationPage",
+          items: [
+            {
+              id: `${id}/anno`,
+              type: "Annotation",
+              motivation: "painting",
+              body,
+              target: id,
+            },
+          ],
+        },
+      ],
+    } as NonNullable<CanvasData["placeholderCanvas"]>;
+  }
+
+  function imageBody(
+    url: string,
+    opts: { type?: string; format?: string } = {},
+  ) {
+    return {
+      id: url,
+      type: opts.type ?? "Image",
+      ...(opts.format ? { format: opts.format } : {}),
+      width: 640,
+      height: 360,
+    };
+  }
+
+  const baseCanvas: CanvasData = {
+    id: "https://example.org/canvas/1",
+    type: "Canvas",
+    width: 640,
+    height: 360,
+    duration: 100,
+  };
+
+  it("returns the placeholderCanvas image URL", () => {
+    const canvas: CanvasData = {
+      ...baseCanvas,
+      placeholderCanvas: auxCanvas(
+        "https://example.org/canvas/1/placeholder",
+        imageBody("https://example.org/poster.png"),
+      ),
+    };
+    expect(getPosterUrl(canvas)).toBe("https://example.org/poster.png");
+  });
+
+  it("falls back to accompanyingCanvas when no placeholderCanvas", () => {
+    const canvas: CanvasData = {
+      ...baseCanvas,
+      accompanyingCanvas: auxCanvas(
+        "https://example.org/canvas/1/accompanying",
+        imageBody("https://example.org/cover.png"),
+      ),
+    };
+    expect(getPosterUrl(canvas)).toBe("https://example.org/cover.png");
+  });
+
+  it("prefers placeholderCanvas over accompanyingCanvas when both present", () => {
+    const canvas: CanvasData = {
+      ...baseCanvas,
+      placeholderCanvas: auxCanvas(
+        "https://example.org/canvas/1/placeholder",
+        imageBody("https://example.org/poster.png"),
+      ),
+      accompanyingCanvas: auxCanvas(
+        "https://example.org/canvas/1/accompanying",
+        imageBody("https://example.org/cover.png"),
+      ),
+    };
+    expect(getPosterUrl(canvas)).toBe("https://example.org/poster.png");
+  });
+
+  it("extracts the image URL when body is an array", () => {
+    const canvas: CanvasData = {
+      ...baseCanvas,
+      placeholderCanvas: auxCanvas("https://example.org/canvas/1/placeholder", [
+        imageBody("https://example.org/poster.png"),
+      ]),
+    };
+    expect(getPosterUrl(canvas)).toBe("https://example.org/poster.png");
+  });
+
+  it("detects an image body by format when type is absent", () => {
+    const canvas: CanvasData = {
+      ...baseCanvas,
+      placeholderCanvas: auxCanvas(
+        "https://example.org/canvas/1/placeholder",
+        imageBody("https://example.org/poster.jpg", {
+          type: "Unknown",
+          format: "image/jpeg",
+        }),
+      ),
+    };
+    expect(getPosterUrl(canvas)).toBe("https://example.org/poster.jpg");
+  });
+
+  it("returns undefined when neither auxiliary canvas is present", () => {
+    expect(getPosterUrl(baseCanvas)).toBeUndefined();
+  });
+
+  it("returns undefined when the auxiliary canvas has no image body", () => {
+    const canvas: CanvasData = {
+      ...baseCanvas,
+      placeholderCanvas: {
+        id: "https://example.org/canvas/1/placeholder",
+        type: "Canvas",
+        width: 640,
+        height: 360,
+        items: [],
+      },
+    };
+    expect(getPosterUrl(canvas)).toBeUndefined();
   });
 });

@@ -204,6 +204,22 @@ export const AnnotationPageSchema = z
   })
   .describe("IIIF annotation page");
 
+// Auxiliary canvas schema for placeholderCanvas / accompanyingCanvas.
+// These are full Canvases per the spec, but we only need their painting
+// annotations (to extract a poster image), so this is a lightweight subset.
+const AuxiliaryCanvasSchema = z
+  .object({
+    id: IIIFIdentifier,
+    type: z.literal("Canvas"),
+    width: z.number().positive().optional(),
+    height: z.number().positive().optional(),
+    items: z
+      .array(AnnotationPageSchema)
+      .optional()
+      .describe("Array of annotation pages"),
+  })
+  .describe("IIIF auxiliary canvas (placeholder/accompanying)");
+
 // Canvas schema with comprehensive validation
 const CanvasSchema = z
   .object({
@@ -231,6 +247,12 @@ const CanvasSchema = z
       .array(AnnotationPageSchema)
       .optional()
       .describe("Supplementary annotation pages (non-painting)"),
+    placeholderCanvas: AuxiliaryCanvasSchema.optional().describe(
+      "Canvas shown before playback (IIIF placeholderCanvas) — poster source",
+    ),
+    accompanyingCanvas: AuxiliaryCanvasSchema.optional().describe(
+      "Canvas shown during playback (IIIF accompanyingCanvas)",
+    ),
   })
   .describe("IIIF canvas")
   .refine(
