@@ -947,5 +947,28 @@ describe("Viewer", () => {
       const audioElement = target.querySelector("audio");
       expect(audioElement?.getAttribute("poster")).toBeNull();
     });
+
+    test('poster="" suppresses the IIIF-derived poster', () => {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+
+      const mockContext = createMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        posterUrl: "https://example.com/derived.png",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: mockContext,
+          children: createChildSnippet(target, Viewer, { poster: "" }),
+        },
+      });
+      flushSync();
+
+      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      expect(videoElement?.getAttribute("poster")).toBeNull();
+    });
   });
 });

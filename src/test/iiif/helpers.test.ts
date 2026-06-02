@@ -1768,4 +1768,18 @@ describe("getPosterUrl", () => {
     };
     expect(getPosterUrl(canvas)).toBeUndefined();
   });
+
+  it("extracts the image URL from a Choice body", () => {
+    const canvas: CanvasData = {
+      ...baseCanvas,
+      placeholderCanvas: auxCanvas("https://example.org/canvas/1/placeholder", {
+        type: "Choice",
+        items: [
+          { id: "https://example.org/poster-en.png", type: "Image" },
+          { id: "https://example.org/poster-fr.png", type: "Image" },
+        ],
+      }),
+    };
+    expect(getPosterUrl(canvas)).toBe("https://example.org/poster-en.png");
+  });
 });
