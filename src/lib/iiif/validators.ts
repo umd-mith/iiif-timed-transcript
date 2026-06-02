@@ -38,7 +38,7 @@ const ServiceReferenceSchema = z
       .describe("Service type (ImageService3, AuthCookieService1, etc.)"),
     profile: z.string().optional().describe("Service profile level"),
   })
-  .passthrough() // Allow additional service-specific properties
+  .loose() // Allow additional service-specific properties
   .describe("IIIF service reference");
 
 /**
@@ -104,7 +104,7 @@ const SelectorSchema = z
     value: z.string().optional().describe("Selector value"),
     conformsTo: z.string().optional().describe("Selector specification URI"),
   })
-  .passthrough() // Allow additional selector-specific properties
+  .loose() // Allow additional selector-specific properties
   .describe("W3C Web Annotation Selector");
 
 /**
