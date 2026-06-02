@@ -180,6 +180,12 @@
       onerror={handleMediaError}
     ></audio>
   {:else if ctx.mediaType === "video"}
+    <!--
+      Captions are provided at runtime from IIIF manifest annotations / the
+      tracks prop (rendered dynamically below), so the static a11y check can't
+      see them. A runtime dev-warning covers the genuinely caption-less case.
+    -->
+    <!-- svelte-ignore a11y_media_has_caption -->
     <video
       bind:this={localMediaElement}
       src={mediaSrc}

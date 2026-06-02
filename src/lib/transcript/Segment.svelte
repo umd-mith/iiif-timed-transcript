@@ -59,6 +59,7 @@
 </script>
 
 <div
+  role="button"
   data-annotation-id={annotation.id}
   data-state={isActive ? "active" : "inactive"}
   data-highlighted={isHighlighted ? "true" : undefined}

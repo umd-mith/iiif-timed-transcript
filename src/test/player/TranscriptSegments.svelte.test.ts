@@ -40,6 +40,22 @@ describe("TranscriptSegments", () => {
     expect(container).not.toBeNull();
   });
 
+  test("container uses a labelled group role, not a toolbar (read-first a11y)", () => {
+    mount(TranscriptSegments, {
+      target,
+      props: { annotations: mockAnnotations },
+    });
+    flushSync();
+
+    const container = target.querySelector(".segments-container");
+    // Read-first: a transcript is readable text grouped under a label, not a
+    // row of action controls. Roving-tabindex navigation is a progressive
+    // enhancement, so the composite-only aria-orientation is intentionally absent.
+    expect(container?.getAttribute("role")).toBe("group");
+    expect(container?.getAttribute("aria-label")).toBe("Transcript segments");
+    expect(container?.getAttribute("aria-orientation")).toBeNull();
+  });
+
   test("renders all segments with props", () => {
     mount(TranscriptSegments, {
       target,

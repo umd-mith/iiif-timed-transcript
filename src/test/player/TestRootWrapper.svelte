@@ -13,6 +13,9 @@
     onResult: (ctx: PlayerContext) => void;
   } = $props();
 
+  // Seed local state from the initial prop value only; the wrapper is an
+  // uncontrolled component driven afterwards via the imperative setCanvasIndex.
+  // svelte-ignore state_referenced_locally
   let canvasIndex = $state(initialCanvasIndex);
 
   export function setCanvasIndex(idx: number) {
