@@ -1,6 +1,7 @@
 import { createContext } from "svelte";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import type { HlsAdapter } from "../media/hlsUtils.js";
+import type { DashAdapter } from "../media/dashUtils.js";
 import type { Annotation } from "../sync/types.js";
 
 export interface TrackDefinition {
@@ -42,8 +43,9 @@ export interface PlayerActions {
  * How Root decided to handle media source attachment.
  * - 'native': use <audio/video src="..."> (progressive download or native HLS in Safari)
  * - 'hls-js': hls.js manages the source via the hlsAdapter in context
+ * - 'dash-js': dash.js manages the source via the dashAdapter in context
  */
-export type MediaStrategy = "native" | "hls-js";
+export type MediaStrategy = "native" | "hls-js" | "dash-js";
 
 export interface PlayerContext {
   state: PlayerState;
@@ -52,6 +54,7 @@ export interface PlayerContext {
   mediaType: "audio" | "video";
   readonly mediaStrategy: MediaStrategy;
   readonly hlsAdapter: HlsAdapter | null;
+  readonly dashAdapter: DashAdapter | null;
   readonly annotations: Annotation[];
   readonly chapters: Chapter[];
   readonly activeChapterId: string | null;
@@ -67,7 +70,7 @@ export interface PlayerContext {
  *
  * Exposes orchestration-relevant fields (state, actions, content metadata,
  * canvas navigation) while excluding internal wiring (mediaElement, hlsAdapter,
- * mediaStrategy, tracks, mediaUrl).
+ * dashAdapter, mediaStrategy, tracks, mediaUrl).
  *
  * At runtime this is the PlayerStateManager instance — reactivity works because
  * the class uses $state and $derived internally.

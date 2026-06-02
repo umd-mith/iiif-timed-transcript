@@ -7,12 +7,14 @@
     crossOrigin,
     preload = "auto",
     tracks = [],
+    poster,
     class: className = "",
   }: {
     controls?: boolean;
     crossOrigin?: "anonymous" | "use-credentials";
     preload?: "auto" | "metadata" | "none";
     tracks?: TrackDefinition[];
+    poster?: string;
     class?: string;
   } = $props();
 
@@ -24,8 +26,9 @@
   const effectiveTracks = $derived(tracks.length > 0 ? tracks : ctx.tracks);
 
   // When hls-js strategy, src is managed by the adapter, not via attribute
+  // When an adapter manages the source (HLS or DASH), don't set src attribute
   const mediaSrc = $derived(
-    ctx.mediaStrategy === "hls-js" ? undefined : ctx.mediaUrl,
+    ctx.mediaStrategy === "native" ? ctx.mediaUrl : undefined,
   );
 
   // Dev warning: video without captions (WCAG 1.2.2) — warn once per mediaUrl
@@ -123,6 +126,38 @@
       adapter.detach();
     };
   });
+
+  // DASH adapter wiring: attach when strategy is dash-js and adapter exists
+  $effect(() => {
+    const el = localMediaElement;
+    const adapter = ctx.dashAdapter;
+    if (!el || !adapter) return;
+
+    // dash.js only fires ERROR events after internal recovery fails,
+    // so all errors are effectively fatal. The error field is either a
+    // string (e.g. "download", "capability") or an object with code/message.
+    adapter.attach(el, ctx.mediaUrl, {
+      onError: (data: unknown) => {
+        const errorData = data as {
+          error?: string | { code: number; message: string };
+        };
+        let message: string;
+        if (typeof errorData.error === "string") {
+          message = errorData.error;
+        } else if (errorData.error && typeof errorData.error === "object") {
+          message = errorData.error.message || `code ${errorData.error.code}`;
+        } else {
+          message = "unknown";
+        }
+        ctx.state.error = new Error(`DASH playback failed: ${message}`);
+        ctx.state.isReady = false;
+      },
+    });
+
+    return () => {
+      adapter.detach();
+    };
+  });
 </script>
 
 {#if ctx.mediaUrl}
@@ -142,6 +177,7 @@
       src={mediaSrc}
       {controls}
       {preload}
+      {poster}
       crossorigin={crossOrigin || undefined}
       class={className}
       style="width: 100%;"

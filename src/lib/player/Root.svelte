@@ -18,6 +18,11 @@
     createHlsAdapter,
     type HlsConstructor,
   } from "../media/hlsUtils";
+  import {
+    isDashUrl,
+    createDashAdapter,
+    type DashConstructor,
+  } from "../media/dashUtils";
   import type { Annotation } from "../sync/types";
   import { manifestCache } from "./manifestCache";
 
@@ -29,6 +34,7 @@
     initialTime,
     autoplay = false,
     hlsConstructor,
+    dashConstructor,
     onCanvasChange,
     onPlayerInit,
     class: className = "",
@@ -40,6 +46,7 @@
     initialTime?: number;
     autoplay?: boolean;
     hlsConstructor?: HlsConstructor;
+    dashConstructor?: DashConstructor;
     onCanvasChange?: (index: number, canvas: CanvasInfo) => void;
     /** Called once after manifest loads and first canvas is parsed. `state.isReady` is false at this point. */
     onPlayerInit?: (player: PlayerRef) => void;
@@ -117,6 +124,7 @@
     // Pause and detach current media
     player.mediaElement?.pause();
     player.hlsAdapter?.detach();
+    player.dashAdapter?.detach();
 
     // Reset player state for new canvas
     player.state.isPlaying = false;
@@ -233,6 +241,9 @@
           player.mediaStrategy = "hls-js";
           resolveHlsAdapter();
         }
+      } else if (isDashUrl(primaryResource.id, primaryResource.format)) {
+        player.mediaStrategy = "dash-js";
+        resolveDashAdapter();
       } else {
         player.mediaStrategy = "native";
       }
@@ -263,6 +274,24 @@
         }));
     if (Hls) {
       player.hlsAdapter = createHlsAdapter(Hls);
+    }
+  }
+
+  async function resolveDashAdapter() {
+    const Dash =
+      dashConstructor ??
+      (await import("dashjs")
+        // dashjs 5.x is ESM-only with a named `MediaPlayer` factory export.
+        .then((m) => m.MediaPlayer())
+        .catch(() => {
+          console.warn(
+            "[IIIFPlayer] DASH stream detected but dashjs is not installed. " +
+              "Install it with: npm install dashjs",
+          );
+          return null;
+        }));
+    if (Dash) {
+      player.dashAdapter = createDashAdapter(Dash);
     }
   }
 
@@ -325,9 +354,11 @@
   // Cleanup on unmount — capture current element and adapter
   $effect(() => {
     const el = player.mediaElement;
-    const adapter = player.hlsAdapter;
+    const hlsAdapter = player.hlsAdapter;
+    const dashAdapter = player.dashAdapter;
     return () => {
-      adapter?.detach();
+      hlsAdapter?.detach();
+      dashAdapter?.detach();
       if (el) {
         el.pause();
         el.src = "";

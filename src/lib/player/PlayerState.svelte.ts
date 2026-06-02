@@ -16,6 +16,7 @@ import type {
   CanvasInfo,
 } from "./context.js";
 import type { HlsAdapter } from "../media/hlsUtils.js";
+import type { DashAdapter } from "../media/dashUtils.js";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import type { Annotation } from "../sync/types.js";
 
@@ -42,6 +43,7 @@ export class PlayerStateManager implements PlayerContext {
   mediaType = $state<"audio" | "video">("audio");
   mediaStrategy = $state<MediaStrategy>("native");
   hlsAdapter = $state.raw<HlsAdapter | null>(null);
+  dashAdapter = $state.raw<DashAdapter | null>(null);
   annotations = $state.raw<Annotation[]>([]);
   chapters = $state.raw<Chapter[]>([]);
   tracks = $state.raw<TrackDefinition[]>([]);
