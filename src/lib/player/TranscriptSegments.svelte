@@ -202,16 +202,20 @@
   <p class="empty-message">No segments available.</p>
 {:else}
   <!--
-    Toolbar pattern (WAI-ARIA APG): a set of action controls (segments seek the
-    media) navigated with roving tabindex + arrow keys. `toolbar` is the
-    interactive composite role that legitimizes the keydown handler; it carries
-    no selection semantics (unlike listbox/radiogroup, which imply selection).
+    Read-first semantics: a transcript is primarily readable text, so the
+    container is a labelled `group` rather than a `toolbar` (which would imply a
+    row of action controls and is wrong for a reading surface). Roving tabindex
+    + arrow-key navigation is layered on as a progressive keyboard enhancement
+    via the keydown handler below. Because that handler lives on a
+    non-interactive grouping element, svelte-check flags
+    a11y_no_noninteractive_element_interactions — suppressed intentionally on
+    the next line; the keyboard enhancement is additive over accessible text.
   -->
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     class="segments-container {className}"
-    role="toolbar"
+    role="group"
     aria-label="Transcript segments"
-    aria-orientation="vertical"
     tabindex="-1"
     onkeydown={handleKeydown}
     bind:this={containerEl}
