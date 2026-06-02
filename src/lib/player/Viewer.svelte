@@ -7,12 +7,14 @@
     crossOrigin,
     preload = "auto",
     tracks = [],
+    poster,
     class: className = "",
   }: {
     controls?: boolean;
     crossOrigin?: "anonymous" | "use-credentials";
     preload?: "auto" | "metadata" | "none";
     tracks?: TrackDefinition[];
+    poster?: string;
     class?: string;
   } = $props();
 
@@ -175,6 +177,7 @@
       src={mediaSrc}
       {controls}
       {preload}
+      {poster}
       crossorigin={crossOrigin || undefined}
       class={className}
       style="width: 100%;"

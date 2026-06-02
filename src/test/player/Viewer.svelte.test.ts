@@ -828,6 +828,30 @@ describe("Viewer", () => {
     });
   });
 
+  test("sets poster attribute on video element", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    const mockContext = createMockPlayerContext({
+      mediaUrl: "https://example.com/video.mp4",
+      mediaType: "video",
+    });
+
+    mount(TestContextProvider, {
+      target,
+      props: {
+        context: mockContext,
+        children: createChildSnippet(target, Viewer, {
+          poster: "https://example.com/poster.jpg",
+        }),
+      },
+    });
+    flushSync();
+
+    const videoElement = target.querySelector("video") as HTMLVideoElement;
+    expect(videoElement?.poster).toBe("https://example.com/poster.jpg");
+  });
+
   test("sets preload on video elements too", () => {
     target = document.createElement("div");
     document.body.appendChild(target);
