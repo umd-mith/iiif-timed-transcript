@@ -1,6 +1,16 @@
-# @umd-mith/svelte-iiif-transcript-player
+# Changelog
 
-## 0.15.0
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Entries below version `0.15.0` retain the `Minor Changes` / `Patch Changes` /
+`Breaking Changes` groupings from the project's earlier changesets-based workflow.
+
+## [Unreleased]
+
+## [0.15.0] - 2026-06-02
 
 ### Minor Changes
 
@@ -10,7 +20,7 @@
 
 - 7718317: Accessibility: the default transcript segment now exposes `role="button"` (it already had click/keyboard activation and `aria-current`). The segments container is a labelled `role="group"` — read-first semantics, since a transcript is primarily readable text rather than a row of action controls — and its roving-tabindex arrow-key navigation remains as a progressive keyboard enhancement. Resolves the `a11y_no_static_element_interactions` and `a11y_no_noninteractive_tabindex` warnings; the container's keydown handler carries a scoped `svelte-ignore` for `a11y_no_noninteractive_element_interactions`. The custom-segment `segmentAttrs` API is unchanged (still role-free — consumers own their element semantics).
 
-## 0.14.1
+## [0.14.1] - 2026-04-21
 
 ### Patch Changes
 
@@ -20,7 +30,7 @@
 
   No API changes. Consumers using `ssr.noExternal: ['@umd-mith/svelte-iiif-transcript-player']` in their Vite/Astro config remain the recommended pattern for SSR contexts.
 
-## 0.14.0
+## [0.14.0] - 2026-04-09
 
 ### Minor Changes
 
@@ -34,7 +44,7 @@
   If the media element already has a valid duration, the decode error is a false alarm.
   Previously this permanently blocked playback, breaking large WAV files that played fine in 0.12.0.
 
-## 0.13.1
+## [0.13.1] - 2026-04-03
 
 ### Patch Changes
 
@@ -44,7 +54,7 @@
   If the media element already has a valid duration, the decode error is a false alarm.
   Previously this permanently blocked playback, breaking large WAV files that played fine in 0.12.0.
 
-## 0.13.0
+## [0.13.0] - 2026-04-03
 
 ### Minor Changes
 
@@ -57,7 +67,7 @@
 - **Wire native media error handling** — add `onerror` handlers to `<audio>`/`<video>` elements with user-friendly error messages. Remove duplicate error handler from Root.svelte. Filter `MEDIA_ERR_ABORTED` during canvas switching (#43)
 - **Log non-fatal HLS errors** — non-fatal HLS errors now emit `console.warn` instead of being silently swallowed
 
-## 0.12.0
+## [0.12.0] - 2026-03-10
 
 ### Breaking Changes
 
@@ -69,7 +79,7 @@
 - **Update demo CSS selectors** — all demo components and walkthrough updated to use element-agnostic `[data-annotation-id]` selectors (#33)
 - **Add HistoryUnErasedDemo** — new demo component showcasing custom segment snippets with `segmentAttrs` spread
 
-## 0.11.0
+## [0.11.0] - 2026-03-10
 
 ### Breaking Changes
 
@@ -79,7 +89,7 @@
 
 - `Annotation` type, `getActiveAnnotation`, `timeToScrollProgress`, `scrollProgressToTime` remain available as standalone utilities
 
-## 0.10.0
+## [0.10.0] - 2026-03-10
 
 ### Minor Changes
 
@@ -89,7 +99,7 @@
 
 - **Fix unhandled `play()` rejections** — `actions.play()` now catches `NotAllowedError` (autoplay policy) and routes it through `state.error`, consistent with existing error paths. Benign `AbortError` (play interrupted by pause/seek) is silently ignored (#28)
 
-## 0.9.0
+## [0.9.0] - 2026-03-09
 
 ### Minor Changes
 
@@ -104,7 +114,7 @@
 - Remove redundant `xstate` from `devDependencies`
 - Add Search navigation and callback test coverage (#27)
 
-## 0.7.0
+## [0.7.0] - 2026-03-09
 
 ### Minor Changes
 
@@ -119,7 +129,7 @@
 - Input-element guard prevents keyboard nav from hijacking typing in inputs, textareas, and contenteditable elements inside the segments container
 - `keyboardNav.ts` `getNextIndex` now returns `null` (instead of current index) for unrecognized keys
 
-## 0.6.1
+## [0.6.1] - 2026-03-06
 
 ### Patch Changes
 
@@ -127,7 +137,7 @@
   - Fix type inconsistency in test-utils `createContextCapture` cast
   - Add XSS sanitization caution to `text` snippet JSDoc in Segment and TranscriptSegments
 
-## 0.6.0
+## [0.6.0] - 2026-03-06
 
 ### Minor Changes
 
