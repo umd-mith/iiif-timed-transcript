@@ -13,7 +13,8 @@
   "author": "Trevor Munoz <tmunoz@umd.edu>",
   "license": "BSD-3-Clause-Clear",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
@@ -58,13 +59,11 @@
     "test:watch": "vitest",
     "lint": "eslint src/ && prettier --check .",
     "format": "prettier --write .",
-    "changeset": "changeset",
-    "release": "pnpm run build && changeset publish",
-    "prepublishOnly": "pnpm run build && pnpm run test",
+    "release": "./scripts/release.sh",
+    "prepublishOnly": "pnpm run build",
     "prepare": "husky && pnpm run build"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.8",
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
     "@eslint/js": "^10.0.1",
