@@ -24,7 +24,9 @@ function collectRoutes(dir) {
     if (entry.isDirectory()) {
       routes.push(...collectRoutes(full));
     } else if (entry.name.endsWith(".html")) {
-      const rel = relative(DIST, full).replace(/index\.html$/, "").replace(/\.html$/, "");
+      const rel = relative(DIST, full)
+        .replace(/index\.html$/, "")
+        .replace(/\.html$/, "");
       const path = "/" + rel.replace(/\/$/, "");
       routes.push(path === "/" ? "" : path);
     }
@@ -56,8 +58,16 @@ console.log(`[smoke] ${routes.length} route(s) to check.`);
 // Start `astro preview` for the docs package (honors base + serves docs/dist).
 const preview = spawn(
   "pnpm",
-  ["--filter", "svelte-iiif-transcript-player-docs", "exec", "astro", "preview", "--port", String(PORT)],
-  { stdio: "inherit" }
+  [
+    "--filter",
+    "svelte-iiif-transcript-player-docs",
+    "exec",
+    "astro",
+    "preview",
+    "--port",
+    String(PORT),
+  ],
+  { stdio: "inherit" },
 );
 
 async function waitForServer(url, timeoutMs = 30000) {
@@ -83,24 +93,32 @@ try {
     const page = await browser.newPage();
     const errors = [];
     page.on("pageerror", (err) => errors.push(String(err)));
-    const response = await page.goto(url, { waitUntil: "load", timeout: 20000 });
+    const response = await page.goto(url, {
+      waitUntil: "load",
+      timeout: 20000,
+    });
     // Settle: this app fetches its IIIF manifest and mounts components AFTER
     // `load`, so give async crashes a window to surface as `pageerror` before
     // we snapshot. `networkidle` may never arrive (media streams / polling),
     // so cap it and move on.
-    await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
+    await page
+      .waitForLoadState("networkidle", { timeout: 5000 })
+      .catch(() => {});
     const status = response ? response.status() : 0;
     const bodyLen = (await page.textContent("body"))?.trim().length ?? 0;
     // Did the player mount? A hydrated IIIFPlayer.Viewer renders <audio>/<video>
     // only after the manifest is fetched and parsed — so this asserts the player
     // came up, not just that the doc shell rendered.
     const mediaCount = await page.locator("audio, video").count();
-    const ok = status === 200 && errors.length === 0 && bodyLen > 0 && mediaCount > 0;
+    const ok =
+      status === 200 && errors.length === 0 && bodyLen > 0 && mediaCount > 0;
     const knownBroken = KNOWN_BROKEN_ROUTES.get(route);
     if (ok) {
       console.log(`[smoke] PASS ${status} ${url}`);
     } else if (knownBroken) {
-      console.log(`[smoke] SKIP ${status} ${url} — known broken: ${knownBroken}`);
+      console.log(
+        `[smoke] SKIP ${status} ${url} — known broken: ${knownBroken}`,
+      );
     } else {
       const why = mediaCount === 0 ? " (no player mounted)" : "";
       console.log(`[smoke] FAIL ${status} ${url}${why}`);
