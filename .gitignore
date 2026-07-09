@@ -12,3 +12,13 @@ src/test/**/*.d.ts.map
 
 # Claude Code
 .claude/
+
+# OS / env
+.DS_Store
+.env
+.env.*
+
+# Private working notes and local AI tooling (not for the public repo)
+docs/plans/
+.mcp.json
+CLAUDE.md
