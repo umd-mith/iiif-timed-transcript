@@ -642,6 +642,24 @@ Targets modern evergreen browsers. Requires:
 
 HLS streaming requires either Safari (native) or `hls.js` (other browsers).
 
+## AI Assistance
+
+We developed this library using Anthropic's Claude as a generative coding tool,
+with human direction and review. We remain aware of the many critiques and
+concerns regarding generative AI and do not dismiss them.
+
+**Process:** AI generated initial implementations, tests, and documentation based
+on W3C and IIIF specifications. Human maintainers directed requirements, reviewed
+all outputs, and take full responsibility for the final code.
+
+**Acknowledgment:** AI capabilities derive partly from programmers whose public
+work became training data. Our open-source output depends on proprietary AI
+infrastructure.
+
+Following [Apache](https://www.apache.org/legal/generative-tooling.html) and
+[OpenInfra](https://openinfra.org/legal/ai-policy/) guidance, we use `Assisted-by:`
+commit trailers for ongoing contributions.
+
 ## Contributing
 
 Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
