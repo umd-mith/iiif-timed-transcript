@@ -1,7 +1,6 @@
 packages:
   - "."
   - "docs"
-  - "astro-test"
 # Approve native build scripts so `pnpm install` does not exit non-zero.
 # `allowBuilds` is the mechanism honored by pnpm 11.x (CI runs
 # pnpm/action-setup with version: latest); `onlyBuiltDependencies` is kept
