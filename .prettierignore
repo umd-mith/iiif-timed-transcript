@@ -4,3 +4,6 @@ docs/.astro/
 
 # Tool-generated lockfile — pnpm owns its format; prettier must not rewrite it
 pnpm-lock.yaml
+
+# Vendored upstream export — preserved as archived; prettier must not reflow it
+docs/public/manifests/
