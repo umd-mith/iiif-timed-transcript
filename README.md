@@ -1,5 +1,10 @@
 # @umd-mith/svelte-iiif-transcript-player
 
+[![npm](https://img.shields.io/npm/v/@umd-mith/svelte-iiif-transcript-player)](https://www.npmjs.com/package/@umd-mith/svelte-iiif-transcript-player)
+[![CI](https://github.com/umd-mith/svelte-iiif-transcript-player/actions/workflows/ci.yml/badge.svg)](https://github.com/umd-mith/svelte-iiif-transcript-player/actions/workflows/ci.yml)
+[![License: BSD-3-Clause-Clear](https://img.shields.io/badge/License-BSD--3--Clause--Clear-blue.svg)](./LICENSE)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://umd-mith.github.io/svelte-iiif-transcript-player)
+
 Svelte 5 components that synchronize media playback with timed transcripts from [IIIF](https://iiif.io/) manifests. Designed for digital humanities projects, oral history archives, and anywhere time-based annotations meet audio/video.
 
 The compound component API lets you compose custom player layouts from small, focused pieces — controls, transcript panel, chapter navigation, canvas switching — while a bidirectional sync engine keeps the transcript scroll position and media playback in sync.
@@ -15,40 +20,16 @@ The compound component API lets you compose custom player layouts from small, fo
 
 ## Install
 
-### From GitHub Packages
-
-Install via direct tarball URL from [GitHub Packages](https://github.com/umd-mith/svelte-iiif-transcript-player/pkgs/npm/svelte-iiif-transcript-player). Scope-based registry config (`@umd-mith:registry=...`) would route _all_ `@umd-mith` packages to GitHub, breaking `@umd-mith/iiif-media-parsers` which lives on npm.
-
-**1. Authenticate with GitHub Packages**
-
-Create or update `.npmrc` in your project root:
-
-```ini
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```bash
+npm install @umd-mith/svelte-iiif-transcript-player
 ```
 
-You need a GitHub personal access token (classic) with `read:packages` scope, set as the `GITHUB_TOKEN` environment variable. Omit `@umd-mith:registry=...` so that `@umd-mith/iiif-media-parsers` resolves from npm normally.
-
-**2. Find the tarball URL**
+Optional peers for adaptive streaming — install only what your manifests need:
 
 ```bash
-npm view @umd-mith/svelte-iiif-transcript-player@<version> dist.tarball \
-  --registry=https://npm.pkg.github.com
+npm install hls.js    # HLS (.m3u8) sources
+npm install dashjs    # MPEG-DASH (.mpd) sources
 ```
-
-**3. Add to package.json**
-
-Use the tarball URL as the version:
-
-```json
-{
-  "dependencies": {
-    "@umd-mith/svelte-iiif-transcript-player": "https://npm.pkg.github.com/download/@umd-mith/svelte-iiif-transcript-player/<version>/<sha>"
-  }
-}
-```
-
-Then run `pnpm install` (or your package manager). The `@umd-mith/iiif-media-parsers` dependency resolves from npm.
 
 ### Peer Dependencies
 
