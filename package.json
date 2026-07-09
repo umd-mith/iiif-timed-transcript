@@ -53,6 +53,7 @@
   },
   "scripts": {
     "build": "svelte-kit sync && svelte-package && publint",
+    "smoke:docs": "node scripts/smoke-docs.mjs",
     "dev": "svelte-package --watch",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",

@@ -46,6 +46,12 @@ jobs:
       - name: Build docs
         run: pnpm --filter svelte-iiif-transcript-player-docs run build
 
+      - name: Install Chromium for smoke check
+        run: pnpm exec playwright install chromium
+
+      - name: Smoke-check built docs
+        run: pnpm run smoke:docs
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
