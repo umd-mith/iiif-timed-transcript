@@ -1,11 +1,8 @@
 ---
 import AVAnnotateDemo from "../components/AVAnnotateDemo.svelte";
 
-// AVAnnotate "Voices" export, archived 2025-03-26 (upstream site reorganized away
-// the standalone manifest). Vendored into docs/public so the demo stays stable.
-// The player opens on canvas 0 (the Rukeyser reading); the file also contains two
-// other recordings, but this demo shows a single canvas.
-const manifestUrl = `${import.meta.env.BASE_URL}/manifests/avannotate-voices.json`;
+const manifestUrl =
+  "https://avannotate.github.io/voices/manifests/spaces-and-dreams-in-muriel-rukeyser-s-the-speed-of-darkness.json";
 ---
 
 <!doctype html>
@@ -73,7 +70,7 @@ const manifestUrl = `${import.meta.env.BASE_URL}/manifests/avannotate-voices.jso
         <p
           class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed"
         >
-          This demo shows the player reading a real
+          This demo shows the player handling a real-world
           <a
             href="https://avannotate.github.io/voices/"
             target="_blank"
@@ -81,13 +78,13 @@ const manifestUrl = `${import.meta.env.BASE_URL}/manifests/avannotate-voices.jso
             class="text-terracotta-500 hover:text-terracotta-600 underline"
             >AVAnnotate</a
           >
-          export, where transcript annotations live in <code
+          manifest where transcript annotations live in <code
             class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
             >canvas.annotations</code
           > rather than <code
             class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
             >canvas.items</code
-          >. The manifest works as-is — there is no conversion step.
+          >.
         </p>
         <p
           class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed"
@@ -175,11 +172,8 @@ const { annotations, skipped } = buildTranscriptAnnotations(canvas);
               rel="noopener"
               class="text-terracotta-500 hover:text-terracotta-600 underline"
               >AVAnnotate Voices</a
-            >. Timed annotations carry speaker identification and
-            voice-characterization tags, read straight from the manifest's <code
-              class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
-              >canvas.annotations</code
-            >.
+            >. 110 annotations with speaker identification and voice
+            characterization tags.
           </p>
         </div>
 
@@ -189,16 +183,15 @@ const { annotations, skipped } = buildTranscriptAnnotations(canvas);
 
         <div class="mt-6 text-sm text-ink-500">
           <p>
-            Source: an
+            Source manifest:
             <a
-              href="https://avannotate.github.io/voices/"
+              href={manifestUrl}
               target="_blank"
               rel="noopener"
-              class="text-terracotta-500 hover:text-terracotta-600 underline"
-              >AVAnnotate &ldquo;Voices&rdquo;</a
+              class="text-terracotta-500 hover:text-terracotta-600 underline break-all"
             >
-            export (archived 2025-03-26), vendored into this docs site so the demo
-            stays stable.
+              {manifestUrl}
+            </a>
           </p>
         </div>
       </div>
