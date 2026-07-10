@@ -5,7 +5,7 @@
 [![License: BSD-3-Clause-Clear](https://img.shields.io/badge/License-BSD--3--Clause--Clear-blue.svg)](./LICENSE)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://umd-mith.github.io/svelte-iiif-transcript-player)
 
-Svelte 5 components that synchronize media playback with timed transcripts from [IIIF](https://iiif.io/) manifests. Designed for digital humanities projects, oral history archives, and anywhere time-based annotations meet audio/video.
+Svelte 5 components that render [IIIF](https://iiif.io/) audio and video with a synchronized, navigable transcript. It reads **standard IIIF** — supplementing annotations, Ranges, and VTT tracks — with no proprietary transcript format, so an archive can adopt it without re-modeling its data. Built for oral-history collections, digital humanities projects, and community-run archives that need a good audio/video and transcript viewer without building one from scratch. It renders one manifest well, and pairs with the IIIF tools that author and organize them.
 
 The compound component API lets you compose custom player layouts from small, focused pieces — controls, transcript panel, chapter navigation, canvas switching — while a bidirectional sync engine keeps the transcript scroll position and media playback in sync.
 
