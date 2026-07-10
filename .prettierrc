@@ -1,4 +1,12 @@
 {
-  "plugins": ["prettier-plugin-svelte"],
-  "overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }]
+  "plugins": ["prettier-plugin-svelte", "prettier-plugin-astro"],
+  "overrides": [
+    { "files": "*.svelte", "options": { "parser": "svelte" } },
+    { "files": "*.astro", "options": { "parser": "astro" } },
+    {
+      "comment": "prettier-plugin-astro's global embed hook mis-parses markdown code fences (throws on README); disable embedded formatting for markdown so prose still formats but fenced samples stay verbatim",
+      "files": "*.md",
+      "options": { "embeddedLanguageFormatting": "off" }
+    }
+  ]
 }
