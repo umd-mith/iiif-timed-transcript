@@ -61,6 +61,7 @@
             annotations: Annotation[];
             chapters: import("@umd-mith/iiif-media-parsers").Chapter[];
             activeChapterId: string | null;
+            transcriptStatus: import("./context").TranscriptStatus;
           };
         },
       ]
@@ -390,6 +391,7 @@
         annotations: player.annotations,
         chapters: player.chapters,
         activeChapterId: player.activeChapterId,
+        transcriptStatus: player.transcriptStatus,
       },
     })}
   {/if}

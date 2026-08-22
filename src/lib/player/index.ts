@@ -74,6 +74,9 @@ export type {
   CanvasInfo,
   TrackDefinition,
   PlayerRef,
+  TranscriptStatus,
+  PlayerErrorSource,
+  PlayerErrorInfo,
 } from "./context.js";
 export type {
   TranscriptContext,

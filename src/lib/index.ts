@@ -44,6 +44,9 @@ export type {
   MediaStrategy,
   CanvasInfo,
   PlayerRef,
+  TranscriptStatus,
+  PlayerErrorSource,
+  PlayerErrorInfo,
 } from "./player/index.js";
 export type {
   TranscriptContext,
