@@ -33,6 +33,10 @@
   } from "../media/dashUtils";
   import type { Annotation } from "../sync/types";
   import { manifestCache } from "./manifestCache";
+  import {
+    selectTranscriptTrack,
+    loadVTTTranscript,
+  } from "../iiif/vttTranscript";
 
   // Props
   let {
@@ -328,12 +332,27 @@
       // Discover VTT caption tracks from canvas.annotations (recipe 0219)
       player.tracks = getSupplementaryVTTTracks(canvas);
 
-      // annotations="auto": tier 1 — embedded TextualBody supplementing
-      // annotations (synchronous). Tier 2 (external VTT) is resolved below.
+      // annotations="auto": tier 1 — embedded TextualBody (synchronous);
+      // tier 2 — the canvas's external VTT supplementing track (async,
+      // see resolveVTTTranscript). A canvas with neither yields [] / "ready".
       if (annotations === "auto") {
         const embedded = buildTranscriptAnnotations(canvas).annotations;
-        player.annotations = embedded;
-        player.transcriptStatus = "ready";
+        if (embedded.length > 0) {
+          player.annotations = embedded;
+          player.transcriptStatus = "ready";
+        } else {
+          const track = selectTranscriptTrack(
+            player.tracks,
+            typeof navigator !== "undefined" ? navigator.language : undefined,
+          );
+          player.annotations = [];
+          if (track) {
+            player.transcriptStatus = "loading";
+            resolveVTTTranscript(track.src);
+          } else {
+            player.transcriptStatus = "ready";
+          }
+        }
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -389,6 +408,26 @@
         "DASH stream detected but dashjs is not available. Install it with: npm install dashjs",
       ),
     );
+  }
+
+  // Tier 2 of annotations="auto". Failures are non-fatal: the panel stays
+  // empty, native captions stay attached, playback is unaffected, and
+  // player.state.error is never written. Stale results (canvas switched or
+  // Root destroyed while fetching) are dropped via loadGeneration.
+  async function resolveVTTTranscript(url: string) {
+    const generation = loadGeneration;
+    try {
+      const result = await loadVTTTranscript(url);
+      if (destroyed || generation !== loadGeneration) return;
+      player.annotations = result.annotations;
+      player.transcriptStatus = "ready";
+    } catch (error) {
+      if (destroyed || generation !== loadGeneration) return;
+      const err = error instanceof Error ? error : new Error(String(error));
+      player.annotations = [];
+      player.transcriptStatus = "error";
+      reportError(err, { fatal: false, source: "transcript" });
+    }
   }
 
   // Set up media event listeners

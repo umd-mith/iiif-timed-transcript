@@ -169,10 +169,11 @@ export const MANIFEST_WITH_VTT_CAPTIONS = {
               type: "Annotation",
               motivation: "supplementing",
               body: {
-                id: "https://example.com/captions-en.vtt",
+                id: "https://example.com/captions-fr.vtt",
                 type: "Text",
                 format: "text/vtt",
-                language: "en",
+                language: "fr",
+                label: { fr: ["Sous-titres"] },
               },
               target: "https://example.com/canvas/1",
             },
@@ -386,6 +387,28 @@ export function deferred<T>(): {
   });
   return { promise, resolve };
 }
+
+export const VTT_FIXTURE_OK = `WEBVTT
+
+c1
+00:00:00.000 --> 00:00:02.000
+<v Narrator>First caption &amp; more
+
+c2
+00:00:02.000 --> 00:00:04.000
+Second caption
+`;
+
+export const VTT_FIXTURE_MALFORMED = `this is not webvtt`;
+
+export const VTT_FIXTURE_PARTIAL = `WEBVTT
+
+00:00:00.000 --> 00:00:01.000
+Only good cue
+
+garbage --> 00:00:02.000
+Bad cue
+`;
 
 /**
  * Audio manifest with embedded TextualBody supplementing annotations

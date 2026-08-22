@@ -12,6 +12,9 @@ import {
   MANIFEST_WITH_VTT_CAPTIONS,
   MANIFEST_MULTI_CANVAS,
   MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
+  VTT_FIXTURE_OK,
+  VTT_FIXTURE_MALFORMED,
+  VTT_FIXTURE_PARTIAL,
   mockFetchManifest,
   mockFetchRoutes,
   deferred,
@@ -382,9 +385,10 @@ describe("Root component", () => {
         expect(capturedCtx!.tracks).toBeDefined();
         expect(capturedCtx!.tracks).toHaveLength(1);
         expect(capturedCtx!.tracks[0]).toMatchObject({
-          src: "https://example.com/captions-en.vtt",
+          src: "https://example.com/captions-fr.vtt",
           kind: "captions",
-          srclang: "en",
+          srclang: "fr",
+          label: "Sous-titres",
         });
       });
     });
@@ -1482,6 +1486,262 @@ describe("Root component", () => {
       });
       expect(capturedCtx!.annotations).toEqual(given);
       expect(capturedCtx!.transcriptStatus).toBe("idle");
+    });
+
+    test("builds annotations from the external VTT track (tier 2) with a loading state in between", async () => {
+      const url = "https://example.com/auto-vtt.json";
+      const vtt = deferred<{ text: string }>();
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        "https://example.com/captions-fr.vtt": { promise: vtt.promise },
+      });
+      const onPlayerInit = vi.fn();
+      const onError = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          onPlayerInit,
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("loading");
+      });
+      expect(capturedCtx!.annotations).toEqual([]);
+      // playerrefavailable is not widened to wait for the VTT
+      expect(onPlayerInit).toHaveBeenCalledTimes(1);
+      // Native track still attached
+      expect(capturedCtx!.tracks).toHaveLength(1);
+
+      vtt.resolve({ text: VTT_FIXTURE_OK });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+      expect(capturedCtx!.annotations).toEqual([
+        { id: "c1", startTime: 0, endTime: 2, text: "First caption & more" },
+        { id: "c2", startTime: 2, endTime: 4, text: "Second caption" },
+      ]);
+      expect(onError).not.toHaveBeenCalled();
+      expect(capturedCtx!.state.error).toBeNull();
+    });
+
+    test("a 404 VTT is reported as non-fatal transcript; player stays usable", async () => {
+      const url = "https://example.com/auto-vtt-404.json";
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        "https://example.com/captions-fr.vtt": { status: 404 },
+      });
+      const onPlayerInit = vi.fn();
+      const onError = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          onPlayerInit,
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: false,
+        source: "transcript",
+      });
+      expect(onPlayerInit).toHaveBeenCalledTimes(1);
+      expect(capturedCtx!.state.error).toBeNull();
+      expect(capturedCtx!.transcriptStatus).toBe("error");
+      expect(capturedCtx!.annotations).toEqual([]);
+      expect(capturedCtx!.tracks).toHaveLength(1);
+    });
+
+    test("a malformed VTT is reported as non-fatal transcript", async () => {
+      const url = "https://example.com/auto-vtt-malformed.json";
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        "https://example.com/captions-fr.vtt": { text: VTT_FIXTURE_MALFORMED },
+      });
+      const onError = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: false,
+        source: "transcript",
+      });
+      expect(capturedCtx!.transcriptStatus).toBe("error");
+      expect(capturedCtx!.state.error).toBeNull();
+    });
+
+    test("a partially malformed VTT populates the panel without an error", async () => {
+      const url = "https://example.com/auto-vtt-partial.json";
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        "https://example.com/captions-fr.vtt": { text: VTT_FIXTURE_PARTIAL },
+      });
+      const onError = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+      expect(capturedCtx!.annotations).toHaveLength(1);
+      expect(capturedCtx!.annotations[0]!.text).toBe("Only good cue");
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    test("a VTT result that arrives after a canvas switch is dropped", async () => {
+      // MANIFEST_MULTI_CANVAS: canvas 0 = audio, no VTT; canvas 1 = video + VTT.
+      const url = "https://example.com/auto-vtt-stale.json";
+      const vtt = deferred<{ text: string }>();
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_MULTI_CANVAS },
+        "https://example.com/captions-en.vtt": { promise: vtt.promise },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          canvasIndex: 1,
+          annotations: "auto",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("loading");
+      });
+
+      capturedCtx!.actions.switchCanvas(0);
+      flushSync();
+      await vi.waitFor(() => {
+        expect(capturedCtx!.canvasIndex).toBe(0);
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+
+      vtt.resolve({ text: VTT_FIXTURE_OK });
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(capturedCtx!.annotations).toEqual([]);
+      expect(capturedCtx!.transcriptStatus).toBe("ready");
+    });
+
+    test("two Roots on one page resolve their own VTT transcripts", async () => {
+      const urlA = "https://example.com/auto-two-a.json";
+      const urlB = "https://example.com/auto-two-b.json";
+      const manifestB = {
+        ...MANIFEST_WITH_VTT_CAPTIONS,
+        id: urlB,
+        items: [
+          {
+            ...MANIFEST_WITH_VTT_CAPTIONS.items[0],
+            annotations: [
+              {
+                id: "https://example.com/canvas/1/annotations/b",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/1/annotations/b/1",
+                    type: "Annotation",
+                    motivation: "supplementing",
+                    body: {
+                      id: "https://example.com/captions-b.vtt",
+                      type: "Text",
+                      format: "text/vtt",
+                      language: "en",
+                    },
+                    target: "https://example.com/canvas/1",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      mockFetchRoutes({
+        [urlA]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        [urlB]: { json: manifestB },
+        "https://example.com/captions-fr.vtt": { text: VTT_FIXTURE_OK },
+        "https://example.com/captions-b.vtt": { text: VTT_FIXTURE_PARTIAL },
+      });
+      let ctxA: PlayerContext | null = null;
+      let ctxB: PlayerContext | null = null;
+      const target2 = document.createElement("div");
+      document.body.appendChild(target2);
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: urlA,
+          annotations: "auto",
+          children: createContextCapture(target, (ctx) => {
+            ctxA = ctx;
+          }),
+        },
+      });
+      mount(Root, {
+        target: target2,
+        props: {
+          manifestUrl: urlB,
+          annotations: "auto",
+          children: createContextCapture(target2, (ctx) => {
+            ctxB = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(ctxA!.transcriptStatus).toBe("ready");
+        expect(ctxB!.transcriptStatus).toBe("ready");
+      });
+      expect(ctxA!.annotations).toHaveLength(2);
+      expect(ctxB!.annotations).toHaveLength(1);
+      document.body.removeChild(target2);
     });
   });
 });
