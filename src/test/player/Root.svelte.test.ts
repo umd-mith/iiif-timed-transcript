@@ -14,6 +14,7 @@ import {
   mockFetchManifest,
   mockFetchRoutes,
   deferred,
+  buildStaleHlsManifest,
 } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
 
@@ -846,40 +847,6 @@ describe("Root component", () => {
         expect(capturedCtx!.canvasIndex).toBe(0);
       });
     });
-
-    // Builds a two-canvas manifest where canvas 0 is HLS and canvas 1 is
-    // plain audio, shared by both stale-HLS regression tests below.
-    function buildStaleHlsManifest(url: string) {
-      return {
-        ...MANIFEST_MULTI_CANVAS,
-        id: url,
-        items: [
-          {
-            ...MANIFEST_MULTI_CANVAS.items[0],
-            items: [
-              {
-                id: "https://example.com/canvas/1/page/1",
-                type: "AnnotationPage",
-                items: [
-                  {
-                    id: "https://example.com/canvas/1/page/1/annotation/1",
-                    type: "Annotation",
-                    motivation: "painting",
-                    body: {
-                      id: "https://example.com/stream/master.m3u8",
-                      type: "Video",
-                      format: "application/x-mpegURL",
-                    },
-                    target: "https://example.com/canvas/1",
-                  },
-                ],
-              },
-            ],
-          },
-          MANIFEST_MULTI_CANVAS.items[1],
-        ],
-      };
-    }
 
     // Regression test for the performCanvasSwitch null-reset fix (Root.svelte):
     // hlsAdapter/dashAdapter must be cleared when switching away from a

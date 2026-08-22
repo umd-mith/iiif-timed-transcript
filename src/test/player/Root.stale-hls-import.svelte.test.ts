@@ -3,7 +3,7 @@ import { mount, flushSync } from "svelte";
 import Root from "../../lib/player/Root.svelte";
 import type { PlayerContext } from "../../lib/player/context";
 import { createContextCapture } from "./test-utils";
-import { MANIFEST_MULTI_CANVAS, mockFetchManifest } from "./test-fixtures";
+import { mockFetchManifest, buildStaleHlsManifest } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
 
 // Regression test for the loadGeneration async-race guard itself
@@ -47,35 +47,7 @@ describe("Root stale HLS import (loadGeneration guard)", () => {
     try {
       // Canvas 0 is HLS, canvas 1 is plain audio (from MANIFEST_MULTI_CANVAS).
       const url = "https://example.com/stale-hls-deferred.json";
-      const manifest = {
-        ...MANIFEST_MULTI_CANVAS,
-        id: url,
-        items: [
-          {
-            ...MANIFEST_MULTI_CANVAS.items[0],
-            items: [
-              {
-                id: "https://example.com/canvas/1/page/1",
-                type: "AnnotationPage",
-                items: [
-                  {
-                    id: "https://example.com/canvas/1/page/1/annotation/1",
-                    type: "Annotation",
-                    motivation: "painting",
-                    body: {
-                      id: "https://example.com/stream/master.m3u8",
-                      type: "Video",
-                      format: "application/x-mpegURL",
-                    },
-                    target: "https://example.com/canvas/1",
-                  },
-                ],
-              },
-            ],
-          },
-          MANIFEST_MULTI_CANVAS.items[1],
-        ],
-      };
+      const manifest = buildStaleHlsManifest(url);
       mockFetchManifest(manifest);
 
       let capturedCtx: PlayerContext | null = null;

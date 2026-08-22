@@ -296,6 +296,43 @@ export const MANIFEST_MULTI_CANVAS = {
 };
 
 /**
+ * Builds a two-canvas manifest where canvas 0 is HLS and canvas 1 is plain
+ * audio, based on MANIFEST_MULTI_CANVAS. Shared by the stale-HLS regression
+ * tests in Root.svelte.test.ts and Root.stale-hls-import.svelte.test.ts.
+ */
+export function buildStaleHlsManifest(url: string) {
+  return {
+    ...MANIFEST_MULTI_CANVAS,
+    id: url,
+    items: [
+      {
+        ...MANIFEST_MULTI_CANVAS.items[0],
+        items: [
+          {
+            id: "https://example.com/canvas/1/page/1",
+            type: "AnnotationPage",
+            items: [
+              {
+                id: "https://example.com/canvas/1/page/1/annotation/1",
+                type: "Annotation",
+                motivation: "painting",
+                body: {
+                  id: "https://example.com/stream/master.m3u8",
+                  type: "Video",
+                  format: "application/x-mpegURL",
+                },
+                target: "https://example.com/canvas/1",
+              },
+            ],
+          },
+        ],
+      },
+      MANIFEST_MULTI_CANVAS.items[1],
+    ],
+  };
+}
+
+/**
  * Helper: mock fetch to return a manifest.
  */
 export function mockFetchManifest(manifest: Record<string, unknown>) {
