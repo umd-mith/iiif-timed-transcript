@@ -194,6 +194,14 @@
         player.transcriptStatus = "idle";
       } else if (mode === "auto" && currentCanvas) {
         deriveAutoAnnotations(currentCanvas);
+      } else if (mode === "auto") {
+        // No resolved canvas (the last load failed), so there is nothing to
+        // derive against — but "auto" still means Root owns `annotations`.
+        // Leaving the consumer's array in place would keep it rendering under
+        // Root's ownership next to the error banner. The next successful
+        // loadCanvas derives.
+        player.annotations = [];
+        player.transcriptStatus = "idle";
       }
     });
   });
@@ -426,11 +434,14 @@
   //
   // Tier 2: the canvas's external VTT track, only when tier 1 yields none.
   function deriveAutoAnnotations(canvas: CanvasData) {
+    // Blank-text annotations (a TextualBody with `value: ""`) do not count as
+    // a tier-1 hit: they would put empty segments on screen *and* suppress the
+    // canvas's real VTT. Same rule tier 2 applies to parsed cues.
     const embedded = buildTranscriptAnnotations(canvas, [
       "supplementing",
       "commenting",
       "tagging",
-    ]).annotations;
+    ]).annotations.filter((a) => a.text.trim().length > 0);
     if (embedded.length > 0) {
       player.annotations = embedded;
       player.transcriptStatus = "ready";

@@ -74,13 +74,22 @@
       playerContext.transcriptStatus === "loading",
   );
 
+  // The context read is tracked on purpose. Root clears the flag on every
+  // canvas load, and with a consumer-supplied annotations *array* nothing else
+  // this effect reads ever changes — so an untracked read would latch the flag
+  // at `false` for the life of the component and native captions would never
+  // be hidden on the documented primary path. Tracking it makes Root's clear
+  // force one extra run that re-publishes the truth; the write is guarded by
+  // the inequality check and happens inside `untrack`, so it converges in that
+  // one run rather than looping.
   $effect(() => {
     const populated = resolvedAnnotations.length > 0;
-    untrack(() => {
-      if (playerContext.transcriptPopulated !== populated) {
+    const current = playerContext.transcriptPopulated;
+    if (current !== populated) {
+      untrack(() => {
         playerContext.transcriptPopulated = populated;
-      }
-    });
+      });
+    }
   });
 
   $effect(() => {

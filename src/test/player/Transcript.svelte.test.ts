@@ -8,6 +8,7 @@ import TestTranscriptContextConsumer from "./TestTranscriptContextConsumer.svelt
 import TestTranscriptWithSegments from "./TestTranscriptWithSegments.svelte";
 import TestTranscriptLoadingSnippet from "./TestTranscriptLoadingSnippet.svelte";
 import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import { createReactiveMockPlayerContext } from "./reactive-context.svelte";
 import type { Annotation } from "../../lib/sync/types";
 import type { TranscriptContext } from "../../lib/player/transcript-context";
 
@@ -397,6 +398,30 @@ describe("Transcript", () => {
       flushSync();
 
       expect(ctx.transcriptPopulated).toBe(false);
+    });
+
+    test("re-publishes transcriptPopulated after the player clears it", () => {
+      // Root clears the flag on every canvas load. With a stable annotations
+      // array nothing else in this effect changes, so the flag would latch
+      // false for the life of the component unless the effect tracks it.
+      const ctx = createReactiveMockPlayerContext();
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+          }),
+        },
+      });
+      flushSync();
+      expect(ctx.transcriptPopulated).toBe(true);
+
+      ctx.transcriptPopulated = false;
+      flushSync();
+
+      expect(ctx.transcriptPopulated).toBe(true);
     });
 
     test("shows a loading affordance instead of the empty state while loading", () => {
