@@ -770,7 +770,15 @@ export function buildTranscriptAnnotations(
     // id, so we deduplicate by appending a suffix when collisions occur.
     let id = item.annotationId;
     if (seenIds.has(id)) {
-      id = `${id}-${annotations.length}`;
+      // Keep suffixing until the id is actually unique — a single-shot
+      // suffix can itself collide with an id seen earlier.
+      let n = 1;
+      let candidate = `${id}-${n}`;
+      while (seenIds.has(candidate)) {
+        n += 1;
+        candidate = `${id}-${n}`;
+      }
+      id = candidate;
     }
     seenIds.add(id);
 

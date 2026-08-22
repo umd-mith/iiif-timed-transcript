@@ -2,6 +2,8 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushSync, unmount } from "svelte";
 import Root from "../../lib/player/Root.svelte";
 import TestRootWrapper from "./TestRootWrapper.svelte";
+import TestRootAnnotationsWrapper from "./TestRootAnnotationsWrapper.svelte";
+import TestRootViewerTranscript from "./TestRootViewerTranscript.svelte";
 import type { PlayerContext } from "../../lib/player/context";
 import type { HlsConstructor } from "../../lib/media/hlsUtils";
 import { createContextCapture } from "./test-utils";
@@ -1742,6 +1744,340 @@ describe("Root component", () => {
       expect(ctxA!.annotations).toHaveLength(2);
       expect(ctxB!.annotations).toHaveLength(1);
       document.body.removeChild(target2);
+    });
+
+    test("clears annotations and status when a canvas switch lands on a non-AV canvas", async () => {
+      // Canvas 0: embedded transcript, tier 1 populates it. Canvas 1: an
+      // Image canvas — loadCanvas throws before it can re-derive anything.
+      // The failed switch must not leave canvas 0's transcript on screen.
+      const url = "https://example.com/auto-switch-to-non-av.json";
+      const manifest = {
+        ...MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
+        id: url,
+        items: [
+          ...MANIFEST_WITH_EMBEDDED_TRANSCRIPT.items,
+          {
+            id: "https://example.com/emb/canvas/2",
+            type: "Canvas",
+            width: 100,
+            height: 100,
+            items: [
+              {
+                id: "https://example.com/emb/canvas/2/page/1",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/emb/canvas/2/page/1/annotation/1",
+                    type: "Annotation",
+                    motivation: "painting",
+                    body: {
+                      id: "https://example.com/emb/image.jpg",
+                      type: "Image",
+                      format: "image/jpeg",
+                    },
+                    target: "https://example.com/emb/canvas/2",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      mockFetchRoutes({ [url]: { json: manifest } });
+      const onError = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.annotations.length).toBeGreaterThan(0);
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+
+      capturedCtx!.actions.switchCanvas(1);
+      flushSync();
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: true,
+        source: "canvas",
+      });
+      expect(capturedCtx!.annotations).toEqual([]);
+      expect(capturedCtx!.transcriptStatus).toBe("idle");
+    });
+
+    test("only embedded motivations supplementing/commenting/tagging count as tier 1; others fall through to tier 2", async () => {
+      // A canvas with a single "describing" annotation (not in the allow
+      // list) plus an external VTT supplement must fetch the VTT — the
+      // describing note must not permanently suppress tier 2.
+      const url = "https://example.com/auto-describing-plus-vtt.json";
+      const manifest = {
+        ...MANIFEST_WITH_VTT_CAPTIONS,
+        id: url,
+        items: [
+          {
+            ...MANIFEST_WITH_VTT_CAPTIONS.items[0],
+            annotations: [
+              ...MANIFEST_WITH_VTT_CAPTIONS.items[0]!.annotations,
+              {
+                id: "https://example.com/canvas/1/annotations/note",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/1/annotations/note/1",
+                    type: "Annotation",
+                    motivation: "describing",
+                    body: {
+                      type: "TextualBody",
+                      value: "An editorial note, not the transcript.",
+                      format: "text/plain",
+                    },
+                    target: "https://example.com/canvas/1#t=0,1",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      mockFetchRoutes({
+        [url]: { json: manifest },
+        "https://example.com/captions-fr.vtt": { text: VTT_FIXTURE_OK },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+      expect(capturedCtx!.annotations).toEqual([
+        { id: "c1", startTime: 0, endTime: 2, text: "First caption & more" },
+        { id: "c2", startTime: 2, endTime: 4, text: "Second caption" },
+      ]);
+    });
+
+    test("prefers an embedded commenting annotation (AVAnnotate-shaped) over an external VTT supplement", async () => {
+      const url = "https://example.com/auto-commenting-plus-vtt.json";
+      const manifest = {
+        ...MANIFEST_WITH_VTT_CAPTIONS,
+        id: url,
+        items: [
+          {
+            ...MANIFEST_WITH_VTT_CAPTIONS.items[0],
+            annotations: [
+              ...MANIFEST_WITH_VTT_CAPTIONS.items[0]!.annotations,
+              {
+                id: "https://example.com/canvas/1/annotations/comment",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/1/annotations/comment/1",
+                    type: "Annotation",
+                    motivation: "commenting",
+                    body: {
+                      type: "TextualBody",
+                      value: "This is the real transcript text.",
+                      format: "text/plain",
+                    },
+                    target: "https://example.com/canvas/1#t=0,1",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      // The VTT route is deliberately absent from mockFetchRoutes: if tier 1
+      // wins as expected, tier 2 never fetches it.
+      mockFetchRoutes({ [url]: { json: manifest } });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+      expect(capturedCtx!.annotations).toEqual([
+        {
+          id: "https://example.com/canvas/1/annotations/comment/1",
+          startTime: 0,
+          endTime: 1,
+          text: "This is the real transcript text.",
+        },
+      ]);
+    });
+
+    test('re-derives when the prop flips from an array to "auto" without a canvas switch', async () => {
+      const url = "https://example.com/auto-prop-flip-to-auto.json";
+      mockFetchRoutes({ [url]: { json: MANIFEST_WITH_EMBEDDED_TRANSCRIPT } });
+      const given = [{ id: "p1", startTime: 0, endTime: 1, text: "From prop" }];
+      let capturedCtx: PlayerContext | null = null;
+
+      const wrapper = mount(TestRootAnnotationsWrapper, {
+        target,
+        props: {
+          manifestUrl: url,
+          canvasIndex: 0,
+          annotations: given,
+          onResult: (ctx: PlayerContext) => {
+            capturedCtx = ctx;
+          },
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.mediaUrl).not.toBe("");
+      });
+      expect(capturedCtx!.annotations).toEqual(given);
+      expect(capturedCtx!.transcriptStatus).toBe("idle");
+
+      wrapper.setAnnotations("auto");
+      flushSync();
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+      expect(capturedCtx!.annotations).not.toEqual(given);
+      expect(capturedCtx!.annotations.length).toBeGreaterThan(0);
+    });
+
+    test('re-derives when the prop flips from "auto" to an array without a canvas switch', async () => {
+      const url = "https://example.com/auto-prop-flip-to-array.json";
+      mockFetchRoutes({ [url]: { json: MANIFEST_WITH_EMBEDDED_TRANSCRIPT } });
+      let capturedCtx: PlayerContext | null = null;
+
+      const wrapper = mount(TestRootAnnotationsWrapper, {
+        target,
+        props: {
+          manifestUrl: url,
+          canvasIndex: 0,
+          annotations: "auto",
+          onResult: (ctx: PlayerContext) => {
+            capturedCtx = ctx;
+          },
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+      expect(capturedCtx!.annotations.length).toBeGreaterThan(0);
+
+      const given = [
+        { id: "p1", startTime: 0, endTime: 1, text: "Consumer-supplied" },
+      ];
+      wrapper.setAnnotations(given);
+      flushSync();
+
+      expect(capturedCtx!.annotations).toEqual(given);
+      expect(capturedCtx!.transcriptStatus).toBe("idle");
+    });
+  });
+
+  describe('Root + Viewer + Transcript wiring (annotations="auto")', () => {
+    // These mount the real composition — Root deriving annotations, Viewer
+    // reading textTracks, and Transcript publishing transcriptPopulated on
+    // the same PlayerContext instance — rather than a hand-built mock
+    // context, so a wiring mistake between the two components (writing to a
+    // different context object, gating on the wrong field, effect ordering)
+    // would actually fail these tests.
+    test("hides the native track once the VTT-derived panel populates", async () => {
+      const url = "https://example.com/wiring-vtt.json";
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        "https://example.com/captions-fr.vtt": { text: VTT_FIXTURE_OK },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(TestRootViewerTranscript, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          onResult: (ctx: PlayerContext) => {
+            capturedCtx = ctx;
+          },
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+        expect(capturedCtx!.annotations.length).toBe(2);
+      });
+
+      const video = target.querySelector("video") as HTMLVideoElement;
+      expect(video).not.toBeNull();
+      await vi.waitFor(() => {
+        expect(video.textTracks).toHaveLength(1);
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+    });
+
+    test("leaves the native track showing when nothing renders the transcript panel", async () => {
+      const url = "https://example.com/wiring-vtt-no-panel.json";
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        "https://example.com/captions-fr.vtt": { text: VTT_FIXTURE_OK },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(TestRootViewerTranscript, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          renderTranscript: false,
+          onResult: (ctx: PlayerContext) => {
+            capturedCtx = ctx;
+          },
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+        expect(capturedCtx!.annotations.length).toBe(2);
+      });
+
+      const video = target.querySelector("video") as HTMLVideoElement;
+      expect(video).not.toBeNull();
+      await vi.waitFor(() => {
+        expect(video.textTracks).toHaveLength(1);
+      });
+      // No <Transcript> in the tree, so transcriptPopulated is never set —
+      // the track keeps its browser-default mode.
+      await new Promise((r) => setTimeout(r, 50));
+      expect(video.textTracks[0]!.mode).toBe("showing");
     });
   });
 });

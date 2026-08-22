@@ -19,7 +19,11 @@
     filterChaptersForCanvas,
     buildTranscriptAnnotations,
   } from "../iiif/helpers";
-  import { ManifestSchema, type ManifestData } from "../iiif/validators";
+  import {
+    ManifestSchema,
+    type ManifestData,
+    type CanvasData,
+  } from "../iiif/validators";
   import {
     isHlsUrl,
     isHlsNativelySupported,
@@ -121,6 +125,11 @@
   // changed — instance-local, so two Roots on a page never interfere.
   let loadGeneration = 0;
 
+  // The last successfully-resolved canvas (set even if a later step in
+  // loadCanvas throws — e.g. a non-AV canvas — so the annotations-prop
+  // effect can still re-derive "auto" against it after a mode flip).
+  let currentCanvas: CanvasData | null = null;
+
   function reportError(error: Error, info: PlayerErrorInfo) {
     if (destroyed) return;
     reportedErrors.add(error);
@@ -156,14 +165,28 @@
     }
   });
 
-  // Sync annotations prop into player context.
-  // This bridges the prop→class-state boundary (same pattern as canvasIndex effect below,
-  // but without side effects — just a reactive assignment). When "auto", loadCanvas
-  // owns player.annotations instead (embedded text / VTT derivation).
+  // Sync annotations prop into player context. Also reacts to the prop
+  // switching *mode* (array <-> "auto") without a canvas switch: flipping to
+  // an array resets transcriptStatus to "idle" (README: "idle when you pass
+  // annotations yourself"); flipping to "auto" re-derives tier 1/2 against
+  // the currently loaded canvas so the panel doesn't keep showing a stale
+  // array or stay stuck on a stale status.
   $effect(() => {
-    if (Array.isArray(annotations)) {
-      player.annotations = annotations;
-    }
+    const mode = annotations;
+    untrack(() => {
+      if (Array.isArray(mode)) {
+        player.annotations = mode;
+        player.transcriptStatus = "idle";
+      } else if (mode === "auto" && currentCanvas) {
+        // Not part of loadCanvas's own generation bump (that would race
+        // resolveHlsAdapter/resolveDashAdapter, which capture their own
+        // generation earlier in the same loadCanvas call). This path only
+        // ever runs outside loadCanvas, so it is safe to invalidate any
+        // in-flight VTT fetch here.
+        loadGeneration += 1;
+        deriveAutoAnnotations(currentCanvas);
+      }
+    });
   });
 
   // React to prop-driven canvas changes after manifest is loaded.
@@ -281,6 +304,16 @@
     if (!manifestData) return;
     loadGeneration += 1;
 
+    // Reset before anything below can throw. Without this, a canvas switch
+    // that lands on a non-AV canvas (or otherwise throws before reaching the
+    // tier-1/2 block) would leave the *previous* canvas's transcript
+    // annotations and "ready" status in place — the panel would render
+    // segments for media that never loaded.
+    if (annotations === "auto") {
+      player.annotations = [];
+      player.transcriptStatus = "idle";
+    }
+
     try {
       const canvas =
         manifestData.validated.items?.[index] ??
@@ -289,6 +322,7 @@
       if (!canvas) {
         throw new Error("No canvas found in IIIF manifest");
       }
+      currentCanvas = canvas;
 
       if (isAudioCanvas(canvas)) {
         player.mediaType = "audio";
@@ -336,29 +370,46 @@
       // tier 2 — the canvas's external VTT supplementing track (async,
       // see resolveVTTTranscript). A canvas with neither yields [] / "ready".
       if (annotations === "auto") {
-        const embedded = buildTranscriptAnnotations(canvas).annotations;
-        if (embedded.length > 0) {
-          player.annotations = embedded;
-          player.transcriptStatus = "ready";
-        } else {
-          const track = selectTranscriptTrack(
-            player.tracks,
-            typeof navigator !== "undefined" ? navigator.language : undefined,
-          );
-          player.annotations = [];
-          if (track) {
-            player.transcriptStatus = "loading";
-            resolveVTTTranscript(track.src);
-          } else {
-            player.transcriptStatus = "ready";
-          }
-        }
+        deriveAutoAnnotations(canvas);
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       player.state.error = err;
       player.state.isReady = false;
       reportError(err, { fatal: true, source: "canvas" });
+    }
+  }
+
+  // annotations="auto" tier 1/2 derivation, shared by loadCanvas (a fresh
+  // canvas) and the annotations-prop effect above (a mode flip with no
+  // canvas switch). Tier 1: embedded TextualBody supplementing/commenting/
+  // tagging annotations (matches getSupplementaryAnnotations' documented
+  // Postel's-Law motivations — AVAnnotate's commenting/tagging as well as
+  // strict-IIIF supplementing — so an unrelated motivation, e.g. a single
+  // editorial "describing" note, can't masquerade as the transcript and
+  // permanently suppress tier 2). Tier 2: the canvas's external VTT track.
+  function deriveAutoAnnotations(canvas: CanvasData) {
+    const embedded = buildTranscriptAnnotations(canvas, [
+      "supplementing",
+      "commenting",
+      "tagging",
+    ]).annotations;
+    if (embedded.length > 0) {
+      player.annotations = embedded;
+      player.transcriptStatus = "ready";
+      return;
+    }
+
+    const track = selectTranscriptTrack(
+      player.tracks,
+      typeof navigator !== "undefined" ? navigator.language : undefined,
+    );
+    player.annotations = [];
+    if (track) {
+      player.transcriptStatus = "loading";
+      resolveVTTTranscript(track.src);
+    } else {
+      player.transcriptStatus = "ready";
     }
   }
 

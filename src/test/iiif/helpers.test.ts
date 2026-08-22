@@ -1125,6 +1125,48 @@ describe("buildTranscriptAnnotations", () => {
     expect(skipped).toEqual([]);
   });
 
+  it("keeps suffixing ids when a single-shot suffix would itself collide", () => {
+    // Annotation ids "a", "a-2", "a" in order: the second is added to
+    // seenIds as-is; the third collides on "a" and a naive
+    // `${id}-${annotations.length}` suffix also lands on "a-2", which is
+    // already taken. It must keep trying until it lands on a truly unique id.
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "a",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "one" },
+            target: "https://example.org/canvas/1#t=0,1",
+          },
+          {
+            id: "a-2",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "two" },
+            target: "https://example.org/canvas/1#t=1,2",
+          },
+          {
+            id: "a",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "three" },
+            target: "https://example.org/canvas/1#t=2,3",
+          },
+        ],
+      },
+    ]);
+
+    const { annotations } = buildTranscriptAnnotations(canvas);
+
+    const ids = annotations.map((a) => a.id);
+    expect(new Set(ids).size).toBe(3);
+    expect(ids).toEqual(["a", "a-2", "a-1"]);
+  });
+
   it("should handle point-in-time annotations (start only, no end)", () => {
     const canvas = createSupplementaryCanvas([
       {

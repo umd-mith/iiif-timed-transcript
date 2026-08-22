@@ -1039,7 +1039,7 @@ describe("Viewer", () => {
       });
     });
 
-    test("hides captions when the panel populates later, and only once", async () => {
+    test("hides captions when the panel populates later", async () => {
       const ctx = createReactiveMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
@@ -1056,15 +1056,60 @@ describe("Viewer", () => {
       await vi.waitFor(() => {
         expect(video.textTracks[0]!.mode).toBe("hidden");
       });
+    });
 
-      // Viewer re-enables captions; a later annotation update must not undo it.
-      video.textTracks[0]!.mode = "showing";
+    test("restores captions to showing when the panel becomes empty again (toggle-able panel)", async () => {
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        tracks: twoTracks,
+        transcriptPopulated: true,
+      });
+      const video = mountVideo(ctx);
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      // Consumer closes the transcript panel — captions must come back, not
+      // leave the viewer with neither captions nor a transcript.
       ctx.transcriptPopulated = false;
       flushSync();
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("showing");
+        expect(video.textTracks[1]!.mode).toBe("showing");
+      });
+
+      // Reopening the panel hides them again.
       ctx.transcriptPopulated = true;
+      flushSync();
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+    });
+
+    test("does not clobber a track the viewer explicitly changed while the panel was populated", async () => {
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        tracks: twoTracks,
+        transcriptPopulated: true,
+      });
+      const video = mountVideo(ctx);
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      // Viewer turns captions on from the native controls, and also
+      // explicitly disables the second track.
+      video.textTracks[0]!.mode = "showing";
+      video.textTracks[1]!.mode = "disabled";
+
+      // Panel closes: the library must not override either manual choice.
+      ctx.transcriptPopulated = false;
       flushSync();
       await new Promise((r) => setTimeout(r, 50));
       expect(video.textTracks[0]!.mode).toBe("showing");
+      expect(video.textTracks[1]!.mode).toBe("disabled");
     });
 
     test("does not touch an explicit tracks prop", async () => {
