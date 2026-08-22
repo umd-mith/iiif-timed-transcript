@@ -484,3 +484,109 @@ export const MANIFEST_WITH_EMBEDDED_TRANSCRIPT = {
     },
   ],
 };
+
+/**
+ * Two-canvas manifest for initial-canvasIndex tests: canvas 0 resolves its
+ * transcript from an external VTT (tier 2), canvas 1 from embedded text
+ * (tier 1). The split lets a test assert that mounting with canvasIndex=1
+ * never issues canvas 0's VTT request.
+ */
+export const MANIFEST_INITIAL_INDEX = {
+  "@context": "http://iiif.io/api/presentation/3/context.json",
+  id: "https://example.com/manifest-initial-index",
+  type: "Manifest",
+  label: { en: ["Initial Index Manifest"] },
+  items: [
+    {
+      id: "https://example.com/ii/canvas/1",
+      type: "Canvas",
+      label: { en: ["Part 1"] },
+      duration: 60,
+      width: 1920,
+      height: 1080,
+      items: [
+        {
+          id: "https://example.com/ii/canvas/1/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.com/ii/canvas/1/page/1/annotation/1",
+              type: "Annotation",
+              motivation: "painting",
+              body: {
+                id: "https://example.com/initial-index-video0.mp4",
+                type: "Video",
+                format: "video/mp4",
+              },
+              target: "https://example.com/ii/canvas/1",
+            },
+          ],
+        },
+      ],
+      annotations: [
+        {
+          id: "https://example.com/ii/canvas/1/annotations/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.com/ii/canvas/1/annotations/1/annotation/1",
+              type: "Annotation",
+              motivation: "supplementing",
+              body: {
+                id: "https://example.com/initial-index-c0.vtt",
+                type: "Text",
+                format: "text/vtt",
+                language: "en",
+              },
+              target: "https://example.com/ii/canvas/1",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "https://example.com/ii/canvas/2",
+      type: "Canvas",
+      label: { en: ["Part 2"] },
+      duration: 30,
+      items: [
+        {
+          id: "https://example.com/ii/canvas/2/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.com/ii/canvas/2/page/1/annotation/1",
+              type: "Annotation",
+              motivation: "painting",
+              body: {
+                id: "https://example.com/initial-index-audio1.mp3",
+                type: "Sound",
+                format: "audio/mpeg",
+              },
+              target: "https://example.com/ii/canvas/2",
+            },
+          ],
+        },
+      ],
+      annotations: [
+        {
+          id: "https://example.com/ii/canvas/2/annotations/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.com/ii/canvas/2/annotations/1/annotation/1",
+              type: "Annotation",
+              motivation: "commenting",
+              body: {
+                type: "TextualBody",
+                value: "Second canvas text.",
+                format: "text/plain",
+              },
+              target: "https://example.com/ii/canvas/2#t=0,10",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};

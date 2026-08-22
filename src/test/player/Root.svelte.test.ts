@@ -14,6 +14,7 @@ import {
   MANIFEST_WITH_VTT_CAPTIONS,
   MANIFEST_MULTI_CANVAS,
   MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
+  MANIFEST_INITIAL_INDEX,
   VTT_FIXTURE_OK,
   VTT_FIXTURE_MALFORMED,
   VTT_FIXTURE_PARTIAL,
@@ -1671,6 +1672,83 @@ describe("Root component", () => {
 
       expect(capturedCtx!.annotations).toEqual([]);
       expect(capturedCtx!.transcriptStatus).toBe("ready");
+    });
+
+    test("mounting with canvasIndex=1 never loads canvas 0 (no wasted VTT fetch)", async () => {
+      // Canvas 0 carries an external VTT (tier 2), canvas 1 embedded text
+      // (tier 1). If the initial load ran against the $state default of 0
+      // before the prop was reconciled, canvas 0's VTT would be requested and
+      // then discarded.
+      const url = "https://example.com/auto-initial-index.json";
+      const c0Vtt = "https://example.com/initial-index-c0.vtt";
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_INITIAL_INDEX },
+        [c0Vtt]: { text: VTT_FIXTURE_OK },
+      });
+      const onCanvasChange = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          canvasIndex: 1,
+          annotations: "auto",
+          onCanvasChange,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+        expect(capturedCtx!.annotations).toHaveLength(1);
+      });
+      // Give any stray canvas-0 tier-2 fetch a chance to be issued.
+      await new Promise((r) => setTimeout(r, 30));
+
+      const fetchedUrls = (
+        globalThis.fetch as ReturnType<typeof vi.fn>
+      ).mock.calls.map((call) => String(call[0]));
+      expect(fetchedUrls.filter((u) => u === c0Vtt)).toHaveLength(0);
+      expect(capturedCtx!.canvasIndex).toBe(1);
+      expect(capturedCtx!.mediaUrl).toBe(
+        "https://example.com/initial-index-audio1.mp3",
+      );
+      expect(capturedCtx!.annotations[0]!.text).toBe("Second canvas text.");
+      expect(onCanvasChange).not.toHaveBeenCalled();
+    });
+
+    test("mounting with an out-of-range canvasIndex falls back to canvas 0", async () => {
+      const url = "https://example.com/auto-initial-index-oob.json";
+      const c0Vtt = "https://example.com/initial-index-c0.vtt";
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_INITIAL_INDEX },
+        [c0Vtt]: { text: VTT_FIXTURE_OK },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          canvasIndex: 99,
+          annotations: "auto",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+      expect(capturedCtx!.canvasIndex).toBe(0);
+      expect(capturedCtx!.mediaUrl).toBe(
+        "https://example.com/initial-index-video0.mp4",
+      );
+      expect(capturedCtx!.annotations).toHaveLength(2);
     });
 
     test("two Roots on one page resolve their own VTT transcripts", async () => {

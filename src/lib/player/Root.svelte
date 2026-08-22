@@ -297,6 +297,17 @@
       manifestData = data;
       player.canvases = buildCanvasInfoList(data.validated);
 
+      // Reconcile the prop into state BEFORE the first load. `player.canvasIndex`
+      // still holds its $state(0) default here; without this, mounting with
+      // canvasIndex > 0 would load canvas 0 and only then have the prop-watch
+      // effect switch away — a discarded load, including a wasted tier-2 VTT
+      // fetch under annotations="auto". The range check matters because
+      // loadCanvas (unlike performCanvasSwitch) does not guard its index: an
+      // out-of-range prop keeps the canvas-0 fallback.
+      if (canvasIndex >= 0 && canvasIndex < player.canvases.length) {
+        player.canvasIndex = canvasIndex;
+      }
+
       loadCanvas(player.canvasIndex);
     } catch (error) {
       // The cache is module-level: evict unconditionally so a rejected
