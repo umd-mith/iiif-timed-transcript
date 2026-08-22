@@ -386,3 +386,78 @@ export function deferred<T>(): {
   });
   return { promise, resolve };
 }
+
+/**
+ * Audio manifest with embedded TextualBody supplementing annotations
+ * (AVAnnotate-style; every annotation reuses the page id, as Voices does).
+ */
+export const MANIFEST_WITH_EMBEDDED_TRANSCRIPT = {
+  "@context": "http://iiif.io/api/presentation/3/context.json",
+  id: "https://example.com/manifest-embedded",
+  type: "Manifest",
+  label: { en: ["Embedded Transcript Manifest"] },
+  items: [
+    {
+      id: "https://example.com/emb/canvas/1",
+      type: "Canvas",
+      duration: 30,
+      items: [
+        {
+          id: "https://example.com/emb/canvas/1/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.com/emb/canvas/1/page/1/annotation/1",
+              type: "Annotation",
+              motivation: "painting",
+              body: {
+                id: "https://example.com/emb/audio.mp3",
+                type: "Sound",
+                format: "audio/mpeg",
+              },
+              target: "https://example.com/emb/canvas/1",
+            },
+          ],
+        },
+      ],
+      annotations: [
+        {
+          id: "https://example.com/emb/canvas/1/annotations/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.com/emb/canvas/1/annotations/1/page1",
+              type: "Annotation",
+              motivation: ["commenting", "tagging"],
+              body: [
+                {
+                  type: "TextualBody",
+                  value: "Welcome to the interview.",
+                  format: "text/plain",
+                  purpose: "commenting",
+                },
+                {
+                  type: "TextualBody",
+                  value: "Interviewer",
+                  purpose: "tagging",
+                },
+              ],
+              target: "https://example.com/emb/canvas/1#t=0,5",
+            },
+            {
+              id: "https://example.com/emb/canvas/1/annotations/1/page1",
+              type: "Annotation",
+              motivation: "commenting",
+              body: {
+                type: "TextualBody",
+                value: "Tell us where you grew up.",
+                format: "text/plain",
+              },
+              target: "https://example.com/emb/canvas/1#t=5,12",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};

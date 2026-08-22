@@ -5,6 +5,7 @@
     type CanvasInfo,
     type PlayerRef,
     type PlayerErrorInfo,
+    type TranscriptStatus,
   } from "./context";
   import { PlayerStateManager } from "./PlayerState.svelte";
   import {
@@ -16,6 +17,7 @@
     getSupplementaryVTTTracks,
     buildCanvasInfoList,
     filterChaptersForCanvas,
+    buildTranscriptAnnotations,
   } from "../iiif/helpers";
   import { ManifestSchema, type ManifestData } from "../iiif/validators";
   import {
@@ -49,7 +51,7 @@
   }: {
     manifestUrl: string;
     canvasIndex?: number;
-    annotations?: Annotation[];
+    annotations?: Annotation[] | "auto";
     initialTime?: number;
     autoplay?: boolean;
     hlsConstructor?: HlsConstructor;
@@ -73,7 +75,7 @@
             annotations: Annotation[];
             chapters: import("@umd-mith/iiif-media-parsers").Chapter[];
             activeChapterId: string | null;
-            transcriptStatus: import("./context").TranscriptStatus;
+            transcriptStatus: TranscriptStatus;
           };
         },
       ]
@@ -152,9 +154,12 @@
 
   // Sync annotations prop into player context.
   // This bridges the prop→class-state boundary (same pattern as canvasIndex effect below,
-  // but without side effects — just a reactive assignment).
+  // but without side effects — just a reactive assignment). When "auto", loadCanvas
+  // owns player.annotations instead (embedded text / VTT derivation).
   $effect(() => {
-    player.annotations = annotations;
+    if (Array.isArray(annotations)) {
+      player.annotations = annotations;
+    }
   });
 
   // React to prop-driven canvas changes after manifest is loaded.
@@ -322,6 +327,14 @@
 
       // Discover VTT caption tracks from canvas.annotations (recipe 0219)
       player.tracks = getSupplementaryVTTTracks(canvas);
+
+      // annotations="auto": tier 1 — embedded TextualBody supplementing
+      // annotations (synchronous). Tier 2 (external VTT) is resolved below.
+      if (annotations === "auto") {
+        const embedded = buildTranscriptAnnotations(canvas).annotations;
+        player.annotations = embedded;
+        player.transcriptStatus = "ready";
+      }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       player.state.error = err;

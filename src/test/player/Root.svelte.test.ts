@@ -11,6 +11,7 @@ import {
   MANIFEST_WITH_HLS,
   MANIFEST_WITH_VTT_CAPTIONS,
   MANIFEST_MULTI_CANVAS,
+  MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
   mockFetchManifest,
   mockFetchRoutes,
   deferred,
@@ -1400,6 +1401,87 @@ describe("Root component", () => {
         );
       });
       errorSpy.mockRestore();
+    });
+  });
+
+  describe('annotations="auto"', () => {
+    test("builds annotations from embedded TextualBody supplementing annotations (tier 1)", async () => {
+      const url = "https://example.com/auto-embedded.json";
+      mockFetchRoutes({ [url]: { json: MANIFEST_WITH_EMBEDDED_TRANSCRIPT } });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.annotations).toHaveLength(2);
+      });
+      expect(capturedCtx!.annotations[0]).toMatchObject({
+        startTime: 0,
+        endTime: 5,
+        text: "Welcome to the interview.",
+        metadata: { tags: ["Interviewer"] },
+      });
+      // Duplicate annotation ids (AVAnnotate) are de-duplicated
+      expect(capturedCtx!.annotations[0]!.id).not.toBe(
+        capturedCtx!.annotations[1]!.id,
+      );
+      expect(capturedCtx!.transcriptStatus).toBe("ready");
+    });
+
+    test("yields [] and status ready for a canvas with neither embedded text nor VTT", async () => {
+      const url = "https://example.com/auto-none.json";
+      mockFetchRoutes({ [url]: { json: mockManifest } });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.mediaUrl).not.toBe("");
+      });
+      expect(capturedCtx!.annotations).toEqual([]);
+      expect(capturedCtx!.transcriptStatus).toBe("ready");
+    });
+
+    test("passes transcriptStatus to the children snippet and leaves prop-mode untouched", async () => {
+      const url = "https://example.com/auto-prop-mode.json";
+      mockFetchRoutes({ [url]: { json: MANIFEST_WITH_EMBEDDED_TRANSCRIPT } });
+      const given = [{ id: "p1", startTime: 0, endTime: 1, text: "From prop" }];
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: given,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.mediaUrl).not.toBe("");
+      });
+      expect(capturedCtx!.annotations).toEqual(given);
+      expect(capturedCtx!.transcriptStatus).toBe("idle");
     });
   });
 });
