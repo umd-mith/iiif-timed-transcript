@@ -364,4 +364,58 @@ describe("Transcript", () => {
       );
     });
   });
+
+  describe("transcriptPopulated and loading state", () => {
+    test("sets transcriptPopulated on the player context from its effective annotations", () => {
+      const ctx = createMockPlayerContext();
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+          }),
+        },
+      });
+      flushSync();
+
+      expect(ctx.transcriptPopulated).toBe(true);
+    });
+
+    test("leaves transcriptPopulated false when there is nothing to show", () => {
+      const ctx = createMockPlayerContext();
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, { annotations: [] }),
+        },
+      });
+      flushSync();
+
+      expect(ctx.transcriptPopulated).toBe(false);
+    });
+
+    test("shows a loading affordance instead of the empty state while loading", () => {
+      const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, { annotations: [] }),
+        },
+      });
+      flushSync();
+
+      const panel = target.querySelector(".transcript-panel");
+      expect(panel?.getAttribute("aria-busy")).toBe("true");
+      expect(target.querySelector(".loading-message")?.textContent).toContain(
+        "Loading transcript",
+      );
+      expect(target.querySelector(".empty-message")).toBeNull();
+    });
+  });
 });

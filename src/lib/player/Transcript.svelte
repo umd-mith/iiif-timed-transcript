@@ -60,6 +60,29 @@
     annotations.length > 0 ? annotations : playerContext.annotations,
   );
 
+  // Publish the panel's *effective* populated state so Viewer (a sibling
+  // that cannot see TranscriptContext) can switch native captions off once
+  // the same text is on screen. Written only on change; cleared on unmount.
+  const isLoading = $derived(
+    resolvedAnnotations.length === 0 &&
+      playerContext.transcriptStatus === "loading",
+  );
+
+  $effect(() => {
+    const populated = resolvedAnnotations.length > 0;
+    untrack(() => {
+      if (playerContext.transcriptPopulated !== populated) {
+        playerContext.transcriptPopulated = populated;
+      }
+    });
+  });
+
+  $effect(() => {
+    return () => {
+      playerContext.transcriptPopulated = false;
+    };
+  });
+
   // Create viewer adapter for SyncController
   // This adapts the player context to the full IIIFMediaViewerRef interface
   const viewerAdapter: IIIFMediaViewerRef = {
@@ -250,11 +273,14 @@
   class="transcript-panel {className}"
   role="region"
   aria-label={ariaLabel}
+  aria-busy={isLoading}
   bind:this={scrollContainer}
 >
   {#if resolvedAnnotations.length === 0}
     <!-- Empty state -->
-    {#if empty}
+    {#if isLoading}
+      <p class="loading-message">Loading transcript…</p>
+    {:else if empty}
       {@render empty()}
     {:else}
       <p class="empty-message">No transcript available.</p>
@@ -285,6 +311,12 @@
   }
 
   .empty-message {
+    padding: 1rem;
+    text-align: center;
+    color: #595959;
+  }
+
+  .loading-message {
     padding: 1rem;
     text-align: center;
     color: #595959;
