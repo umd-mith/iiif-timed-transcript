@@ -103,21 +103,22 @@ pnpm run build
 
 Top-level context provider. Fetches the IIIF manifest, parses canvases, and coordinates all child components via Svelte context.
 
-| Prop             | Type                                          | Default  | Description                                                                                                     |
-| ---------------- | --------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------- |
-| `manifestUrl`    | `string`                                      | required | IIIF Presentation 3.0 manifest URL                                                                              |
-| `canvasIndex`    | `number`                                      | `0`      | Canvas to display                                                                                               |
-| `annotations`    | `Annotation[]`                                | `[]`     | Transcript annotations (passed through to context)                                                              |
-| `initialTime`    | `number`                                      | —        | Start playback at this time (seconds)                                                                           |
-| `autoplay`       | `boolean`                                     | `false`  | Auto-play media on load                                                                                         |
-| `hlsConstructor` | `HlsConstructor`                              | —        | Custom `hls.js` constructor (bypasses dynamic import)                                                           |
-| `onCanvasChange` | `(index: number, canvas: CanvasInfo) => void` | —        | Calls when canvas switches                                                                                      |
-| `onPlayerInit`   | `(player: PlayerRef) => void`                 | —        | Runs once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root) |
-| `class`          | `string`                                      | `""`     | CSS class for root container                                                                                    |
+| Prop             | Type                                                                                                                        | Default  | Description                                                                                                                                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manifestUrl`    | `string`                                                                                                                    | required | IIIF Presentation 3.0 manifest URL                                                                                                                                                                                            |
+| `canvasIndex`    | `number`                                                                                                                    | `0`      | Canvas to display                                                                                                                                                                                                             |
+| `annotations`    | `Annotation[] \| "auto"`                                                                                                    | `[]`     | Transcript annotations passed through to context. `"auto"` builds them from the manifest: embedded `TextualBody` supplementing annotations first, else the canvas's external WebVTT `supplementing` track (fetched on demand) |
+| `initialTime`    | `number`                                                                                                                    | —        | Start playback at this time (seconds)                                                                                                                                                                                         |
+| `autoplay`       | `boolean`                                                                                                                   | `false`  | Auto-play media on load                                                                                                                                                                                                       |
+| `hlsConstructor` | `HlsConstructor`                                                                                                            | —        | Custom `hls.js` constructor (bypasses dynamic import)                                                                                                                                                                         |
+| `onCanvasChange` | `(index: number, canvas: CanvasInfo) => void`                                                                               | —        | Calls when canvas switches                                                                                                                                                                                                    |
+| `onPlayerInit`   | `(player: PlayerRef) => void`                                                                                               | —        | Runs once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root)                                                                                                               |
+| `onError`        | `(error: Error, info: { fatal: boolean; source: "manifest" \| "canvas" \| "media" \| "playback" \| "transcript" }) => void` | —        | Called for every reported error. `fatal: true` means the player will not become usable; `fatal: false` (a rejected `play()`, a transcript that failed to load) needs no action                                                |
+| `class`          | `string`                                                                                                                    | `""`     | CSS class for root container                                                                                                                                                                                                  |
 
 **Children snippet:**
 
-Root passes `{ player }` to its children snippet with `state`, `actions`, `annotations`, `chapters`, and `activeChapterId`:
+Root passes `{ player }` to its children snippet with `state`, `actions`, `annotations`, `chapters`, `activeChapterId`, and `transcriptStatus` (`"idle" | "loading" | "ready" | "error"` — the lifecycle of `annotations="auto"`'s VTT fetch; `"idle"` when you pass annotations yourself):
 
 ```svelte
 <IIIFPlayer.Root {manifestUrl}>
@@ -143,6 +144,8 @@ Renders the media element (`<audio>` or `<video>`) for the current canvas. Auto-
 | `class`       | `string`                           | `""`     | CSS class                                                                                                   |
 
 When `poster` is omitted, the player automatically derives one from the current canvas's IIIF [`placeholderCanvas`](https://iiif.io/api/presentation/3.0/#placeholdercanvas), falling back to [`accompanyingCanvas`](https://iiif.io/api/presentation/3.0/#accompanyingcanvas). Poster images apply to video canvases only.
+
+Captions discovered from the manifest are attached as `<track>` elements exactly as before. When the transcript panel is populated — from `annotations="auto"`, from a `Transcript` `annotations` prop, or from Root's — `Viewer` switches every attached track to `mode = "hidden"` **once per canvas**, so the same text is not shown twice; the tracks stay available in the native controls and a viewer who turns them on keeps them. An explicit `tracks` prop is left alone.
 
 #### `IIIFPlayer.Controls`
 
@@ -219,6 +222,8 @@ Synchronized transcript panel. Manages bidirectional scroll↔media sync via an 
 | `class`                    | `string`                                                                  | `""`                 | CSS class                                                                        |
 
 **Children:** Use `TranscriptSearch` and `TranscriptSegments` as compound children. Without children, renders the empty state.
+
+While Root is fetching a VTT transcript (`annotations="auto"`, `transcriptStatus === "loading"`) the panel shows "Loading transcript…" with `aria-busy="true"` instead of the empty state.
 
 #### `IIIFPlayer.TranscriptSearch`
 
@@ -358,7 +363,7 @@ interface Annotation {
 
 The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) parses IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`) and types (`Chapter`, `SpeakerSegment`, `TemporalFragment`, `SpatialFragment`, `ParsedAnnotationTarget`) so consumers need only one import source.
 
-For a working example of parsing VTT into `Annotation[]`, see [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte).
+You usually do not need to parse VTT yourself: `<IIIFPlayer.Root annotations="auto">` builds transcript annotations from the manifest (embedded `TextualBody` first, else the canvas's external WebVTT `supplementing` track). The building blocks are exported for custom pipelines: `selectTranscriptTrack`, `loadVTTTranscript`, `buildAnnotationsFromVTTCues`, `vttCueToPlainText` (cue text is reduced to plain text — tags stripped, entities decoded — via `media-captions`' `tokenizeVTTCue`). For a hand-rolled example, see [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte).
 
 ### Using `annotation.metadata`
 
