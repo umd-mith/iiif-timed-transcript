@@ -110,6 +110,11 @@
   // Errors already handed to onError. The fallback watcher below skips them.
   const reportedErrors = new WeakSet<Error>();
 
+  // Bumped on every loadCanvas. Async resolvers (adapter imports, the VTT
+  // transcript fetch) capture it before awaiting and drop their result if it
+  // changed — instance-local, so two Roots on a page never interfere.
+  let loadGeneration = 0;
+
   function reportError(error: Error, info: PlayerErrorInfo) {
     if (destroyed) return;
     reportedErrors.add(error);
@@ -173,6 +178,8 @@
     player.mediaElement?.pause();
     player.hlsAdapter?.detach();
     player.dashAdapter?.detach();
+    player.hlsAdapter = null;
+    player.dashAdapter = null;
 
     // Reset player state for new canvas
     player.state.isPlaying = false;
@@ -263,6 +270,7 @@
   // Phase 2: Load a specific canvas — runs on each canvas switch
   function loadCanvas(index: number) {
     if (!manifestData) return;
+    loadGeneration += 1;
 
     try {
       const canvas =
@@ -323,38 +331,46 @@
   }
 
   async function resolveHlsAdapter() {
+    const generation = loadGeneration;
     const Hls =
       hlsConstructor ??
       (await import("hls.js")
-        .then((m) => m.default as unknown as HlsConstructor)
-        .catch(() => {
-          console.warn(
-            "[IIIFPlayer] HLS stream detected but hls.js is not installed. " +
-              "Install it with: npm install hls.js",
-          );
-          return null;
-        }));
+        .then((m) => m.default as unknown as HlsConstructor | undefined)
+        .catch(() => undefined));
+    if (destroyed || generation !== loadGeneration) return;
     if (Hls) {
       player.hlsAdapter = createHlsAdapter(Hls);
+      return;
     }
+    const err = new Error(
+      "HLS stream detected but hls.js is not available. Install it with: npm install hls.js",
+    );
+    console.warn(`[IIIFPlayer] ${err.message}`);
+    player.state.error = err;
+    player.state.isReady = false;
+    reportError(err, { fatal: true, source: "media" });
   }
 
   async function resolveDashAdapter() {
+    const generation = loadGeneration;
     const Dash =
       dashConstructor ??
       (await import("dashjs")
         // dashjs 5.x is ESM-only with a named `MediaPlayer` factory export.
         .then((m) => m.MediaPlayer())
-        .catch(() => {
-          console.warn(
-            "[IIIFPlayer] DASH stream detected but dashjs is not installed. " +
-              "Install it with: npm install dashjs",
-          );
-          return null;
-        }));
+        .catch(() => undefined));
+    if (destroyed || generation !== loadGeneration) return;
     if (Dash) {
       player.dashAdapter = createDashAdapter(Dash);
+      return;
     }
+    const err = new Error(
+      "DASH stream detected but dashjs is not available. Install it with: npm install dashjs",
+    );
+    console.warn(`[IIIFPlayer] ${err.message}`);
+    player.state.error = err;
+    player.state.isReady = false;
+    reportError(err, { fatal: true, source: "media" });
   }
 
   // Set up media event listeners

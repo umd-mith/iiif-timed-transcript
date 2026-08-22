@@ -846,6 +846,79 @@ describe("Root component", () => {
         expect(capturedCtx!.canvasIndex).toBe(0);
       });
     });
+
+    test("a stale HLS resolution after a canvas switch does not attach an adapter", async () => {
+      // This Chromium build under Playwright reports canPlayType("maybe") for
+      // HLS mime types (see hlsUtils.test.ts), so force native support off to
+      // deterministically exercise the hls-js path this test targets.
+      const canPlayTypeSpy = vi
+        .spyOn(HTMLMediaElement.prototype, "canPlayType")
+        .mockReturnValue("");
+
+      // Canvas 2 of MANIFEST_WITH_HLS is not HLS; build a two-canvas manifest
+      // where canvas 0 is HLS and canvas 1 is plain audio.
+      const url = "https://example.com/stale-hls.json";
+      const manifest = {
+        ...MANIFEST_MULTI_CANVAS,
+        id: url,
+        items: [
+          {
+            ...MANIFEST_MULTI_CANVAS.items[0],
+            items: [
+              {
+                id: "https://example.com/canvas/1/page/1",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/1/page/1/annotation/1",
+                    type: "Annotation",
+                    motivation: "painting",
+                    body: {
+                      id: "https://example.com/stream/master.m3u8",
+                      type: "Video",
+                      format: "application/x-mpegURL",
+                    },
+                    target: "https://example.com/canvas/1",
+                  },
+                ],
+              },
+            ],
+          },
+          MANIFEST_MULTI_CANVAS.items[1],
+        ],
+      };
+      mockFetchManifest(manifest);
+
+      // A constructor whose resolution we control: hlsConstructor is used
+      // synchronously, so force the async path by leaving it undefined and
+      // relying on the real hls.js import — then switch canvas immediately.
+      let capturedCtx: PlayerContext | null = null;
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          canvasIndex: 0,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaStrategy).toBe("hls-js");
+      });
+
+      // Switch before the dynamic import can settle.
+      capturedCtx!.actions.switchCanvas(1);
+      flushSync();
+      await new Promise((r) => setTimeout(r, 100));
+
+      expect(capturedCtx!.canvasIndex).toBe(1);
+      expect(capturedCtx!.mediaStrategy).toBe("native");
+      expect(capturedCtx!.hlsAdapter).toBeNull();
+      expect(capturedCtx!.state.error).toBeNull();
+      canPlayTypeSpy.mockRestore();
+    });
   });
 
   describe("onPlayerInit callback", () => {
