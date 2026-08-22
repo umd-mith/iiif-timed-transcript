@@ -106,6 +106,24 @@ describe("buildAnnotationsFromVTTCues", () => {
     expect(new Set(ids).size).toBe(3);
     expect(ids).toEqual(["a", "a-2", "a-1"]);
   });
+
+  it("skips cues whose tokenized text is empty", () => {
+    const result = buildAnnotationsFromVTTCues(
+      [
+        cue(0, 1, "Real text", "c1"),
+        cue(1, 2, "   ", "blank"),
+        cue(2, 3, "<v Alice></v>", "tags-only"),
+      ],
+      tokenizeVTTCue,
+    );
+    expect(result.annotations).toEqual([
+      { id: "c1", startTime: 0, endTime: 1, text: "Real text" },
+    ]);
+    expect(result.skipped).toEqual([
+      { annotationId: "blank", reason: "no-text-body" },
+      { annotationId: "tags-only", reason: "no-text-body" },
+    ]);
+  });
 });
 
 const VTT_OK = `WEBVTT

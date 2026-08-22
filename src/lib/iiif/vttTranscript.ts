@@ -1,6 +1,10 @@
 import type { TrackDefinition } from "../player/context.js";
 import type { VTTCue, VTTNode } from "media-captions";
-import type { Annotation, TranscriptAnnotationResult } from "../sync/types.js";
+import type {
+  Annotation,
+  SkippedAnnotation,
+  TranscriptAnnotationResult,
+} from "../sync/types.js";
 
 // ============================================================================
 // VTT → transcript annotations (annotations="auto" tier 2)
@@ -69,9 +73,24 @@ export function buildAnnotationsFromVTTCues(
   tokenize: VTTCueTokenizer,
 ): TranscriptAnnotationResult {
   const annotations: Annotation[] = [];
+  const skipped: SkippedAnnotation[] = [];
   const seenIds = new Set<string>();
 
   for (const cue of cues) {
+    // A cue whose payload tokenizes to nothing (whitespace-only, or tags with
+    // no text leaves) would render as an empty, unclickable transcript
+    // segment. Skip it — and do so before the id is reserved, so a blank cue
+    // cannot push a later cue onto a suffixed id. `no-text-body` is the same
+    // reason buildTranscriptAnnotations uses for an annotation with no text.
+    const text = vttCueToPlainText(cue, tokenize);
+    if (!text) {
+      skipped.push({
+        annotationId: cue.id || `cue-${cue.startTime}`,
+        reason: "no-text-body",
+      });
+      continue;
+    }
+
     let id = cue.id || `cue-${cue.startTime}`;
     if (seenIds.has(id)) {
       // Keep suffixing until we land on an id that is actually unique —
@@ -92,11 +111,11 @@ export function buildAnnotationsFromVTTCues(
       id,
       startTime: cue.startTime,
       endTime: cue.endTime,
-      text: vttCueToPlainText(cue, tokenize),
+      text,
     });
   }
 
-  return { annotations, skipped: [] };
+  return { annotations, skipped };
 }
 
 /**

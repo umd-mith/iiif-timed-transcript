@@ -5,6 +5,7 @@ import Viewer from "../../lib/player/Viewer.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
 import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 import { createReactiveMockPlayerContext } from "./reactive-context.svelte";
+import type { TrackDefinition } from "../../lib/player/context";
 
 describe("Viewer", () => {
   let target: HTMLElement;
@@ -989,6 +990,23 @@ describe("Viewer", () => {
       },
     ];
 
+    // A second canvas's tracks: different `src`, so the keyed {#each} in
+    // Viewer recreates the <track> elements the way a real canvas switch does.
+    const otherTracks: TrackDefinition[] = [
+      {
+        src: "https://example.com/canvas-2-en.vtt",
+        kind: "captions",
+        srclang: "en",
+        label: "English",
+      },
+      {
+        src: "https://example.com/canvas-2-de.vtt",
+        kind: "captions",
+        srclang: "de",
+        label: "Deutsch",
+      },
+    ];
+
     function mountVideo(
       ctx: ReturnType<typeof createReactiveMockPlayerContext>,
       viewerProps: Record<string, unknown> = {},
@@ -1104,10 +1122,32 @@ describe("Viewer", () => {
       });
     });
 
+    // Root's performCanvasSwitch writes `mediaUrl = ""` and loadCanvas writes
+    // the new url in ONE synchronous call chain, so Svelte batches them and
+    // Viewer's effect never observes the "". These helpers drive the switch
+    // the way Root really does: every write, then a single flush.
+    function switchCanvas(
+      ctx: ReturnType<typeof createReactiveMockPlayerContext>,
+      next: {
+        canvasIndex: number;
+        mediaUrl: string;
+        tracks: TrackDefinition[];
+      },
+    ) {
+      ctx.mediaUrl = "";
+      ctx.transcriptPopulated = false;
+      ctx.tracks = [];
+      ctx.canvasIndex = next.canvasIndex;
+      ctx.mediaUrl = next.mediaUrl;
+      ctx.tracks = next.tracks;
+      flushSync();
+    }
+
     test("starts over on a canvas switch (new mediaUrl)", async () => {
       const ctx = createReactiveMockPlayerContext({
         mediaUrl: "https://example.com/video-1.mp4",
         mediaType: "video",
+        canvasIndex: 0,
         tracks: twoTracks,
         transcriptPopulated: true,
       });
@@ -1116,12 +1156,11 @@ describe("Viewer", () => {
         expect(video.textTracks[0]!.mode).toBe("hidden");
       });
 
-      // Simulate Root's canvas switch: media cleared, panel cleared, new media.
-      ctx.mediaUrl = "";
-      ctx.transcriptPopulated = false;
-      flushSync();
-      ctx.mediaUrl = "https://example.com/video-2.mp4";
-      flushSync();
+      switchCanvas(ctx, {
+        canvasIndex: 1,
+        mediaUrl: "https://example.com/video-2.mp4",
+        tracks: otherTracks,
+      });
       const video2 = target.querySelector("video") as HTMLVideoElement;
       await vi.waitFor(() => {
         expect(video2.textTracks[0]!.mode).toBe("showing");
@@ -1140,6 +1179,7 @@ describe("Viewer", () => {
       const ctx = createReactiveMockPlayerContext({
         mediaUrl: urlA,
         mediaType: "video",
+        canvasIndex: 0,
         tracks: twoTracks,
         transcriptPopulated: true,
       });
@@ -1148,13 +1188,13 @@ describe("Viewer", () => {
         expect(video.textTracks[0]!.mode).toBe("hidden");
       });
 
-      // A -> B (Root clears mediaUrl between canvases, so the <video> — and
-      // with it every <track default> — is recreated).
-      ctx.mediaUrl = "";
-      ctx.transcriptPopulated = false;
-      flushSync();
-      ctx.mediaUrl = urlB;
-      flushSync();
+      // A -> B: canvas-scoped tracks are replaced, so every <track default>
+      // is recreated and the browser selects the new first one.
+      switchCanvas(ctx, {
+        canvasIndex: 1,
+        mediaUrl: urlB,
+        tracks: otherTracks,
+      });
       const videoB = target.querySelector("video") as HTMLVideoElement;
       await vi.waitFor(() => {
         expect(videoB.textTracks[0]!.mode).toBe("showing");
@@ -1163,10 +1203,11 @@ describe("Viewer", () => {
       // B -> A: a "last URL written" latch would still hold urlA here and
       // short-circuit, leaving the fresh default track showing on top of a
       // populated panel.
-      ctx.mediaUrl = "";
-      flushSync();
-      ctx.mediaUrl = urlA;
-      flushSync();
+      switchCanvas(ctx, {
+        canvasIndex: 0,
+        mediaUrl: urlA,
+        tracks: twoTracks,
+      });
       const videoA2 = target.querySelector("video") as HTMLVideoElement;
       await vi.waitFor(() => {
         expect(videoA2.textTracks[0]!.mode).toBe("showing");
@@ -1177,6 +1218,43 @@ describe("Viewer", () => {
       await vi.waitFor(() => {
         expect(videoA2.textTracks[0]!.mode).toBe("hidden");
         expect(videoA2.textTracks[1]!.mode).toBe("hidden");
+      });
+    });
+
+    test("re-arms for two canvases that share one media file", async () => {
+      // Same media body painted by both canvases, different VTT tracks. The
+      // url never changes across the switch, so a url-only latch never
+      // re-arms and canvas 1's fresh <track default> stays showing on top of
+      // a populated panel.
+      const sharedUrl = "https://example.com/shared-video.mp4";
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: sharedUrl,
+        mediaType: "video",
+        canvasIndex: 0,
+        tracks: twoTracks,
+        transcriptPopulated: true,
+      });
+      const video = mountVideo(ctx);
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      switchCanvas(ctx, {
+        canvasIndex: 1,
+        mediaUrl: sharedUrl,
+        tracks: otherTracks,
+      });
+      const video2 = target.querySelector("video") as HTMLVideoElement;
+      await vi.waitFor(() => {
+        expect(video2.textTracks).toHaveLength(otherTracks.length);
+        expect(video2.textTracks[0]!.mode).toBe("showing");
+      });
+
+      ctx.transcriptPopulated = true;
+      flushSync();
+      await vi.waitFor(() => {
+        expect(video2.textTracks[0]!.mode).toBe("hidden");
+        expect(video2.textTracks[1]!.mode).toBe("hidden");
       });
     });
   });

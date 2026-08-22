@@ -321,7 +321,15 @@
     // segments for media that never loaded. Tracks are canvas-scoped for the
     // same reason: a failed canvas must not inherit the previous canvas's
     // VTT, which a later "auto" re-derive would then fetch.
+    //
+    // transcriptPopulated belongs in the same reset: Viewer's effect runs
+    // before Transcript's in tree order, so without this it would see the
+    // *previous* canvas's `true`, hide the new canvas's tracks, and spend its
+    // once-per-load latch before the new panel ever populates — leaving a
+    // canvas whose transcript then fails with neither captions nor
+    // transcript. Transcript re-publishes it truthfully on the next flush.
     player.tracks = [];
+    player.transcriptPopulated = false;
     if (annotations === "auto") {
       player.annotations = [];
       player.transcriptStatus = "idle";
@@ -391,6 +399,10 @@
         deriveAutoAnnotations(canvas);
       }
     } catch (error) {
+      // No canvas is loaded any more, so nothing may be re-derived against
+      // one: leaving the last good canvas here would let a later flip back to
+      // "auto" put its tier-1 transcript on screen next to the error banner.
+      currentCanvas = null;
       const err = error instanceof Error ? error : new Error(String(error));
       player.state.error = err;
       player.state.isReady = false;

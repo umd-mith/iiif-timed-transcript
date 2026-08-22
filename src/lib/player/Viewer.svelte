@@ -68,21 +68,27 @@
   // panel again (toggle, tab, responsive breakpoint) does not get the native
   // captions back — such a host should pass `tracks` explicitly, which is
   // exempt from this policy (consumer's choice).
-  // `captionsHiddenForUrl` is the once-per-canvas latch; `lastSeenUrl` re-arms
-  // it whenever ctx.mediaUrl changes — including the pass through "" that
-  // Root's performCanvasSwitch makes. Without that re-arm, revisiting a canvas
-  // (A -> B -> A) or two canvases sharing one media file would leave the
-  // recreated `<track default>` showing on top of a populated panel, because
-  // the latch still held that URL from the previous visit.
-  let captionsHiddenForUrl = "";
+  // `captionsHidden` is the once-per-canvas-load latch. It re-arms whenever
+  // the *load identity* — the (canvasIndex, mediaUrl) pair — changes. Keying
+  // on the url alone is not enough: Root's performCanvasSwitch writes
+  // `mediaUrl = ""` and loadCanvas writes the new url in one synchronous call
+  // chain, so Svelte batches them and this effect never observes the "" — two
+  // canvases painting the same media body with different VTT tracks would
+  // then look like no change at all, and the recreated `<track default>`
+  // would stay showing on top of a populated panel. The canvas index moves on
+  // every switch, so the pair always does.
+  let captionsHidden = false;
   let lastSeenUrl = "";
+  let lastSeenCanvas = -1;
   $effect(() => {
     const el = localMediaElement;
     const populated = ctx.transcriptPopulated;
     const url = ctx.mediaUrl;
-    if (url !== lastSeenUrl) {
+    const canvas = ctx.canvasIndex;
+    if (url !== lastSeenUrl || canvas !== lastSeenCanvas) {
       lastSeenUrl = url;
-      captionsHiddenForUrl = "";
+      lastSeenCanvas = canvas;
+      captionsHidden = false;
     }
     const trackCount = effectiveTracks.length;
     const usingContextTracks = tracks.length === 0;
@@ -90,7 +96,7 @@
       return;
     }
     if (!(el instanceof HTMLVideoElement)) return;
-    if (captionsHiddenForUrl === url) return;
+    if (captionsHidden) return;
     untrack(() => {
       const list = el.textTracks;
       if (list.length === 0) return;
@@ -98,7 +104,7 @@
         const track = list[i];
         if (track) track.mode = "hidden";
       }
-      captionsHiddenForUrl = url;
+      captionsHidden = true;
     });
   });
 

@@ -2047,14 +2047,42 @@ describe("Root component", () => {
       expect(capturedCtx!.transcriptStatus).toBe("idle");
     });
 
-    test("a failed canvas switch clears tracks so a later re-derive cannot use the previous canvas's VTT", async () => {
+    test("a failed canvas switch clears tracks and the current canvas, so a later re-derive resurrects nothing", async () => {
       const url = "https://example.com/auto-failed-canvas-clears-tracks.json";
       const vttUrl = "https://example.com/captions-fr.vtt";
+      const canvas0 = MANIFEST_WITH_VTT_CAPTIONS.items[0]!;
       const manifest = {
         ...MANIFEST_WITH_VTT_CAPTIONS,
         id: url,
         items: [
-          MANIFEST_WITH_VTT_CAPTIONS.items[0],
+          {
+            ...canvas0,
+            // Canvas 0 also carries an embedded (tier-1) transcript. If a
+            // failed switch left it as the "current canvas", a later flip
+            // back to "auto" would re-derive *this* text next to the error
+            // banner — no fetch involved, so clearing tracks alone does not
+            // catch it.
+            annotations: [
+              ...canvas0.annotations,
+              {
+                id: "https://example.com/canvas/1/annotations/2",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/1/annotations/2/annotation/1",
+                    type: "Annotation",
+                    motivation: "supplementing",
+                    body: {
+                      type: "TextualBody",
+                      value: "Embedded transcript line",
+                      format: "text/plain",
+                    },
+                    target: "https://example.com/canvas/1#t=0,5",
+                  },
+                ],
+              },
+            ],
+          },
           {
             id: "https://example.com/canvas/2",
             type: "Canvas",
@@ -2122,7 +2150,7 @@ describe("Root component", () => {
       expect(capturedCtx!.tracks).toEqual([]);
 
       // A mode flip back to "auto" re-derives — it must not resurrect the
-      // previous canvas's VTT.
+      // previous canvas's embedded transcript or its VTT.
       wrapper.setAnnotations([]);
       flushSync();
       wrapper.setAnnotations("auto");
@@ -2131,6 +2159,7 @@ describe("Root component", () => {
       flushSync();
 
       expect(capturedCtx!.annotations).toEqual([]);
+      expect(capturedCtx!.transcriptStatus).toBe("idle");
       expect(vttCalls()).toBe(callsAfterFirstCanvas);
     });
   });
@@ -2208,6 +2237,115 @@ describe("Root component", () => {
       // the track keeps its browser-default mode.
       await new Promise((r) => setTimeout(r, 50));
       expect(video.textTracks[0]!.mode).toBe("showing");
+    });
+
+    test("does not hide the next canvas's captions on the previous canvas's populated panel", async () => {
+      // Viewer's effect runs before Transcript's in tree order, so on a canvas
+      // switch it sees canvas A's `transcriptPopulated` unless loadCanvas
+      // clears it. If it does not, canvas B's tracks are hidden and the latch
+      // is spent before B's panel populates — and when B's transcript fails,
+      // the viewer is left with neither captions nor transcript.
+      const url = "https://example.com/wiring-switch-to-failing-vtt.json";
+      const vttA = "https://example.com/captions-fr.vtt";
+      const vttB = "https://example.com/canvas-2-missing.vtt";
+      const manifest = {
+        ...MANIFEST_WITH_VTT_CAPTIONS,
+        id: url,
+        items: [
+          MANIFEST_WITH_VTT_CAPTIONS.items[0],
+          {
+            id: "https://example.com/canvas/2",
+            type: "Canvas",
+            duration: 120,
+            items: [
+              {
+                id: "https://example.com/canvas/2/page/1",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/2/page/1/annotation/1",
+                    type: "Annotation",
+                    motivation: "painting",
+                    body: {
+                      id: "https://example.com/video-2.mp4",
+                      type: "Video",
+                      format: "video/mp4",
+                    },
+                    target: "https://example.com/canvas/2",
+                  },
+                ],
+              },
+            ],
+            annotations: [
+              {
+                id: "https://example.com/canvas/2/annotations/1",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/2/annotations/1/annotation/1",
+                    type: "Annotation",
+                    motivation: "supplementing",
+                    body: {
+                      id: vttB,
+                      type: "Text",
+                      format: "text/vtt",
+                      language: "en",
+                      label: { en: ["Captions"] },
+                    },
+                    target: "https://example.com/canvas/2",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      mockFetchRoutes({
+        [url]: { json: manifest },
+        [vttA]: { text: VTT_FIXTURE_OK },
+        [vttB]: { status: 404, text: "" },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(TestRootViewerTranscript, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: "auto",
+          onError: () => {},
+          onResult: (ctx: PlayerContext) => {
+            capturedCtx = ctx;
+          },
+        },
+      });
+
+      // Canvas A: panel populates, its native track goes hidden.
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+        expect(capturedCtx!.annotations.length).toBe(2);
+      });
+      const videoA = target.querySelector("video") as HTMLVideoElement;
+      await vi.waitFor(() => {
+        expect(videoA.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      // Canvas B: its VTT 404s, so the panel never populates.
+      capturedCtx!.actions.switchCanvas(1);
+      flushSync();
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("error");
+      });
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      const videoB = target.querySelector("video") as HTMLVideoElement;
+      expect(capturedCtx!.tracks.map((t) => t.src)).toEqual([vttB]);
+      await vi.waitFor(() => {
+        expect(videoB.textTracks).toHaveLength(1);
+      });
+      expect(capturedCtx!.annotations).toEqual([]);
+      expect(target.textContent).toContain("No transcript available.");
+      expect(videoB.textTracks[0]!.mode).not.toBe("hidden");
     });
   });
 });
