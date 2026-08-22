@@ -32,6 +32,11 @@
 
     // Snippets
     empty?: Snippet;
+    /**
+     * Replaces the built-in "Loading transcript…" affordance while
+     * `transcriptStatus === "loading"` and there is nothing to show yet.
+     */
+    loading?: Snippet;
 
     class?: string;
     children?: Snippet;
@@ -47,6 +52,7 @@
     onActiveAnnotationChange,
     onSegmentClick,
     empty,
+    loading,
     class: className = "",
     children,
   }: Props = $props();
@@ -279,7 +285,11 @@
   {#if resolvedAnnotations.length === 0}
     <!-- Empty state -->
     {#if isLoading}
-      <p class="loading-message">Loading transcript…</p>
+      {#if loading}
+        {@render loading()}
+      {:else}
+        <p class="loading-message">Loading transcript…</p>
+      {/if}
     {:else if empty}
       {@render empty()}
     {:else}

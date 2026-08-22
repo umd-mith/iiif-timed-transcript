@@ -6,6 +6,7 @@ import Transcript from "../../lib/player/Transcript.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
 import TestTranscriptContextConsumer from "./TestTranscriptContextConsumer.svelte";
 import TestTranscriptWithSegments from "./TestTranscriptWithSegments.svelte";
+import TestTranscriptLoadingSnippet from "./TestTranscriptLoadingSnippet.svelte";
 import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 import type { Annotation } from "../../lib/sync/types";
 import type { TranscriptContext } from "../../lib/player/transcript-context";
@@ -416,6 +417,43 @@ describe("Transcript", () => {
         "Loading transcript",
       );
       expect(target.querySelector(".empty-message")).toBeNull();
+    });
+
+    test("renders the loading snippet instead of the default message", () => {
+      const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, TestTranscriptLoadingSnippet),
+        },
+      });
+      flushSync();
+
+      expect(target.querySelector(".custom-loading")?.textContent).toContain(
+        "Fetching the transcript",
+      );
+      expect(target.querySelector(".loading-message")).toBeNull();
+      expect(target.querySelector(".custom-empty")).toBeNull();
+    });
+
+    test("falls back to the empty snippet once loading finishes", () => {
+      const ctx = createMockPlayerContext({ transcriptStatus: "ready" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, TestTranscriptLoadingSnippet),
+        },
+      });
+      flushSync();
+
+      expect(target.querySelector(".custom-loading")).toBeNull();
+      expect(target.querySelector(".custom-empty")?.textContent).toContain(
+        "Nothing here",
+      );
     });
   });
 });

@@ -68,11 +68,22 @@
   // panel again (toggle, tab, responsive breakpoint) does not get the native
   // captions back — such a host should pass `tracks` explicitly, which is
   // exempt from this policy (consumer's choice).
+  // `captionsHiddenForUrl` is the once-per-canvas latch; `lastSeenUrl` re-arms
+  // it whenever ctx.mediaUrl changes — including the pass through "" that
+  // Root's performCanvasSwitch makes. Without that re-arm, revisiting a canvas
+  // (A -> B -> A) or two canvases sharing one media file would leave the
+  // recreated `<track default>` showing on top of a populated panel, because
+  // the latch still held that URL from the previous visit.
   let captionsHiddenForUrl = "";
+  let lastSeenUrl = "";
   $effect(() => {
     const el = localMediaElement;
     const populated = ctx.transcriptPopulated;
     const url = ctx.mediaUrl;
+    if (url !== lastSeenUrl) {
+      lastSeenUrl = url;
+      captionsHiddenForUrl = "";
+    }
     const trackCount = effectiveTracks.length;
     const usingContextTracks = tracks.length === 0;
     if (!el || !populated || !url || trackCount === 0 || !usingContextTracks) {

@@ -1133,5 +1133,51 @@ describe("Viewer", () => {
         expect(video2.textTracks[0]!.mode).toBe("hidden");
       });
     });
+
+    test("re-arms when a canvas is revisited (A -> B -> A)", async () => {
+      const urlA = "https://example.com/video-a.mp4";
+      const urlB = "https://example.com/video-b.mp4";
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: urlA,
+        mediaType: "video",
+        tracks: twoTracks,
+        transcriptPopulated: true,
+      });
+      const video = mountVideo(ctx);
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      // A -> B (Root clears mediaUrl between canvases, so the <video> — and
+      // with it every <track default> — is recreated).
+      ctx.mediaUrl = "";
+      ctx.transcriptPopulated = false;
+      flushSync();
+      ctx.mediaUrl = urlB;
+      flushSync();
+      const videoB = target.querySelector("video") as HTMLVideoElement;
+      await vi.waitFor(() => {
+        expect(videoB.textTracks[0]!.mode).toBe("showing");
+      });
+
+      // B -> A: a "last URL written" latch would still hold urlA here and
+      // short-circuit, leaving the fresh default track showing on top of a
+      // populated panel.
+      ctx.mediaUrl = "";
+      flushSync();
+      ctx.mediaUrl = urlA;
+      flushSync();
+      const videoA2 = target.querySelector("video") as HTMLVideoElement;
+      await vi.waitFor(() => {
+        expect(videoA2.textTracks[0]!.mode).toBe("showing");
+      });
+
+      ctx.transcriptPopulated = true;
+      flushSync();
+      await vi.waitFor(() => {
+        expect(videoA2.textTracks[0]!.mode).toBe("hidden");
+        expect(videoA2.textTracks[1]!.mode).toBe("hidden");
+      });
+    });
   });
 });

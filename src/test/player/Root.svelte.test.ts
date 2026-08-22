@@ -2003,6 +2003,136 @@ describe("Root component", () => {
       expect(capturedCtx!.annotations).toEqual(given);
       expect(capturedCtx!.transcriptStatus).toBe("idle");
     });
+
+    test('drops an in-flight VTT fetch when the prop flips "auto" -> array', async () => {
+      const url = "https://example.com/auto-flip-drops-inflight-vtt.json";
+      const gate = deferred<{ text: string }>();
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        "https://example.com/captions-fr.vtt": { promise: gate.promise },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      const wrapper = mount(TestRootAnnotationsWrapper, {
+        target,
+        props: {
+          manifestUrl: url,
+          canvasIndex: 0,
+          annotations: "auto",
+          onResult: (ctx: PlayerContext) => {
+            capturedCtx = ctx;
+          },
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("loading");
+      });
+
+      const given = [
+        { id: "p1", startTime: 0, endTime: 1, text: "Consumer-supplied" },
+      ];
+      wrapper.setAnnotations(given);
+      flushSync();
+      expect(capturedCtx!.annotations).toEqual(given);
+      expect(capturedCtx!.transcriptStatus).toBe("idle");
+
+      // The fetch started before the flip must not land on the consumer's
+      // array (README: status is "idle" when you pass annotations yourself).
+      gate.resolve({ text: VTT_FIXTURE_OK });
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(capturedCtx!.annotations).toEqual(given);
+      expect(capturedCtx!.transcriptStatus).toBe("idle");
+    });
+
+    test("a failed canvas switch clears tracks so a later re-derive cannot use the previous canvas's VTT", async () => {
+      const url = "https://example.com/auto-failed-canvas-clears-tracks.json";
+      const vttUrl = "https://example.com/captions-fr.vtt";
+      const manifest = {
+        ...MANIFEST_WITH_VTT_CAPTIONS,
+        id: url,
+        items: [
+          MANIFEST_WITH_VTT_CAPTIONS.items[0],
+          {
+            id: "https://example.com/canvas/2",
+            type: "Canvas",
+            width: 100,
+            height: 100,
+            items: [
+              {
+                id: "https://example.com/canvas/2/page/1",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.com/canvas/2/page/1/annotation/1",
+                    type: "Annotation",
+                    motivation: "painting",
+                    body: {
+                      id: "https://example.com/image.jpg",
+                      type: "Image",
+                      format: "image/jpeg",
+                    },
+                    target: "https://example.com/canvas/2",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      mockFetchRoutes({
+        [url]: { json: manifest },
+        [vttUrl]: { text: VTT_FIXTURE_OK },
+      });
+      const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+      const vttCalls = () =>
+        fetchMock.mock.calls.filter((c) => String(c[0]) === vttUrl).length;
+      const onError = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      const wrapper = mount(TestRootAnnotationsWrapper, {
+        target,
+        props: {
+          manifestUrl: url,
+          canvasIndex: 0,
+          annotations: "auto",
+          onError,
+          onResult: (ctx: PlayerContext) => {
+            capturedCtx = ctx;
+          },
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("ready");
+      });
+      expect(capturedCtx!.tracks).toHaveLength(1);
+      expect(capturedCtx!.annotations.length).toBeGreaterThan(0);
+      const callsAfterFirstCanvas = vttCalls();
+
+      capturedCtx!.actions.switchCanvas(1);
+      flushSync();
+      await vi.waitFor(() => {
+        expect(capturedCtx!.state.error).not.toBeNull();
+      });
+
+      // The non-AV canvas has no tracks of its own; canvas 0's must not linger.
+      expect(capturedCtx!.tracks).toEqual([]);
+
+      // A mode flip back to "auto" re-derives — it must not resurrect the
+      // previous canvas's VTT.
+      wrapper.setAnnotations([]);
+      flushSync();
+      wrapper.setAnnotations("auto");
+      flushSync();
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(capturedCtx!.annotations).toEqual([]);
+      expect(vttCalls()).toBe(callsAfterFirstCanvas);
+    });
   });
 
   describe('Root + Viewer + Transcript wiring (annotations="auto")', () => {

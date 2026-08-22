@@ -1,18 +1,23 @@
 <script lang="ts">
   import Root from "../../lib/player/Root.svelte";
   import TestContextConsumer from "./TestContextConsumer.svelte";
-  import type { PlayerContext } from "../../lib/player/context";
+  import type {
+    PlayerContext,
+    PlayerErrorInfo,
+  } from "../../lib/player/context";
   import type { Annotation } from "../../lib/sync/types";
 
   let {
     manifestUrl,
     canvasIndex = 0,
     annotations: initialAnnotations,
+    onError,
     onResult,
   }: {
     manifestUrl: string;
     canvasIndex?: number;
     annotations: Annotation[] | "auto";
+    onError?: (error: Error, info: PlayerErrorInfo) => void;
     onResult: (ctx: PlayerContext) => void;
   } = $props();
 
@@ -27,6 +32,6 @@
   }
 </script>
 
-<Root {manifestUrl} {canvasIndex} {annotations}>
+<Root {manifestUrl} {canvasIndex} {annotations} {...onError ? { onError } : {}}>
   <TestContextConsumer {onResult} />
 </Root>

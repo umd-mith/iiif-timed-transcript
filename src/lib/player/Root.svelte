@@ -132,9 +132,10 @@
   // which would leave mediaStrategy set and the adapter null with no error.
   let transcriptGeneration = 0;
 
-  // The last successfully-resolved canvas (set even if a later step in
-  // loadCanvas throws — e.g. a non-AV canvas — so the annotations-prop
-  // effect can still re-derive "auto" against it after a mode flip).
+  // The last fully-resolved canvas — assigned only once loadCanvas has got
+  // past every check that can throw, so it always agrees with player.tracks.
+  // The annotations-prop effect re-derives "auto" against it after a mode
+  // flip; a canvas that failed to load never becomes it.
   let currentCanvas: CanvasData | null = null;
 
   function reportError(error: Error, info: PlayerErrorInfo) {
@@ -181,15 +182,17 @@
   $effect(() => {
     const mode = annotations;
     untrack(() => {
+      // Drop any VTT fetch still in flight from before the flip — in *both*
+      // directions. Flipping to an array must invalidate it too, or the fetch
+      // lands afterwards and overwrites the consumer's annotations. Only the
+      // transcript counter moves — bumping loadGeneration here would cancel
+      // an in-flight resolveHlsAdapter/resolveDashAdapter import started by
+      // the current loadCanvas.
+      transcriptGeneration += 1;
       if (Array.isArray(mode)) {
         player.annotations = mode;
         player.transcriptStatus = "idle";
       } else if (mode === "auto" && currentCanvas) {
-        // Drop any VTT fetch still in flight from before the flip. Only the
-        // transcript counter moves — bumping loadGeneration here would
-        // cancel an in-flight resolveHlsAdapter/resolveDashAdapter import
-        // started by the current loadCanvas.
-        transcriptGeneration += 1;
         deriveAutoAnnotations(currentCanvas);
       }
     });
@@ -315,7 +318,10 @@
     // that lands on a non-AV canvas (or otherwise throws before reaching the
     // tier-1/2 block) would leave the *previous* canvas's transcript
     // annotations and "ready" status in place — the panel would render
-    // segments for media that never loaded.
+    // segments for media that never loaded. Tracks are canvas-scoped for the
+    // same reason: a failed canvas must not inherit the previous canvas's
+    // VTT, which a later "auto" re-derive would then fetch.
+    player.tracks = [];
     if (annotations === "auto") {
       player.annotations = [];
       player.transcriptStatus = "idle";
@@ -329,7 +335,6 @@
       if (!canvas) {
         throw new Error("No canvas found in IIIF manifest");
       }
-      currentCanvas = canvas;
 
       if (isAudioCanvas(canvas)) {
         player.mediaType = "audio";
@@ -372,6 +377,12 @@
 
       // Discover VTT caption tracks from canvas.annotations (recipe 0219)
       player.tracks = getSupplementaryVTTTracks(canvas);
+
+      // Only now is the canvas genuinely resolved: media type, primary
+      // resource and tracks all agree with it. Assigning earlier would let a
+      // canvas that throws above pair its identity with the previous canvas's
+      // tracks in a later "auto" re-derive.
+      currentCanvas = canvas;
 
       // annotations="auto": tier 1 — embedded TextualBody (synchronous);
       // tier 2 — the canvas's external VTT supplementing track (async,
