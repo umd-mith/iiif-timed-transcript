@@ -2810,4 +2810,149 @@ describe("Root component", () => {
       expect(video.textTracks[0]!.mode).toBe("hidden");
     });
   });
+
+  describe("preprocessManifest", () => {
+    test("runs before validation: a manifest with a missing type loads once the hook adds it", async () => {
+      const url = "https://example.com/preprocess-type.json";
+      const { type: _omitted, ...withoutType } = MANIFEST_WITHOUT_CHAPTERS;
+      mockFetchRoutes({ [url]: { json: { ...withoutType, id: url } } });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          preprocessManifest: (raw) => ({
+            ...(raw as Record<string, unknown>),
+            type: "Manifest",
+          }),
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio.mp3");
+      });
+      expect(capturedCtx!.state.error).toBeNull();
+    });
+
+    test("the same manifest without the hook is a fatal manifest error", async () => {
+      const url = "https://example.com/preprocess-type-nohook.json";
+      const { type: _omitted, ...withoutType } = MANIFEST_WITHOUT_CHAPTERS;
+      mockFetchRoutes({ [url]: { json: { ...withoutType, id: url } } });
+      const onError = vi.fn();
+
+      mount(Root, { target, props: { manifestUrl: url, onError } });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: true,
+        source: "manifest",
+      });
+    });
+
+    test("raw is the preprocessed document: chapters come from the hook's structures", async () => {
+      const url = "https://example.com/preprocess-raw.json";
+      mockFetchRoutes({
+        [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          preprocessManifest: (raw) => ({
+            ...(raw as Record<string, unknown>),
+            structures: MANIFEST_WITH_CHAPTERS.structures,
+          }),
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.chapters).toHaveLength(2);
+      });
+      expect(capturedCtx!.chapters[0]!.label).toBe("Introduction");
+    });
+
+    test("a throwing hook is reported as a fatal manifest error", async () => {
+      const url = "https://example.com/preprocess-throws.json";
+      mockFetchRoutes({
+        [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      });
+      const onError = vi.fn();
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          preprocessManifest: () => {
+            throw new Error("hook failed");
+          },
+          onError,
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![0].message).toBe("hook failed");
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: true,
+        source: "manifest",
+      });
+    });
+
+    test("bypasses the module cache entirely when set — including delete on error", async () => {
+      const url = "https://example.com/preprocess-cache.json";
+      mockFetchRoutes({
+        [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      });
+
+      // 1. A plain instance populates the cache.
+      mount(Root, { target, props: { manifestUrl: url } });
+      await vi.waitFor(() => {
+        expect(manifestCache.has(url)).toBe(true);
+      });
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+      // 2. A preprocessing instance whose hook throws: fetches again (no cache
+      //    read), does not evict the plain entry (no cache delete).
+      const target2 = document.createElement("div");
+      document.body.appendChild(target2);
+      const onError = vi.fn();
+      mount(Root, {
+        target: target2,
+        props: {
+          manifestUrl: url,
+          preprocessManifest: () => {
+            throw new Error("nope");
+          },
+          onError,
+        },
+      });
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+      expect(manifestCache.has(url)).toBe(true);
+
+      // 3. A second plain instance is served from the surviving cache entry.
+      const target3 = document.createElement("div");
+      document.body.appendChild(target3);
+      mount(Root, { target: target3, props: { manifestUrl: url } });
+      await new Promise((r) => setTimeout(r, 30));
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+
+      document.body.removeChild(target2);
+      document.body.removeChild(target3);
+    });
+  });
 });

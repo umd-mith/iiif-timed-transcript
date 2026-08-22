@@ -54,6 +54,7 @@
     onCanvasChange,
     onPlayerInit,
     onError,
+    preprocessManifest,
     class: className = "",
     children,
   }: {
@@ -73,6 +74,12 @@
      * conditions (a rejected play(), a transcript that failed to load).
      */
     onError?: (error: Error, info: PlayerErrorInfo) => void;
+    /**
+     * Runs on the parsed manifest JSON before validation. The hook's output
+     * is both validated and kept as `raw` (chapters are read from it). When
+     * set, Root bypasses the module-level manifest cache entirely.
+     */
+    preprocessManifest?: (raw: unknown) => unknown;
     class?: string;
     children?: import("svelte").Snippet<
       [
@@ -271,7 +278,9 @@
     }
   }
 
-  // Fetch and validate a manifest, using module-level cache to avoid duplicate requests
+  // Fetch and validate a manifest. `preprocessManifest`, when set, runs on
+  // the parsed JSON first; its output is what the validator sees AND what is
+  // kept as `raw` (one document, not two — chapters read `raw.structures`).
   async function fetchAndValidateManifest(
     url: string,
   ): Promise<{ validated: ManifestData; raw: unknown }> {
@@ -282,7 +291,8 @@
       );
     }
 
-    const manifest = await response.json();
+    const json = await response.json();
+    const manifest = preprocessManifest ? preprocessManifest(json) : json;
     const validationResult = ManifestSchema.safeParse(manifest);
     if (!validationResult.success) {
       throw new Error(
@@ -293,13 +303,20 @@
     return { validated: validationResult.data, raw: manifest };
   }
 
-  // Fetch manifest — called on mount and on retry
+  // Fetch manifest — called on mount and on retry.
+  // Cache rule: with `preprocessManifest` set, Root does not touch the
+  // module-level cache at all — no get, no set, and no delete on error (a
+  // bypassing instance's failure must not evict a plain instance's good
+  // entry for the same URL).
   async function fetchManifestData() {
+    const usesCache = !preprocessManifest;
     try {
-      let manifestPromise = manifestCache.get(manifestUrl);
+      let manifestPromise = usesCache
+        ? manifestCache.get(manifestUrl)
+        : undefined;
       if (!manifestPromise) {
         manifestPromise = fetchAndValidateManifest(manifestUrl);
-        manifestCache.set(manifestUrl, manifestPromise);
+        if (usesCache) manifestCache.set(manifestUrl, manifestPromise);
       }
 
       const data = await manifestPromise;
@@ -334,7 +351,7 @@
       // The cache is module-level: evict unconditionally so a rejected
       // promise is never served to the next instance — then bail if we are
       // already torn down.
-      manifestCache.delete(manifestUrl);
+      if (usesCache) manifestCache.delete(manifestUrl);
       if (destroyed) return;
       const err = error instanceof Error ? error : new Error(String(error));
       player.state.error = err;
