@@ -63,6 +63,20 @@ export const ExternalResourceSchema = z
       .array(ServiceReferenceSchema)
       .optional()
       .describe("IIIF Image API or other services"),
+    // Additive, tolerant keys used by VTT track discovery. `.catch(undefined)`
+    // is load-bearing: declared bare, a non-conformant value (e.g. a
+    // bare-string `label: "English"`) would fail this schema, then every
+    // other AnnotationBodySchema member, and kill the whole manifest. Today
+    // such keys are silently stripped; with `.catch` they still degrade to
+    // "absent". Precedent: placeholderCanvas/accompanyingCanvas below.
+    label: IIIFLanguageMap.optional()
+      .catch(undefined)
+      .describe("Resource label (IIIF language map)"),
+    language: z
+      .union([z.string(), z.array(z.string())])
+      .optional()
+      .catch(undefined)
+      .describe("BCP 47 language code(s) of the resource"),
   })
   .describe("IIIF external web resource");
 
