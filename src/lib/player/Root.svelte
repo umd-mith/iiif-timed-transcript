@@ -330,6 +330,15 @@
     }
   }
 
+  // Shared by resolveHlsAdapter/resolveDashAdapter when the media library
+  // they need is unavailable (not installed, or the dynamic import threw).
+  function reportMediaLibraryError(err: Error) {
+    console.warn(`[IIIFPlayer] ${err.message}`);
+    player.state.error = err;
+    player.state.isReady = false;
+    reportError(err, { fatal: true, source: "media" });
+  }
+
   async function resolveHlsAdapter() {
     const generation = loadGeneration;
     const Hls =
@@ -342,13 +351,11 @@
       player.hlsAdapter = createHlsAdapter(Hls);
       return;
     }
-    const err = new Error(
-      "HLS stream detected but hls.js is not available. Install it with: npm install hls.js",
+    reportMediaLibraryError(
+      new Error(
+        "HLS stream detected but hls.js is not available. Install it with: npm install hls.js",
+      ),
     );
-    console.warn(`[IIIFPlayer] ${err.message}`);
-    player.state.error = err;
-    player.state.isReady = false;
-    reportError(err, { fatal: true, source: "media" });
   }
 
   async function resolveDashAdapter() {
@@ -364,13 +371,11 @@
       player.dashAdapter = createDashAdapter(Dash);
       return;
     }
-    const err = new Error(
-      "DASH stream detected but dashjs is not available. Install it with: npm install dashjs",
+    reportMediaLibraryError(
+      new Error(
+        "DASH stream detected but dashjs is not available. Install it with: npm install dashjs",
+      ),
     );
-    console.warn(`[IIIFPlayer] ${err.message}`);
-    player.state.error = err;
-    player.state.isReady = false;
-    reportError(err, { fatal: true, source: "media" });
   }
 
   // Set up media event listeners

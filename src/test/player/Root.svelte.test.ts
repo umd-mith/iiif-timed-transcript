@@ -847,18 +847,10 @@ describe("Root component", () => {
       });
     });
 
-    test("a stale HLS resolution after a canvas switch does not attach an adapter", async () => {
-      // This Chromium build under Playwright reports canPlayType("maybe") for
-      // HLS mime types (see hlsUtils.test.ts), so force native support off to
-      // deterministically exercise the hls-js path this test targets.
-      const canPlayTypeSpy = vi
-        .spyOn(HTMLMediaElement.prototype, "canPlayType")
-        .mockReturnValue("");
-
-      // Canvas 2 of MANIFEST_WITH_HLS is not HLS; build a two-canvas manifest
-      // where canvas 0 is HLS and canvas 1 is plain audio.
-      const url = "https://example.com/stale-hls.json";
-      const manifest = {
+    // Builds a two-canvas manifest where canvas 0 is HLS and canvas 1 is
+    // plain audio, shared by both stale-HLS regression tests below.
+    function buildStaleHlsManifest(url: string) {
+      return {
         ...MANIFEST_MULTI_CANVAS,
         id: url,
         items: [
@@ -887,38 +879,64 @@ describe("Root component", () => {
           MANIFEST_MULTI_CANVAS.items[1],
         ],
       };
-      mockFetchManifest(manifest);
+    }
 
-      // A constructor whose resolution we control: hlsConstructor is used
-      // synchronously, so force the async path by leaving it undefined and
-      // relying on the real hls.js import — then switch canvas immediately.
-      let capturedCtx: PlayerContext | null = null;
-      mount(Root, {
-        target,
-        props: {
-          manifestUrl: url,
-          canvasIndex: 0,
-          children: createContextCapture(target, (ctx) => {
-            capturedCtx = ctx;
-          }),
-        },
-      });
-      await vi.waitFor(() => {
-        expect(capturedCtx).not.toBeNull();
-        expect(capturedCtx!.mediaStrategy).toBe("hls-js");
-      });
+    // Regression test for the performCanvasSwitch null-reset fix (Root.svelte):
+    // hlsAdapter/dashAdapter must be cleared when switching away from a
+    // canvas that had one attached, even though here the real (unmocked)
+    // hls.js import happens to resolve before switchCanvas runs — so this
+    // test does NOT exercise the loadGeneration async-race guard. See the
+    // next test for that.
+    test("switching away from an HLS canvas clears the hlsAdapter (performCanvasSwitch null-reset)", async () => {
+      // This Chromium build under Playwright reports canPlayType("maybe") for
+      // HLS mime types (see hlsUtils.test.ts), so force native support off to
+      // deterministically exercise the hls-js path this test targets.
+      const canPlayTypeSpy = vi
+        .spyOn(HTMLMediaElement.prototype, "canPlayType")
+        .mockReturnValue("");
 
-      // Switch before the dynamic import can settle.
-      capturedCtx!.actions.switchCanvas(1);
-      flushSync();
-      await new Promise((r) => setTimeout(r, 100));
+      try {
+        const url = "https://example.com/stale-hls.json";
+        mockFetchManifest(buildStaleHlsManifest(url));
 
-      expect(capturedCtx!.canvasIndex).toBe(1);
-      expect(capturedCtx!.mediaStrategy).toBe("native");
-      expect(capturedCtx!.hlsAdapter).toBeNull();
-      expect(capturedCtx!.state.error).toBeNull();
-      canPlayTypeSpy.mockRestore();
+        // A constructor whose resolution we control: hlsConstructor is used
+        // synchronously, so force the async path by leaving it undefined and
+        // relying on the real hls.js import — then switch canvas immediately.
+        let capturedCtx: PlayerContext | null = null;
+        mount(Root, {
+          target,
+          props: {
+            manifestUrl: url,
+            canvasIndex: 0,
+            children: createContextCapture(target, (ctx) => {
+              capturedCtx = ctx;
+            }),
+          },
+        });
+        await vi.waitFor(() => {
+          expect(capturedCtx).not.toBeNull();
+          expect(capturedCtx!.mediaStrategy).toBe("hls-js");
+        });
+
+        // Switch before the dynamic import can settle.
+        capturedCtx!.actions.switchCanvas(1);
+        flushSync();
+        await new Promise((r) => setTimeout(r, 100));
+
+        expect(capturedCtx!.canvasIndex).toBe(1);
+        expect(capturedCtx!.mediaStrategy).toBe("native");
+        expect(capturedCtx!.hlsAdapter).toBeNull();
+        expect(capturedCtx!.state.error).toBeNull();
+      } finally {
+        canPlayTypeSpy.mockRestore();
+      }
     });
+
+    // The loadGeneration async-race guard itself (resolveHlsAdapter's
+    // `generation !== loadGeneration` check) needs the hls.js import held
+    // genuinely pending across a canvas switch — see the dedicated
+    // Root.stale-hls-import.svelte.test.ts, which module-mocks "hls.js"
+    // with a controlled deferred promise to do that deterministically.
   });
 
   describe("onPlayerInit callback", () => {

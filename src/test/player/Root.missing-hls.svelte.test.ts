@@ -32,31 +32,37 @@ describe("Root without hls.js available", () => {
     const canPlayTypeSpy = vi
       .spyOn(HTMLMediaElement.prototype, "canPlayType")
       .mockReturnValue("");
-    mockFetchManifest(MANIFEST_WITH_HLS);
-    const onError = vi.fn();
-    let capturedCtx: PlayerContext | null = null;
+    try {
+      mockFetchManifest(MANIFEST_WITH_HLS);
+      const onError = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
 
-    mount(Root, {
-      target,
-      props: {
-        manifestUrl: "https://example.com/missing-hls.json",
-        onError,
-        children: createContextCapture(target, (ctx) => {
-          capturedCtx = ctx;
-        }),
-      },
-    });
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/missing-hls.json",
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
 
-    await vi.waitFor(() => {
-      expect(onError).toHaveBeenCalledTimes(1);
-    });
-    expect(onError.mock.calls[0]![1]).toEqual({ fatal: true, source: "media" });
-    expect(capturedCtx!.state.error?.message).toMatch(/hls\.js/);
-    expect(capturedCtx!.hlsAdapter).toBeNull();
-    expect(target.querySelector('[role="alert"]')?.textContent).toMatch(
-      /hls\.js/,
-    );
-    warnSpy.mockRestore();
-    canPlayTypeSpy.mockRestore();
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: true,
+        source: "media",
+      });
+      expect(capturedCtx!.state.error?.message).toMatch(/hls\.js/);
+      expect(capturedCtx!.hlsAdapter).toBeNull();
+      expect(target.querySelector('[role="alert"]')?.textContent).toMatch(
+        /hls\.js/,
+      );
+    } finally {
+      warnSpy.mockRestore();
+      canPlayTypeSpy.mockRestore();
+    }
   });
 });
