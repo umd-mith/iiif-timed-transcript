@@ -1,6 +1,11 @@
 <script lang="ts">
-  import { onMount, untrack } from "svelte";
-  import { setPlayerContext, type CanvasInfo, type PlayerRef } from "./context";
+  import { onMount, onDestroy, untrack } from "svelte";
+  import {
+    setPlayerContext,
+    type CanvasInfo,
+    type PlayerRef,
+    type PlayerErrorInfo,
+  } from "./context";
   import { PlayerStateManager } from "./PlayerState.svelte";
   import {
     getFirstCanvas,
@@ -38,6 +43,7 @@
     dashConstructor,
     onCanvasChange,
     onPlayerInit,
+    onError,
     class: className = "",
     children,
   }: {
@@ -51,6 +57,12 @@
     onCanvasChange?: (index: number, canvas: CanvasInfo) => void;
     /** Called once after manifest loads and first canvas is parsed. `state.isReady` is false at this point. */
     onPlayerInit?: (player: PlayerRef) => void;
+    /**
+     * Called for every reported error. `info.fatal` is true when the player
+     * will not become usable (manifest, canvas, media); false for recoverable
+     * conditions (a rejected play(), a transcript that failed to load).
+     */
+    onError?: (error: Error, info: PlayerErrorInfo) => void;
     class?: string;
     children?: import("svelte").Snippet<
       [
@@ -77,6 +89,8 @@
   const player = new PlayerStateManager({
     onRetry: () => fetchManifestData(),
     onSwitchCanvas: (index: number) => performCanvasSwitch(index),
+    onPlaybackError: (error: Error) =>
+      reportError(error, { fatal: false, source: "playback" }),
   });
 
   // Provide context — the class instance satisfies PlayerContext
@@ -85,6 +99,38 @@
   // Apply initialTime (first canvas load only) and autoplay (every canvas load)
   let initialTimeApplied = false;
   let initFired = false;
+
+  // Set in onDestroy; checked after every await so continuations of in-flight
+  // work never write state or fire callbacks on a torn-down instance.
+  let destroyed = false;
+  onDestroy(() => {
+    destroyed = true;
+  });
+
+  // Errors already handed to onError. The fallback watcher below skips them.
+  const reportedErrors = new WeakSet<Error>();
+
+  function reportError(error: Error, info: PlayerErrorInfo) {
+    if (destroyed) return;
+    reportedErrors.add(error);
+    try {
+      onError?.(error, info);
+    } catch (callbackError) {
+      console.error("[IIIFPlayer] onError callback threw:", callbackError);
+    }
+  }
+
+  // Fallback watcher: errors written to player.state.error by Viewer (native
+  // onerror, HLS/DASH adapter callbacks) are fatal media failures. Anything
+  // Root or PlayerState reported directly is already in reportedErrors.
+  $effect(() => {
+    const error = player.state.error;
+    if (!error) return;
+    untrack(() => {
+      if (reportedErrors.has(error)) return;
+      reportError(error, { fatal: true, source: "media" });
+    });
+  });
 
   $effect(() => {
     if (!player.state.isReady) return;
@@ -180,15 +226,22 @@
         manifestCache.set(manifestUrl, manifestPromise);
       }
 
-      manifestData = await manifestPromise;
-      player.canvases = buildCanvasInfoList(manifestData.validated);
+      const data = await manifestPromise;
+      if (destroyed) return;
+      manifestData = data;
+      player.canvases = buildCanvasInfoList(data.validated);
 
       loadCanvas(player.canvasIndex);
     } catch (error) {
+      // The cache is module-level: evict unconditionally so a rejected
+      // promise is never served to the next instance — then bail if we are
+      // already torn down.
       manifestCache.delete(manifestUrl);
-      player.state.error =
-        error instanceof Error ? error : new Error(String(error));
+      if (destroyed) return;
+      const err = error instanceof Error ? error : new Error(String(error));
+      player.state.error = err;
       player.state.isReady = false;
+      reportError(err, { fatal: true, source: "manifest" });
       return;
     }
 
@@ -262,9 +315,10 @@
       // Discover VTT caption tracks from canvas.annotations (recipe 0219)
       player.tracks = getSupplementaryVTTTracks(canvas);
     } catch (error) {
-      player.state.error =
-        error instanceof Error ? error : new Error(String(error));
+      const err = error instanceof Error ? error : new Error(String(error));
+      player.state.error = err;
       player.state.isReady = false;
+      reportError(err, { fatal: true, source: "canvas" });
     }
   }
 

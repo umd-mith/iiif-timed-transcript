@@ -304,3 +304,48 @@ export function mockFetchManifest(manifest: Record<string, unknown>) {
     json: async () => manifest,
   });
 }
+
+export type FetchRoute =
+  | { json: unknown; status?: number }
+  | { text: string; status?: number }
+  | { status: number }
+  | { promise: Promise<FetchRoute> };
+
+/**
+ * Helper: route mocked fetch by URL. Unmatched URLs reject (so a test fails
+ * loudly on an unexpected request). A route with `promise` defers until it
+ * resolves — use `deferred()` to control timing.
+ */
+export function mockFetchRoutes(routes: Record<string, FetchRoute>) {
+  const toResponse = (route: FetchRoute): Response => {
+    const status = "status" in route ? (route.status ?? 200) : 200;
+    return {
+      ok: status >= 200 && status < 300,
+      status,
+      statusText: status === 404 ? "Not Found" : "OK",
+      json: async () => ("json" in route ? route.json : undefined),
+      text: async () => ("text" in route ? route.text : ""),
+    } as Response;
+  };
+  (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+    async (input: RequestInfo | URL) => {
+      const url = String(input);
+      const route = routes[url];
+      if (!route) throw new Error(`Unexpected fetch: ${url}`);
+      if ("promise" in route) return toResponse(await route.promise);
+      return toResponse(route);
+    },
+  );
+}
+
+/** Helper: a promise the test resolves by hand. */
+export function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (v: T) => void;
+} {
+  let resolve!: (v: T) => void;
+  const promise = new Promise<T>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}

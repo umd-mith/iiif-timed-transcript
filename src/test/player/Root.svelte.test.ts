@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, flushSync } from "svelte";
+import { mount, flushSync, unmount } from "svelte";
 import Root from "../../lib/player/Root.svelte";
 import TestRootWrapper from "./TestRootWrapper.svelte";
 import type { PlayerContext } from "../../lib/player/context";
@@ -12,6 +12,8 @@ import {
   MANIFEST_WITH_VTT_CAPTIONS,
   MANIFEST_MULTI_CANVAS,
   mockFetchManifest,
+  mockFetchRoutes,
+  deferred,
 } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
 
@@ -1134,6 +1136,212 @@ describe("Root component", () => {
         expect(capturedCtx!.mediaUrl).toBe("https://example.com/video.mp4");
       });
       expect(capturedCtx!.posterUrl).toBeUndefined();
+    });
+  });
+
+  describe("onError", () => {
+    test("reports a failed manifest fetch as fatal manifest and sets state.error", async () => {
+      const onError = vi.fn();
+      const url = "https://example.com/onerror-404.json";
+      mockFetchRoutes({ [url]: { status: 404 } });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      const [error, info] = onError.mock.calls[0]!;
+      expect(error).toBeInstanceOf(Error);
+      expect(info).toEqual({ fatal: true, source: "manifest" });
+      expect(capturedCtx!.state.error).toBe(error);
+    });
+
+    test("reports a non-AV canvas as fatal canvas", async () => {
+      const onError = vi.fn();
+      const url = "https://example.com/onerror-image.json";
+      const imageManifest = {
+        ...mockManifest,
+        id: url,
+        items: [
+          {
+            id: "canvas-img",
+            type: "Canvas",
+            width: 100,
+            height: 100,
+            items: [
+              {
+                id: "page-img",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "anno-img",
+                    type: "Annotation",
+                    motivation: "painting",
+                    body: {
+                      id: "https://example.com/image.jpg",
+                      type: "Image",
+                      format: "image/jpeg",
+                    },
+                    target: "canvas-img",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      mockFetchRoutes({ [url]: { json: imageManifest } });
+
+      mount(Root, { target, props: { manifestUrl: url, onError } });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: true,
+        source: "canvas",
+      });
+    });
+
+    test("reports a rejected play() as non-fatal playback, exactly once", async () => {
+      const onError = vi.fn();
+      const url = "https://example.com/onerror-playback.json";
+      mockFetchRoutes({ [url]: { json: mockManifest } });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).not.toBe("");
+      });
+
+      const notAllowed = new DOMException("blocked", "NotAllowedError");
+      capturedCtx!.mediaElement = {
+        play: vi.fn().mockRejectedValue(notAllowed),
+        pause: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        currentTime: 0,
+        duration: 60,
+        playbackRate: 1,
+        src: "",
+      } as unknown as HTMLMediaElement;
+      flushSync();
+
+      await capturedCtx!.actions.play();
+      flushSync();
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(onError.mock.calls[0]![0]).toBe(notAllowed);
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: false,
+        source: "playback",
+      });
+    });
+
+    test("reports an error written to state.error from outside Root as fatal media", async () => {
+      const onError = vi.fn();
+      const url = "https://example.com/onerror-watcher.json";
+      mockFetchRoutes({ [url]: { json: mockManifest } });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          onError,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).not.toBe("");
+      });
+
+      const mediaError = new Error(
+        "This media format is not supported by your browser.",
+      );
+      capturedCtx!.state.error = mediaError;
+      flushSync();
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![0]).toBe(mediaError);
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: true,
+        source: "media",
+      });
+    });
+
+    test("neither onPlayerInit nor onError fires when Root is unmounted before the manifest settles", async () => {
+      const onError = vi.fn();
+      const onPlayerInit = vi.fn();
+      const url = "https://example.com/onerror-unmount.json";
+      const pending = deferred<{ json: unknown }>();
+      mockFetchRoutes({ [url]: { promise: pending.promise } });
+
+      const app = mount(Root, {
+        target,
+        props: { manifestUrl: url, onError, onPlayerInit },
+      });
+      flushSync();
+      await vi.waitFor(() => {
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      });
+
+      unmount(app);
+      pending.resolve({ json: mockManifest });
+      await new Promise((r) => setTimeout(r, 30));
+
+      expect(onPlayerInit).not.toHaveBeenCalled();
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    test("a throwing onError callback is caught and logged", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const url = "https://example.com/onerror-throws.json";
+      mockFetchRoutes({ [url]: { status: 500 } });
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          onError: () => {
+            throw new Error("consumer bug");
+          },
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(errorSpy).toHaveBeenCalledWith(
+          "[IIIFPlayer] onError callback threw:",
+          expect.any(Error),
+        );
+      });
+      errorSpy.mockRestore();
     });
   });
 });
