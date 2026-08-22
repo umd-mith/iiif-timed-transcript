@@ -11,7 +11,7 @@
 
   let {
     manifestUrl,
-    annotations,
+    annotations: initialAnnotations,
     renderTranscript = true,
     onResult,
     onError,
@@ -22,6 +22,16 @@
     onResult: (ctx: PlayerContext) => void;
     onError?: (error: Error, info: PlayerErrorInfo) => void;
   } = $props();
+
+  // Seeded from the initial prop only; afterwards the wrapper is uncontrolled
+  // and driven via setAnnotations, so tests can flip annotations="auto" <->
+  // Annotation[] against the real Root + Viewer + Transcript composition.
+  // svelte-ignore state_referenced_locally
+  let annotations = $state<Annotation[] | "auto">(initialAnnotations);
+
+  export function setAnnotations(value: Annotation[] | "auto") {
+    annotations = value;
+  }
 </script>
 
 <!--

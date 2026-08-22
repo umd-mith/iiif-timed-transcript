@@ -2590,5 +2590,58 @@ describe("Root component", () => {
         expect(video.textTracks[0]!.mode).toBe("hidden");
       });
     });
+
+    test('clears transcriptPopulated when the prop flips array -> "auto" and the VTT fails', async () => {
+      // A mode flip is a transcript-ownership change with the same convergence
+      // property as loadCanvas: Transcript re-publishes `true` on the next
+      // flush if the panel is still populated. Without the clear, a flip whose
+      // re-derive ends up EMPTY leaves a stale `true` on the context.
+      const url = "https://example.com/wiring-array-flip-to-auto.json";
+      const vtt = "https://example.com/captions-fr.vtt";
+      mockFetchRoutes({
+        [url]: { json: MANIFEST_WITH_VTT_CAPTIONS },
+        [vtt]: { status: 404, text: "" },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      const wrapper = mount(TestRootViewerTranscript, {
+        target,
+        props: {
+          manifestUrl: url,
+          annotations: given,
+          onError: () => {},
+          onResult: (ctx: PlayerContext) => {
+            capturedCtx = ctx;
+          },
+        },
+      });
+
+      // Array mode: the panel populates and the native track goes hidden.
+      await vi.waitFor(() => {
+        expect(capturedCtx!.tracks).toHaveLength(1);
+        expect(capturedCtx!.annotations).toEqual(given);
+        expect(capturedCtx!.transcriptPopulated).toBe(true);
+      });
+      const video = target.querySelector("video") as HTMLVideoElement;
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      // Flip to "auto": the canvas's only VTT 404s, so the panel empties.
+      wrapper.setAnnotations("auto");
+      flushSync();
+      await vi.waitFor(() => {
+        expect(capturedCtx!.transcriptStatus).toBe("error");
+      });
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(capturedCtx!.annotations).toEqual([]);
+      expect(target.textContent).toContain("No transcript available.");
+      expect(capturedCtx!.transcriptPopulated).toBe(false);
+      // The one-time write already happened for this (canvasIndex, mediaUrl)
+      // load and is never undone — a flip does not re-arm Viewer's latch.
+      expect(video.textTracks[0]!.mode).toBe("hidden");
+    });
   });
 });

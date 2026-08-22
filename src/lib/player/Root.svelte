@@ -189,6 +189,16 @@
       // an in-flight resolveHlsAdapter/resolveDashAdapter import started by
       // the current loadCanvas.
       transcriptGeneration += 1;
+      // A mode flip is a transcript-ownership change, so it gets the same
+      // reset as loadCanvas: whatever the panel showed under the old mode no
+      // longer says anything about what it will show under the new one. The
+      // clear converges the same way — Transcript re-publishes `true` on the
+      // next flush while the panel is still populated — and its point is that
+      // a flip whose re-derive ends up EMPTY does not leave a stale `true`
+      // behind. Viewer's once-per-load latch is keyed on (canvasIndex,
+      // mediaUrl) and deliberately does not re-arm on a flip: the one-time
+      // write has already happened for this canvas load.
+      player.transcriptPopulated = false;
       if (Array.isArray(mode)) {
         player.annotations = mode;
         player.transcriptStatus = "idle";

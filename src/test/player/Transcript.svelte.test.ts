@@ -468,6 +468,29 @@ describe("Transcript", () => {
       expect(target.querySelector(".empty-message")).toBeNull();
     });
 
+    test("ignores a loading context status when it has its own annotations", () => {
+      // `<Transcript annotations={filtered}/>` under a Root with an in-flight
+      // VTT fetch is not loading anything: the panel has text to show, so it
+      // must render it rather than "Loading transcript…" with aria-busy.
+      const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, TestTranscriptWithSegments, {
+            annotations: mockAnnotations,
+          }),
+        },
+      });
+      flushSync();
+
+      const panel = target.querySelector(".transcript-panel");
+      expect(panel?.getAttribute("aria-busy")).not.toBe("true");
+      expect(target.querySelector(".loading-message")).toBeNull();
+      expect(target.querySelectorAll("[data-annotation-id]")).toHaveLength(3);
+    });
+
     test("renders the loading snippet instead of the default message", () => {
       const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
 

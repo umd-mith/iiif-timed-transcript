@@ -66,15 +66,21 @@
     annotations.length > 0 ? annotations : playerContext.annotations,
   );
 
-  // Publish the panel's *effective* populated state so Viewer (a sibling
-  // that cannot see TranscriptContext) can switch native captions off once
-  // the same text is on screen. Root clears the flag on every canvas load;
-  // Transcript only ever sets it.
+  // `transcriptStatus` describes Root's own fetch, so it only speaks for this
+  // panel while the panel is falling back to the context annotations. A panel
+  // given its own `annotations` prop — `<Transcript annotations={filtered}/>`
+  // beside a Root with a VTT fetch in flight — is not loading anything.
   const isLoading = $derived(
-    resolvedAnnotations.length === 0 &&
+    annotations.length === 0 &&
+      resolvedAnnotations.length === 0 &&
       playerContext.transcriptStatus === "loading",
   );
 
+  // Publish the panel's *effective* populated state so Viewer (a sibling
+  // that cannot see TranscriptContext) can switch native captions off once
+  // the same text is on screen. Root clears the flag on every canvas load
+  // and on an `annotations` mode flip; Transcript only ever sets it.
+  //
   // The flag is monotonic per canvas load: "true wins", and only Root clears
   // it (on every `loadCanvas`). Writing `false` from here would make two
   // panels whose effective annotations differ — say `<Transcript
