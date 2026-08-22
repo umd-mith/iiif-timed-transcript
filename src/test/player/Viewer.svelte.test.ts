@@ -4,6 +4,7 @@ import { flushSync } from "svelte";
 import Viewer from "../../lib/player/Viewer.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
 import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import { createReactiveMockPlayerContext } from "./reactive-context.svelte";
 
 describe("Viewer", () => {
   let target: HTMLElement;
@@ -969,6 +970,144 @@ describe("Viewer", () => {
 
       const videoElement = target.querySelector("video") as HTMLVideoElement;
       expect(videoElement?.getAttribute("poster")).toBeNull();
+    });
+  });
+
+  describe("native captions when the transcript panel is populated", () => {
+    const twoTracks = [
+      {
+        src: "https://example.com/en.vtt",
+        kind: "captions" as const,
+        srclang: "en",
+        label: "English",
+      },
+      {
+        src: "https://example.com/fr.vtt",
+        kind: "captions" as const,
+        srclang: "fr",
+        label: "Français",
+      },
+    ];
+
+    function mountVideo(
+      ctx: ReturnType<typeof createReactiveMockPlayerContext>,
+      viewerProps: Record<string, unknown> = {},
+    ): HTMLVideoElement {
+      target = document.createElement("div");
+      document.body.appendChild(target);
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Viewer, viewerProps),
+        },
+      });
+      flushSync();
+      return target.querySelector("video") as HTMLVideoElement;
+    }
+
+    test("sets every context track to hidden once the panel is populated", async () => {
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        tracks: twoTracks,
+        transcriptPopulated: true,
+      });
+      const video = mountVideo(ctx);
+
+      await vi.waitFor(() => {
+        expect(video.textTracks.length).toBe(2);
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+        expect(video.textTracks[1]!.mode).toBe("hidden");
+      });
+      // The browser's automatic default-track selection must not flip it back.
+      await new Promise((r) => setTimeout(r, 100));
+      expect(video.textTracks[0]!.mode).toBe("hidden");
+    });
+
+    test("leaves the default track showing while the panel is empty", async () => {
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        tracks: twoTracks,
+        transcriptPopulated: false,
+      });
+      const video = mountVideo(ctx);
+
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("showing");
+      });
+    });
+
+    test("hides captions when the panel populates later, and only once", async () => {
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        tracks: twoTracks,
+        transcriptPopulated: false,
+      });
+      const video = mountVideo(ctx);
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("showing");
+      });
+
+      ctx.transcriptPopulated = true;
+      flushSync();
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      // Viewer re-enables captions; a later annotation update must not undo it.
+      video.textTracks[0]!.mode = "showing";
+      ctx.transcriptPopulated = false;
+      flushSync();
+      ctx.transcriptPopulated = true;
+      flushSync();
+      await new Promise((r) => setTimeout(r, 50));
+      expect(video.textTracks[0]!.mode).toBe("showing");
+    });
+
+    test("does not touch an explicit tracks prop", async () => {
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: "https://example.com/video.mp4",
+        mediaType: "video",
+        transcriptPopulated: true,
+      });
+      const video = mountVideo(ctx, { tracks: twoTracks });
+
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("showing");
+      });
+    });
+
+    test("starts over on a canvas switch (new mediaUrl)", async () => {
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: "https://example.com/video-1.mp4",
+        mediaType: "video",
+        tracks: twoTracks,
+        transcriptPopulated: true,
+      });
+      const video = mountVideo(ctx);
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      // Simulate Root's canvas switch: media cleared, panel cleared, new media.
+      ctx.mediaUrl = "";
+      ctx.transcriptPopulated = false;
+      flushSync();
+      ctx.mediaUrl = "https://example.com/video-2.mp4";
+      flushSync();
+      const video2 = target.querySelector("video") as HTMLVideoElement;
+      await vi.waitFor(() => {
+        expect(video2.textTracks[0]!.mode).toBe("showing");
+      });
+
+      ctx.transcriptPopulated = true;
+      flushSync();
+      await vi.waitFor(() => {
+        expect(video2.textTracks[0]!.mode).toBe("hidden");
+      });
     });
   });
 });

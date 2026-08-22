@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { getPlayerContext, type TrackDefinition } from "./context";
 
   // Props
@@ -54,6 +55,37 @@
           "Provide captions via the tracks prop or IIIF manifest annotations for WCAG 1.2.2 compliance.",
       );
     }
+  });
+
+  // Native-caption policy (VTT design, requirement 5): tracks are attached
+  // exactly as today; once the transcript panel is populated — by whatever
+  // source — every attached text track is set to "hidden" ONE time per canvas
+  // load, so the viewer does not see the same text twice. We never write
+  // `mode` again, so a viewer who re-enables captions keeps them. The
+  // `default` attribute cannot express this: the browser consults it only at
+  // insertion, which on a VTT-only canvas happens while the panel is still
+  // empty. Explicit `tracks` prop is exempt (consumer's choice).
+  let captionsHiddenForUrl = "";
+  $effect(() => {
+    const el = localMediaElement;
+    const populated = ctx.transcriptPopulated;
+    const url = ctx.mediaUrl;
+    const trackCount = effectiveTracks.length;
+    const usingContextTracks = tracks.length === 0;
+    if (!el || !populated || !url || trackCount === 0 || !usingContextTracks) {
+      return;
+    }
+    if (!(el instanceof HTMLVideoElement)) return;
+    if (captionsHiddenForUrl === url) return;
+    untrack(() => {
+      const list = el.textTracks;
+      if (list.length === 0) return;
+      for (let i = 0; i < list.length; i++) {
+        const track = list[i];
+        if (track) track.mode = "hidden";
+      }
+      captionsHiddenForUrl = url;
+    });
   });
 
   // Update context's mediaElement when ours is mounted
