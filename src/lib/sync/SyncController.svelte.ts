@@ -152,9 +152,27 @@ export class SyncController {
     // Polling is necessary because IIIFMediaViewerRef doesn't expose the raw video element
     // or timeupdate events. The viewer interface only provides getCurrentTime() method.
     // Alternative: If viewer API adds ontimeupdate callback, we could switch to event-based sync.
+    //
+    // Do not drive the machine until playback has actually moved the time.
+    // The first poll after mount reports the initial time (usually 0) while
+    // the media is paused; forwarding it would enter mediaDriven and scroll
+    // the first segment into view before the user pressed play — in a
+    // page-level layout that scrolls the whole document (#55).
+    let initialTime: number | null = null;
+    let playbackStarted = false;
     const timeupdateInterval = setInterval(() => {
       if (this.viewer && this.actor) {
         const currentTime = this.viewer.getCurrentTime();
+        if (!playbackStarted) {
+          if (initialTime === null) {
+            initialTime = currentTime;
+            return;
+          }
+          if (currentTime === initialTime) {
+            return;
+          }
+          playbackStarted = true;
+        }
         this.actor.send({ type: "VIDEO_TIME_UPDATE", currentTime });
       }
     }, 100);
