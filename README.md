@@ -150,9 +150,9 @@ Renders the media element (`<audio>` or `<video>`) for the current canvas. Auto-
 
 When `poster` is omitted, the player automatically derives one from the current canvas's IIIF [`placeholderCanvas`](https://iiif.io/api/presentation/3.0/#placeholdercanvas), falling back to [`accompanyingCanvas`](https://iiif.io/api/presentation/3.0/#accompanyingcanvas). Poster images apply to video canvases only.
 
-Captions discovered from the manifest are attached as `<track>` elements exactly as before. When the transcript panel is populated — from `annotations="auto"`, from a `Transcript` `annotations` prop, or from Root's — `Viewer` switches every attached track to `mode = "hidden"` **once per canvas**, so the same text is not shown twice; the tracks stay available in the native controls and a viewer who turns them on keeps them. An explicit `tracks` prop is left alone.
+Captions discovered from the manifest are attached as `<track>` elements exactly as before. When the transcript panel is populated — from `annotations="auto"`, from a `Transcript` `annotations` prop, or from Root's — `Viewer` switches every attached track to `mode = "hidden"` **once per canvas**, so the same text is not shown twice. The tracks stay attached, and a viewer can turn them back on — and keep them on — from the browser's native caption menu **when you pass `controls`** (`Viewer` defaults to `controls={false}`, and the library ships no caption toggle of its own). An explicit `tracks` prop is left alone.
 
-Because that write happens **once per canvas**, it is not undone: if your app shows and hides the transcript panel (a toggle, a tab, a responsive breakpoint), the native captions are not turned back on when the panel goes away. If you need captions to follow the panel, pass `tracks` explicitly — the policy never touches those — and set the track modes yourself.
+Because that write happens **once per canvas**, it is not undone: if your app shows and hides the transcript panel (a toggle, a tab, a responsive breakpoint), the native captions are not turned back on when the panel goes away. If you render your own controls without a caption toggle and need the captions to stay on, pass `tracks` explicitly — the policy never touches those — and set the track modes yourself.
 
 If the VTT lives on a different origin from the page, set `crossOrigin="anonymous"` on `Viewer` (and serve the VTT with CORS headers): browsers refuse a cross-origin `<track>` without it, so the native caption toggle silently does nothing. Note also that on a **video** canvas under `annotations="auto"` tier 2 the VTT is requested twice — once by the library to build the transcript, once by the browser for the `<track>` — normally served the second time from the HTTP cache. Audio canvases render an `<audio>` element with no `<track>`, so there is only the one request.
 
@@ -234,6 +234,8 @@ Synchronized transcript panel. Manages bidirectional scroll↔media sync via an 
 **Children:** Use `TranscriptSearch` and `TranscriptSegments` as compound children. Without children, renders the empty state.
 
 While Root is fetching a VTT transcript (`annotations="auto"`, `transcriptStatus === "loading"`) the panel shows "Loading transcript…" with `aria-busy="true"` — this replaces the empty state and the `empty` snippet for as long as the status is `"loading"`. Pass a `loading` snippet to render your own affordance (translated copy, a skeleton) in its place.
+
+There is no matching `error` snippet: when the fetch fails (`transcriptStatus === "error"`) the panel falls back to the ordinary empty state. If you want a distinct failure affordance, read `transcriptStatus` from the Root children snippet or handle `onError` and render it yourself.
 
 #### `IIIFPlayer.TranscriptSearch`
 

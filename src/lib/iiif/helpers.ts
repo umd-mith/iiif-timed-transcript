@@ -977,8 +977,9 @@ export function getSupplementaryVTTTracks(
 ): TrackDefinition[] {
   const annotations = getSupplementaryAnnotations(canvas, "supplementing");
   const tracks: TrackDefinition[] = [];
-  // Viewer keys its <track> {#each} on `src`; a duplicate would throw
-  // each_key_duplicate. First occurrence wins.
+  // Viewer keys its <track> {#each} on `${canvasIndex}:${src}`; two tracks
+  // with the same src on one canvas would throw each_key_duplicate. First
+  // occurrence wins.
   const seenSrc = new Set<string>();
 
   const pushTrack = (resource: ContentResourceData) => {
