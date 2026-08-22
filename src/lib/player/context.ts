@@ -84,9 +84,11 @@ export interface PlayerContext {
   /** Tier-2 transcript fetch lifecycle; "idle" unless Root builds annotations itself. */
   readonly transcriptStatus: TranscriptStatus;
   /**
-   * Set by Transcript from its *effective* annotations (prop or context) so
-   * Viewer can switch native captions off once the panel shows the same text.
-   * Internal wiring — not on PlayerRef.
+   * True once any Transcript instance has been populated during the current
+   * canvas load; cleared by Root on each canvas load. Transcript never writes
+   * `false` (two panels with different effective annotations would otherwise
+   * loop). Viewer reads it to switch native captions off once the panel shows
+   * the same text. Internal wiring — not on PlayerRef.
    */
   transcriptPopulated: boolean;
   actions: PlayerActions;

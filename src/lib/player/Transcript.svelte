@@ -68,34 +68,34 @@
 
   // Publish the panel's *effective* populated state so Viewer (a sibling
   // that cannot see TranscriptContext) can switch native captions off once
-  // the same text is on screen. Written only on change; cleared on unmount.
+  // the same text is on screen. Root clears the flag on every canvas load;
+  // Transcript only ever sets it.
   const isLoading = $derived(
     resolvedAnnotations.length === 0 &&
       playerContext.transcriptStatus === "loading",
   );
 
-  // The context read is tracked on purpose. Root clears the flag on every
-  // canvas load, and with a consumer-supplied annotations *array* nothing else
-  // this effect reads ever changes — so an untracked read would latch the flag
-  // at `false` for the life of the component and native captions would never
-  // be hidden on the documented primary path. Tracking it makes Root's clear
-  // force one extra run that re-publishes the truth; the write is guarded by
-  // the inequality check and happens inside `untrack`, so it converges in that
-  // one run rather than looping.
+  // The flag is monotonic per canvas load: "true wins", and only Root clears
+  // it (on every `loadCanvas`). Writing `false` from here would make two
+  // panels whose effective annotations differ — say `<Transcript
+  // annotations={notes}/>` beside a bare `<Transcript/>` — ping-pong the flag
+  // forever and blow the effect update depth.
+  //
+  // The context read is tracked on purpose. With a consumer-supplied
+  // annotations *array* nothing else this effect reads ever changes, so an
+  // untracked read would latch the flag at `false` for the life of the
+  // component and native captions would never be hidden on the documented
+  // primary path. Tracking it makes Root's per-load clear force one extra run
+  // that re-publishes the truth; the write happens inside `untrack` and only
+  // in the false→true direction, so it converges in that one run.
   $effect(() => {
     const populated = resolvedAnnotations.length > 0;
     const current = playerContext.transcriptPopulated;
-    if (current !== populated) {
+    if (populated && !current) {
       untrack(() => {
-        playerContext.transcriptPopulated = populated;
+        playerContext.transcriptPopulated = true;
       });
     }
-  });
-
-  $effect(() => {
-    return () => {
-      playerContext.transcriptPopulated = false;
-    };
   });
 
   // Create viewer adapter for SyncController

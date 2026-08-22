@@ -328,7 +328,9 @@
     // annotations and "ready" status in place — the panel would render
     // segments for media that never loaded. Tracks are canvas-scoped for the
     // same reason: a failed canvas must not inherit the previous canvas's
-    // VTT, which a later "auto" re-derive would then fetch.
+    // VTT, which a later "auto" re-derive would then fetch. Chapters are
+    // canvas-scoped too — a failed switch must not leave the previous
+    // canvas's ranges in the navigation.
     //
     // transcriptPopulated belongs in the same reset: Viewer's effect runs
     // before Transcript's in tree order, so without this it would see the
@@ -337,6 +339,7 @@
     // canvas whose transcript then fails with neither captions nor
     // transcript. Transcript re-publishes it truthfully on the next flush.
     player.tracks = [];
+    player.chapters = [];
     player.transcriptPopulated = false;
     if (annotations === "auto") {
       player.annotations = [];

@@ -1221,6 +1221,41 @@ describe("Viewer", () => {
       });
     });
 
+    test("recreates a <track> the next canvas reuses by src", async () => {
+      // Two canvases whose caption tracks share a `src`. Keyed only on the
+      // src, the {#each} would reuse the very same <track> node across the
+      // switch and its TextTrack.mode would survive as "hidden" — captions
+      // silently off on a canvas whose panel is empty.
+      const sharedTrack: TrackDefinition = {
+        src: "https://example.com/shared-en.vtt",
+        kind: "captions",
+        srclang: "en",
+        label: "English",
+      };
+      const ctx = createReactiveMockPlayerContext({
+        mediaUrl: "https://example.com/video-1.mp4",
+        mediaType: "video",
+        canvasIndex: 0,
+        tracks: [sharedTrack],
+        transcriptPopulated: true,
+      });
+      const video = mountVideo(ctx);
+      await vi.waitFor(() => {
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+      });
+
+      // Canvas 1: different media, same track src, and an empty panel.
+      switchCanvas(ctx, {
+        canvasIndex: 1,
+        mediaUrl: "https://example.com/video-2.mp4",
+        tracks: [{ ...sharedTrack }],
+      });
+      const video2 = target.querySelector("video") as HTMLVideoElement;
+      await vi.waitFor(() => {
+        expect(video2.textTracks[0]!.mode).toBe("showing");
+      });
+    });
+
     test("re-arms for two canvases that share one media file", async () => {
       // Same media body painted by both canvases, different VTT tracks. The
       // url never changes across the switch, so a url-only latch never

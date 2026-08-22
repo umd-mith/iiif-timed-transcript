@@ -424,6 +424,30 @@ describe("Transcript", () => {
       expect(ctx.transcriptPopulated).toBe(true);
     });
 
+    test("two instances with different effective annotations converge", () => {
+      // A populated panel and a bare one under the same Root: if the flag were
+      // written in both directions the two effects would ping-pong forever
+      // (effect_update_depth_exceeded). "true wins" per canvas load.
+      const ctx = createReactiveMockPlayerContext();
+
+      const twoPanels = ((anchor: Node) => {
+        mount(Transcript, {
+          target,
+          anchor,
+          props: { annotations: mockAnnotations },
+        });
+        mount(Transcript, { target, anchor, props: {} });
+      }) as unknown as Snippet;
+
+      mount(TestContextProvider, {
+        target,
+        props: { context: ctx, children: twoPanels },
+      });
+
+      expect(() => flushSync()).not.toThrow();
+      expect(ctx.transcriptPopulated).toBe(true);
+    });
+
     test("shows a loading affordance instead of the empty state while loading", () => {
       const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
 

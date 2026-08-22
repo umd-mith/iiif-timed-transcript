@@ -249,7 +249,13 @@
       style="width: 100%;"
       onerror={handleMediaError}
     >
-      {#each effectiveTracks as track, i (track.src)}
+      <!--
+        Keyed on the canvas as well as the src: a `<track>` node reused across
+        a canvas switch keeps its `TextTrack.mode`, so a canvas that repeats a
+        src would inherit the previous canvas's `hidden` and show no captions
+        even with an empty transcript panel.
+      -->
+      {#each effectiveTracks as track, i (`${ctx.canvasIndex}:${track.src}`)}
         <track
           src={track.src}
           kind={track.kind}

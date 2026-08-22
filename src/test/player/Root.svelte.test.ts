@@ -2047,7 +2047,7 @@ describe("Root component", () => {
       expect(capturedCtx!.transcriptStatus).toBe("idle");
     });
 
-    test("a failed canvas switch clears tracks and the current canvas, so a later re-derive resurrects nothing", async () => {
+    test("a failed canvas switch clears tracks, chapters and the current canvas, so a later re-derive resurrects nothing", async () => {
       const url = "https://example.com/auto-failed-canvas-clears-tracks.json";
       const vttUrl = "https://example.com/captions-fr.vtt";
       const canvas0 = MANIFEST_WITH_VTT_CAPTIONS.items[0]!;
@@ -2109,6 +2109,18 @@ describe("Root component", () => {
             ],
           },
         ],
+        // Canvas 0 has a chapter range; canvas 1 has none. A failed switch
+        // must not leave canvas 0's chapters in the navigation.
+        structures: [
+          {
+            id: "https://example.com/range/1",
+            type: "Range",
+            label: { en: ["Introduction"] },
+            items: [
+              { id: "https://example.com/canvas/1#t=0,5", type: "Canvas" },
+            ],
+          },
+        ],
       };
       mockFetchRoutes({
         [url]: { json: manifest },
@@ -2138,6 +2150,7 @@ describe("Root component", () => {
       });
       expect(capturedCtx!.tracks).toHaveLength(1);
       expect(capturedCtx!.annotations.length).toBeGreaterThan(0);
+      expect(capturedCtx!.chapters).toHaveLength(1);
       const callsAfterFirstCanvas = vttCalls();
 
       capturedCtx!.actions.switchCanvas(1);
@@ -2146,8 +2159,10 @@ describe("Root component", () => {
         expect(capturedCtx!.state.error).not.toBeNull();
       });
 
-      // The non-AV canvas has no tracks of its own; canvas 0's must not linger.
+      // The non-AV canvas has no tracks or chapters of its own; canvas 0's
+      // must not linger.
       expect(capturedCtx!.tracks).toEqual([]);
+      expect(capturedCtx!.chapters).toEqual([]);
 
       // A mode flip back to "auto" re-derives — it must not resurrect the
       // previous canvas's embedded transcript or its VTT.
