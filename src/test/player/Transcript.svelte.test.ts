@@ -468,10 +468,12 @@ describe("Transcript", () => {
       expect(target.querySelector(".empty-message")).toBeNull();
     });
 
-    test("ignores a loading context status when it has its own annotations", () => {
+    test("own annotations render rather than the context's loading state (composition)", () => {
       // `<Transcript annotations={filtered}/>` under a Root with an in-flight
       // VTT fetch is not loading anything: the panel has text to show, so it
-      // must render it rather than "Loading transcript…" with aria-busy.
+      // must render it rather than "Loading transcript…" with aria-busy. Own
+      // annotations win because they are what `resolvedAnnotations` resolves
+      // to, so the panel never falls back to the context's status.
       const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
 
       mount(TestContextProvider, {

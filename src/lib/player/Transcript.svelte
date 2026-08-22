@@ -70,9 +70,10 @@
   // panel while the panel is falling back to the context annotations. A panel
   // given its own `annotations` prop — `<Transcript annotations={filtered}/>`
   // beside a Root with a VTT fetch in flight — is not loading anything.
+  // An empty `resolvedAnnotations` already implies the panel is falling back to
+  // context (own annotations, when non-empty, are what it resolves to).
   const isLoading = $derived(
-    annotations.length === 0 &&
-      resolvedAnnotations.length === 0 &&
+    resolvedAnnotations.length === 0 &&
       playerContext.transcriptStatus === "loading",
   );
 

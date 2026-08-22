@@ -85,7 +85,8 @@ export interface PlayerContext {
   readonly transcriptStatus: TranscriptStatus;
   /**
    * True once any Transcript instance has been populated during the current
-   * canvas load; cleared by Root on each canvas load. Transcript never writes
+   * canvas load; cleared by Root on each canvas load and on an `annotations`
+   * mode flip (array <-> "auto"). Transcript never writes
    * `false` (two panels with different effective annotations would otherwise
    * loop). Viewer reads it to switch native captions off once the panel shows
    * the same text. Internal wiring — not on PlayerRef.
