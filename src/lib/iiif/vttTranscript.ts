@@ -93,11 +93,12 @@ export function buildAnnotationsFromVTTCues(
 
     let id = cue.id || `cue-${cue.startTime}`;
     if (seenIds.has(id)) {
-      // Keep suffixing until we land on an id that is actually unique —
-      // a single-shot suffix can itself collide with an id seen earlier
-      // (e.g. cue ids "a", "a-2", "a": the third cue's naive suffix "a-2"
-      // duplicates the second cue's real id).
-      let n = 1;
+      // Same rule as buildTranscriptAnnotations: start at the
+      // `${id}-${annotations.length}` suffix, then keep incrementing until
+      // the id is actually unique — a single-shot suffix can itself collide
+      // with an id seen earlier (e.g. cue ids "a", "a-2", "a": the third
+      // cue's naive suffix "a-2" duplicates the second cue's real id).
+      let n = annotations.length;
       let candidate = `${id}-${n}`;
       while (seenIds.has(candidate)) {
         n += 1;

@@ -96,15 +96,15 @@ describe("buildAnnotationsFromVTTCues", () => {
 
   it("keeps suffixing when a single-shot suffix would itself collide", () => {
     // "a", "a-2", "a": cue 2 -> "a-2" (added to seenIds); cue 3 collides on
-    // "a" and a naive `${id}-${annotations.length}` suffix also lands on
-    // "a-2", which is already taken. It must keep trying until unique.
+    // "a" and the `${id}-${annotations.length}` suffix also lands on "a-2",
+    // which is already taken. It must keep incrementing until unique.
     const result = buildAnnotationsFromVTTCues(
       [cue(0, 1, "one", "a"), cue(1, 2, "two", "a-2"), cue(2, 3, "three", "a")],
       tokenizeVTTCue,
     );
     const ids = result.annotations.map((a) => a.id);
     expect(new Set(ids).size).toBe(3);
-    expect(ids).toEqual(["a", "a-2", "a-1"]);
+    expect(ids).toEqual(["a", "a-2", "a-3"]);
   });
 
   it("skips cues whose tokenized text is empty", () => {

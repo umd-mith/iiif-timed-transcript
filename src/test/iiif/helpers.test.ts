@@ -1127,9 +1127,9 @@ describe("buildTranscriptAnnotations", () => {
 
   it("keeps suffixing ids when a single-shot suffix would itself collide", () => {
     // Annotation ids "a", "a-2", "a" in order: the second is added to
-    // seenIds as-is; the third collides on "a" and a naive
+    // seenIds as-is; the third collides on "a" and 0.15.0's
     // `${id}-${annotations.length}` suffix also lands on "a-2", which is
-    // already taken. It must keep trying until it lands on a truly unique id.
+    // already taken. It must keep incrementing to a truly unique id.
     const canvas = createSupplementaryCanvas([
       {
         id: "https://example.org/page/supp",
@@ -1164,7 +1164,46 @@ describe("buildTranscriptAnnotations", () => {
 
     const ids = annotations.map((a) => a.id);
     expect(new Set(ids).size).toBe(3);
-    expect(ids).toEqual(["a", "a-2", "a-1"]);
+    expect(ids).toEqual(["a", "a-2", "a-3"]);
+  });
+
+  it("keeps 0.15.0's suffix when that suffix does not collide", () => {
+    // Ids "A", "B", "A": 0.15.0 gave the third annotation `${id}-${length}`
+    // = "A-2", which is unique here. `buildTranscriptAnnotations` is a shipped
+    // public export, so the id must stay byte-identical in that case.
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "A",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "one" },
+            target: "https://example.org/canvas/1#t=0,1",
+          },
+          {
+            id: "B",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "two" },
+            target: "https://example.org/canvas/1#t=1,2",
+          },
+          {
+            id: "A",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "three" },
+            target: "https://example.org/canvas/1#t=2,3",
+          },
+        ],
+      },
+    ]);
+
+    const { annotations } = buildTranscriptAnnotations(canvas);
+
+    expect(annotations.map((a) => a.id)).toEqual(["A", "B", "A-2"]);
   });
 
   it("should handle point-in-time annotations (start only, no end)", () => {
