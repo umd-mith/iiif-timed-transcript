@@ -1,4 +1,6 @@
 import type { TrackDefinition } from "../player/context.js";
+import type { VTTCue, VTTNode } from "media-captions";
+import type { Annotation, TranscriptAnnotationResult } from "../sync/types.js";
 
 // ============================================================================
 // VTT → transcript annotations (annotations="auto" tier 2)
@@ -27,4 +29,62 @@ export function selectTranscriptTrack(
     if (match) return match;
   }
   return tracks[0];
+}
+
+/** `tokenizeVTTCue` from media-captions, passed in so this module stays free of a static import. */
+export type VTTCueTokenizer = (cue: VTTCue) => VTTNode[];
+
+/**
+ * Plain text of a cue: the WebVTT cue-text parser's text leaves, concatenated.
+ * Tags (`<v>`, `<b>`, `<c.x>`, timestamps) are dropped and entities decoded;
+ * `cue.text` is the raw payload and would render tags literally through
+ * Segment's escaped `{annotation.text}`.
+ */
+export function vttCueToPlainText(
+  cue: VTTCue,
+  tokenize: VTTCueTokenizer,
+): string {
+  const parts: string[] = [];
+  const walk = (nodes: VTTNode[]) => {
+    for (const node of nodes) {
+      if (node.type === "text") {
+        parts.push(node.data);
+      } else {
+        walk(node.children);
+      }
+    }
+  };
+  walk(tokenize(cue));
+  return parts.join("").trim();
+}
+
+/**
+ * Builds transcript annotations from parsed VTT cues. Same result shape and
+ * id-dedup rule as buildTranscriptAnnotations (helpers.ts): VTT cue ids are
+ * optional and routinely absent or repeated, and `cue-${startTime}` collides
+ * whenever two cues share a start time; TranscriptSegments keys on id.
+ */
+export function buildAnnotationsFromVTTCues(
+  cues: readonly VTTCue[],
+  tokenize: VTTCueTokenizer,
+): TranscriptAnnotationResult {
+  const annotations: Annotation[] = [];
+  const seenIds = new Set<string>();
+
+  for (const cue of cues) {
+    let id = cue.id || `cue-${cue.startTime}`;
+    if (seenIds.has(id)) {
+      id = `${id}-${annotations.length}`;
+    }
+    seenIds.add(id);
+
+    annotations.push({
+      id,
+      startTime: cue.startTime,
+      endTime: cue.endTime,
+      text: vttCueToPlainText(cue, tokenize),
+    });
+  }
+
+  return { annotations, skipped: [] };
 }

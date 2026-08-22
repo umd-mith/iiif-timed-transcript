@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { selectTranscriptTrack } from "../../lib/iiif/vttTranscript";
+import { VTTCue, tokenizeVTTCue } from "media-captions";
+import {
+  selectTranscriptTrack,
+  vttCueToPlainText,
+  buildAnnotationsFromVTTCues,
+} from "../../lib/iiif/vttTranscript";
 import type { TrackDefinition } from "../../lib/player/context";
 
 const en: TrackDefinition = {
@@ -31,5 +36,60 @@ describe("selectTranscriptTrack", () => {
 
   it("falls back to the first track when no preference is given", () => {
     expect(selectTranscriptTrack([fr, en])).toBe(fr);
+  });
+});
+
+function cue(start: number, end: number, text: string, id = ""): VTTCue {
+  const c = new VTTCue(start, end, text);
+  c.id = id;
+  return c;
+}
+
+describe("vttCueToPlainText", () => {
+  it("strips voice, class, bold/italic and timestamp tags", () => {
+    const c = cue(
+      0,
+      1,
+      "<v Alice><b>Hello</b> <i>there</i> <c.yellow>friend</c><00:00:00.500> again",
+    );
+    expect(vttCueToPlainText(c, tokenizeVTTCue)).toBe(
+      "Hello there friend again",
+    );
+  });
+
+  it("decodes HTML entities", () => {
+    const c = cue(0, 1, "Fish &amp; chips &lt;cheap&gt;");
+    expect(vttCueToPlainText(c, tokenizeVTTCue)).toBe("Fish & chips <cheap>");
+  });
+});
+
+describe("buildAnnotationsFromVTTCues", () => {
+  it("maps cues to annotations with plain text", () => {
+    const result = buildAnnotationsFromVTTCues(
+      [cue(0, 1.5, "<v Bob>One", "c1"), cue(1.5, 3, "Two", "c2")],
+      tokenizeVTTCue,
+    );
+    expect(result.skipped).toEqual([]);
+    expect(result.annotations).toEqual([
+      { id: "c1", startTime: 0, endTime: 1.5, text: "One" },
+      { id: "c2", startTime: 1.5, endTime: 3, text: "Two" },
+    ]);
+  });
+
+  it("produces unique ids for cues without ids, repeated ids, and shared start times", () => {
+    const result = buildAnnotationsFromVTTCues(
+      [
+        cue(0, 1, "a"), // no id → cue-0
+        cue(0, 2, "b"), // no id, same start → collides with cue-0
+        cue(2, 3, "c", "x"),
+        cue(3, 4, "d", "x"), // repeated id
+        cue(4, 5, "e", "x-3"), // collides with a generated suffix
+      ],
+      tokenizeVTTCue,
+    );
+    const ids = result.annotations.map((a) => a.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids[0]).toBe("cue-0");
+    expect(ids[2]).toBe("x");
   });
 });
