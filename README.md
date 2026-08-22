@@ -562,8 +562,10 @@ interface PlayerContext {
   mediaElement: HTMLMediaElement | null;
   mediaUrl: string;
   mediaType: "audio" | "video";
+  posterUrl: string | undefined;
   readonly mediaStrategy: MediaStrategy;
   readonly hlsAdapter: HlsAdapter | null;
+  readonly dashAdapter: DashAdapter | null;
   readonly annotations: Annotation[];
   readonly chapters: Chapter[];
   readonly activeChapterId: string | null;
