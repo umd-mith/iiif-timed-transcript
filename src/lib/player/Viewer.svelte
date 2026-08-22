@@ -57,56 +57,37 @@
     }
   });
 
-  // Native-caption policy (VTT design, requirement 5, revised for a
-  // toggle-able transcript panel): tracks are attached exactly as today.
-  // When the panel's effective annotations go empty -> non-empty, every
-  // attached text track is set to "hidden" so the viewer does not see the
-  // same text twice. When the panel then goes non-empty -> empty (a
-  // consumer that conditionally renders <Transcript>, e.g. a toggle or tab),
-  // any of those tracks still sitting at the "hidden" value we wrote are
-  // restored to "showing" — a toggle-able panel must not leave the viewer
-  // with neither captions nor a transcript. A track the viewer has since
-  // changed (turned on via native controls, or off) is left alone either
-  // way: we only ever act on a track whose mode still equals what we last
-  // wrote. Explicit `tracks` prop is exempt (consumer's choice) throughout.
-  let bookkeepingUrl = "";
-  let hiddenTracks: TextTrack[] = [];
+  // Native-caption policy (VTT design, requirement 5): tracks are attached
+  // exactly as today; once the transcript panel is populated — by whatever
+  // source — every attached text track is set to "hidden" ONE time per canvas
+  // load, so the viewer does not see the same text twice. We never write
+  // `mode` again, so a viewer who re-enables captions keeps them. The
+  // `default` attribute cannot express this: the browser consults it only at
+  // insertion, which on a VTT-only canvas happens while the panel is still
+  // empty. Because the write happens once, a host that hides the transcript
+  // panel again (toggle, tab, responsive breakpoint) does not get the native
+  // captions back — such a host should pass `tracks` explicitly, which is
+  // exempt from this policy (consumer's choice).
+  let captionsHiddenForUrl = "";
   $effect(() => {
     const el = localMediaElement;
     const populated = ctx.transcriptPopulated;
     const url = ctx.mediaUrl;
     const trackCount = effectiveTracks.length;
     const usingContextTracks = tracks.length === 0;
-    if (!el || !url || trackCount === 0 || !usingContextTracks) return;
+    if (!el || !populated || !url || trackCount === 0 || !usingContextTracks) {
+      return;
+    }
     if (!(el instanceof HTMLVideoElement)) return;
-
+    if (captionsHiddenForUrl === url) return;
     untrack(() => {
-      if (bookkeepingUrl !== url) {
-        // New canvas: previously-tracked TextTrack objects belong to a
-        // detached <video>; start over with "default" semantics.
-        bookkeepingUrl = url;
-        hiddenTracks = [];
+      const list = el.textTracks;
+      if (list.length === 0) return;
+      for (let i = 0; i < list.length; i++) {
+        const track = list[i];
+        if (track) track.mode = "hidden";
       }
-
-      if (populated) {
-        if (hiddenTracks.length > 0) return; // already hidden this session
-        const list = el.textTracks;
-        if (list.length === 0) return;
-        const hidden: TextTrack[] = [];
-        for (let i = 0; i < list.length; i++) {
-          const track = list[i];
-          if (track) {
-            track.mode = "hidden";
-            hidden.push(track);
-          }
-        }
-        hiddenTracks = hidden;
-      } else if (hiddenTracks.length > 0) {
-        for (const track of hiddenTracks) {
-          if (track.mode === "hidden") track.mode = "showing";
-        }
-        hiddenTracks = [];
-      }
+      captionsHiddenForUrl = url;
     });
   });
 

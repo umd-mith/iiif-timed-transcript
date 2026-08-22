@@ -120,10 +120,17 @@
   // Errors already handed to onError. The fallback watcher below skips them.
   const reportedErrors = new WeakSet<Error>();
 
-  // Bumped on every loadCanvas. Async resolvers (adapter imports, the VTT
-  // transcript fetch) capture it before awaiting and drop their result if it
-  // changed — instance-local, so two Roots on a page never interfere.
+  // Bumped by loadCanvas and nothing else. The media-adapter imports capture
+  // it before awaiting and drop their result if it changed — instance-local,
+  // so two Roots on a page never interfere.
   let loadGeneration = 0;
+
+  // Same idea for the tier-2 VTT fetch, but bumped by loadCanvas *and* by the
+  // annotations-prop mode flip. It is deliberately separate from
+  // loadGeneration: a mode flip must invalidate an in-flight transcript fetch
+  // without invalidating an in-flight `import("hls.js")`/`import("dashjs")`,
+  // which would leave mediaStrategy set and the adapter null with no error.
+  let transcriptGeneration = 0;
 
   // The last successfully-resolved canvas (set even if a later step in
   // loadCanvas throws — e.g. a non-AV canvas — so the annotations-prop
@@ -178,12 +185,11 @@
         player.annotations = mode;
         player.transcriptStatus = "idle";
       } else if (mode === "auto" && currentCanvas) {
-        // Not part of loadCanvas's own generation bump (that would race
-        // resolveHlsAdapter/resolveDashAdapter, which capture their own
-        // generation earlier in the same loadCanvas call). This path only
-        // ever runs outside loadCanvas, so it is safe to invalidate any
-        // in-flight VTT fetch here.
-        loadGeneration += 1;
+        // Drop any VTT fetch still in flight from before the flip. Only the
+        // transcript counter moves — bumping loadGeneration here would
+        // cancel an in-flight resolveHlsAdapter/resolveDashAdapter import
+        // started by the current loadCanvas.
+        transcriptGeneration += 1;
         deriveAutoAnnotations(currentCanvas);
       }
     });
@@ -303,6 +309,7 @@
   function loadCanvas(index: number) {
     if (!manifestData) return;
     loadGeneration += 1;
+    transcriptGeneration += 1;
 
     // Reset before anything below can throw. Without this, a canvas switch
     // that lands on a non-AV canvas (or otherwise throws before reaching the
@@ -382,12 +389,19 @@
 
   // annotations="auto" tier 1/2 derivation, shared by loadCanvas (a fresh
   // canvas) and the annotations-prop effect above (a mode flip with no
-  // canvas switch). Tier 1: embedded TextualBody supplementing/commenting/
-  // tagging annotations (matches getSupplementaryAnnotations' documented
-  // Postel's-Law motivations — AVAnnotate's commenting/tagging as well as
-  // strict-IIIF supplementing — so an unrelated motivation, e.g. a single
-  // editorial "describing" note, can't masquerade as the transcript and
-  // permanently suppress tier 2). Tier 2: the canvas's external VTT track.
+  // canvas switch).
+  //
+  // Tier 1: embedded TextualBody annotations whose motivation is on the
+  // allow-list below. Those three are the motivations that AVAnnotate/
+  // Voices-style manifests (commenting, tagging) and Cookbook-style
+  // manifests (supplementing) actually use for embedded transcript text;
+  // everything else (describing, highlighting, ...) is excluded. Note this
+  // does NOT disambiguate a transcript from an editorial note that happens
+  // to use one of the three: a `commenting` note on a canvas that also has
+  // a VTT transcript wins tier 1 and suppresses tier 2. That precedence is
+  // accepted — a manifest carrying both should pass `annotations` explicitly.
+  //
+  // Tier 2: the canvas's external VTT track, only when tier 1 yields none.
   function deriveAutoAnnotations(canvas: CanvasData) {
     const embedded = buildTranscriptAnnotations(canvas, [
       "supplementing",
@@ -463,17 +477,18 @@
 
   // Tier 2 of annotations="auto". Failures are non-fatal: the panel stays
   // empty, native captions stay attached, playback is unaffected, and
-  // player.state.error is never written. Stale results (canvas switched or
-  // Root destroyed while fetching) are dropped via loadGeneration.
+  // player.state.error is never written. Stale results (canvas switched, the
+  // annotations prop flipped mode, or Root destroyed while fetching) are
+  // dropped via transcriptGeneration.
   async function resolveVTTTranscript(url: string) {
-    const generation = loadGeneration;
+    const generation = transcriptGeneration;
     try {
       const result = await loadVTTTranscript(url);
-      if (destroyed || generation !== loadGeneration) return;
+      if (destroyed || generation !== transcriptGeneration) return;
       player.annotations = result.annotations;
       player.transcriptStatus = "ready";
     } catch (error) {
-      if (destroyed || generation !== loadGeneration) return;
+      if (destroyed || generation !== transcriptGeneration) return;
       const err = error instanceof Error ? error : new Error(String(error));
       player.annotations = [];
       player.transcriptStatus = "error";
