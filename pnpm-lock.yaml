@@ -10,6 +10,9 @@ importers:
       "@umd-mith/iiif-media-parsers":
         specifier: ^0.3.2
         version: 0.3.2
+      media-captions:
+        specifier: ^0.0.18
+        version: 0.0.18
       quick-lru:
         specifier: ^7.3.0
         version: 7.3.0
@@ -68,9 +71,6 @@ importers:
       husky:
         specifier: ^9.1.7
         version: 9.1.7
-      media-captions:
-        specifier: ^0.0.18
-        version: 0.0.18
       playwright:
         specifier: ^1.58.2
         version: 1.58.2
@@ -3387,7 +3387,7 @@ packages:
         integrity: sha512-ICsMM1Wk8xSGMowkOmPrzo2Fgmfo4bMHLNX6ytHjajRJUqvHOw/TFapQ+QG75c3X/tTDDhOSRPGC52dDbNM8FQ==,
       }
     engines: { node: ">=16" }
-    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
+    deprecated: Deprecated and no longer maintained. Use @conventional-changelog/git-client instead.
     hasBin: true
 
   github-slugger@2.0.0:
@@ -5464,6 +5464,7 @@ packages:
         integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==,
       }
     engines: { node: ^18 || >=20 }
+    deprecated: unmaintained
     hasBin: true
     peerDependencies:
       typescript: ^5.0.0

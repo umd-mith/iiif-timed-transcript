@@ -141,6 +141,15 @@ export {
   type SupplementaryTextualContent,
 } from "./iiif/helpers.js";
 
+// VTT → transcript annotations (annotations="auto" tier 2 building blocks)
+export {
+  selectTranscriptTrack,
+  vttCueToPlainText,
+  buildAnnotationsFromVTTCues,
+  loadVTTTranscript,
+  type VTTCueTokenizer,
+} from "./iiif/vttTranscript.js";
+
 // Cache
 export {
   IIIFManifestCache,

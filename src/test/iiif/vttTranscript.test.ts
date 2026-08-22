@@ -1,9 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { VTTCue, tokenizeVTTCue } from "media-captions";
 import {
   selectTranscriptTrack,
   vttCueToPlainText,
   buildAnnotationsFromVTTCues,
+  loadVTTTranscript,
 } from "../../lib/iiif/vttTranscript";
 import type { TrackDefinition } from "../../lib/player/context";
 
@@ -91,5 +92,73 @@ describe("buildAnnotationsFromVTTCues", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids[0]).toBe("cue-0");
     expect(ids[2]).toBe("x");
+  });
+});
+
+const VTT_OK = `WEBVTT
+
+1
+00:00:00.000 --> 00:00:01.000
+<v Alice>Hello &amp; welcome
+
+2
+00:00:01.000 --> 00:00:02.000
+Second line
+`;
+
+const VTT_PARTIAL = `WEBVTT
+
+00:00:00.000 --> 00:00:01.000
+Good cue
+
+not-a-timestamp --> 00:00:02.000
+Bad cue
+`;
+
+const VTT_MALFORMED = `not a webvtt file at all`;
+
+function mockFetchText(status: number, body: string) {
+  globalThis.fetch = vi.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 404 ? "Not Found" : "OK",
+    text: async () => body,
+  } as Response) as unknown as typeof fetch;
+}
+
+describe("loadVTTTranscript", () => {
+  const realFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  it("fetches, parses and builds annotations", async () => {
+    mockFetchText(200, VTT_OK);
+    const result = await loadVTTTranscript("https://example.org/ok.vtt");
+    expect(result.annotations).toEqual([
+      { id: "1", startTime: 0, endTime: 1, text: "Hello & welcome" },
+      { id: "2", startTime: 1, endTime: 2, text: "Second line" },
+    ]);
+  });
+
+  it("throws on a non-OK response", async () => {
+    mockFetchText(404, "");
+    await expect(
+      loadVTTTranscript("https://example.org/missing.vtt"),
+    ).rejects.toThrow(/404/);
+  });
+
+  it("throws when nothing parses and errors were reported", async () => {
+    mockFetchText(200, VTT_MALFORMED);
+    await expect(
+      loadVTTTranscript("https://example.org/bad.vtt"),
+    ).rejects.toThrow(/Malformed VTT/);
+  });
+
+  it("returns recovered cues for a partially malformed file", async () => {
+    mockFetchText(200, VTT_PARTIAL);
+    const result = await loadVTTTranscript("https://example.org/partial.vtt");
+    expect(result.annotations).toHaveLength(1);
+    expect(result.annotations[0]!.text).toBe("Good cue");
   });
 });

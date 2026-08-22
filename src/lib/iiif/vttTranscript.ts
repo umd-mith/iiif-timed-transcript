@@ -88,3 +88,38 @@ export function buildAnnotationsFromVTTCues(
 
   return { annotations, skipped: [] };
 }
+
+/**
+ * Fetches a WebVTT file and builds transcript annotations from it.
+ *
+ * Throws (so Root can report `{ fatal: false, source: "transcript" }`) on a
+ * non-OK response, a thrown parse, or a parse that produced zero cues with
+ * errors. `errors: true` (not `strict`) keeps recovered cues from a partially
+ * malformed file. No credentials / RequestInit by design.
+ */
+export async function loadVTTTranscript(
+  url: string,
+): Promise<TranscriptAnnotationResult> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch VTT transcript: ${response.status} ${response.statusText}`,
+    );
+  }
+  const text = await response.text();
+
+  const { parseText, tokenizeVTTCue } = await import("media-captions");
+  const { cues, errors } = await parseText(text, {
+    type: "vtt",
+    errors: true,
+  });
+
+  if (cues.length === 0 && errors.length > 0) {
+    const first = errors[0];
+    throw new Error(
+      `Malformed VTT transcript: ${first ? first.message : "unknown parse error"}`,
+    );
+  }
+
+  return buildAnnotationsFromVTTCues(cues, tokenizeVTTCue);
+}
