@@ -15,6 +15,9 @@ import {
   getSupplementaryVTTTracks,
   buildCanvasInfoList,
   filterChaptersForCanvas,
+  isImageCanvas,
+  isAudioCanvas,
+  isVideoCanvas,
 } from "../../lib/iiif/helpers";
 import type { CanvasData, ManifestData } from "../../lib/iiif/validators";
 import { MANIFEST_MULTI_CANVAS } from "../player/test-fixtures";
@@ -407,6 +410,119 @@ describe("getPrimaryResource edge cases", () => {
     const result = getPrimaryResource(canvas);
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe("getPrimaryResource Choice bodies", () => {
+  const video = {
+    id: "https://example.org/video.mp4",
+    type: "Video",
+    format: "video/mp4",
+  };
+  const hls = {
+    id: "https://example.org/stream.m3u8",
+    type: "Video",
+    format: "application/x-mpegURL",
+  };
+  const sound = {
+    id: "https://example.org/audio.mp3",
+    type: "Sound",
+    format: "audio/mpeg",
+  };
+  const image = {
+    id: "https://example.org/image.jpg",
+    type: "Image",
+    format: "image/jpeg",
+  };
+  const text = {
+    id: "https://example.org/transcript.txt",
+    type: "Text",
+    format: "text/plain",
+  };
+
+  function canvasWithBody(body: unknown): CanvasData {
+    return {
+      id: "https://example.org/canvas/1",
+      type: "Canvas",
+      duration: 60,
+      items: [
+        {
+          id: "https://example.org/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.org/annotation/1",
+              type: "Annotation",
+              motivation: "painting",
+              body,
+              target: "https://example.org/canvas/1",
+            },
+          ],
+        },
+      ],
+    } as CanvasData;
+  }
+
+  it("resolves a single Choice to its first Sound/Video member", () => {
+    const canvas = canvasWithBody({
+      type: "Choice",
+      items: [image, hls, video],
+    });
+    expect(getPrimaryResource(canvas)?.id).toBe(hls.id);
+    expect(isVideoCanvas(canvas)).toBe(true);
+  });
+
+  it("resolves a Choice of HLS renditions (Avalon shape, choiceHint dropped by the validator)", () => {
+    const canvas = canvasWithBody({
+      type: "Choice",
+      items: [
+        { ...hls, id: "https://example.org/high.m3u8" },
+        { ...hls, id: "https://example.org/low.m3u8" },
+      ],
+    });
+    expect(getPrimaryResource(canvas)?.id).toBe(
+      "https://example.org/high.m3u8",
+    );
+  });
+
+  it("resolves a Choice of Sound to the first Sound", () => {
+    const canvas = canvasWithBody({ type: "Choice", items: [sound] });
+    expect(getPrimaryResource(canvas)?.id).toBe(sound.id);
+    expect(isAudioCanvas(canvas)).toBe(true);
+  });
+
+  it("resolves a Choice with no Sound/Video to undefined (no typed fallback)", () => {
+    const canvas = canvasWithBody({ type: "Choice", items: [text, image] });
+    expect(getPrimaryResource(canvas)).toBeUndefined();
+    expect(isImageCanvas(canvas)).toBe(false);
+  });
+
+  it("array: order wins between two resolving members — [Image, Choice{Video}] → Image", () => {
+    const canvas = canvasWithBody([image, { type: "Choice", items: [video] }]);
+    expect(getPrimaryResource(canvas)?.id).toBe(image.id);
+    expect(isImageCanvas(canvas)).toBe(true);
+  });
+
+  it("array: [Choice{Video}, Image] → Video (accepted AV-first change; isImageCanvas now false)", () => {
+    const canvas = canvasWithBody([{ type: "Choice", items: [video] }, image]);
+    expect(getPrimaryResource(canvas)?.id).toBe(video.id);
+    expect(isImageCanvas(canvas)).toBe(false);
+    expect(isVideoCanvas(canvas)).toBe(true);
+  });
+
+  it("array: [Choice{Image, Video}] → Video", () => {
+    const canvas = canvasWithBody([{ type: "Choice", items: [image, video] }]);
+    expect(getPrimaryResource(canvas)?.id).toBe(video.id);
+  });
+
+  it("array: [Choice{Text}, Video] → Video (an unresolvable Choice is skipped)", () => {
+    const canvas = canvasWithBody([{ type: "Choice", items: [text] }, video]);
+    expect(getPrimaryResource(canvas)?.id).toBe(video.id);
+  });
+
+  it("array: [Choice{Text}] → undefined", () => {
+    const canvas = canvasWithBody([{ type: "Choice", items: [text] }]);
+    expect(getPrimaryResource(canvas)).toBeUndefined();
   });
 });
 

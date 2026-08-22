@@ -590,3 +590,56 @@ export const MANIFEST_INITIAL_INDEX = {
     },
   ],
 };
+
+/**
+ * Avalon-shaped manifest: a Choice of HLS renditions with the non-standard
+ * `choiceHint` (stripped by Zod). Today this canvas hard-fails with
+ * "Canvas is not audio or video media".
+ */
+export const MANIFEST_WITH_CHOICE_HLS = {
+  "@context": "http://iiif.io/api/presentation/3/context.json",
+  id: "https://example.com/manifest-choice-hls",
+  type: "Manifest",
+  label: { en: ["Choice HLS Manifest"] },
+  items: [
+    {
+      id: "https://example.com/choice/canvas/1",
+      type: "Canvas",
+      duration: 120,
+      width: 1280,
+      height: 720,
+      items: [
+        {
+          id: "https://example.com/choice/canvas/1/page/1",
+          type: "AnnotationPage",
+          items: [
+            {
+              id: "https://example.com/choice/canvas/1/page/1/annotation/1",
+              type: "Annotation",
+              motivation: "painting",
+              body: {
+                type: "Choice",
+                choiceHint: "user",
+                items: [
+                  {
+                    id: "https://example.com/choice/high.m3u8",
+                    type: "Video",
+                    format: "application/x-mpegURL",
+                    label: { none: ["high"] },
+                  },
+                  {
+                    id: "https://example.com/choice/medium.m3u8",
+                    type: "Video",
+                    format: "application/x-mpegURL",
+                    label: { none: ["medium"] },
+                  },
+                ],
+              },
+              target: "https://example.com/choice/canvas/1",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};

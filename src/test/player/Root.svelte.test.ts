@@ -11,6 +11,7 @@ import {
   MANIFEST_WITH_CHAPTERS,
   MANIFEST_WITHOUT_CHAPTERS,
   MANIFEST_WITH_HLS,
+  MANIFEST_WITH_CHOICE_HLS,
   MANIFEST_WITH_VTT_CAPTIONS,
   MANIFEST_MULTI_CANVAS,
   MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
@@ -364,6 +365,46 @@ describe("Root component", () => {
         expect(capturedCtx!.mediaStrategy).toBe("native");
         expect(capturedCtx!.hlsAdapter).toBeNull();
       });
+    });
+
+    test("plays a Choice of HLS renditions (first Video member) instead of failing", async () => {
+      mockFetchManifest(MANIFEST_WITH_CHOICE_HLS);
+      const MockHls = Object.assign(
+        function () {
+          return {
+            loadSource: vi.fn(),
+            attachMedia: vi.fn(),
+            destroy: vi.fn(),
+            on: vi.fn(),
+            off: vi.fn(),
+          };
+        },
+        {
+          isSupported: () => true,
+          Events: { MANIFEST_PARSED: "hlsManifestParsed", ERROR: "hlsError" },
+        },
+      ) as unknown as HlsConstructor;
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/choice-hls.json",
+          hlsConstructor: MockHls,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBe(
+          "https://example.com/choice/high.m3u8",
+        );
+      });
+      expect(capturedCtx!.mediaType).toBe("video");
+      expect(capturedCtx!.state.error).toBeNull();
     });
   });
 
