@@ -110,6 +110,10 @@
   let initialTimeApplied = false;
   let initFired = false;
 
+  // Latches the one-time reconcile of the canvasIndex prop in
+  // fetchManifestData, which runs on mount but must not run again on retry.
+  let initialIndexApplied = false;
+
   // Set in onDestroy; checked after every await so continuations of in-flight
   // work never write state or fire callbacks on a torn-down instance.
   let destroyed = false;
@@ -218,11 +222,17 @@
 
   // React to prop-driven canvas changes after manifest is loaded.
   // This effect drives external side effects (media teardown/setup), not state derivation.
+  //
+  // Only the prop is tracked. `manifestData` is read untracked because retry
+  // reassigns it: tracking it would re-run this effect on every retry and
+  // switch back to the prop's index, discarding a canvas the user had
+  // selected internally. A prop change that arrives before the manifest is
+  // loaded is not lost — fetchManifestData reconciles the prop into state
+  // before the first canvas load.
   $effect(() => {
     const propIndex = canvasIndex;
-    const manifest = manifestData;
     untrack(() => {
-      if (manifest && propIndex !== player.canvasIndex) {
+      if (manifestData && propIndex !== player.canvasIndex) {
         performCanvasSwitch(propIndex);
       }
     });
@@ -297,15 +307,26 @@
       manifestData = data;
       player.canvases = buildCanvasInfoList(data.validated);
 
-      // Reconcile the prop into state BEFORE the first load. `player.canvasIndex`
-      // still holds its $state(0) default here; without this, mounting with
-      // canvasIndex > 0 would load canvas 0 and only then have the prop-watch
-      // effect switch away — a discarded load, including a wasted tier-2 VTT
-      // fetch under annotations="auto". The range check matters because
-      // loadCanvas (unlike performCanvasSwitch) does not guard its index: an
-      // out-of-range prop keeps the canvas-0 fallback.
-      if (canvasIndex >= 0 && canvasIndex < player.canvases.length) {
-        player.canvasIndex = canvasIndex;
+      // Reconcile the prop into state BEFORE the first load, and only then.
+      // On mount `player.canvasIndex` still holds its $state(0) default;
+      // without this, mounting with canvasIndex > 0 would load canvas 0 and
+      // only then have the prop-watch effect switch away — a discarded load,
+      // including a wasted tier-2 VTT fetch under annotations="auto". The
+      // range check matters because loadCanvas (unlike performCanvasSwitch)
+      // does not guard its index: an out-of-range prop keeps the canvas-0
+      // fallback.
+      //
+      // This function is also the retry path, where the reconcile must NOT
+      // run again: by then the canvas may have been selected internally
+      // (CanvasNav / actions.switchCanvas) while the prop stayed put, and
+      // re-applying the prop would overwrite that selection behind
+      // performCanvasSwitch's back — no onCanvasChange, no media teardown.
+      // The latch flips either way, so an out-of-range prop is not retried.
+      if (!initialIndexApplied) {
+        initialIndexApplied = true;
+        if (canvasIndex >= 0 && canvasIndex < player.canvases.length) {
+          player.canvasIndex = canvasIndex;
+        }
       }
 
       loadCanvas(player.canvasIndex);

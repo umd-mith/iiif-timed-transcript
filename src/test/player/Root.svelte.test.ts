@@ -1019,6 +1019,53 @@ describe("Root component", () => {
       expect(ref.mediaType).toBe("audio");
     });
 
+    test("retry keeps an internally-selected canvas", async () => {
+      // retry() re-runs fetchManifestData, which reconciles the canvasIndex
+      // prop into state. That reconcile must happen on the first load only:
+      // here the prop stays at its default 0 while the user switched to
+      // canvas 1, and retry must not snap back past performCanvasSwitch.
+      mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+      const onCanvasChange = vi.fn();
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/retry-keeps-canvas.json",
+          onCanvasChange,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio1.mp3");
+      });
+
+      capturedCtx!.actions.switchCanvas(1);
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.canvasIndex).toBe(1);
+        expect(capturedCtx!.mediaUrl).toBe("https://example.com/video2.mp4");
+      });
+      expect(onCanvasChange).toHaveBeenCalledOnce();
+
+      capturedCtx!.actions.retry();
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.mediaUrl).toBe("https://example.com/video2.mp4");
+      });
+      // Let any stray reconcile + reload settle before asserting.
+      await new Promise((r) => setTimeout(r, 30));
+
+      expect(capturedCtx!.canvasIndex).toBe(1);
+      expect(capturedCtx!.mediaUrl).toBe("https://example.com/video2.mp4");
+      expect(onCanvasChange).toHaveBeenCalledOnce();
+    });
+
     test("does not re-fire onPlayerInit on canvas switch", async () => {
       mockFetchManifest(MANIFEST_MULTI_CANVAS);
 
