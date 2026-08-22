@@ -153,6 +153,8 @@ Captions discovered from the manifest are attached as `<track>` elements exactly
 
 Because that write happens **once per canvas**, it is not undone: if your app shows and hides the transcript panel (a toggle, a tab, a responsive breakpoint), the native captions are not turned back on when the panel goes away. If you need captions to follow the panel, pass `tracks` explicitly — the policy never touches those — and set the track modes yourself.
 
+If the VTT lives on a different origin from the page, set `crossOrigin="anonymous"` on `Viewer` (and serve the VTT with CORS headers): browsers refuse a cross-origin `<track>` without it, so the native caption toggle silently does nothing. Note also that under `annotations="auto"` tier 2 the VTT is requested twice — once by the library to build the transcript, once by the browser for the `<track>` — normally served the second time from the HTTP cache.
+
 #### `IIIFPlayer.Controls`
 
 Pass-through container for control components. Use for layout.
@@ -225,11 +227,12 @@ Synchronized transcript panel. Manages bidirectional scroll↔media sync via an 
 | `onActiveAnnotationChange` | `(annotation: Annotation \| null) => void`                                | —                    | Calls when active segment changes                                                |
 | `onSegmentClick`           | `(annotation: Annotation, event: { preventDefault: () => void }) => void` | —                    | Intercept clicks; call `preventDefault()` synchronously to suppress default seek |
 | `empty`                    | `Snippet`                                                                 | —                    | Custom empty state                                                               |
+| `loading`                  | `Snippet`                                                                 | —                    | Custom loading state (replaces the built-in "Loading transcript…")               |
 | `class`                    | `string`                                                                  | `""`                 | CSS class                                                                        |
 
 **Children:** Use `TranscriptSearch` and `TranscriptSegments` as compound children. Without children, renders the empty state.
 
-While Root is fetching a VTT transcript (`annotations="auto"`, `transcriptStatus === "loading"`) the panel shows "Loading transcript…" with `aria-busy="true"` instead of the empty state.
+While Root is fetching a VTT transcript (`annotations="auto"`, `transcriptStatus === "loading"`) the panel shows "Loading transcript…" with `aria-busy="true"` — this replaces the empty state and the `empty` snippet for as long as the status is `"loading"`. Pass a `loading` snippet to render your own affordance (translated copy, a skeleton) in its place.
 
 #### `IIIFPlayer.TranscriptSearch`
 
@@ -551,6 +554,7 @@ interface PlayerRef {
   readonly canvasCount: number;
   readonly canvases: CanvasInfo[];
   readonly mediaType: "audio" | "video";
+  readonly transcriptStatus: TranscriptStatus;
 }
 
 interface PlayerContext {
@@ -567,7 +571,23 @@ interface PlayerContext {
   readonly canvasIndex: number;
   readonly canvasCount: number;
   readonly canvases: CanvasInfo[];
+  readonly transcriptStatus: TranscriptStatus;
+  transcriptPopulated: boolean;
   actions: PlayerActions;
+}
+
+type TranscriptStatus = "idle" | "loading" | "ready" | "error";
+
+type PlayerErrorSource =
+  | "manifest"
+  | "canvas"
+  | "media"
+  | "playback"
+  | "transcript";
+
+interface PlayerErrorInfo {
+  fatal: boolean;
+  source: PlayerErrorSource;
 }
 
 interface CanvasInfo {
