@@ -152,13 +152,24 @@ describe("<iiif-transcript-player> error contract", () => {
     // The fixture's <video src> ("https://example.com/video.mp4") is a real,
     // reachable domain with no actual video there, so headless Chromium
     // issues a genuine network request and fires a native MediaError once it
-    // 404s. That's unrelated to the transcript-tier error this test pins;
-    // swallow it in the capture phase, ahead of Viewer's own bubble-phase
-    // `onerror` handler, so it can't be mistaken for a fatal media error.
-    // Media `error` events aren't composed, so the listener must live inside
-    // the shadow root (open shadow root exists synchronously on creation).
+    // resolves to something that isn't playable video (MEDIA_ERR_SRC_NOT_SUPPORTED,
+    // code 4). That's unrelated to the transcript-tier error this test pins;
+    // swallow *only that exact confound* in the capture phase, ahead of
+    // Viewer's own bubble-phase `onerror` handler, so it can't be mistaken
+    // for a fatal media error. The check is narrowed to the known dummy URL
+    // and error code so a genuine implementation defect — e.g. a VTT/transcript
+    // failure incorrectly propagating into media-tier error state via some
+    // other code path — is not silently discarded here too; only this one
+    // known sandbox confound is. Media `error` events aren't composed, so the
+    // listener must live inside the shadow root (open shadow root exists
+    // synchronously on creation).
     const swallowVideoError = (e: Event) => {
-      if ((e.target as HTMLElement)?.tagName === "VIDEO") {
+      const target = e.target;
+      if (
+        target instanceof HTMLVideoElement &&
+        target.currentSrc === "https://example.com/video.mp4" &&
+        target.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+      ) {
         e.stopImmediatePropagation();
       }
     };
