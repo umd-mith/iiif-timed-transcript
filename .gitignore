@@ -1,4 +1,5 @@
 node_modules/
+.pnpm-store/
 dist/
 .svelte-kit/
 coverage/
@@ -22,3 +23,6 @@ src/test/**/*.d.ts.map
 docs/plans/
 .mcp.json
 CLAUDE.md
+
+# Build-time scratch (postbuild type probe)
+.tmp/

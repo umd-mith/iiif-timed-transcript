@@ -14,6 +14,7 @@ import type {
   MediaStrategy,
   TrackDefinition,
   CanvasInfo,
+  TranscriptStatus,
 } from "./context.js";
 import type { HlsAdapter } from "../media/hlsUtils.js";
 import type { DashAdapter } from "../media/dashUtils.js";
@@ -23,6 +24,8 @@ import type { Annotation } from "../sync/types.js";
 export interface PlayerStateManagerOptions {
   onRetry?: () => Promise<void>;
   onSwitchCanvas?: (index: number) => void;
+  /** A rejected `play()` (e.g. blocked autoplay, NotAllowedError). Not called for AbortError. */
+  onPlaybackError?: (error: Error) => void;
 }
 
 export class PlayerStateManager implements PlayerContext {
@@ -48,6 +51,8 @@ export class PlayerStateManager implements PlayerContext {
   annotations = $state.raw<Annotation[]>([]);
   chapters = $state.raw<Chapter[]>([]);
   tracks = $state.raw<TrackDefinition[]>([]);
+  transcriptStatus = $state<TranscriptStatus>("idle");
+  transcriptPopulated = $state(false);
 
   // Canvas navigation
   canvasIndex = $state(0);
@@ -81,8 +86,9 @@ export class PlayerStateManager implements PlayerContext {
         // AbortError is benign — play() interrupted by pause/seek, expected during normal usage
         if (error instanceof DOMException && error.name === "AbortError")
           return;
-        this.state.error =
-          error instanceof Error ? error : new Error(String(error));
+        const err = error instanceof Error ? error : new Error(String(error));
+        this.state.error = err;
+        this.onPlaybackError?.(err);
       }
     },
     pause: () => {
@@ -124,9 +130,11 @@ export class PlayerStateManager implements PlayerContext {
 
   private onRetry: (() => Promise<void>) | undefined;
   private onSwitchCanvas: ((index: number) => void) | undefined;
+  private onPlaybackError: ((error: Error) => void) | undefined;
 
   constructor(options?: PlayerStateManagerOptions) {
     this.onRetry = options?.onRetry;
     this.onSwitchCanvas = options?.onSwitchCanvas;
+    this.onPlaybackError = options?.onPlaybackError;
   }
 }

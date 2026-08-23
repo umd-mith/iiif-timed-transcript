@@ -10,6 +10,19 @@ Entries below version `0.15.0` retain the `Minor Changes` / `Patch Changes` /
 
 ## [Unreleased]
 
+### Added
+
+- 504a892: `IIIFPlayer.Root` gains `annotations="auto"`: transcript annotations are built from the manifest — embedded `TextualBody` annotations (motivation `supplementing`, `commenting`, or `tagging`) first, else — only when those yield nothing — the canvas's external WebVTT `supplementing` track, fetched on demand with `media-captions` (now a runtime dependency). New `onError(error, { fatal, source })` prop; `transcriptStatus` on the player context, `PlayerRef`, and the children snippet. `IIIFPlayer.Transcript` gains an optional `loading` snippet that replaces the built-in "Loading transcript…" affordance. `getSupplementaryVTTTracks` now finds VTT tracks inside `Choice` bodies and de-duplicates by `src`; `ExternalResourceSchema` keeps `label`/`language` (tolerantly). New public exports: `selectTranscriptTrack`, `loadVTTTranscript`, `buildAnnotationsFromVTTCues`, `vttCueToPlainText`, and the types `VTTCueTokenizer`, `TranscriptStatus`, `PlayerErrorSource`, `PlayerErrorInfo`. (#58)
+- d42fa68: New `<iiif-transcript-player>` custom element for pages without a Svelte build: `@umd-mith/svelte-iiif-transcript-player/element` (ESM, `register()`) and `…/element/iife` (`<script src>`, hls.js bundled — a classic script that installs `window.IIIFTranscriptPlayer`, not a module). Attributes `manifest-url`, `canvas-index` (reflected), `initial-time`, `autoplay`; properties `annotations`, `preprocessManifest`, `errorCallback`, `playerRef`; events `playerrefavailable`, `playererror` (`{ error, fatal, source }`), `canvaschange`; custom-property theming. Host inputs are validated and reported as non-fatal `source: "host"` errors instead of failing silently; clearing `manifest-url` unmounts the player; re-connecting a detached element rebuilds the player and fires `playerrefavailable` again, applying `initial-time` only on the first connection. Core changes: `getPrimaryResource` resolves `Choice` bodies (first Sound/Video); `IIIFPlayer.Root` gains `preprocessManifest` (bypasses the manifest cache when set) and ignores a non-integer `switchCanvas` index; IIIF Auth API 1 service references (`@type`/`@id`) are tolerated, so `service[].type` is now optional. (#59)
+
+### Changed
+
+- 504a892: A captioned video whose transcript panel is populated no longer starts with captions showing — every attached track is set to `hidden` once per canvas and never written again (pass `tracks` explicitly to opt out); the tracks stay attached and can be re-enabled from the browser's native caption menu when `Viewer` is given `controls`. A missing `hls.js`/`dashjs` still logs a console warning and now also surfaces as a player error (`state.error` plus `onError` with `source: "media"`). `buildTranscriptAnnotations` now guarantees unique annotation ids when a manifest reuses one id more than twice. (#58)
+
+### Fixed
+
+- 95bc3f8: Transcript auto-scroll no longer fires on load: the sync controller does not drive media-driven scrolling until playback has actually advanced the time, so the page no longer jumps to the transcript before the user presses play. (#55, #57)
+
 ## [0.15.0] - 2026-06-02
 
 ### Minor Changes

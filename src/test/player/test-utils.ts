@@ -5,6 +5,7 @@ import type {
   PlayerActions,
   PlayerContext,
   PlayerState,
+  TranscriptStatus,
 } from "../../lib/player/context";
 import type { Annotation } from "../../lib/sync/types";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
@@ -26,6 +27,7 @@ export function createContextCapture(
         annotations: Annotation[];
         chapters: Chapter[];
         activeChapterId: string | null;
+        transcriptStatus: TranscriptStatus;
       };
     },
   ]
@@ -105,6 +107,8 @@ export function createMockPlayerContext(
     canvasIndex: 0,
     canvasCount: 1,
     canvases: [],
+    transcriptStatus: "idle",
+    transcriptPopulated: false,
     actions: {
       play: vi.fn(),
       pause: vi.fn(),

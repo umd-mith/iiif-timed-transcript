@@ -47,6 +47,23 @@ export interface PlayerActions {
  */
 export type MediaStrategy = "native" | "hls-js" | "dash-js";
 
+/** Lifecycle of the transcript annotations when Root builds them (`annotations="auto"`). */
+export type TranscriptStatus = "idle" | "loading" | "ready" | "error";
+
+/** Where a reported error came from. The element wrapper adds "host" on its side. */
+export type PlayerErrorSource =
+  | "manifest"
+  | "canvas"
+  | "media"
+  | "playback"
+  | "transcript";
+
+export interface PlayerErrorInfo {
+  /** `true`: the player will not become usable (manifest/canvas/media). `false`: recoverable (transcript, playback). */
+  fatal: boolean;
+  source: PlayerErrorSource;
+}
+
 export interface PlayerContext {
   state: PlayerState;
   mediaElement: HTMLMediaElement | null;
@@ -64,6 +81,17 @@ export interface PlayerContext {
   readonly canvasIndex: number;
   readonly canvasCount: number;
   readonly canvases: CanvasInfo[];
+  /** Tier-2 transcript fetch lifecycle; "idle" unless Root builds annotations itself. */
+  readonly transcriptStatus: TranscriptStatus;
+  /**
+   * True once any Transcript instance has been populated during the current
+   * canvas load; cleared by Root on each canvas load and on an `annotations`
+   * mode flip (array <-> "auto"). Transcript never writes
+   * `false` (two panels with different effective annotations would otherwise
+   * loop). Viewer reads it to switch native captions off once the panel shows
+   * the same text. Internal wiring — not on PlayerRef.
+   */
+  transcriptPopulated: boolean;
   actions: PlayerActions;
 }
 
@@ -90,6 +118,7 @@ export interface PlayerRef {
   readonly canvasCount: number;
   readonly canvases: CanvasInfo[];
   readonly mediaType: "audio" | "video";
+  readonly transcriptStatus: TranscriptStatus;
 }
 
 export const [getPlayerContext, setPlayerContext] =

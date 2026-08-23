@@ -49,6 +49,12 @@ describe("PlayerStateManager", () => {
       expect(manager.chapters).toEqual([]);
       expect(manager.tracks).toEqual([]);
     });
+
+    test("initializes transcriptStatus to idle and transcriptPopulated to false", () => {
+      const manager = new PlayerStateManager();
+      expect(manager.transcriptStatus).toBe("idle");
+      expect(manager.transcriptPopulated).toBe(false);
+    });
   });
 
   describe("activeChapterId", () => {
@@ -302,6 +308,39 @@ describe("PlayerStateManager", () => {
       manager.actions.pause();
 
       expect(el.pause).toHaveBeenCalled();
+    });
+
+    test("play reports a rejection through onPlaybackError and still sets state.error", async () => {
+      const onPlaybackError = vi.fn();
+      const manager = new PlayerStateManager({ onPlaybackError });
+      const notAllowed = new DOMException("blocked", "NotAllowedError");
+      manager.mediaElement = createMockMediaElement({
+        play: vi
+          .fn()
+          .mockRejectedValue(notAllowed) as unknown as () => Promise<void>,
+      });
+
+      await manager.actions.play();
+
+      expect(onPlaybackError).toHaveBeenCalledTimes(1);
+      expect(onPlaybackError).toHaveBeenCalledWith(notAllowed);
+      expect(manager.state.error).toBe(notAllowed);
+    });
+
+    test("play does not call onPlaybackError for AbortError", async () => {
+      const onPlaybackError = vi.fn();
+      const manager = new PlayerStateManager({ onPlaybackError });
+      manager.mediaElement = createMockMediaElement({
+        play: vi
+          .fn()
+          .mockRejectedValue(
+            new DOMException("interrupted", "AbortError"),
+          ) as unknown as () => Promise<void>,
+      });
+
+      await manager.actions.play();
+
+      expect(onPlaybackError).not.toHaveBeenCalled();
     });
   });
 

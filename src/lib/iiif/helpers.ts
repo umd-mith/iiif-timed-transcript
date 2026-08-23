@@ -37,13 +37,22 @@ function hasLabel(obj: unknown): obj is { label: Record<string, string[]> } {
   );
 }
 
-function hasLanguage(obj: unknown): obj is { language: string } {
+function hasLanguage(obj: unknown): obj is { language: string | string[] } {
+  if (typeof obj !== "object" || obj === null || !("language" in obj)) {
+    return false;
+  }
+  const language = (obj as Record<string, unknown>).language;
   return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "language" in obj &&
-    typeof (obj as Record<string, unknown>).language === "string"
+    typeof language === "string" ||
+    (Array.isArray(language) &&
+      language.length > 0 &&
+      typeof language[0] === "string")
   );
+}
+
+/** First entry of a string-or-array language value. */
+function primaryLanguage(language: string | string[]): string {
+  return Array.isArray(language) ? (language[0] as string) : language;
 }
 
 /**
@@ -240,7 +249,42 @@ function isExternalResource(
 }
 
 /**
- * Gets the primary content resource from a canvas (first painting annotation body)
+ * Resolves a Choice body to its first audio/video member, or undefined.
+ * No typed fallback: a Choice holding only Image/Text/Dataset members does
+ * not resolve, so isImageCanvas/isPDFCanvas keep today's result for it.
+ */
+function resolveChoice(
+  choice: ChoiceBodyData,
+): ContentResourceData | undefined {
+  // `?? []`: getPrimaryResource is public and may be handed unvalidated
+  // input, where `items` can be missing.
+  for (const item of choice.items ?? []) {
+    if (
+      isExternalResource(item as AnnotationBodyData) &&
+      (item.type === "Sound" || item.type === "Video")
+    ) {
+      return item as ContentResourceData;
+    }
+  }
+  return undefined;
+}
+
+/** Resolves one body member (plain or Choice) to a content resource, or undefined. */
+function resolveBodyMember(
+  body: AnnotationBodyData,
+): ContentResourceData | undefined {
+  if (isChoiceBody(body)) return resolveChoice(body);
+  return isExternalResource(body) ? body : undefined;
+}
+
+/**
+ * Gets the primary content resource from a canvas (first painting annotation body).
+ *
+ * - A Choice body resolves to its first Sound/Video member (or undefined).
+ * - A body array is walked in order; the first member that resolves wins —
+ *   so `[Image, Choice{Video}]` → Image, `[Choice{Video}, Image]` → Video,
+ *   `[Choice{Text}, Video]` → Video.
+ *
  * @param canvas - IIIF canvas
  * @returns Content resource object or undefined
  */
@@ -254,17 +298,15 @@ export function getPrimaryResource(
     return undefined;
   }
 
-  // Handle array of bodies - find first external resource
   if (Array.isArray(body)) {
-    return body.find(isExternalResource);
+    for (const member of body) {
+      const resolved = resolveBodyMember(member);
+      if (resolved) return resolved;
+    }
+    return undefined;
   }
 
-  // Handle single body
-  if (isExternalResource(body)) {
-    return body;
-  }
-
-  return undefined;
+  return resolveBodyMember(body);
 }
 
 /**
@@ -761,7 +803,17 @@ export function buildTranscriptAnnotations(
     // id, so we deduplicate by appending a suffix when collisions occur.
     let id = item.annotationId;
     if (seenIds.has(id)) {
-      id = `${id}-${annotations.length}`;
+      // Start at 0.15.0's suffix (`${id}-${annotations.length}`) so ids that
+      // were already unique under the old rule stay byte-identical for this
+      // shipped public export, then keep incrementing — a single-shot suffix
+      // can itself collide with an id seen earlier.
+      let n = annotations.length;
+      let candidate = `${id}-${n}`;
+      while (seenIds.has(candidate)) {
+        n += 1;
+        candidate = `${id}-${n}`;
+      }
+      id = candidate;
     }
     seenIds.add(id);
 
@@ -939,7 +991,7 @@ function getVTTLabel(body: ContentResourceData): string {
     }
   }
   // Fall back to language code, then "Unknown"
-  return hasLanguage(body) ? body.language : "Unknown";
+  return hasLanguage(body) ? primaryLanguage(body.language) : "Unknown";
 }
 
 /**
@@ -958,6 +1010,23 @@ export function getSupplementaryVTTTracks(
 ): TrackDefinition[] {
   const annotations = getSupplementaryAnnotations(canvas, "supplementing");
   const tracks: TrackDefinition[] = [];
+  // Viewer keys its <track> {#each} on `${canvasIndex}:${src}`; two tracks
+  // with the same src on one canvas would throw each_key_duplicate. First
+  // occurrence wins.
+  const seenSrc = new Set<string>();
+
+  const pushTrack = (resource: ContentResourceData) => {
+    if (seenSrc.has(resource.id)) return;
+    seenSrc.add(resource.id);
+    tracks.push({
+      src: resource.id,
+      kind: "captions",
+      srclang: hasLanguage(resource)
+        ? primaryLanguage(resource.language)
+        : "en",
+      label: getVTTLabel(resource),
+    });
+  };
 
   for (const annotation of annotations) {
     if (!annotation.body) continue;
@@ -967,15 +1036,13 @@ export function getSupplementaryVTTTracks(
       : [annotation.body];
 
     for (const body of bodies) {
-      if (isVTTResource(body)) {
-        const resource = body as ContentResourceData;
-        const language = hasLanguage(resource) ? resource.language : "en";
-        tracks.push({
-          src: resource.id,
-          kind: "captions",
-          srclang: language,
-          label: getVTTLabel(resource),
-        });
+      if (isChoiceBody(body)) {
+        // Collect-all: multi-language captions are modeled as a Choice.
+        for (const item of body.items) {
+          if (isVTTResource(item)) pushTrack(item);
+        }
+      } else if (isVTTResource(body)) {
+        pushTrack(body);
       }
     }
   }

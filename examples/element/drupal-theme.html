@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>iiif-transcript-player — umd-lib Drupal theme smoke</title>
+    <!-- The current UMD Libraries theme (github.com/umd-lib/umdlib-design-system-theme) global stylesheet.
+         jsDelivr serves GitHub files with a text/css MIME type; raw.githubusercontent.com does not.
+         If the path has moved, open the repo, find the base/tokens stylesheet under css/, and update the href —
+         or copy it to examples/element/vendor/umd-lib-base.css and link that instead (do not commit a copy without its license header). -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/umd-lib/umdlib-design-system-theme@main/css/base.css"
+    />
+    <style>
+      /* Host-side theming only through the documented contract: follow the theme's dark mode by remapping
+         our custom properties from the theme's variables. Nothing here targets the element's internals. */
+      .dark-theme iiif-transcript-player {
+        --iiif-player-bg: var(--black, #000);
+        --iiif-player-fg: var(--white, #fff);
+        --iiif-player-transcript-bg: var(--black, #000);
+        --iiif-player-border: var(--gray, #666);
+        /* Remap the foreground tokens alongside the backgrounds above, or
+           accent buttons / active segments render illegible text. The
+           control bar is its own bg/fg pair: leave --iiif-player-control-bg
+           at its light default and the Time readout and Speed select
+           inherit the white page foreground onto #f3f4f6 (~1.07:1). */
+        --iiif-player-control-bg: var(--black, #000);
+        --iiif-player-control-fg: var(--white, #fff);
+        --iiif-player-accent-fg: var(--white, #fff);
+        --iiif-player-segment-fg: var(--black, #000);
+      }
+      main {
+        max-width: 60rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      .toolbar {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+    </style>
+    <script src="../../dist/element/iiif-transcript-player.iife.js"></script>
+  </head>
+  <body class="umd-lib">
+    <main>
+      <div class="toolbar">
+        <button type="button" id="toggle-dark">Toggle .dark-theme</button>
+        <span id="mode">light</span>
+      </div>
+      <h1>Cookbook 0219 inside the umd-lib theme</h1>
+      <p>
+        Body text here should be in the theme's typeface and colours; the player
+        below must keep its own defaults (system-ui, white/near-black) until the
+        host opts in via <code>--iiif-player-*</code>.
+      </p>
+      <iiif-transcript-player
+        manifest-url="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json"
+      ></iiif-transcript-player>
+    </main>
+    <script>
+      const btn = document.getElementById("toggle-dark");
+      const mode = document.getElementById("mode");
+      btn.addEventListener("click", () => {
+        const dark = document.body.classList.toggle("dark-theme");
+        mode.textContent = dark ? "dark" : "light";
+      });
+      const el = document.querySelector("iiif-transcript-player");
+      el.addEventListener("playererror", (e) =>
+        console.warn("playererror", e.detail),
+      );
+      el.addEventListener("playerrefavailable", () =>
+        console.info("playerrefavailable"),
+      );
+    </script>
+  </body>
+</html>
