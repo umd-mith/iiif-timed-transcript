@@ -36,7 +36,7 @@
       "default": "./dist/element/index.js"
     },
     "./element/iife": {
-      "types": "./dist/element/index.d.ts",
+      "types": "./dist/element/iiif-transcript-player.iife.d.ts",
       "default": "./dist/element/iiif-transcript-player.iife.js"
     }
   },

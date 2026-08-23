@@ -2,7 +2,9 @@
 //  - missing artifacts
 //  - `svelte/internal` source inside the ESM build (externalization failed)
 //  - IIFE over the size budget
-// Also copies the hand-maintained public types next to the ESM entry.
+// Also copies the two hand-maintained public type files into dist/element:
+// public-types.d.ts (the ESM entry's types) and iife-global.d.ts (the IIFE's,
+// which declare a window global and no module exports).
 import {
   readFileSync,
   statSync,
@@ -10,6 +12,7 @@ import {
   existsSync,
   writeFileSync,
   rmSync,
+  mkdirSync,
 } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,6 +25,11 @@ const esm = resolve(root, "dist/element/index.js");
 const iife = resolve(root, "dist/element/iiif-transcript-player.iife.js");
 const types = resolve(root, "src/element/public-types.d.ts");
 const typesOut = resolve(root, "dist/element/index.d.ts");
+const iifeTypes = resolve(root, "src/element/iife-global.d.ts");
+const iifeTypesOut = resolve(
+  root,
+  "dist/element/iiif-transcript-player.iife.d.ts",
+);
 
 const IIFE_BUDGET_BYTES = 1 * 1024 * 1024; // 1 MB minified (spec: "Size budget")
 
@@ -30,7 +38,7 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-for (const file of [esm, iife, types]) {
+for (const file of [esm, iife, types, iifeTypes]) {
   if (!existsSync(file)) fail(`missing ${file}`);
 }
 
@@ -40,9 +48,15 @@ const esmSource = readFileSync(esm, "utf8");
 // import lines are the expected, healthy shape. What must never appear is the
 // runtime's actual internal source inlined into the bundle, which would show
 // up as "svelte/internal" text outside of an import/from declaration.
+// Both `import … from "svelte/…"` and `export … from "svelte/…"` are healthy
+// externalized-module lines, so filter on the `from "svelte/` clause rather
+// than on the leading keyword — a re-export line would otherwise be read as
+// inlined runtime source.
 const nonImportLines = esmSource
   .split("\n")
-  .filter((line) => !/^\s*import\b/.test(line))
+  .filter(
+    (line) => !/^\s*import\b/.test(line) && !/\bfrom\s+["']svelte\//.test(line),
+  )
   .join("\n");
 if (/svelte\/internal/.test(nonImportLines)) {
   fail(
@@ -78,6 +92,7 @@ if (!/dashjs/.test(iifeSource)) {
 }
 
 copyFileSync(types, typesOut);
+copyFileSync(iifeTypes, iifeTypesOut);
 
 // public-types.d.ts is hand-maintained and, unlike src/**, is never compiled
 // by `pnpm typecheck` (tsconfig.json excludes dist and sets skipLibCheck).
@@ -94,9 +109,13 @@ copyFileSync(types, typesOut);
 // that imports every documented named export (value and type) from
 // "./index.js" and uses each one, the way a real consumer would — that
 // fails to compile if a re-export is missing or a type mismatches.
-const probe = resolve(root, "dist/element/.postbuild-probe.ts");
+// Written OUTSIDE dist/ — dist is the publishable tree and must never hold a
+// build-time scratch file, however briefly.
+const probeDir = resolve(root, ".tmp");
+mkdirSync(probeDir, { recursive: true });
+const probe = resolve(probeDir, "postbuild-probe.ts");
 const probeSource = `
-import { register, DEFAULT_TAG, IIIFTranscriptPlayerElement } from "./index.js";
+import { register, DEFAULT_TAG, IIIFTranscriptPlayerElement } from "../dist/element/index.js";
 import type {
   Annotation,
   CanvasInfo,
@@ -107,7 +126,7 @@ import type {
   CanvasChangeDetail,
   ErrorCallback,
   IIIFTranscriptPlayerElementEventMap,
-} from "./index.js";
+} from "../dist/element/index.js";
 
 declare const annotation: Annotation;
 declare const eventMap: IIIFTranscriptPlayerElementEventMap;
@@ -150,14 +169,17 @@ const tscArgs = [
 ];
 try {
   execFileSync(tsc, [...tscArgs, typesOut], { cwd: root, stdio: "pipe" });
+  // The IIFE's own types declare a global and nothing else; compiling them
+  // catches a drift between that declaration and the entry's real exports.
+  execFileSync(tsc, [...tscArgs, iifeTypesOut], { cwd: root, stdio: "pipe" });
   execFileSync(tsc, [...tscArgs, probe], { cwd: root, stdio: "pipe" });
-  rmSync(probe, { force: true });
+  rmSync(probeDir, { force: true, recursive: true });
 } catch (err) {
   // `fail()` calls process.exit(), which would skip a `finally` cleanup —
   // remove the probe file before it, not after.
-  rmSync(probe, { force: true });
+  rmSync(probeDir, { force: true, recursive: true });
   fail(
-    `dist/element/index.d.ts does not compile (standalone or against a real import of its exports):\n${err.stdout?.toString() ?? err.message}`,
+    `dist/element types do not compile (standalone or against a real import of their exports):\n${err.stdout?.toString() ?? err.message}`,
   );
 }
 

@@ -12,3 +12,6 @@ src/test/**/*.d.ts.map
 
 # Claude Code
 .claude/
+
+# Build-time scratch (postbuild type probe)
+.tmp/

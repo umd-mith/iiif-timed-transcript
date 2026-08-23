@@ -13,4 +13,11 @@ import {
 setDefaultHlsConstructor(Hls as unknown as HlsConstructor);
 register();
 
+// These are NOT module exports of the shipped file. Vite's `build.lib.name`
+// (IIIFTranscriptPlayer, see vite.config.element.ts) turns an IIFE entry's
+// exports into properties of that global, and the emitted bundle is a classic
+// script with no `export` statements — which is exactly why
+// `./element/iife`'s published types (src/element/iife-global.d.ts) declare
+// `window.IIIFTranscriptPlayer` and nothing else. Keep this list and that
+// declaration in step.
 export { register, DEFAULT_TAG, IIIFTranscriptPlayerElement };
