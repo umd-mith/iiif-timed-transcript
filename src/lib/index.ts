@@ -44,6 +44,9 @@ export type {
   MediaStrategy,
   CanvasInfo,
   PlayerRef,
+  TranscriptStatus,
+  PlayerErrorSource,
+  PlayerErrorInfo,
 } from "./player/index.js";
 export type {
   TranscriptContext,
@@ -140,6 +143,15 @@ export {
   filterChaptersForCanvas,
   type SupplementaryTextualContent,
 } from "./iiif/helpers.js";
+
+// VTT → transcript annotations (annotations="auto" tier 2 building blocks)
+export {
+  selectTranscriptTrack,
+  vttCueToPlainText,
+  buildAnnotationsFromVTTCues,
+  loadVTTTranscript,
+  type VTTCueTokenizer,
+} from "./iiif/vttTranscript.js";
 
 // Cache
 export {

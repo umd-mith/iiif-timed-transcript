@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { getPlayerContext, type TrackDefinition } from "./context";
 
   // Props
@@ -54,6 +55,57 @@
           "Provide captions via the tracks prop or IIIF manifest annotations for WCAG 1.2.2 compliance.",
       );
     }
+  });
+
+  // Native-caption policy (VTT design, requirement 5): tracks are attached
+  // exactly as today; once the transcript panel is populated — by whatever
+  // source — every attached text track is set to "hidden" ONE time per canvas
+  // load, so the viewer does not see the same text twice. We never write
+  // `mode` again, so a viewer who re-enables captions keeps them. The
+  // `default` attribute cannot express this: the browser consults it only at
+  // insertion, which on a VTT-only canvas happens while the panel is still
+  // empty. Because the write happens once, a host that hides the transcript
+  // panel again (toggle, tab, responsive breakpoint) does not get the native
+  // captions back — such a host should pass `tracks` explicitly, which is
+  // exempt from this policy (consumer's choice).
+  // `captionsHidden` is the once-per-canvas-load latch. It re-arms whenever
+  // the *load identity* — the (canvasIndex, mediaUrl) pair — changes. Keying
+  // on the url alone is not enough: Root's performCanvasSwitch writes
+  // `mediaUrl = ""` and loadCanvas writes the new url in one synchronous call
+  // chain, so Svelte batches them and this effect never observes the "" — two
+  // canvases painting the same media body with different VTT tracks would
+  // then look like no change at all, and the recreated `<track default>`
+  // would stay showing on top of a populated panel. The canvas index moves on
+  // every switch, so the pair always does.
+  let captionsHidden = false;
+  let lastSeenUrl = "";
+  let lastSeenCanvas = -1;
+  $effect(() => {
+    const el = localMediaElement;
+    const populated = ctx.transcriptPopulated;
+    const url = ctx.mediaUrl;
+    const canvas = ctx.canvasIndex;
+    if (url !== lastSeenUrl || canvas !== lastSeenCanvas) {
+      lastSeenUrl = url;
+      lastSeenCanvas = canvas;
+      captionsHidden = false;
+    }
+    const trackCount = effectiveTracks.length;
+    const usingContextTracks = tracks.length === 0;
+    if (!el || !populated || !url || trackCount === 0 || !usingContextTracks) {
+      return;
+    }
+    if (!(el instanceof HTMLVideoElement)) return;
+    if (captionsHidden) return;
+    untrack(() => {
+      const list = el.textTracks;
+      if (list.length === 0) return;
+      for (let i = 0; i < list.length; i++) {
+        const track = list[i];
+        if (track) track.mode = "hidden";
+      }
+      captionsHidden = true;
+    });
   });
 
   // Update context's mediaElement when ours is mounted
@@ -197,7 +249,13 @@
       style="width: 100%;"
       onerror={handleMediaError}
     >
-      {#each effectiveTracks as track, i (track.src)}
+      <!--
+        Keyed on the canvas as well as the src: a `<track>` node reused across
+        a canvas switch keeps its `TextTrack.mode`, so a canvas that repeats a
+        src would inherit the previous canvas's `hidden` and show no captions
+        even with an empty transcript panel.
+      -->
+      {#each effectiveTracks as track, i (`${ctx.canvasIndex}:${track.src}`)}
         <track
           src={track.src}
           kind={track.kind}

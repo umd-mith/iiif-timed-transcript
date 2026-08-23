@@ -37,13 +37,22 @@ function hasLabel(obj: unknown): obj is { label: Record<string, string[]> } {
   );
 }
 
-function hasLanguage(obj: unknown): obj is { language: string } {
+function hasLanguage(obj: unknown): obj is { language: string | string[] } {
+  if (typeof obj !== "object" || obj === null || !("language" in obj)) {
+    return false;
+  }
+  const language = (obj as Record<string, unknown>).language;
   return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "language" in obj &&
-    typeof (obj as Record<string, unknown>).language === "string"
+    typeof language === "string" ||
+    (Array.isArray(language) &&
+      language.length > 0 &&
+      typeof language[0] === "string")
   );
+}
+
+/** First entry of a string-or-array language value. */
+function primaryLanguage(language: string | string[]): string {
+  return Array.isArray(language) ? (language[0] as string) : language;
 }
 
 /**
@@ -761,7 +770,17 @@ export function buildTranscriptAnnotations(
     // id, so we deduplicate by appending a suffix when collisions occur.
     let id = item.annotationId;
     if (seenIds.has(id)) {
-      id = `${id}-${annotations.length}`;
+      // Start at 0.15.0's suffix (`${id}-${annotations.length}`) so ids that
+      // were already unique under the old rule stay byte-identical for this
+      // shipped public export, then keep incrementing — a single-shot suffix
+      // can itself collide with an id seen earlier.
+      let n = annotations.length;
+      let candidate = `${id}-${n}`;
+      while (seenIds.has(candidate)) {
+        n += 1;
+        candidate = `${id}-${n}`;
+      }
+      id = candidate;
     }
     seenIds.add(id);
 
@@ -939,7 +958,7 @@ function getVTTLabel(body: ContentResourceData): string {
     }
   }
   // Fall back to language code, then "Unknown"
-  return hasLanguage(body) ? body.language : "Unknown";
+  return hasLanguage(body) ? primaryLanguage(body.language) : "Unknown";
 }
 
 /**
@@ -958,6 +977,23 @@ export function getSupplementaryVTTTracks(
 ): TrackDefinition[] {
   const annotations = getSupplementaryAnnotations(canvas, "supplementing");
   const tracks: TrackDefinition[] = [];
+  // Viewer keys its <track> {#each} on `${canvasIndex}:${src}`; two tracks
+  // with the same src on one canvas would throw each_key_duplicate. First
+  // occurrence wins.
+  const seenSrc = new Set<string>();
+
+  const pushTrack = (resource: ContentResourceData) => {
+    if (seenSrc.has(resource.id)) return;
+    seenSrc.add(resource.id);
+    tracks.push({
+      src: resource.id,
+      kind: "captions",
+      srclang: hasLanguage(resource)
+        ? primaryLanguage(resource.language)
+        : "en",
+      label: getVTTLabel(resource),
+    });
+  };
 
   for (const annotation of annotations) {
     if (!annotation.body) continue;
@@ -967,15 +1003,13 @@ export function getSupplementaryVTTTracks(
       : [annotation.body];
 
     for (const body of bodies) {
-      if (isVTTResource(body)) {
-        const resource = body as ContentResourceData;
-        const language = hasLanguage(resource) ? resource.language : "en";
-        tracks.push({
-          src: resource.id,
-          kind: "captions",
-          srclang: language,
-          label: getVTTLabel(resource),
-        });
+      if (isChoiceBody(body)) {
+        // Collect-all: multi-language captions are modeled as a Choice.
+        for (const item of body.items) {
+          if (isVTTResource(item)) pushTrack(item);
+        }
+      } else if (isVTTResource(body)) {
+        pushTrack(body);
       }
     }
   }

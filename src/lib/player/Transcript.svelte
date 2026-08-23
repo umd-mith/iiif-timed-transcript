@@ -32,6 +32,11 @@
 
     // Snippets
     empty?: Snippet;
+    /**
+     * Replaces the built-in "Loading transcript…" affordance while
+     * `transcriptStatus === "loading"` and there is nothing to show yet.
+     */
+    loading?: Snippet;
 
     class?: string;
     children?: Snippet;
@@ -47,6 +52,7 @@
     onActiveAnnotationChange,
     onSegmentClick,
     empty,
+    loading,
     class: className = "",
     children,
   }: Props = $props();
@@ -59,6 +65,45 @@
   const resolvedAnnotations = $derived(
     annotations.length > 0 ? annotations : playerContext.annotations,
   );
+
+  // `transcriptStatus` describes Root's own fetch, so it only speaks for this
+  // panel while the panel is falling back to the context annotations. A panel
+  // given its own `annotations` prop — `<Transcript annotations={filtered}/>`
+  // beside a Root with a VTT fetch in flight — is not loading anything.
+  // An empty `resolvedAnnotations` already implies the panel is falling back to
+  // context (own annotations, when non-empty, are what it resolves to).
+  const isLoading = $derived(
+    resolvedAnnotations.length === 0 &&
+      playerContext.transcriptStatus === "loading",
+  );
+
+  // Publish the panel's *effective* populated state so Viewer (a sibling
+  // that cannot see TranscriptContext) can switch native captions off once
+  // the same text is on screen. Root clears the flag on every canvas load
+  // and on an `annotations` mode flip; Transcript only ever sets it.
+  //
+  // The flag is monotonic per canvas load: "true wins", and only Root clears
+  // it (on every `loadCanvas`). Writing `false` from here would make two
+  // panels whose effective annotations differ — say `<Transcript
+  // annotations={notes}/>` beside a bare `<Transcript/>` — ping-pong the flag
+  // forever and blow the effect update depth.
+  //
+  // The context read is tracked on purpose. With a consumer-supplied
+  // annotations *array* nothing else this effect reads ever changes, so an
+  // untracked read would latch the flag at `false` for the life of the
+  // component and native captions would never be hidden on the documented
+  // primary path. Tracking it makes Root's per-load clear force one extra run
+  // that re-publishes the truth; the write happens inside `untrack` and only
+  // in the false→true direction, so it converges in that one run.
+  $effect(() => {
+    const populated = resolvedAnnotations.length > 0;
+    const current = playerContext.transcriptPopulated;
+    if (populated && !current) {
+      untrack(() => {
+        playerContext.transcriptPopulated = true;
+      });
+    }
+  });
 
   // Create viewer adapter for SyncController
   // This adapts the player context to the full IIIFMediaViewerRef interface
@@ -250,11 +295,18 @@
   class="transcript-panel {className}"
   role="region"
   aria-label={ariaLabel}
+  aria-busy={isLoading}
   bind:this={scrollContainer}
 >
   {#if resolvedAnnotations.length === 0}
     <!-- Empty state -->
-    {#if empty}
+    {#if isLoading}
+      {#if loading}
+        {@render loading()}
+      {:else}
+        <p class="loading-message">Loading transcript…</p>
+      {/if}
+    {:else if empty}
       {@render empty()}
     {:else}
       <p class="empty-message">No transcript available.</p>
@@ -285,6 +337,12 @@
   }
 
   .empty-message {
+    padding: 1rem;
+    text-align: center;
+    color: #595959;
+  }
+
+  .loading-message {
     padding: 1rem;
     text-align: center;
     color: #595959;

@@ -130,6 +130,126 @@ describe("IIIF Annotation Body Schemas", () => {
         expect(result.data.service).toHaveLength(2);
       }
     });
+
+    it("keeps language and label (language map) on a Text resource", () => {
+      const result = ExternalResourceSchema.safeParse({
+        id: "https://example.org/captions-fr.vtt",
+        type: "Text",
+        format: "text/vtt",
+        language: "fr",
+        label: { fr: ["Sous-titres"] },
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.language).toBe("fr");
+        expect(result.data.label).toEqual({ fr: ["Sous-titres"] });
+      }
+    });
+
+    it("keeps an array-valued language", () => {
+      const result = ExternalResourceSchema.safeParse({
+        id: "https://example.org/captions.vtt",
+        type: "Text",
+        language: ["fr", "de"],
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.language).toEqual(["fr", "de"]);
+      }
+    });
+
+    it("degrades a bare-string label to undefined instead of failing", () => {
+      const result = ExternalResourceSchema.safeParse({
+        id: "https://example.org/captions.vtt",
+        type: "Text",
+        format: "text/vtt",
+        label: "English",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.label).toBeUndefined();
+      }
+    });
+
+    it("degrades a non-string language to undefined instead of failing", () => {
+      const result = ExternalResourceSchema.safeParse({
+        id: "https://example.org/captions.vtt",
+        type: "Text",
+        language: 42,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.language).toBeUndefined();
+      }
+    });
+
+    it("does not fail a whole manifest when a VTT body has a bare-string label", () => {
+      // The `.catch(undefined)` on `label` is load-bearing at manifest scale:
+      // declared bare, this body would fail every AnnotationBodySchema member
+      // and take the entire manifest down with it.
+      const manifest = {
+        "@context": "http://iiif.io/api/presentation/3/context.json",
+        id: "https://example.org/manifest-bare-label",
+        type: "Manifest",
+        label: { en: ["Bare label manifest"] },
+        items: [
+          {
+            id: "https://example.org/canvas/1",
+            type: "Canvas",
+            duration: 120,
+            items: [
+              {
+                id: "https://example.org/canvas/1/page/1",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.org/canvas/1/page/1/annotation/1",
+                    type: "Annotation",
+                    motivation: "painting",
+                    body: {
+                      id: "https://example.org/video.mp4",
+                      type: "Video",
+                      format: "video/mp4",
+                    },
+                    target: "https://example.org/canvas/1",
+                  },
+                ],
+              },
+            ],
+            annotations: [
+              {
+                id: "https://example.org/canvas/1/annotations/1",
+                type: "AnnotationPage",
+                items: [
+                  {
+                    id: "https://example.org/canvas/1/annotations/1/anno/1",
+                    type: "Annotation",
+                    motivation: "supplementing",
+                    body: {
+                      id: "https://example.org/captions-en.vtt",
+                      type: "Text",
+                      format: "text/vtt",
+                      language: "en",
+                      label: "English",
+                    },
+                    target: "https://example.org/canvas/1",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = ManifestSchema.safeParse(manifest);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        const body = result.data.items?.[0]?.annotations?.[0]?.items?.[0]
+          ?.body as { id?: string; label?: unknown } | undefined;
+        expect(body?.id).toBe("https://example.org/captions-en.vtt");
+        expect(body?.label).toBeUndefined();
+      }
+    });
   });
 
   describe("TextualBodySchema (EmbeddedResource)", () => {

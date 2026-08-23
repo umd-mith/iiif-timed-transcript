@@ -1125,6 +1125,87 @@ describe("buildTranscriptAnnotations", () => {
     expect(skipped).toEqual([]);
   });
 
+  it("keeps suffixing ids when a single-shot suffix would itself collide", () => {
+    // Annotation ids "a", "a-2", "a" in order: the second is added to
+    // seenIds as-is; the third collides on "a" and 0.15.0's
+    // `${id}-${annotations.length}` suffix also lands on "a-2", which is
+    // already taken. It must keep incrementing to a truly unique id.
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "a",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "one" },
+            target: "https://example.org/canvas/1#t=0,1",
+          },
+          {
+            id: "a-2",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "two" },
+            target: "https://example.org/canvas/1#t=1,2",
+          },
+          {
+            id: "a",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "three" },
+            target: "https://example.org/canvas/1#t=2,3",
+          },
+        ],
+      },
+    ]);
+
+    const { annotations } = buildTranscriptAnnotations(canvas);
+
+    const ids = annotations.map((a) => a.id);
+    expect(new Set(ids).size).toBe(3);
+    expect(ids).toEqual(["a", "a-2", "a-3"]);
+  });
+
+  it("keeps 0.15.0's suffix when that suffix does not collide", () => {
+    // Ids "A", "B", "A": 0.15.0 gave the third annotation `${id}-${length}`
+    // = "A-2", which is unique here. `buildTranscriptAnnotations` is a shipped
+    // public export, so the id must stay byte-identical in that case.
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "A",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "one" },
+            target: "https://example.org/canvas/1#t=0,1",
+          },
+          {
+            id: "B",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "two" },
+            target: "https://example.org/canvas/1#t=1,2",
+          },
+          {
+            id: "A",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: { type: "TextualBody", value: "three" },
+            target: "https://example.org/canvas/1#t=2,3",
+          },
+        ],
+      },
+    ]);
+
+    const { annotations } = buildTranscriptAnnotations(canvas);
+
+    expect(annotations.map((a) => a.id)).toEqual(["A", "B", "A-2"]);
+  });
+
   it("should handle point-in-time annotations (start only, no end)", () => {
     const canvas = createSupplementaryCanvas([
       {
@@ -1437,6 +1518,186 @@ describe("getSupplementaryVTTTracks", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]!.src).toBe("https://example.org/captions.vtt");
+  });
+
+  it("collects every VTT member of a Choice body", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/vtt-choice",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              type: "Choice",
+              items: [
+                {
+                  id: "https://example.org/captions-en.vtt",
+                  type: "Text",
+                  format: "text/vtt",
+                  language: "en",
+                },
+                {
+                  id: "https://example.org/captions-fr.vtt",
+                  type: "Text",
+                  format: "text/vtt",
+                  language: "fr",
+                },
+              ],
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result.map((t) => t.srclang)).toEqual(["en", "fr"]);
+  });
+
+  it("de-duplicates tracks by src, first occurrence wins", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/vtt-direct",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              id: "https://example.org/captions.vtt",
+              type: "Text",
+              format: "text/vtt",
+              language: "en",
+              label: { en: ["First"] },
+            },
+            target: "https://example.org/canvas/1",
+          },
+          {
+            id: "https://example.org/annotation/vtt-choice",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              type: "Choice",
+              items: [
+                {
+                  id: "https://example.org/captions.vtt",
+                  type: "Text",
+                  format: "text/vtt",
+                  language: "en",
+                  label: { en: ["Second"] },
+                },
+              ],
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.label).toBe("First");
+  });
+
+  it("uses the first entry of an array-valued language", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/vtt-multi-lang",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              id: "https://example.org/captions.vtt",
+              type: "Text",
+              format: "text/vtt",
+              language: ["fr", "de"],
+            },
+            target: "https://example.org/canvas/1",
+          },
+        ],
+      },
+    ]);
+
+    const result = getSupplementaryVTTTracks(canvas);
+
+    expect(result[0]!.srclang).toBe("fr");
+    expect(result[0]!.label).toBe("fr");
+  });
+
+  it("keeps srclang and label after ManifestSchema validation", async () => {
+    const { ManifestSchema } = await import("../../lib/iiif/validators");
+    const manifest = {
+      "@context": "http://iiif.io/api/presentation/3/context.json",
+      id: "https://example.org/manifest-fr",
+      type: "Manifest",
+      label: { en: ["FR captions"] },
+      items: [
+        {
+          id: "https://example.org/canvas/1",
+          type: "Canvas",
+          duration: 60,
+          items: [
+            {
+              id: "https://example.org/page/1",
+              type: "AnnotationPage",
+              items: [
+                {
+                  id: "https://example.org/anno/1",
+                  type: "Annotation",
+                  motivation: "painting",
+                  body: {
+                    id: "https://example.org/video.mp4",
+                    type: "Video",
+                    format: "video/mp4",
+                  },
+                  target: "https://example.org/canvas/1",
+                },
+              ],
+            },
+          ],
+          annotations: [
+            {
+              id: "https://example.org/page/supp",
+              type: "AnnotationPage",
+              items: [
+                {
+                  id: "https://example.org/anno/vtt",
+                  type: "Annotation",
+                  motivation: "supplementing",
+                  body: {
+                    id: "https://example.org/captions-fr.vtt",
+                    type: "Text",
+                    format: "text/vtt",
+                    language: "fr",
+                    label: { fr: ["Sous-titres"] },
+                  },
+                  target: "https://example.org/canvas/1",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = ManifestSchema.safeParse(manifest);
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+
+    const result = getSupplementaryVTTTracks(parsed.data.items![0]!);
+
+    expect(result[0]).toMatchObject({
+      srclang: "fr",
+      label: "Sous-titres",
+    });
   });
 });
 

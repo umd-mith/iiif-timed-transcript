@@ -55,6 +55,8 @@ describe("getPlayerContext", () => {
       canvasIndex: 0,
       canvasCount: 1,
       canvases: [],
+      transcriptStatus: "idle",
+      transcriptPopulated: false,
       actions: {
         play: vi.fn(),
         pause: vi.fn(),
@@ -126,6 +128,8 @@ describe("PlayerContext chapter types", () => {
       canvasIndex: 0,
       canvasCount: 1,
       canvases: [],
+      transcriptStatus: "idle",
+      transcriptPopulated: false,
       actions: {
         play: async () => {},
         pause: () => {},

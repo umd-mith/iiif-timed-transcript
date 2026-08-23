@@ -6,7 +6,9 @@ import Transcript from "../../lib/player/Transcript.svelte";
 import TestContextProvider from "./TestContextProvider.svelte";
 import TestTranscriptContextConsumer from "./TestTranscriptContextConsumer.svelte";
 import TestTranscriptWithSegments from "./TestTranscriptWithSegments.svelte";
+import TestTranscriptLoadingSnippet from "./TestTranscriptLoadingSnippet.svelte";
 import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import { createReactiveMockPlayerContext } from "./reactive-context.svelte";
 import type { Annotation } from "../../lib/sync/types";
 import type { TranscriptContext } from "../../lib/player/transcript-context";
 
@@ -361,6 +363,170 @@ describe("Transcript", () => {
 
       expect(a1Element.scrollIntoView).toHaveBeenCalledWith(
         expect.objectContaining({ behavior: "instant", block: "start" }),
+      );
+    });
+  });
+
+  describe("transcriptPopulated and loading state", () => {
+    test("sets transcriptPopulated on the player context from its effective annotations", () => {
+      const ctx = createMockPlayerContext();
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+          }),
+        },
+      });
+      flushSync();
+
+      expect(ctx.transcriptPopulated).toBe(true);
+    });
+
+    test("leaves transcriptPopulated false when there is nothing to show", () => {
+      const ctx = createMockPlayerContext();
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, { annotations: [] }),
+        },
+      });
+      flushSync();
+
+      expect(ctx.transcriptPopulated).toBe(false);
+    });
+
+    test("re-publishes transcriptPopulated after the player clears it", () => {
+      // Root clears the flag on every canvas load. With a stable annotations
+      // array nothing else in this effect changes, so the flag would latch
+      // false for the life of the component unless the effect tracks it.
+      const ctx = createReactiveMockPlayerContext();
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+          }),
+        },
+      });
+      flushSync();
+      expect(ctx.transcriptPopulated).toBe(true);
+
+      ctx.transcriptPopulated = false;
+      flushSync();
+
+      expect(ctx.transcriptPopulated).toBe(true);
+    });
+
+    test("two instances with different effective annotations converge", () => {
+      // A populated panel and a bare one under the same Root: if the flag were
+      // written in both directions the two effects would ping-pong forever
+      // (effect_update_depth_exceeded). "true wins" per canvas load.
+      const ctx = createReactiveMockPlayerContext();
+
+      const twoPanels = ((anchor: Node) => {
+        mount(Transcript, {
+          target,
+          anchor,
+          props: { annotations: mockAnnotations },
+        });
+        mount(Transcript, { target, anchor, props: {} });
+      }) as unknown as Snippet;
+
+      mount(TestContextProvider, {
+        target,
+        props: { context: ctx, children: twoPanels },
+      });
+
+      expect(() => flushSync()).not.toThrow();
+      expect(ctx.transcriptPopulated).toBe(true);
+    });
+
+    test("shows a loading affordance instead of the empty state while loading", () => {
+      const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, { annotations: [] }),
+        },
+      });
+      flushSync();
+
+      const panel = target.querySelector(".transcript-panel");
+      expect(panel?.getAttribute("aria-busy")).toBe("true");
+      expect(target.querySelector(".loading-message")?.textContent).toContain(
+        "Loading transcript",
+      );
+      expect(target.querySelector(".empty-message")).toBeNull();
+    });
+
+    test("own annotations render rather than the context's loading state (composition)", () => {
+      // `<Transcript annotations={filtered}/>` under a Root with an in-flight
+      // VTT fetch is not loading anything: the panel has text to show, so it
+      // must render it rather than "Loading transcript…" with aria-busy. Own
+      // annotations win because they are what `resolvedAnnotations` resolves
+      // to, so the panel never falls back to the context's status.
+      const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, TestTranscriptWithSegments, {
+            annotations: mockAnnotations,
+          }),
+        },
+      });
+      flushSync();
+
+      const panel = target.querySelector(".transcript-panel");
+      expect(panel?.getAttribute("aria-busy")).not.toBe("true");
+      expect(target.querySelector(".loading-message")).toBeNull();
+      expect(target.querySelectorAll("[data-annotation-id]")).toHaveLength(3);
+    });
+
+    test("renders the loading snippet instead of the default message", () => {
+      const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, TestTranscriptLoadingSnippet),
+        },
+      });
+      flushSync();
+
+      expect(target.querySelector(".custom-loading")?.textContent).toContain(
+        "Fetching the transcript",
+      );
+      expect(target.querySelector(".loading-message")).toBeNull();
+      expect(target.querySelector(".custom-empty")).toBeNull();
+    });
+
+    test("falls back to the empty snippet once loading finishes", () => {
+      const ctx = createMockPlayerContext({ transcriptStatus: "ready" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, TestTranscriptLoadingSnippet),
+        },
+      });
+      flushSync();
+
+      expect(target.querySelector(".custom-loading")).toBeNull();
+      expect(target.querySelector(".custom-empty")?.textContent).toContain(
+        "Nothing here",
       );
     });
   });
