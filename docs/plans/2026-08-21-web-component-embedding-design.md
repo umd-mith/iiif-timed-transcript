@@ -124,6 +124,13 @@ This reuses the existing `onPlayerInit` contract (fires after manifest +
 first-canvas parse, not "playable") — bridged across the shadow boundary
 rather than redefined.
 
+The readiness claim is scoped, not absolute: `playerRef` stays nullish if
+the fatal error is a manifest or first-canvas failure. A fatal _media_
+error (the `<video>`/`<audio>` element's own `onerror`, or an HLS/DASH
+adapter failure) can only be detected after the media element exists,
+which is after `onPlayerInit` has already run — so it arrives with
+`playerRef` already set, and `playerRef` stays set.
+
 ### Auth hook (reserved, not implemented)
 
 A property-only `fetchCredentials` hook: `(request: { url: string }) =>
