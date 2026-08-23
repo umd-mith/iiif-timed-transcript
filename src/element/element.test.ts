@@ -14,6 +14,7 @@ import {
   untilShadow,
   waitForEvent,
   removeAllElements,
+  withStubMedia,
 } from "./test-helpers";
 import {
   mockFetchRoutes,
@@ -23,6 +24,15 @@ import {
 import { manifestCache } from "../lib/player/manifestCache";
 import type { PlayerRef } from "../lib/index.js";
 import type { PlayerRefAvailableDetail } from "./events";
+
+// Media stubs: the shared lib fixtures point <audio>/<video> at
+// https://example.com/…, which the browser really requests — where that host
+// resolves the media element errors and Root reports a fatal media-tier
+// error mid-test. withStubMedia swaps in `data:` sources that fail locally
+// and identically on every runner. (The lib fixtures themselves are shared
+// with the lib tests and stay untouched.)
+const MANIFEST_WITHOUT_CHAPTERS_STUB = withStubMedia(MANIFEST_WITHOUT_CHAPTERS);
+const MANIFEST_MULTI_CANVAS_STUB = withStubMedia(MANIFEST_MULTI_CANVAS);
 
 describe("<iiif-transcript-player> basics", () => {
   beforeAll(() => {
@@ -51,7 +61,7 @@ describe("<iiif-transcript-player> basics", () => {
   test("renders the fixed composition inside an open shadow root", async () => {
     const url = "https://example.com/el-basic.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS_STUB, id: url } },
     });
 
     const el = await mountElement({ "manifest-url": url });
@@ -77,7 +87,7 @@ describe("<iiif-transcript-player> basics", () => {
   test("playerRef is nullish before init and fires playerrefavailable with a usable ref", async () => {
     const url = "https://example.com/el-ref.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS_STUB, id: url } },
     });
 
     const el = document.createElement(DEFAULT_TAG) as HTMLElement & {
@@ -102,7 +112,9 @@ describe("<iiif-transcript-player> basics", () => {
 
   test("canvas-index arrives as a number (attribute coercion)", async () => {
     const url = "https://example.com/el-coerce.json";
-    mockFetchRoutes({ [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } } });
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
 
     const el = await mountElement({ "manifest-url": url, "canvas-index": "1" });
     const { detail } = await waitForEvent<PlayerRefAvailableDetail>(

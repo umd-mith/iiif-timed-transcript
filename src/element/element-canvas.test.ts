@@ -14,6 +14,7 @@ import {
   untilShadow,
   waitForEvent,
   removeAllElements,
+  withStubMedia,
 } from "./test-helpers";
 import {
   mockFetchRoutes,
@@ -34,6 +35,21 @@ import type { HlsConstructor } from "../lib/media/hlsUtils";
 import type { PlayerRef } from "../lib/index.js";
 import type { CanvasChangeDetail, PlayerRefAvailableDetail } from "./events";
 
+// Media stubs: the shared lib fixtures point <audio>/<video> at
+// https://example.com/…, which the browser really requests — where that host
+// resolves the media element errors and Root reports a fatal media-tier
+// error mid-test. withStubMedia swaps in `data:` sources that fail locally
+// and identically on every runner. (The lib fixtures themselves are shared
+// with the lib tests and stay untouched.)
+const MANIFEST_WITHOUT_CHAPTERS_STUB = withStubMedia(MANIFEST_WITHOUT_CHAPTERS);
+const MANIFEST_MULTI_CANVAS_STUB = withStubMedia(MANIFEST_MULTI_CANVAS);
+const MANIFEST_WITH_EMBEDDED_TRANSCRIPT_STUB = withStubMedia(
+  MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
+);
+const MANIFEST_WITH_VTT_CAPTIONS_STUB = withStubMedia(
+  MANIFEST_WITH_VTT_CAPTIONS,
+);
+
 type El = HTMLElement & { canvasIndex?: number; playerRef?: PlayerRef | null };
 
 describe("<iiif-transcript-player> canvases, gating, transcript", () => {
@@ -53,8 +69,8 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     const multi = "https://example.com/el-nav-multi.json";
     const single = "https://example.com/el-nav-single.json";
     mockFetchRoutes({
-      [multi]: { json: { ...MANIFEST_MULTI_CANVAS, id: multi } },
-      [single]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: single } },
+      [multi]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: multi } },
+      [single]: { json: { ...MANIFEST_WITHOUT_CHAPTERS_STUB, id: single } },
     });
     const a = await mountElement({ "manifest-url": multi });
     const b = await mountElement({ "manifest-url": single });
@@ -68,7 +84,9 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
 
   test("CanvasNav click fires canvaschange and reflects canvas-index; host write back round-trips", async () => {
     const url = "https://example.com/el-canvas-roundtrip.json";
-    mockFetchRoutes({ [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } } });
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
     const el = (await mountElement({
       "manifest-url": url,
       "canvas-index": "0",
@@ -103,7 +121,9 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
 
   test("setting the canvas-index attribute after mount switches the canvas and fires canvaschange", async () => {
     const url = "https://example.com/el-canvas-attr.json";
-    mockFetchRoutes({ [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } } });
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
     const el = (await mountElement({ "manifest-url": url })) as El;
     await waitForEvent(el, "playerrefavailable");
 
@@ -119,7 +139,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
   test("no transcript panel for a canvas with neither embedded text nor VTT", async () => {
     const url = "https://example.com/el-no-transcript.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS_STUB, id: url } },
     });
     const el = await mountElement({ "manifest-url": url });
     await untilShadow(el, "audio");
@@ -131,7 +151,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
   test("populates the transcript from embedded TextualBody annotations with duplicate ids (AVAnnotate shape)", async () => {
     const url = "https://example.com/el-embedded.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITH_EMBEDDED_TRANSCRIPT, id: url } },
+      [url]: { json: { ...MANIFEST_WITH_EMBEDDED_TRANSCRIPT_STUB, id: url } },
     });
     const el = await mountElement({ "manifest-url": url });
     await untilShadow(el, ".transcript-panel");
@@ -148,7 +168,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     const url = "https://example.com/el-vtt.json";
     const vtt = deferred<{ text: string }>();
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITH_VTT_CAPTIONS, id: url } },
+      [url]: { json: { ...MANIFEST_WITH_VTT_CAPTIONS_STUB, id: url } },
       "https://example.com/captions-fr.vtt": { promise: vtt.promise },
     });
     const el = await mountElement({ "manifest-url": url });
@@ -171,7 +191,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     // Canvas 0: audio, no text, no VTT → no panel. Canvas 1: video + VTT.
     const url = "https://example.com/el-repopulate.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } },
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
       "https://example.com/captions-en.vtt": { text: VTT_FIXTURE_OK },
     });
     const el = (await mountElement({ "manifest-url": url })) as El;

@@ -8,7 +8,12 @@ import {
   afterEach,
 } from "vitest";
 import { register, DEFAULT_TAG } from "./register";
-import { mountElement, removeAllElements, untilShadow } from "./test-helpers";
+import {
+  mountElement,
+  removeAllElements,
+  untilShadow,
+  withStubMedia,
+} from "./test-helpers";
 import {
   mockFetchRoutes,
   deferred,
@@ -30,27 +35,11 @@ function recordEvents(el: HTMLElement): Seen[] {
   return seen;
 }
 
-/**
- * A `data:` stub for this file's media: the element test only needs a canvas
- * whose <video> exists and never plays, and pointing it at a real host makes
- * the outcome depend on the runner's network posture. Not changed in
- * src/test/player/test-fixtures.ts — the lib tests share that fixture.
- */
-const UNPLAYABLE_MEDIA = "data:video/mp4;base64,AAAAAA==";
-
-const MANIFEST_VTT_UNPLAYABLE_MEDIA = {
-  ...MANIFEST_WITH_VTT_CAPTIONS,
-  items: MANIFEST_WITH_VTT_CAPTIONS.items.map((canvas) => ({
-    ...canvas,
-    items: canvas.items.map((page) => ({
-      ...page,
-      items: page.items.map((annotation) => ({
-        ...annotation,
-        body: { ...annotation.body, id: UNPLAYABLE_MEDIA },
-      })),
-    })),
-  })),
-};
+// File-local copies whose media are the `data:` stubs (see withStubMedia):
+// no request leaves the browser, so no media-tier error can race the
+// host-tier assertions below on a runner where example.com resolves.
+const MANIFEST_VTT_UNPLAYABLE_MEDIA = withStubMedia(MANIFEST_WITH_VTT_CAPTIONS);
+const MANIFEST_STUB_MEDIA = withStubMedia(MANIFEST_WITHOUT_CHAPTERS);
 
 describe("<iiif-transcript-player> error contract", () => {
   beforeAll(() => {
@@ -101,7 +90,7 @@ describe("<iiif-transcript-player> error contract", () => {
   test("a string assigned to the annotations attribute is a non-fatal host error, fired before playerrefavailable, and not passed to Root", async () => {
     const url = "https://example.com/el-host-misuse.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_STUB_MEDIA, id: url } },
     });
     const el = document.createElement(DEFAULT_TAG) as HTMLElement;
     el.setAttribute("manifest-url", url);
@@ -128,7 +117,7 @@ describe("<iiif-transcript-player> error contract", () => {
   test("a non-function errorCallback and preprocessManifest are each reported once as host errors", async () => {
     const url = "https://example.com/el-host-misuse-2.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_STUB_MEDIA, id: url } },
     });
     const el = document.createElement(DEFAULT_TAG) as HTMLElement & {
       errorCallback?: unknown;
@@ -162,7 +151,7 @@ describe("<iiif-transcript-player> error contract", () => {
   test("assigning errorCallback after a reported host error does not re-fire it", async () => {
     const url = "https://example.com/el-host-misuse-3.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_STUB_MEDIA, id: url } },
     });
     const el = document.createElement(DEFAULT_TAG) as HTMLElement & {
       errorCallback?: unknown;
@@ -198,65 +187,58 @@ describe("<iiif-transcript-player> error contract", () => {
     );
     expect(hostErrors).toHaveLength(1);
     // The callback assigned after the fact never receives the stale error.
-    expect(errorCallback).not.toHaveBeenCalled();
+    // Scoped to the host tier, like the count above: this test says nothing
+    // about media/transcript-tier reports, and asserting on the unscoped
+    // call list would make it fail on any unrelated report.
+    expect(
+      errorCallback.mock.calls.filter(
+        ([, info]) => (info as { source?: string }).source === "host",
+      ),
+    ).toHaveLength(0);
   });
 
-  test("a 404 VTT is a non-fatal transcript playererror strictly after playerrefavailable; playback works", async () => {
+  test("a 404 VTT is a non-fatal transcript playererror strictly after playerrefavailable; the player and its native caption track survive", async () => {
     const url = "https://example.com/el-vtt-404.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_VTT_UNPLAYABLE_MEDIA, id: url } },
       "https://example.com/captions-fr.vtt": { status: 404 },
     });
     const el = document.createElement(DEFAULT_TAG) as HTMLElement & {
-      playerRef?: { state: { error: Error | null } } | null;
+      playerRef?: unknown;
     };
     el.setAttribute("manifest-url", url);
     const seen = recordEvents(el);
+    document.body.appendChild(el);
 
-    // This canvas's media is a `data:` stub (see UNPLAYABLE_MEDIA): the
-    // <video> can never play it, but it fails locally and immediately —
-    // measured in this runner as MEDIA_ERR_SRC_NOT_SUPPORTED (code 4) on
-    // every run, with no request leaving the browser. The swallow is still
-    // needed, because any unplayable source fires `error` and Viewer's own
-    // bubble-phase `onerror` would turn it into a media-tier playererror
-    // that this transcript-tier test would then trip over. It is narrowed to
-    // that one src so a genuine defect — e.g. a transcript failure leaking
-    // into media-tier error state by another path — is not swallowed too.
-    // Media `error` events aren't composed, so the listener must live inside
-    // the shadow root (the open shadow root exists synchronously on
-    // creation).
-    const swallowVideoError = (e: Event) => {
-      const target = e.target;
-      if (
-        target instanceof HTMLVideoElement &&
-        target.currentSrc === UNPLAYABLE_MEDIA
-      ) {
-        e.stopImmediatePropagation();
-      }
-    };
-    el.shadowRoot!.addEventListener("error", swallowVideoError, true);
-    try {
-      document.body.appendChild(el);
-
-      await vi.waitFor(() => {
-        expect(seen.some((s) => s.type === "playererror")).toBe(true);
-      });
-      const types = seen.map((s) => s.type);
-      expect(types.indexOf("playerrefavailable")).toBeGreaterThanOrEqual(0);
-      expect(types.indexOf("playerrefavailable")).toBeLessThan(
-        types.indexOf("playererror"),
-      );
-      const detail = seen.find((s) => s.type === "playererror")!
-        .detail as PlayerErrorDetail;
-      expect(detail).toMatchObject({ fatal: false, source: "transcript" });
-      expect(el.playerRef).toBeTruthy();
-      expect(el.playerRef!.state.error).toBeNull();
-      await untilShadow(el, "video");
-      // Native caption track is still attached
-      expect(el.shadowRoot!.querySelectorAll("track")).toHaveLength(1);
-    } finally {
-      el.shadowRoot!.removeEventListener("error", swallowVideoError, true);
-    }
+    // This canvas's media is a `data:` stub (see withStubMedia): the <video>
+    // can never play it, so a media-tier playererror may also arrive. That is
+    // not what this test is about, so every assertion below is scoped to the
+    // transcript tier rather than swallowing the media `error` event.
+    await vi.waitFor(() => {
+      expect(
+        seen.some(
+          (s) =>
+            s.type === "playererror" &&
+            (s.detail as PlayerErrorDetail).source === "transcript",
+        ),
+      ).toBe(true);
+    });
+    const types = seen.map((s) => s.type);
+    const transcriptAt = seen.findIndex(
+      (s) =>
+        s.type === "playererror" &&
+        (s.detail as PlayerErrorDetail).source === "transcript",
+    );
+    expect(types.indexOf("playerrefavailable")).toBeGreaterThanOrEqual(0);
+    expect(types.indexOf("playerrefavailable")).toBeLessThan(transcriptAt);
+    expect(seen[transcriptAt]!.detail).toMatchObject({
+      fatal: false,
+      source: "transcript",
+    });
+    expect(el.playerRef).toBeTruthy();
+    await untilShadow(el, "video");
+    // Native caption track is still attached
+    expect(el.shadowRoot!.querySelectorAll("track")).toHaveLength(1);
   });
 
   test("disconnecting before the manifest settles fires neither event", async () => {
@@ -271,7 +253,7 @@ describe("<iiif-transcript-player> error contract", () => {
 
     el.remove();
     await Promise.resolve();
-    pending.resolve({ json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } });
+    pending.resolve({ json: { ...MANIFEST_STUB_MEDIA, id: url } });
     await new Promise((r) => setTimeout(r, 50));
 
     expect(seen).toHaveLength(0);

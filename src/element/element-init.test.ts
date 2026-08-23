@@ -13,6 +13,7 @@ import {
   untilShadow,
   waitForEvent,
   removeAllElements,
+  withStubMedia,
 } from "./test-helpers";
 import {
   mockFetchRoutes,
@@ -21,6 +22,14 @@ import {
 import { manifestCache } from "../lib/player/manifestCache";
 import type { PlayerRef } from "../lib/index.js";
 import type { PlayerRefAvailableDetail } from "./events";
+
+// Media stubs: the shared lib fixtures point <audio>/<video> at
+// https://example.com/…, which the browser really requests — where that host
+// resolves the media element errors and Root reports a fatal media-tier
+// error mid-test. withStubMedia swaps in `data:` sources that fail locally
+// and identically on every runner. (The lib fixtures themselves are shared
+// with the lib tests and stay untouched.)
+const MANIFEST_WITHOUT_CHAPTERS_STUB = withStubMedia(MANIFEST_WITHOUT_CHAPTERS);
 
 // Root's own initialTime/autoplay/preprocessManifest behavior is pinned
 // exhaustively in src/test/player/Root.svelte.test.ts. These tests only pin
@@ -60,7 +69,7 @@ describe("<iiif-transcript-player> initial-time, autoplay, preprocessManifest wi
   test("initial-time reaches Root and seeks once media is ready", async () => {
     const url = "https://example.com/el-initial-time.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS_STUB, id: url } },
     });
     const el = (await mountElement({
       "manifest-url": url,
@@ -83,7 +92,7 @@ describe("<iiif-transcript-player> initial-time, autoplay, preprocessManifest wi
   test("autoplay set → play() runs once media is ready", async () => {
     const url = "https://example.com/el-autoplay.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS_STUB, id: url } },
     });
     const el = (await mountElement({
       "manifest-url": url,
@@ -104,7 +113,7 @@ describe("<iiif-transcript-player> initial-time, autoplay, preprocessManifest wi
   test("a valid preprocessManifest function is applied before validation", async () => {
     const url = "https://example.com/el-preprocess.json";
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS_STUB, id: url } },
     });
     const el = document.createElement(DEFAULT_TAG) as El & {
       preprocessManifest?: (raw: unknown) => unknown;

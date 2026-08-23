@@ -8,7 +8,7 @@ import {
   afterEach,
 } from "vitest";
 import { register, DEFAULT_TAG } from "./register";
-import { waitForEvent, removeAllElements } from "./test-helpers";
+import { waitForEvent, removeAllElements, withStubMedia } from "./test-helpers";
 import {
   mockFetchRoutes,
   MANIFEST_MULTI_CANVAS,
@@ -16,6 +16,14 @@ import {
 import { manifestCache } from "../lib/player/manifestCache";
 import type { PlayerRef } from "../lib/index.js";
 import type { PlayerRefAvailableDetail } from "./events";
+
+// Media stubs: the shared lib fixtures point <audio>/<video> at
+// https://example.com/…, which the browser really requests — where that host
+// resolves the media element errors and Root reports a fatal media-tier
+// error mid-test. withStubMedia swaps in `data:` sources that fail locally
+// and identically on every runner. (The lib fixtures themselves are shared
+// with the lib tests and stay untouched.)
+const MANIFEST_MULTI_CANVAS_STUB = withStubMedia(MANIFEST_MULTI_CANVAS);
 
 type El = HTMLElement & { canvasIndex?: number; playerRef?: PlayerRef | null };
 
@@ -51,7 +59,9 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
 
   test("case 1 — defined class: a property set before append beats a markup attribute", async () => {
     const url = "https://example.com/prec-case1.json";
-    mockFetchRoutes({ [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } } });
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
     const el = document.createElement(DEFAULT_TAG) as El;
     el.setAttribute("manifest-url", url);
     el.setAttribute("canvas-index", "0");
@@ -62,7 +72,9 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
 
   test("case 2 — upgrade in place: the attribute wins over a pre-upgrade property write, which then shadows the accessor for good; a fresh element behaves like case 1", async () => {
     const url = "https://example.com/prec-case2.json";
-    mockFetchRoutes({ [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } } });
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
 
     // Element exists before the tag is defined (like markup parsed before the
     // IIFE <script> runs).
@@ -94,7 +106,9 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
 
   test("case 3 — after upgrade, each channel works on its own, but mixing them for one key is not reliable: a property write leaves the attribute channel holding a stale value", async () => {
     const url = "https://example.com/prec-case3.json";
-    mockFetchRoutes({ [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } } });
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
     const el = document.createElement(DEFAULT_TAG) as El;
     el.setAttribute("manifest-url", url);
     document.body.appendChild(el);

@@ -13,12 +13,23 @@ import {
   shadow,
   untilShadow,
   removeAllElements,
+  withStubMedia,
 } from "./test-helpers";
 import {
   mockFetchRoutes,
   MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
 } from "../test/player/test-fixtures";
 import { manifestCache } from "../lib/player/manifestCache";
+
+// Media stubs: the shared lib fixtures point <audio>/<video> at
+// https://example.com/…, which the browser really requests — where that host
+// resolves the media element errors and Root reports a fatal media-tier
+// error mid-test. withStubMedia swaps in `data:` sources that fail locally
+// and identically on every runner. (The lib fixtures themselves are shared
+// with the lib tests and stay untouched.)
+const MANIFEST_WITH_EMBEDDED_TRANSCRIPT_STUB = withStubMedia(
+  MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
+);
 
 describe("<iiif-transcript-player> theming", () => {
   let hostile: HTMLStyleElement;
@@ -45,7 +56,7 @@ describe("<iiif-transcript-player> theming", () => {
 
   async function mountWithTranscript(url: string) {
     mockFetchRoutes({
-      [url]: { json: { ...MANIFEST_WITH_EMBEDDED_TRANSCRIPT, id: url } },
+      [url]: { json: { ...MANIFEST_WITH_EMBEDDED_TRANSCRIPT_STUB, id: url } },
     });
     const el = await mountElement({ "manifest-url": url });
     await untilShadow(el, "[data-annotation-id]");
