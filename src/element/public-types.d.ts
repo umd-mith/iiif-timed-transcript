@@ -44,9 +44,13 @@ export declare const DEFAULT_TAG: "iiif-transcript-player";
 export declare class IIIFTranscriptPlayerElement extends HTMLElement {
   /** `manifest-url` attribute. Set before connection; replace the node to load another manifest. */
   manifestUrl: string;
-  /** `canvas-index` attribute. Reactive and reflected. */
+  /**
+   * `canvas-index` attribute. Reactive and reflected. A value that is not a
+   * non-negative integer falls back to 0 and an out-of-range index is
+   * ignored; either is a non-fatal `host` error, reported once per value.
+   */
   canvasIndex: number;
-  /** `initial-time` attribute. Init-only. */
+  /** `initial-time` attribute. Init-only, and only on the first connection. */
   initialTime: number | undefined;
   /** `autoplay` attribute. */
   autoplay: boolean;
@@ -56,8 +60,14 @@ export declare class IIIFTranscriptPlayerElement extends HTMLElement {
   preprocessManifest: ((raw: unknown) => unknown) | undefined;
   /** Property only. Same payload as the `playererror` event. */
   errorCallback: ErrorCallback | undefined;
-  /** Read-only. Nullish until `playerrefavailable`; stays nullish after a fatal `playererror`. */
-  readonly playerRef: PlayerRef | null;
+  /**
+   * Read-only. Nullish until `playerrefavailable` — `undefined` before the
+   * inner component exists (the accessor reads through it), `null` after.
+   * It stays nullish if the fatal error is a manifest or first-canvas
+   * failure; a fatal *media* error can arrive after `playerrefavailable`, in
+   * which case `playerRef` is already set and stays set.
+   */
+  readonly playerRef: PlayerRef | null | undefined;
   addEventListener<K extends keyof IIIFTranscriptPlayerElementEventMap>(
     type: K,
     listener: (
