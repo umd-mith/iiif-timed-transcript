@@ -30,6 +30,13 @@
       "types": "./dist/index.d.ts",
       "svelte": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./element": {
+      "types": "./dist/element/index.d.ts",
+      "default": "./dist/element/index.js"
+    },
+    "./element/iife": {
+      "default": "./dist/element/iiif-transcript-player.iife.js"
     }
   },
   "files": [
@@ -51,7 +58,9 @@
     }
   },
   "scripts": {
-    "build": "svelte-kit sync && svelte-package && publint",
+    "build:package": "svelte-kit sync && svelte-package",
+    "build:element": "vite build --config vite.config.element.ts --mode element-iife && vite build --config vite.config.element.ts --mode element-esm && node scripts/postbuild-element.mjs",
+    "build": "pnpm run build:package && pnpm run build:element && publint",
     "dev": "svelte-package --watch",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"options_missing_custom_element:ignore\"",
     "test": "vitest run",
