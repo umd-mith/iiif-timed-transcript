@@ -67,7 +67,11 @@ export default defineConfig(({ mode }) => {
       outDir: "dist/element",
       emptyOutDir: false,
       target: "es2022",
-      sourcemap: true,
+      // "hidden": maps are still written next to the bundles for local
+      // debugging, but no `sourceMappingURL` comment is emitted — the maps
+      // are excluded from the tarball (package.json#files), so a published
+      // bundle must not point at a file that is not there.
+      sourcemap: "hidden" as const,
       minify: iife ? "esbuild" : false,
       lib: iife
         ? {

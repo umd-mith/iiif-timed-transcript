@@ -41,7 +41,7 @@
   },
   "files": [
     "dist",
-    "!dist/**/*.map",
+    "!dist/element/*.map",
     "README.md",
     "LICENSE"
   ],
