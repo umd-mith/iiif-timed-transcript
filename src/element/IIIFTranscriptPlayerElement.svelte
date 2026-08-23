@@ -296,12 +296,18 @@
 
   // `initial-time` applies once per host, not once per inner component — see
   // initialTimeAppliedHosts above. The flag is read once, at setup, before the
-  // effect below records this connection. The latch is recorded only when a
-  // valid `initial-time` was really handed to a Root that exists — an invalid
-  // value, or no `manifest-url` (so no Root mounted at all), must not burn it.
+  // effect below records this connection. The latch is recorded only once a
+  // valid `initial-time` was really handed to a Root that initialized
+  // (`playerRefValue` set means onPlayerInit fired, so the manifest loaded) —
+  // an invalid value, a failed manifest fetch, or no `manifest-url` (so no
+  // Root mounted at all) must not burn it. Known gap: the manifest can load
+  // and the media still fail before the seek runs (Root seeks only once
+  // `state.isReady`), which burns the latch without a seek; closing that
+  // window would need a new
+  // "initial time applied" signal from Root.
   const initialTimeAlreadyApplied = initialTimeAppliedHosts.has($host());
   $effect(() => {
-    if (manifestUrl && initialTime != null && initialTimeValid) {
+    if (playerRefValue && initialTime != null && initialTimeValid) {
       initialTimeAppliedHosts.add($host());
     }
   });

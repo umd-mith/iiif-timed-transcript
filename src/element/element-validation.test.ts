@@ -394,4 +394,37 @@ describe("<iiif-transcript-player> reconnection", () => {
     await new Promise((r) => setTimeout(r, 100));
     expect(shadow(el).querySelector("audio")!.currentTime).toBeLessThan(0.5);
   });
+
+  test("a failed first load does not burn the initial-time latch", async () => {
+    const url = "https://example.com/el-reconnect-after-404.json";
+    mockFetchRoutes({ [url]: { status: 404, text: "not found" } });
+    const el = (await mountElement({
+      "manifest-url": url,
+      "initial-time": "1",
+    })) as El;
+    // The fetch 404s, so no player ever exists on this connection.
+    await waitForEvent<PlayerErrorDetail>(el, "playererror");
+    expect(el.playerRef == null).toBe(true);
+
+    el.remove();
+    await new Promise((r) => setTimeout(r, 0));
+
+    // The server works now; the same node is re-appended (tab/accordion
+    // hosts re-parent rather than re-create). initial-time was never
+    // applied, so this connection must still apply it.
+    const playable = withStubMedia(MANIFEST_MULTI_CANVAS, {
+      audio: silentWavDataUrl(3),
+    });
+    mockFetchRoutes({ [url]: { json: { ...playable, id: url } } });
+    const again = waitForEvent<PlayerRefAvailableDetail>(
+      el,
+      "playerrefavailable",
+    );
+    document.body.appendChild(el);
+    await again;
+    await vi.waitFor(() => {
+      const audio = shadow(el).querySelector("audio");
+      expect(audio?.currentTime ?? 0).toBeGreaterThan(0.9);
+    });
+  });
 });
