@@ -1,0 +1,205 @@
+{
+  "@context": [
+    "http://www.w3.org/ns/anno.jsonld",
+    "http://iiif.io/api/presentation/3/context.json"
+  ],
+  "id": "https://example.org/examples/avannotate-duplicate-ids.json",
+  "type": "Manifest",
+  "label": {
+    "en": ["AVAnnotate export with duplicate annotation ids"]
+  },
+  "items": [
+    {
+      "id": "https://scholarlyediting.org",
+      "type": "Canvas",
+      "duration": 2449.98,
+      "items": [
+        {
+          "id": "https://scholarlyediting.org/page/audio",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://scholarlyediting.org/annotation/audio",
+              "type": "Annotation",
+              "motivation": "painting",
+              "body": {
+                "id": "https://scholarlyediting.org/audio/historyunerased.mp3",
+                "type": "Sound",
+                "format": "audio/mpeg"
+              },
+              "target": "https://scholarlyediting.org"
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "https://scholarlyediting.org/page/transcript",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://scholarlyediting.org/page/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Robert Riter</b>: Thank you again for participating in this interview. Would you first describe, and introduce, the initiative <i>History UnErased</i> and the context of its founding, how and why?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=0,13.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/page/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: Sure, I will. I'll take the reins on that. I'm Deb Fowler. One of the co-founders, current Executive Director, and as I always like to share, former boots on the ground in the trenches classroom teacher, working with new immigrant and refugee populations here in the United States. But prior to that, I taught for several years in South Korea, teaching English as a foreign language.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=14,41.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/page/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "The impetus for founding <i>History UnErased</i> was really a long winding process for both myself and Miriam Morgenstern. As far as how we came to the why, and then the how, became even more complicated. But working with new immigrant and refugee populations of students at the high school level, it was, I could have up to 17 different countries represented in one classroom. And through this process of trying to help them access the English language\nto ensure they would be able to be successful in today's world, I would bring in content that\nwas reflective of their native countries, to broaden understanding of each other, but also to provide them with relatable content. And they just came alive with reflections of themselves in each other, and what they were learning and their stories.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=42,117.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/page/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "These young people were often coming from not only native countries that criminalize homosexuality, but they were coming from unspeakable grief. But they would arrive every day with this hunger and desire, and a particular grace that it was so beautiful and impacted me deeply. But irrespective of their degree of English proficiency, it was clear they were aching to be seen. And they would find multiple ways to share that with me, whether that was through incidental conversations, or grammar homework, indeed, through purposeful conversations of what they chose to write, what they doodled on their desks. And these stories became like this living, breathing thing that I felt a responsibility for, and ended up producing a documentary\nfilm, zero budget film, thanks to the high school with a then junior student, Connor Crosby.\nAnd the film, <i>Hard Truth, Levity, and Hope</i>, spotlighted six of our refugee students from Burma, Congo, Nepal, Iraq, and they held the cameras themselves and they took the cameras around following with them through their everyday lives. And the intention of this documentary\nwas to serve a purpose to highlight that not only were these young people in their families not taking anything from our society, but they were hungry to contribute and be a part of their new community.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=118,237.5"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/page/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "So, two years later he came back. And he shared with me that he had an idea for another film. And he wanted to work with me on this film. And he said that he was tired of the continued discrimination and prejudice against gay people, and he wanted to do something about it. And I stood up, gave him a hug, sat back down, and said, Connor, do you know that I'm gay? And he did not. So that's a wonderful piece of irony there. So we ended up interviewing students, teachers, parents, community members, to produce what became the documentary film, <i>Through Gay Eyes</i>. Through the process of creating this film, <i>Through Gay\nEyes</i>, and hearing in the editing booth over and over and over and over again, comments from teachers and students, that the absence of LGBTQ inclusion and visibility, and what they were learning in school, was doing harm. So my colleague at the time, Miriam Morgenstern, and I began having conversations about this absence. And we were both in a position through a combined decades of experience in the classroom, and hungry to do more and expand our influence, we spent about two years in the rabbit holes of research connecting with archivists and experts and people who could tell us, help us, know where to look for the primary sources.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=237.501,335"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/page/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "And that is how we connected with Kathleen Barker, my esteemed colleague who is here today with us. And one more important thing to note, in the why, is that so often education policy leaders are so far removed from the realities of classroom practice, that there is a chasm there, of not only an absence of communication, but an absence of understanding the implications and considerations of how to ensure the efficacy of policy. And Miriam and I understood that in order for teachers to be able to bring in LGBTQ inclusive academic content into the mainstream curriculum, they needed high quality content, and exceptional professional learning in an ongoing fashion. One and dones do not work. And we also knew that individual educators, doing this as an island in their classroom, was going to potentially cause more problems than solutions. And so we understood that a whole school partnership model was the ideal way to really ensure sustainability in perpetuity.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=335.001,430.049"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/page/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Jenifer Ishee</b>: Thank you for that background. We know you have a wonderful dynamic team of other educators, as you've mentioned, that are involved in this organization\nwith you. Can you tell us a little bit about them? And you've you mentioned, Kathleen, of course, but about their backgrounds and their focus areas?",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=430.05,456.999"
+                }
+              }
+            },
+            {
+              "id": "https://scholarlyediting.org/page/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "<b>Deb Fowler</b>: The people I have the privilege of working alongside every day are all phenomenal. When, and whenever, I have the chance to introduce people to <i>History UnErased</i> I feel so very proud to talk about our rockstar team and the wealth of experience and expertise, as well as good humor and kindness they contribute to our mission and work with K through 12 schools. And everyone on our team has come on board through serendipitous circumstances, which is a bonus. You can go to our About Us page on our website to meet them.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": {
+                "type": "SpecificResource",
+                "source": "https://scholarlyediting.org",
+                "selector": {
+                  "type": "FragmentSelector",
+                  "conformsTo": "http://www.w3.org/TR/media-frags/",
+                  "value": "t=457,494.999"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

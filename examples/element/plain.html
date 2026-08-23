@@ -41,13 +41,25 @@
       manifest-url="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json"
     ></iiif-transcript-player>
 
-    <h2>
-      Scholarly Editing "Voices" (AVAnnotate export, embedded text, duplicate
-      ids)
-    </h2>
+    <h2>AVAnnotate export: embedded text with duplicate annotation ids</h2>
+    <p>
+      Local fixture (<code>fixtures/avannotate-duplicate-ids.json</code>),
+      derived from a Scholarly Editing "Voices" interview: eight
+      <code>TextualBody</code> segments that all carry the annotation page's id,
+      the way an AVAnnotate export does. All eight must appear in the transcript
+      panel — segments are not deduplicated by id. The audio is loaded
+      cross-origin from scholarlyediting.org.
+    </p>
+    <p>
+      <small
+        >The manifest is served locally on purpose: scholarlyediting.org sends
+        no <code>Access-Control-Allow-Origin</code>, so its manifests cannot be
+        fetched from another origin.</small
+      >
+    </p>
     <iiif-transcript-player
       id="voices"
-      manifest-url="https://www.scholarlyediting.org/issues/43/voices/mediation-and-lived-experience.json"
+      manifest-url="./fixtures/avannotate-duplicate-ids.json"
     ></iiif-transcript-player>
 
     <h2>Events</h2>
