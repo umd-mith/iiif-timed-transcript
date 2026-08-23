@@ -119,6 +119,53 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     });
   });
 
+  test("the attribute channel still works after in-player navigation (host writes back the index it started from)", async () => {
+    const url = "https://example.com/el-canvas-attr-after-nav.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
+    const el = (await mountElement({
+      "manifest-url": url,
+      "canvas-index": "0",
+    })) as El;
+    const changes: number[] = [];
+    el.addEventListener("canvaschange", (e) =>
+      changes.push((e as CustomEvent<CanvasChangeDetail>).detail.index),
+    );
+    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    const second = await untilShadow<HTMLButtonElement>(
+      el,
+      'button[data-canvas-index="1"]',
+    );
+
+    // In-player navigation: CanvasNav, not the host.
+    const change = waitForEvent<CanvasChangeDetail>(el, "canvaschange");
+    second.click();
+    expect((await change).detail.index).toBe(1);
+    await vi.waitFor(() => {
+      expect(el.playerRef!.canvasIndex).toBe(1);
+      expect(el.getAttribute("canvas-index")).toBe("1");
+    });
+
+    // A host that only ever uses attributes (the documented rule) writes
+    // back the index it set in markup. Nothing about the in-player switch
+    // may make that write a no-op.
+    const back = waitForEvent<CanvasChangeDetail>(el, "canvaschange");
+    el.setAttribute("canvas-index", "0");
+    expect((await back).detail.index).toBe(0);
+    await vi.waitFor(() => {
+      expect(el.playerRef!.canvasIndex).toBe(0);
+      expect(el.getAttribute("canvas-index")).toBe("0");
+    });
+
+    // The element's own attribute write must not echo back into another
+    // canvas switch: exactly one canvaschange per switch, and no third one
+    // after everything settles.
+    expect(changes).toEqual([1, 0]);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(changes).toEqual([1, 0]);
+  });
+
   test("setting the canvas-index attribute after mount switches the canvas and fires canvaschange", async () => {
     const url = "https://example.com/el-canvas-attr.json";
     mockFetchRoutes({

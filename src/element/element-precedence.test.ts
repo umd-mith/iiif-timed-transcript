@@ -44,7 +44,12 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     manifestCache.clear();
   });
 
-  async function initialIndex(el: El): Promise<number> {
+  /**
+   * Waits for the first canvas to settle and asserts which index won. The
+   * trailing sleep is a stability check ("and it stays there"), not the
+   * synchronisation: the positive assertion is the `vi.waitFor` above it.
+   */
+  async function expectInitialIndex(el: El, expected: number): Promise<void> {
     const { detail } = await waitForEvent<PlayerRefAvailableDetail>(
       el,
       "playerrefavailable",
@@ -52,9 +57,10 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     // Root applies the prop on first load; wait for it to settle.
     await vi.waitFor(() => {
       expect(detail.playerRef.canvasCount).toBe(2);
+      expect(detail.playerRef.canvasIndex).toBe(expected);
     });
     await new Promise((r) => setTimeout(r, 20));
-    return detail.playerRef.canvasIndex;
+    expect(detail.playerRef.canvasIndex).toBe(expected);
   }
 
   test("case 1 — defined class: a property set before append beats a markup attribute", async () => {
@@ -67,7 +73,7 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     el.setAttribute("canvas-index", "0");
     el.canvasIndex = 1; // prototype setter → pending props
     document.body.appendChild(el);
-    expect(await initialIndex(el)).toBe(1);
+    await expectInitialIndex(el, 1);
   });
 
   test("case 2 — upgrade in place: the attribute wins over a pre-upgrade property write, which then shadows the accessor for good; a fresh element behaves like case 1", async () => {
@@ -86,7 +92,7 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     document.body.appendChild(el);
 
     register(UPGRADE_TAG); // define() upgrades existing elements synchronously
-    expect(await initialIndex(el)).toBe(0); // attribute won
+    await expectInitialIndex(el, 0); // attribute won
 
     // The dead own property still shadows the prototype accessor: a later
     // write to this key on this element goes nowhere.
@@ -101,10 +107,10 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     fresh.setAttribute("canvas-index", "0");
     fresh.canvasIndex = 1;
     document.body.appendChild(fresh);
-    expect(await initialIndex(fresh)).toBe(1);
+    await expectInitialIndex(fresh, 1);
   });
 
-  test("case 3 — after upgrade, each channel works on its own, but mixing them for one key is not reliable: a property write leaves the attribute channel holding a stale value", async () => {
+  test("case 3 — after upgrade each channel works on its own, and an attribute write still lands after a property write, because every canvas switch refreshes the props source", async () => {
     const url = "https://example.com/prec-case3.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
@@ -112,7 +118,7 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     const el = document.createElement(DEFAULT_TAG) as El;
     el.setAttribute("manifest-url", url);
     document.body.appendChild(el);
-    await initialIndex(el);
+    await expectInitialIndex(el, 0);
 
     // Why mixing is unreliable (measured, then traced in Svelte 5.53.3 —
     // it is NOT that one of the writes defers; neither does):
@@ -128,32 +134,45 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     //     (svelte/src/internal/client/reactivity/props.js:403-416) — a
     //     *local override* that leaves the props source untouched.
     //
-    // Two consequences, both exercised below. (1) After a property write the
-    // props source is stale, so a later attribute write repeating that stale
-    // value is an equality no-op (sources.js:174-175) and is silently
+    // Left to itself that would leave the props source stale after every
+    // property write, so a later attribute write repeating that stale value
+    // would be an equality no-op (sources.js:174-175) and be silently
     // ignored; `reflect` does not help — it writes the attribute back with
     // `$$r` set, which attributeChangedCallback ignores (custom-element.js
-    // :154-174, :195). (2) In the same task the local override is discarded
-    // whenever the derived recomputes (props.js:389-392), so which write
-    // wins depends on hidden flush state — measured over 20 same-task pairs,
-    // identical sequences from the same observable index resolved both ways.
-    // Hence the README's rule: one channel per key.
+    // :154-174, :195).
+    //
+    // The element closes that hole: onCanvasChange writes the attribute
+    // explicitly (IIIFTranscriptPlayerElement.svelte, handleCanvasChange),
+    // and that unguarded write refreshes the props source. So after ANY
+    // canvas switch — host attribute, host property, or CanvasNav — the
+    // attribute, the props source and the prop all hold the live index, and
+    // both channels keep working. The one residue of the Svelte behaviour is
+    // ordering: the local override is discarded whenever the derived
+    // recomputes (props.js:389-392), so two writes issued in the SAME task
+    // can still resolve either way — measured over 20 same-task pairs,
+    // identical sequences resolved both ways. Hence the README's rule: one
+    // channel per key.
 
     // The attribute channel on its own.
     el.setAttribute("canvas-index", "1");
-    await new Promise((r) => setTimeout(r, 50));
-    expect(el.playerRef!.canvasIndex).toBe(1);
+    await vi.waitFor(() => {
+      expect(el.playerRef!.canvasIndex).toBe(1);
+    });
 
     // The property channel on its own.
     el.canvasIndex = 0;
-    await new Promise((r) => setTimeout(r, 50));
-    expect(el.playerRef!.canvasIndex).toBe(0);
+    await vi.waitFor(() => {
+      expect(el.playerRef!.canvasIndex).toBe(0);
+    });
 
-    // Mixed: the props source still holds 1 from the attribute write above,
-    // so this attribute write — a whole task later, and visibly a change —
-    // does nothing.
+    // Mixed, a task apart: the property write above switched the canvas, so
+    // the props source was refreshed to 0 and this attribute write is a real
+    // change again.
     el.setAttribute("canvas-index", "1");
-    await new Promise((r) => setTimeout(r, 50));
-    expect(el.playerRef!.canvasIndex).toBe(0);
+    await vi.waitFor(() => {
+      expect(el.playerRef!.canvasIndex).toBe(1);
+    });
+    expect(el.getAttribute("canvas-index")).toBe("1");
+    expect(el.canvasIndex).toBe(1);
   });
 });

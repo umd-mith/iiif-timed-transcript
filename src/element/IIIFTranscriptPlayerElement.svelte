@@ -177,10 +177,24 @@
   }
 
   function handleCanvasChange(index: number, canvas: CanvasInfo) {
-    // Keep the prop — and, through `reflect`, the canvas-index attribute —
-    // in step with switches made inside the shadow root (CanvasNav), so a
-    // later host write back to the old index is a real change for Root.
-    canvasIndex = index;
+    // Write the ATTRIBUTE, not the prop, to keep the element in step with
+    // switches made inside the shadow root (CanvasNav).
+    //
+    // A prop write (`canvasIndex = index`) is a *local override* on the
+    // prop's derived (svelte/src/internal/client/reactivity/props.js:403-416)
+    // and leaves the props source untouched; `reflect` then writes the
+    // attribute back with `$$r` set, which attributeChangedCallback ignores
+    // (custom-element.js:154-174, :195). The source would stay at the host's
+    // original index, so the host writing that same index back again would
+    // be an equality no-op and be silently dropped.
+    //
+    // An explicit setAttribute runs attributeChangedCallback without the
+    // `$$r` guard, so the props source is refreshed too: attribute, source
+    // and prop all hold `index`, and either channel keeps working
+    // afterwards. It does not echo — the resulting prop change is equal to
+    // the index Root just switched to, and performCanvasSwitch returns
+    // early on `index === player.canvasIndex`.
+    $host().setAttribute("canvas-index", String(index));
     emit<CanvasChangeDetail>("canvaschange", { index, canvas });
   }
 </script>
