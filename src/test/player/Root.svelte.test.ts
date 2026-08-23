@@ -833,6 +833,39 @@ describe("Root component", () => {
       expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio1.mp3");
     });
 
+    test("switchCanvas ignores a non-integer index", async () => {
+      mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/multi-canvas-non-integer.json",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBeTruthy();
+      });
+
+      // NaN passes every ordering guard (`NaN < 0`, `NaN >= len` and
+      // `NaN === 0` are all false), so without an explicit integer check it
+      // would tear down the media, set canvasIndex to NaN and silently
+      // reload canvas 0 with no onCanvasChange.
+      capturedCtx!.actions.switchCanvas(Number.NaN);
+      expect(capturedCtx!.canvasIndex).toBe(0);
+      expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio1.mp3");
+
+      capturedCtx!.actions.switchCanvas(1.5);
+      expect(capturedCtx!.canvasIndex).toBe(0);
+      expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio1.mp3");
+    });
+
     test("prop canvasIndex change before manifest loads is honored", async () => {
       // Create a deferred promise so we control when fetch resolves
       let resolveFetch!: (value: unknown) => void;

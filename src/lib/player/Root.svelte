@@ -247,6 +247,13 @@
 
   function performCanvasSwitch(index: number) {
     if (!manifestData) return;
+    // Integer check first: the range comparisons below are all false for NaN
+    // (`NaN < 0`, `NaN >= len`) and so is `NaN === player.canvasIndex`, so a
+    // non-integer would fall through every guard, tear down the media and
+    // set player.canvasIndex to NaN — after which loadCanvas silently falls
+    // back to canvas 0 and onCanvasChange never fires (canvases[NaN] is
+    // undefined). Fractional indices are rejected for the same reason.
+    if (!Number.isInteger(index)) return;
     if (index < 0 || index >= player.canvases.length) return;
     if (index === player.canvasIndex) return;
 

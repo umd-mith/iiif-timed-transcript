@@ -593,7 +593,7 @@ export const MANIFEST_INITIAL_INDEX = {
 
 /**
  * Avalon-shaped manifest: a Choice of HLS renditions with the non-standard
- * `choiceHint` (stripped by Zod). Today this canvas hard-fails with
+ * `choiceHint` (stripped by Zod). Before Task 1 this canvas hard-failed with
  * "Canvas is not audio or video media".
  */
 export const MANIFEST_WITH_CHOICE_HLS = {
