@@ -206,7 +206,112 @@
 </div>
 
 <style>
+  /*
+    Theming contract (see the spec, "Theming contract"):
+    - every rule that targets nested-component DOM is `.iiif-tp :global(hook)`,
+      which compiles to `.iiif-tp.svelte-<hash> hook` (≥ (0,3,0) for an
+      attribute hook) and therefore beats the nested baseline `all: unset`
+      rules ((0,1,1)) without !important;
+    - focus indicators are NOT restyled (the nested `:focus:not(:focus-visible)`
+      rules are (0,3,1) and win by design);
+    - custom properties are the public theming API; names are stable.
+  */
   :host {
     display: block;
+  }
+
+  .iiif-tp {
+    font-family: var(--iiif-player-font-family, system-ui, sans-serif);
+    background: var(--iiif-player-bg, #ffffff);
+    color: var(--iiif-player-fg, #1a1a1a);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .iiif-tp :global(video),
+  .iiif-tp :global(audio) {
+    width: 100%;
+    display: block;
+  }
+
+  .iiif-tp :global([data-audio-controls]) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--iiif-player-control-bg, #f3f4f6);
+    color: var(--iiif-player-control-fg, inherit);
+    border: 1px solid var(--iiif-player-border, #e5e7eb);
+    border-radius: 4px;
+  }
+
+  .iiif-tp :global([data-audio-button]) {
+    background: var(--iiif-player-accent, #1d4ed8);
+    color: #ffffff;
+    border: 0;
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .iiif-tp :global([data-audio-control]) {
+    font: inherit;
+    color: inherit;
+  }
+
+  .iiif-tp :global(input[type="range"]) {
+    flex: 1;
+    accent-color: var(--iiif-player-accent, #1d4ed8);
+  }
+
+  .iiif-tp :global(nav.canvas-nav) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .iiif-tp :global(nav.canvas-nav button) {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--iiif-player-border, #e5e7eb);
+    border-radius: 4px;
+    width: auto;
+  }
+
+  .iiif-tp :global(nav.canvas-nav button[data-state="active"]) {
+    background: var(--iiif-player-accent, #1d4ed8);
+    color: #ffffff;
+  }
+
+  .iiif-tp :global(.transcript-panel) {
+    background: var(--iiif-player-transcript-bg, transparent);
+    border: 1px solid var(--iiif-player-border, #e5e7eb);
+    border-radius: 4px;
+    padding: 0.5rem;
+    max-height: 24rem;
+  }
+
+  .iiif-tp :global(input[type="search"]) {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--iiif-player-border, #e5e7eb);
+    border-radius: 4px;
+    font: inherit;
+  }
+
+  .iiif-tp :global([data-annotation-id]) {
+    padding: 0.375rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .iiif-tp :global([data-annotation-id][data-state="active"]) {
+    background: var(--iiif-player-segment-active-bg, #fef3c7);
+  }
+
+  .iiif-tp :global([data-annotation-id][data-highlighted="true"]),
+  .iiif-tp :global([data-annotation-id][data-current-match="true"]) {
+    background: var(--iiif-player-segment-highlight-bg, #dbeafe);
   }
 </style>
