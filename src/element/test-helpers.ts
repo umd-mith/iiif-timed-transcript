@@ -81,16 +81,53 @@ export function waitForEvent<T = unknown>(
 export const STUB_VIDEO_SRC = "data:video/mp4;base64,AAAAAA==";
 export const STUB_AUDIO_SRC = "data:audio/mpeg;base64,AAAAAA==";
 
+/**
+ * A `data:` URL for `seconds` of silence as 8 kHz 8-bit mono PCM WAV, built
+ * at runtime so no multi-kilobyte base64 literal lands in the source. Unlike
+ * the stubs above this really decodes, so a test that needs `state.isReady`
+ * (and therefore a working `seekTo`) has media the browser will accept.
+ */
+export function silentWavDataUrl(seconds = 3): string {
+  const sampleRate = 8000;
+  const samples = Math.round(sampleRate * seconds);
+  const bytes = new Uint8Array(44 + samples);
+  const view = new DataView(bytes.buffer);
+  const ascii = (offset: number, text: string) => {
+    for (let i = 0; i < text.length; i += 1)
+      view.setUint8(offset + i, text.charCodeAt(i));
+  };
+  ascii(0, "RIFF");
+  view.setUint32(4, 36 + samples, true);
+  ascii(8, "WAVEfmt ");
+  view.setUint32(16, 16, true); // PCM fmt chunk size
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate, true); // byte rate
+  view.setUint16(32, 1, true); // block align
+  view.setUint16(34, 8, true); // bits per sample
+  ascii(36, "data");
+  view.setUint32(40, samples, true);
+  bytes.fill(128, 44); // 8-bit PCM silence is 0x80
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return `data:audio/wav;base64,${btoa(binary)}`;
+}
+
 type Json = Record<string, unknown>;
 
-function stubBody(body: unknown): unknown {
+type StubSources = { audio?: string; video?: string };
+
+function stubBody(body: unknown, sources: StubSources): unknown {
   if (!body || typeof body !== "object") return body;
   const b = body as Json;
   if (b["type"] === "Choice" && Array.isArray(b["items"])) {
-    return { ...b, items: b["items"].map(stubBody) };
+    return { ...b, items: b["items"].map((i) => stubBody(i, sources)) };
   }
-  if (b["type"] === "Sound") return { ...b, id: STUB_AUDIO_SRC };
-  if (b["type"] === "Video") return { ...b, id: STUB_VIDEO_SRC };
+  if (b["type"] === "Sound")
+    return { ...b, id: sources.audio ?? STUB_AUDIO_SRC };
+  if (b["type"] === "Video")
+    return { ...b, id: sources.video ?? STUB_VIDEO_SRC };
   return b;
 }
 
@@ -99,7 +136,10 @@ function stubBody(body: unknown): unknown {
  * `data:` stubs above. Shared lib fixtures (src/test/player/test-fixtures.ts)
  * are left untouched — the lib tests share them.
  */
-export function withStubMedia<T extends Json>(manifest: T): T {
+export function withStubMedia<T extends Json>(
+  manifest: T,
+  sources: StubSources = {},
+): T {
   const items = manifest["items"];
   if (!Array.isArray(items)) return manifest;
   return {
@@ -117,7 +157,7 @@ export function withStubMedia<T extends Json>(manifest: T): T {
             items: p["items"].map((annotation) => {
               const a = annotation as Json;
               if (a["motivation"] !== "painting") return a;
-              return { ...a, body: stubBody(a["body"]) };
+              return { ...a, body: stubBody(a["body"], sources) };
             }),
           };
         }),

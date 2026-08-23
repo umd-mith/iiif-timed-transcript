@@ -13,6 +13,17 @@
   }}
 />
 
+<script module lang="ts">
+  // Hosts on which `initial-time` has already been applied. Svelte destroys
+  // the inner component a microtask after `disconnectedCallback` and rebuilds
+  // it on the next `connectedCallback` (custom-element.js:93-151, :201-211),
+  // so a tab/accordion host that re-parents the element gets a brand-new Root
+  // whose own `initialTimeApplied` latch is fresh — and playback would rewind
+  // to `initial-time` behind the user's back. Keyed on the host element, so
+  // the record survives the rebuild and dies with the node.
+  const initialTimeAppliedHosts = new WeakSet<HTMLElement>();
+</script>
+
 <script lang="ts">
   import { untrack } from "svelte";
   import { IIIFPlayer } from "../lib/index.js";
@@ -50,7 +61,10 @@
 
   // Exposed as a read-only getter on the element (Svelte turns instance
   // exports into prototype accessors on the generated class). Nullish until
-  // Root's onPlayerInit fires.
+  // Root's onPlayerInit fires — and it stays nullish only when the fatal
+  // error is a manifest/first-canvas failure; a fatal *media* error is
+  // detected by the media element, which exists only after onPlayerInit, so
+  // by then this is set and stays set.
   let playerRefValue: PlayerRef | null = $state(null);
   export { playerRefValue as playerRef };
 
@@ -150,6 +164,76 @@
     }
   });
 
+  // `canvas-index` is coerced with `+value` (custom-element.js:258-259), so
+  // `canvas-index="abc"` arrives as NaN and `removeAttribute("canvas-index")`
+  // — what a framework binding does when its bound value becomes undefined —
+  // arrives as null. Both would slip past every ordering guard downstream, so
+  // they are replaced with 0 here and reported as host errors. Reported per
+  // distinct bad value, so a host that keeps writing garbage gets one error
+  // per value rather than one per effect run. A plain array, not a Set:
+  // nothing here is reactive, and `includes` dedupes on SameValueZero, so NaN
+  // and null each match themselves.
+  const canvasIndexValid = $derived(
+    Number.isInteger(canvasIndex) && canvasIndex >= 0,
+  );
+  const safeCanvasIndex = $derived(canvasIndexValid ? canvasIndex : 0);
+  const reportedCanvasIndexes: unknown[] = [];
+  // `$effect.pre`, not `$effect`: a bad value is replaced with 0, which for a
+  // player sitting on another canvas makes Root switch back — and that switch
+  // rewrites the attribute (handleCanvasChange), which writes the prop again.
+  // Root's effects run before user effects in the same flush, so a plain
+  // `$effect` would only ever see the repaired value and report nothing.
+  $effect.pre(() => {
+    const value = canvasIndex;
+    if (canvasIndexValid) return;
+    untrack(() => {
+      if (reportedCanvasIndexes.includes(value)) return;
+      reportedCanvasIndexes.push(value);
+      report(
+        new Error("`canvas-index` must be a non-negative integer; ignoring it"),
+        { fatal: false, source: "host" },
+      );
+    });
+  });
+  // An in-range check needs the canvas count, which only exists once the
+  // manifest has parsed. Root already ignores an out-of-range index on both
+  // paths — the first-load reconcile range-checks it and performCanvasSwitch
+  // returns early — so the player is never wrong; without this the host just
+  // got no diagnostic at all.
+  $effect(() => {
+    const value = canvasIndex;
+    const count = playerRefValue?.canvasCount ?? 0;
+    if (!canvasIndexValid || count === 0 || value < count) return;
+    untrack(() => {
+      if (reportedCanvasIndexes.includes(value)) return;
+      reportedCanvasIndexes.push(value);
+      report(
+        new Error(
+          `\`canvas-index\` ${value} is out of range for ${count} canvases; ignoring it`,
+        ),
+        { fatal: false, source: "host" },
+      );
+    });
+  });
+
+  // A connected element with no `manifest-url` renders an empty shadow root
+  // and says nothing. Deferred past the current task so the common host
+  // pattern — append, then set the attribute — is not reported; only an
+  // element that is still bare on the next task is.
+  let manifestUrlReported = false;
+  $effect(() => {
+    if (manifestUrl) return;
+    const timer = setTimeout(() => {
+      if (manifestUrlReported) return;
+      manifestUrlReported = true;
+      report(new Error("`manifest-url` is required; nothing will render"), {
+        fatal: false,
+        source: "host",
+      });
+    }, 0);
+    return () => clearTimeout(timer);
+  });
+
   const safeAnnotations = $derived<Annotation[] | "auto">(
     annotationsValid ? annotations : "auto",
   );
@@ -157,12 +241,22 @@
     preprocessValid ? preprocessManifest : undefined,
   );
 
+  // `initial-time` applies once per host, not once per inner component — see
+  // initialTimeAppliedHosts above. The flag is read once, at setup, before the
+  // effect below records this connection.
+  const initialTimeAlreadyApplied = initialTimeAppliedHosts.has($host());
+  $effect(() => {
+    if (initialTime != null) initialTimeAppliedHosts.add($host());
+  });
+
   // hls.js comes from the module-level default (set by the IIFE entry).
   const hlsDefault = getDefaultHlsConstructor();
 
   // exactOptionalPropertyTypes: only pass optional Root props when defined.
   const optionalRootProps = $derived({
-    ...(initialTime != null ? { initialTime } : {}),
+    ...(initialTime != null && !initialTimeAlreadyApplied
+      ? { initialTime }
+      : {}),
     ...(safePreprocess ? { preprocessManifest: safePreprocess } : {}),
     ...(hlsDefault ? { hlsConstructor: hlsDefault } : {}),
   });
@@ -203,7 +297,7 @@
   {#if manifestUrl}
     <IIIFPlayer.Root
       {manifestUrl}
-      {canvasIndex}
+      canvasIndex={safeCanvasIndex}
       {autoplay}
       annotations={safeAnnotations}
       {...optionalRootProps}

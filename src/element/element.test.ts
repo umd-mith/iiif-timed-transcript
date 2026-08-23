@@ -129,6 +129,10 @@ describe("<iiif-transcript-player> basics", () => {
   });
 
   test("renders nothing until manifest-url is set", async () => {
+    // The empty shadow root is not silent: a still-bare element is reported
+    // as a non-fatal host error on the next task — see
+    // element-validation.test.ts, which covers both that and the host that
+    // sets the attribute right after append.
     const el = await mountElement({});
     expect(shadow(el).querySelector(".iiif-player-root")).toBeNull();
   });
