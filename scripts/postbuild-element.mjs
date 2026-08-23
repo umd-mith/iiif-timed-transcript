@@ -52,6 +52,12 @@ const esmSource = readFileSync(esm, "utf8");
 // externalized-module lines, so filter on the `from "svelte/` clause rather
 // than on the leading keyword — a re-export line would otherwise be read as
 // inlined runtime source.
+//
+// This is line-based, so it only works while the ESM build stays
+// `minify: false` (vite.config.element.ts:75): a minified bundle collapses into a few
+// very long lines, where an import clause and inlined runtime source share
+// one line and the filter throws both away. If the ESM build is ever
+// minified, replace this with an executable check.
 const nonImportLines = esmSource
   .split("\n")
   .filter(

@@ -654,7 +654,7 @@ import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
 register(); // defines <iiif-transcript-player>; no side effects on import
 ```
 
-`hls.js` / `dashjs` resolve from your `node_modules` as optional peers, exactly as for the Svelte components. The ESM build is about 117 kB: it externalizes only `dependencies` and `peerDependencies`, so the library's own `src/lib` is inlined into it. An app that imports both `@umd-mith/svelte-iiif-transcript-player` and `@umd-mith/svelte-iiif-transcript-player/element` therefore ships two copies of the player code, with two separate `manifestCache` instances (a size and cache-duplication cost, not a correctness one). If you already have a Svelte build, use the components directly.
+Unlike the IIFE, this entry keeps `svelte` external, so the `svelte` peer dependency must be installed in your app — a bundler resolves it from your `node_modules` like any other import. `hls.js` / `dashjs` resolve the same way as optional peers, exactly as for the Svelte components. The ESM build is about 118 kB: it externalizes only `dependencies` and `peerDependencies`, so the library's own `src/lib` is inlined into it. An app that imports both `@umd-mith/svelte-iiif-transcript-player` and `@umd-mith/svelte-iiif-transcript-player/element` therefore ships two copies of the player code, with two separate `manifestCache` instances (a size and cache-duplication cost, not a correctness one). If you already have a Svelte build, use the components directly.
 
 ### Attributes and properties
 
@@ -686,7 +686,7 @@ All events bubble and are composed.
 
 Listen for **both** `playerrefavailable` and `playererror`, and branch on `detail.fatal`: a fatal error means the player will not become usable (replace the element to retry); a non-fatal one (a blocked autoplay, a transcript that failed to load, a misused property) needs no action. `playererror` may fire before or after `playerrefavailable`. Do not block on `playerRef` becoming non-nullish.
 
-**Reconnection.** Moving the element out of the document and back in later — a tab or accordion that detaches its panel, a framework re-parenting a node — rebuilds the player: `playerrefavailable` fires again, `playerRef` is briefly nullish in between, and the manifest is re-read (from the in-memory cache). `canvas-index` is honoured on the way back in. `initial-time` is applied only on the element's first connection, so a rebuild does not rewind playback. A synchronous move (remove and re-append in the same task) is not a rebuild and changes nothing.
+**Reconnection.** Moving the element out of the document and back in later — a tab or accordion that detaches its panel, a framework re-parenting a node — rebuilds the player: `playerrefavailable` fires again, `playerRef` is briefly nullish in between, and the manifest is re-read (from the in-memory cache — unless `preprocessManifest` is set, in which case the manifest is re-fetched over the network and the hook runs again). `canvas-index` is honoured on the way back in. `initial-time` is applied only on the element's first connection, so a rebuild does not rewind playback. A synchronous move (remove and re-append in the same task) is not a rebuild and changes nothing.
 
 ### Theming
 
@@ -694,7 +694,7 @@ The element renders in a shadow root, so page CSS does not reach it. Theme it wi
 
 `--iiif-player-font-family`, `--iiif-player-bg`, `--iiif-player-fg`, `--iiif-player-accent`, `--iiif-player-accent-fg`, `--iiif-player-control-bg`, `--iiif-player-control-fg`, `--iiif-player-transcript-bg`, `--iiif-player-segment-active-bg`, `--iiif-player-segment-highlight-bg`, `--iiif-player-segment-fg`, `--iiif-player-border`.
 
-`--iiif-player-accent-fg` is the text/icon color drawn over `--iiif-player-accent` (the play/skip buttons, the active canvas-nav button); `--iiif-player-segment-fg` is the text color drawn over the segment-active/highlight backgrounds. Both default to today's colors — remap them alongside their background counterpart when theming for dark mode, or active/highlighted transcript segments and accent-colored buttons render illegibly.
+`--iiif-player-accent-fg` is the text/icon color drawn over `--iiif-player-accent` (the play/skip buttons, the active canvas-nav button); `--iiif-player-segment-fg` is the text color drawn over the segment-active/highlight backgrounds. `--iiif-player-control-fg` is the text color of the control bar (the Time readout, the Speed select), drawn over `--iiif-player-control-bg`. All three are bg/fg pairs: remap each foreground alongside its background when theming for dark mode. Remapping only the page-level `--iiif-player-bg`/`--iiif-player-fg` leaves the control bar on its light default background with the page's foreground inherited onto it (white on `#f3f4f6`, about 1.07:1), and active/highlighted transcript segments and accent-colored buttons illegible the same way.
 
 ```css
 iiif-transcript-player {
