@@ -241,6 +241,47 @@ describe("<iiif-transcript-player> error contract", () => {
     expect(el.shadowRoot!.querySelectorAll("track")).toHaveLength(1);
   });
 
+  test("a fatal media error arrives after playerrefavailable and leaves playerRef set", async () => {
+    // The readiness contract is scoped: `playerRef` stays nullish only for a
+    // fatal manifest / first-canvas failure. Media failures are detected by
+    // the <video>/<audio> element, which exists only after onPlayerInit has
+    // already handed the ref over — so a fatal media error is a fatal error
+    // that arrives with `playerRef` set, and it stays set.
+    const url = "https://example.com/el-fatal-media.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_STUB_MEDIA, id: url } },
+    });
+    const el = document.createElement(DEFAULT_TAG) as HTMLElement & {
+      playerRef?: unknown;
+    };
+    el.setAttribute("manifest-url", url);
+    const seen = recordEvents(el);
+    document.body.appendChild(el);
+
+    await vi.waitFor(() => {
+      expect(
+        seen.some(
+          (s) =>
+            s.type === "playererror" &&
+            (s.detail as PlayerErrorDetail).source === "media",
+        ),
+      ).toBe(true);
+    });
+    const mediaAt = seen.findIndex(
+      (s) =>
+        s.type === "playererror" &&
+        (s.detail as PlayerErrorDetail).source === "media",
+    );
+    expect(seen[mediaAt]!.detail).toMatchObject({
+      fatal: true,
+      source: "media",
+    });
+    const refAt = seen.findIndex((s) => s.type === "playerrefavailable");
+    expect(refAt).toBeGreaterThanOrEqual(0);
+    expect(refAt).toBeLessThan(mediaAt);
+    expect(el.playerRef).toBeTruthy();
+  });
+
   test("disconnecting before the manifest settles fires neither event", async () => {
     const url = "https://example.com/el-disconnect.json";
     const pending = deferred<{ json: unknown }>();
