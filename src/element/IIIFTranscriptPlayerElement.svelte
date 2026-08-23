@@ -14,6 +14,7 @@
 />
 
 <script lang="ts">
+  import { untrack } from "svelte";
   import { IIIFPlayer } from "../lib/index.js";
   import type {
     Annotation,
@@ -67,7 +68,12 @@
     error: Error,
     info: { fatal: boolean; source: PlayerErrorDetail["source"] },
   ) {
-    const cb = errorCallback;
+    // Read untracked: report() runs inside host-validation $effects (below),
+    // and a tracked read of errorCallback here would make those effects
+    // depend on it — so a later `el.errorCallback = fn` (the documented
+    // <script src> pattern, set after customElements.whenDefined) would
+    // re-run a still-failing validator and re-emit the same host error.
+    const cb = untrack(() => errorCallback);
     if (typeof cb === "function") {
       try {
         cb(error, info);
@@ -101,8 +107,16 @@
   const errorCallbackValid = $derived(
     errorCallback === undefined || typeof errorCallback === "function",
   );
+  // Belt-and-braces alongside the untracked read in report(): each validator
+  // reports at most once ever, so a stray extra effect run (from an
+  // unrelated dependency, now or introduced later) cannot resurface a host
+  // error that was already delivered.
+  let annotationsReported = false;
+  let preprocessReported = false;
+  let errorCallbackReported = false;
   $effect(() => {
-    if (!annotationsValid) {
+    if (!annotationsValid && !annotationsReported) {
+      annotationsReported = true;
       report(
         new Error(
           '`annotations` must be an Annotation[] or "auto"; ignoring it',
@@ -115,7 +129,8 @@
     }
   });
   $effect(() => {
-    if (!preprocessValid) {
+    if (!preprocessValid && !preprocessReported) {
+      preprocessReported = true;
       report(
         new Error("`preprocessManifest` must be a function; ignoring it"),
         {
@@ -126,7 +141,8 @@
     }
   });
   $effect(() => {
-    if (!errorCallbackValid) {
+    if (!errorCallbackValid && !errorCallbackReported) {
+      errorCallbackReported = true;
       report(new Error("`errorCallback` must be a function; ignoring it"), {
         fatal: false,
         source: "host",
@@ -214,7 +230,11 @@
       rules ((0,1,1)) without !important;
     - focus indicators are NOT restyled (the nested `:focus:not(:focus-visible)`
       rules are (0,3,1) and win by design);
-    - custom properties are the public theming API; names are stable.
+    - custom properties are the public theming API; names are stable;
+      `--iiif-player-accent-fg` and `--iiif-player-segment-fg` exist
+      alongside their background counterparts so a host that remaps only the
+      backgrounds (e.g. for dark mode) does not lose text contrast — they
+      default to today's hard-coded colors.
   */
   :host {
     display: block;
@@ -248,7 +268,7 @@
 
   .iiif-tp :global([data-audio-button]) {
     background: var(--iiif-player-accent, #1d4ed8);
-    color: #ffffff;
+    color: var(--iiif-player-accent-fg, #ffffff);
     border: 0;
     border-radius: 4px;
     padding: 0.25rem 0.6rem;
@@ -259,6 +279,14 @@
   .iiif-tp :global([data-audio-control]) {
     font: inherit;
     color: inherit;
+  }
+
+  /* The UA's default <select> background is opaque and theme-independent,
+     so `color: inherit` above is not enough on its own — without an
+     explicit background a dark --iiif-player-control-fg reads as
+     light-on-light against it (or the reverse). */
+  .iiif-tp :global(select[data-audio-control]) {
+    background: var(--iiif-player-control-bg, #f3f4f6);
   }
 
   .iiif-tp :global(input[type="range"]) {
@@ -281,7 +309,7 @@
 
   .iiif-tp :global(nav.canvas-nav button[data-state="active"]) {
     background: var(--iiif-player-accent, #1d4ed8);
-    color: #ffffff;
+    color: var(--iiif-player-accent-fg, #ffffff);
   }
 
   .iiif-tp :global(.transcript-panel) {
@@ -308,10 +336,12 @@
 
   .iiif-tp :global([data-annotation-id][data-state="active"]) {
     background: var(--iiif-player-segment-active-bg, #fef3c7);
+    color: var(--iiif-player-segment-fg, #1a1a1a);
   }
 
   .iiif-tp :global([data-annotation-id][data-highlighted="true"]),
   .iiif-tp :global([data-annotation-id][data-current-match="true"]) {
     background: var(--iiif-player-segment-highlight-bg, #dbeafe);
+    color: var(--iiif-player-segment-fg, #1a1a1a);
   }
 </style>

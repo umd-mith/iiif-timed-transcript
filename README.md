@@ -672,7 +672,7 @@ register(); // defines <iiif-transcript-player>; no side effects on import
 | `errorCallback`             | `(error, { fatal, source }) => void` | Same payload as the `playererror` event.                                          |
 | `playerRef`                 | `PlayerRef` (read-only)              | Nullish until `playerrefavailable`; stays nullish after a fatal `playererror`.    |
 
-**Attributes vs properties — three rules.** Use attributes for initial configuration. For a `<script src>` host, set properties only after the element is defined — inside `customElements.whenDefined("iiif-transcript-player").then(…)`; a property written onto an element _before_ the defining script has run is lost for that key, and the attribute wins. After the element exists, whichever of attribute and property was set last wins.
+**Attributes vs properties — three rules.** Use attributes for initial configuration. For a `<script src>` host, set properties only after the element is defined — inside `customElements.whenDefined("iiif-transcript-player").then(…)`; a property written onto an element _before_ the defining script has run is lost for that key, and the attribute wins. After the element exists, an attribute write and a property write to the same key resolve deterministically only when they are separated by a microtask (`await Promise.resolve()`, or simply the next task/tick) — the later of the two then wins, as expected. Two writes issued in the _same_ task (e.g. `el.setAttribute("canvas-index", "1"); el.canvasIndex = 0;` back to back) do not resolve in call order: the property write flushes synchronously through the generated accessor, while the attribute write flushes on a later microtask through `attributeChangedCallback`, so the attribute can still win even though it was written first. Prefer one or the other per key after creation, or add the microtask boundary between them.
 
 ### Events
 
@@ -690,7 +690,9 @@ Listen for **both** `playerrefavailable` and `playererror`, and branch on `detai
 
 The element renders in a shadow root, so page CSS does not reach it. Theme it with custom properties set on the element or any ancestor:
 
-`--iiif-player-font-family`, `--iiif-player-bg`, `--iiif-player-fg`, `--iiif-player-accent`, `--iiif-player-control-bg`, `--iiif-player-control-fg`, `--iiif-player-transcript-bg`, `--iiif-player-segment-active-bg`, `--iiif-player-segment-highlight-bg`, `--iiif-player-border`.
+`--iiif-player-font-family`, `--iiif-player-bg`, `--iiif-player-fg`, `--iiif-player-accent`, `--iiif-player-accent-fg`, `--iiif-player-control-bg`, `--iiif-player-control-fg`, `--iiif-player-transcript-bg`, `--iiif-player-segment-active-bg`, `--iiif-player-segment-highlight-bg`, `--iiif-player-segment-fg`, `--iiif-player-border`.
+
+`--iiif-player-accent-fg` is the text/icon color drawn over `--iiif-player-accent` (the play/skip buttons, the active canvas-nav button); `--iiif-player-segment-fg` is the text color drawn over the segment-active/highlight backgrounds. Both default to today's colors — remap them alongside their background counterpart when theming for dark mode, or active/highlighted transcript segments and accent-colored buttons render illegibly.
 
 ```css
 iiif-transcript-player {

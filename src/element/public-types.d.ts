@@ -4,6 +4,15 @@ import type {
   PlayerRef,
 } from "@umd-mith/svelte-iiif-transcript-player";
 
+// Re-exported so `import type { Annotation } from
+// "@umd-mith/svelte-iiif-transcript-player/element"` — which compiles fine
+// against src/element/index.ts (see its own re-export of these three) —
+// also compiles against the *published* types. Without this, the shipped
+// .d.ts (this file, copied verbatim to dist/element/index.d.ts) only
+// imports these names for local use below and never makes them available
+// to importers.
+export type { Annotation, CanvasInfo, PlayerRef };
+
 export type ElementErrorSource =
   | "manifest"
   | "canvas"

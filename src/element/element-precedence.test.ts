@@ -92,7 +92,7 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     expect(await initialIndex(fresh)).toBe(1);
   });
 
-  test("case 3 — after creation, last write wins (attribute then property, property then attribute)", async () => {
+  test("case 3 — after creation, last write wins when the two writes are separated by a microtask (attribute then property, property then attribute)", async () => {
     const url = "https://example.com/prec-case3.json";
     mockFetchRoutes({ [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } } });
     const el = document.createElement(DEFAULT_TAG) as El;
@@ -101,6 +101,14 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     await initialIndex(el);
 
     el.setAttribute("canvas-index", "1");
+    // This await is load-bearing, not incidental spacing: a property write
+    // flushes synchronously through the generated accessor, while an
+    // attribute write only reaches props via attributeChangedCallback's
+    // Object.assign, which flushes on a later microtask. Two writes issued
+    // in the *same* task do not resolve in call order — see the README's
+    // "Attributes vs properties" section — so this test separates them with
+    // a microtask to pin the documented (and only reliable) "last write
+    // wins" behavior.
     await Promise.resolve();
     el.canvasIndex = 0;
     await new Promise((r) => setTimeout(r, 50));

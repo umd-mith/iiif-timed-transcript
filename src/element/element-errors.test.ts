@@ -137,6 +137,48 @@ describe("<iiif-transcript-player> error contract", () => {
     ]);
   });
 
+  test("assigning errorCallback after a reported host error does not re-fire it", async () => {
+    const url = "https://example.com/el-host-misuse-3.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+    });
+    const el = document.createElement(DEFAULT_TAG) as HTMLElement & {
+      errorCallback?: unknown;
+    };
+    // `annotations` misuse is reported once, in the wrapper's first flush —
+    // this is the documented <script src> host pattern (attributes in
+    // markup, properties assigned after the element is defined).
+    el.setAttribute("manifest-url", url);
+    el.setAttribute("annotations", "garbage");
+    const seen = recordEvents(el);
+    document.body.appendChild(el);
+
+    await vi.waitFor(() => {
+      expect(
+        seen.filter(
+          (s) =>
+            s.type === "playererror" &&
+            (s.detail as PlayerErrorDetail).source === "host",
+        ),
+      ).toHaveLength(1);
+    });
+
+    // report() must read errorCallback untracked so this later assignment
+    // does not re-run the (still-failing) annotations validator effect.
+    const errorCallback = vi.fn();
+    el.errorCallback = errorCallback;
+    await new Promise((r) => setTimeout(r, 50));
+
+    const hostErrors = seen.filter(
+      (s) =>
+        s.type === "playererror" &&
+        (s.detail as PlayerErrorDetail).source === "host",
+    );
+    expect(hostErrors).toHaveLength(1);
+    // The callback assigned after the fact never receives the stale error.
+    expect(errorCallback).not.toHaveBeenCalled();
+  });
+
   test("a 404 VTT is a non-fatal transcript playererror strictly after playerrefavailable; playback works", async () => {
     const url = "https://example.com/el-vtt-404.json";
     mockFetchRoutes({
