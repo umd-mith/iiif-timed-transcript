@@ -119,6 +119,9 @@ type Json = Record<string, unknown>;
 type StubSources = { audio?: string; video?: string };
 
 function stubBody(body: unknown, sources: StubSources): unknown {
+  // A painting annotation's `body` may itself be an array (IIIF allows it),
+  // not only a single resource or a Choice.
+  if (Array.isArray(body)) return body.map((b) => stubBody(b, sources));
   if (!body || typeof body !== "object") return body;
   const b = body as Json;
   if (b["type"] === "Choice" && Array.isArray(b["items"])) {

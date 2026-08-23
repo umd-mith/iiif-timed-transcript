@@ -39,8 +39,8 @@ const MANIFEST_WITHOUT_CHAPTERS_STUB = withStubMedia(MANIFEST_WITHOUT_CHAPTERS);
 // `optionalRootProps` would otherwise be silent).
 type El = HTMLElement & { playerRef?: PlayerRef | null };
 
-// The fixture's <audio src> is a fake domain, so it never really reaches
-// HAVE_METADATA. Real media elements report a spec-defined "default
+// The fixture's <audio src> is a `data:` stub (withStubMedia, above), so it
+// never really reaches HAVE_METADATA. Real media elements report a spec-defined "default
 // playback start position" from `currentTime` while readyState is
 // HAVE_NOTHING, so overriding `duration` (an own-property shadow of the
 // native getter) and dispatching a real `durationchange` event reproduces

@@ -214,6 +214,13 @@ describe("<iiif-transcript-player> error contract", () => {
     // can never play it, so a media-tier playererror may also arrive. That is
     // not what this test is about, so every assertion below is scoped to the
     // transcript tier rather than swallowing the media `error` event.
+    //
+    // The rendered <track src="https://example.com/captions-fr.vtt"> comes
+    // from the shared lib fixture and is the one URL in the element tests the
+    // browser still requests for real: <track> fetches natively, outside the
+    // mocked `fetch`. Harmless either way — no assertion here depends on its
+    // outcome (only that the element exists), and the transcript tier reads
+    // the same URL through the mocked fetch, which 404s deterministically.
     await vi.waitFor(() => {
       expect(
         seen.some(

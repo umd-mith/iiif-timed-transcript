@@ -260,8 +260,19 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
   });
 
   test("the module-level hls.js default reaches Root (no dynamic import)", async () => {
+    // This Chromium build under Playwright reports canPlayType("maybe") for
+    // HLS mime types, so the strategy could resolve to "native" and the
+    // assertion below would never run. Force native support off to pin the
+    // hls-js path this test is about.
+    const canPlayTypeSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "canPlayType")
+      .mockReturnValue("");
     const url = "https://example.com/el-hls-default.json";
-    mockFetchRoutes({ [url]: { json: { ...MANIFEST_WITH_HLS, id: url } } });
+    // The fixture's body id is https://example.com/stream/master.m3u8; stub
+    // it so nothing here reaches the network. `format` survives the stub, so
+    // isHlsUrl still says HLS.
+    const hlsStub = withStubMedia(MANIFEST_WITH_HLS);
+    mockFetchRoutes({ [url]: { json: { ...hlsStub, id: url } } });
     const constructed = vi.fn();
     const FakeHls = Object.assign(
       function () {
@@ -281,23 +292,22 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     ) as unknown as HlsConstructor;
     setDefaultHlsConstructor(FakeHls);
 
-    const el = (await mountElement({ "manifest-url": url })) as El;
-    await untilShadow(el, "video");
-    // playerrefavailable fires in the same microtask batch as the video's
-    // first render, so by the time `untilShadow` above resolves the event has
-    // already come and gone — read the ref off the element instead of
-    // listening for an event that cannot arrive.
-    expect(el.playerRef).not.toBeNull();
-    expect(el.playerRef!.mediaType).toBe("video");
-    // In Chromium the strategy may resolve to "native" (canPlayType for HLS).
-    // When it is hls-js, the default constructor must be the one used.
-    const video = shadow(el).querySelector("video")!;
-    if (!video.getAttribute("src")) {
+    try {
+      const el = (await mountElement({ "manifest-url": url })) as El;
+      await untilShadow(el, "video");
+      // playerrefavailable fires in the same microtask batch as the video's
+      // first render, so by the time `untilShadow` above resolves the event
+      // has already come and gone — read the ref off the element instead of
+      // listening for an event that cannot arrive.
+      expect(el.playerRef).not.toBeNull();
+      expect(el.playerRef!.mediaType).toBe("video");
+      // With native HLS forced off the strategy is hls-js, so the
+      // module-level default constructor must be the one used.
       await vi.waitFor(() => {
         expect(constructed).toHaveBeenCalled();
       });
-    } else {
-      expect(constructed).not.toHaveBeenCalled();
+    } finally {
+      canPlayTypeSpy.mockRestore();
     }
   });
 });
