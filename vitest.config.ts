@@ -29,6 +29,11 @@ export default defineConfig({
         // Element suites: custom-element compile for src/element/*.svelte,
         // CSS injected (not extracted) so shadow-root styling is testable.
         plugins: [elementSveltePlugin()],
+        // The built-artifact smoke tests skip when dist/element is missing.
+        // In CI that must be a failure instead (see element-iife-smoke.test.ts)
+        // — `process.env` is not available in the browser, so the flag is
+        // baked in here.
+        define: { __CI__: JSON.stringify(Boolean(process.env["CI"])) },
         test: {
           name: "element",
           include: ["src/element/**/*.test.ts"],

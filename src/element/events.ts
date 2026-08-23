@@ -44,3 +44,14 @@ export type ErrorCallback = (
   error: Error,
   info: { fatal: boolean; source: ElementErrorSource },
 ) => void;
+
+/**
+ * The element's own events, for a typed `addEventListener`. Mirrored in
+ * public-types.d.ts, and exported from index.ts so the two surfaces stay
+ * pinned by the postbuild probe.
+ */
+export interface IIIFTranscriptPlayerElementEventMap extends HTMLElementEventMap {
+  playerrefavailable: CustomEvent<PlayerRefAvailableDetail>;
+  playererror: CustomEvent<PlayerErrorDetail>;
+  canvaschange: CustomEvent<CanvasChangeDetail>;
+}

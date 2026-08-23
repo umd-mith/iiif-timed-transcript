@@ -57,7 +57,7 @@ export declare class IIIFTranscriptPlayerElement extends HTMLElement {
   /** Property only. Same payload as the `playererror` event. */
   errorCallback: ErrorCallback | undefined;
   /** Read-only. Nullish until `playerrefavailable`; stays nullish after a fatal `playererror`. */
-  readonly playerRef: PlayerRef | null | undefined;
+  readonly playerRef: PlayerRef | null;
   addEventListener<K extends keyof IIIFTranscriptPlayerElementEventMap>(
     type: K,
     listener: (

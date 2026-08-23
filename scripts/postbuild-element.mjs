@@ -12,9 +12,12 @@ import {
   rmSync,
 } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 
-const root = resolve(new URL("..", import.meta.url).pathname);
+// fileURLToPath, not `.pathname`: the latter keeps percent-encoding (a repo
+// checked out under a path with a space) and yields "/C:/…" on Windows.
+const root = fileURLToPath(new URL("..", import.meta.url));
 const esm = resolve(root, "dist/element/index.js");
 const iife = resolve(root, "dist/element/iiif-transcript-player.iife.js");
 const types = resolve(root, "src/element/public-types.d.ts");
@@ -103,9 +106,11 @@ import type {
   PlayerRefAvailableDetail,
   CanvasChangeDetail,
   ErrorCallback,
+  IIIFTranscriptPlayerElementEventMap,
 } from "./index.js";
 
 declare const annotation: Annotation;
+declare const eventMap: IIIFTranscriptPlayerElementEventMap;
 declare const canvas: CanvasInfo;
 declare const playerRef: PlayerRef;
 declare const source: ElementErrorSource;
@@ -125,6 +130,7 @@ void [
   refAvailable,
   canvasChange,
   errorCallback,
+  eventMap,
 ];
 `;
 writeFileSync(probe, probeSource);

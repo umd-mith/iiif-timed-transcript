@@ -1,23 +1,21 @@
 import { describe, test, expect, afterEach, vi } from "vitest";
+import { requireBuiltArtifact } from "./built-artifacts";
 
-// The grep-based checks in scripts/postbuild-element.mjs verify the IIFE's
-// *text* (no leaked ESM syntax, dashjs still referenced) but never execute
-// it — the distribution mode most hosts actually use (a bare <script src>)
-// had no executable coverage. This test loads the real built artifact as a
-// classic script, exactly as examples/element/*.html do, and asserts it
-// registers the element and produces a working shadow root.
-//
-// `import.meta.glob` only matches files present on disk at request time, so
-// when dist/element hasn't been built yet (a fresh checkout, before
-// `pnpm build`) the glob is empty and the whole suite is skipped rather than
-// failing — this test is a build-artifact check, not a build step.
+// scripts/postbuild-element.mjs checks the IIFE's *text* (size budget,
+// dashjs still referenced) but never executes it — the distribution mode
+// most hosts actually use (a bare <script src>) had no executable coverage.
+// This test loads the real built artifact as a classic script, exactly as
+// examples/element/*.html do, and asserts it registers the element and
+// produces a working shadow root.
 const iifeModules = import.meta.glob(
   "../../dist/element/iiif-transcript-player.iife.js",
   { eager: true, query: "?url", import: "default" },
 ) as Record<string, string>;
 const iifeUrl = Object.values(iifeModules)[0];
 
-describe.skipIf(!iifeUrl)("<iiif-transcript-player> built IIFE", () => {
+const skip = requireBuiltArtifact(iifeUrl, "IIFE bundle");
+
+describe.skipIf(skip)("<iiif-transcript-player> built IIFE", () => {
   afterEach(() => {
     document
       .querySelectorAll("iiif-transcript-player")

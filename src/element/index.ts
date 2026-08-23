@@ -9,5 +9,6 @@ export type {
   PlayerRefAvailableDetail,
   CanvasChangeDetail,
   ErrorCallback,
+  IIIFTranscriptPlayerElementEventMap,
 } from "./events.js";
 export type { PlayerRef, CanvasInfo, Annotation } from "../lib/index.js";
