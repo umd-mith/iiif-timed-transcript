@@ -256,7 +256,9 @@ function isExternalResource(
 function resolveChoice(
   choice: ChoiceBodyData,
 ): ContentResourceData | undefined {
-  for (const item of choice.items) {
+  // `?? []`: getPrimaryResource is public and may be handed unvalidated
+  // input, where `items` can be missing.
+  for (const item of choice.items ?? []) {
     if (
       isExternalResource(item as AnnotationBodyData) &&
       (item.type === "Sound" || item.type === "Video")

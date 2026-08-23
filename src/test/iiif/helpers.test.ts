@@ -491,6 +491,14 @@ describe("getPrimaryResource Choice bodies", () => {
     expect(isAudioCanvas(canvas)).toBe(true);
   });
 
+  // getPrimaryResource is public and may be handed unvalidated input, where
+  // a Choice can arrive without `items`.
+  it("returns undefined for a Choice with no items array instead of throwing", () => {
+    const canvas = canvasWithBody({ type: "Choice" });
+    expect(() => getPrimaryResource(canvas)).not.toThrow();
+    expect(getPrimaryResource(canvas)).toBeUndefined();
+  });
+
   it("resolves a Choice with no Sound/Video to undefined (no typed fallback)", () => {
     const canvas = canvasWithBody({ type: "Choice", items: [text, image] });
     expect(getPrimaryResource(canvas)).toBeUndefined();

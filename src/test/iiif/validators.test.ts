@@ -105,6 +105,52 @@ describe("IIIF Annotation Body Schemas", () => {
       }
     });
 
+    // Avalon (av.lib.umd.edu) serializes IIIF Auth API 1.0 services in 2.x
+    // style — `@type`/`@id`, no `type` — on every rendition of a restricted
+    // item. We never read `service` (no auth support), so rejecting the
+    // service must not cascade into rejecting the body, the annotation and
+    // the whole manifest.
+    it("should accept an Auth API 1.0 service serialized with @type/@id", () => {
+      const restrictedRendition = {
+        id: "https://av.lib.umd.edu/master_files/6t053g68m/auto.m3u8",
+        type: "Video",
+        format: "application/x-mpegURL",
+        duration: 2507,
+        service: [
+          {
+            context: "http://iiif.io/api/auth/1/context.json",
+            "@id": "https://av.lib.umd.edu/users/sign_in?login_popup=1",
+            "@type": "AuthCookieService1",
+            profile: "http://iiif.io/api/auth/1/login",
+            label: "Login Required",
+            service: [
+              {
+                "@id":
+                  "https://av.lib.umd.edu/master_files/6t053g68m/auto.m3u8",
+                "@type": "AuthProbeService1",
+                profile: "http://iiif.io/api/auth/1/probe",
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = ExternalResourceSchema.safeParse(restrictedRendition);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.service).toHaveLength(1);
+      }
+    });
+
+    it("should accept a service entry with neither type nor @type rather than kill the manifest", () => {
+      const result = ExternalResourceSchema.safeParse({
+        id: "https://example.org/audio.mp3",
+        type: "Sound",
+        service: [{ profile: "http://example.org/some-profile" }],
+      });
+      expect(result.success).toBe(true);
+    });
+
     it("should validate resource with multiple services", () => {
       const imageWithMultipleServices = {
         id: "https://example.org/image.jpg",
