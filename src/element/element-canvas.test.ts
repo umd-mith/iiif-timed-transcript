@@ -214,21 +214,16 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     ) as unknown as HlsConstructor;
     setDefaultHlsConstructor(FakeHls);
 
-    const el = await mountElement({ "manifest-url": url });
+    const el = (await mountElement({ "manifest-url": url })) as El;
     await untilShadow(el, "video");
+    // playerrefavailable fires in the same microtask batch as the video's
+    // first render, so by the time `untilShadow` above resolves the event has
+    // already come and gone — read the ref off the element instead of
+    // listening for an event that cannot arrive.
+    expect(el.playerRef).not.toBeNull();
+    expect(el.playerRef!.mediaType).toBe("video");
     // In Chromium the strategy may resolve to "native" (canPlayType for HLS).
     // When it is hls-js, the default constructor must be the one used.
-    // playerrefavailable fires in the same microtask batch as the video's
-    // first render, so by the time `untilShadow` above resolves (real-timer
-    // polling) the event has already fired; bound the wait instead of
-    // hanging on an event that has already come and gone.
-    const ref = await Promise.race<PlayerRefAvailableDetail | null>([
-      waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable").then(
-        (e) => e.detail,
-      ),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 200)),
-    ]);
-    void ref;
     const video = shadow(el).querySelector("video")!;
     if (!video.getAttribute("src")) {
       await vi.waitFor(() => {
