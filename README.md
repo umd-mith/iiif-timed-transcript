@@ -103,19 +103,20 @@ pnpm run build
 
 Top-level context provider. Fetches the IIIF manifest, parses canvases, and coordinates all child components via Svelte context.
 
-| Prop              | Type                                                                                                                        | Default  | Description                                                                                                                                                                                                                                                     |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `manifestUrl`     | `string`                                                                                                                    | required | IIIF Presentation 3.0 manifest URL                                                                                                                                                                                                                              |
-| `canvasIndex`     | `number`                                                                                                                    | `0`      | Canvas to display                                                                                                                                                                                                                                               |
-| `annotations`     | `Annotation[] \| "auto"`                                                                                                    | `[]`     | Transcript annotations passed through to context. `"auto"` builds them from the manifest: embedded `TextualBody` annotations first, else the canvas's external WebVTT `supplementing` track (fetched on demand). See [precedence](#annotations-auto-precedence) |
-| `initialTime`     | `number`                                                                                                                    | —        | Start playback at this time (seconds)                                                                                                                                                                                                                           |
-| `autoplay`        | `boolean`                                                                                                                   | `false`  | Auto-play media on load                                                                                                                                                                                                                                         |
-| `hlsConstructor`  | `HlsConstructor`                                                                                                            | —        | Custom `hls.js` constructor (bypasses dynamic import)                                                                                                                                                                                                           |
-| `dashConstructor` | `DashConstructor`                                                                                                           | —        | Custom `dash.js` `MediaPlayer` factory (bypasses dynamic import)                                                                                                                                                                                                |
-| `onCanvasChange`  | `(index: number, canvas: CanvasInfo) => void`                                                                               | —        | Calls when canvas switches                                                                                                                                                                                                                                      |
-| `onPlayerInit`    | `(player: PlayerRef) => void`                                                                                               | —        | Runs once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root)                                                                                                                                                 |
-| `onError`         | `(error: Error, info: { fatal: boolean; source: "manifest" \| "canvas" \| "media" \| "playback" \| "transcript" }) => void` | —        | Called for every reported error. `fatal: true` means the player will not become usable; `fatal: false` (a rejected `play()`, a transcript that failed to load) needs no action                                                                                  |
-| `class`           | `string`                                                                                                                    | `""`     | CSS class for root container                                                                                                                                                                                                                                    |
+| Prop                 | Type                                                                                                                        | Default  | Description                                                                                                                                                                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manifestUrl`        | `string`                                                                                                                    | required | IIIF Presentation 3.0 manifest URL                                                                                                                                                                                                                              |
+| `canvasIndex`        | `number`                                                                                                                    | `0`      | Canvas to display                                                                                                                                                                                                                                               |
+| `annotations`        | `Annotation[] \| "auto"`                                                                                                    | `[]`     | Transcript annotations passed through to context. `"auto"` builds them from the manifest: embedded `TextualBody` annotations first, else the canvas's external WebVTT `supplementing` track (fetched on demand). See [precedence](#annotations-auto-precedence) |
+| `initialTime`        | `number`                                                                                                                    | —        | Start playback at this time (seconds)                                                                                                                                                                                                                           |
+| `autoplay`           | `boolean`                                                                                                                   | `false`  | Auto-play media on load                                                                                                                                                                                                                                         |
+| `hlsConstructor`     | `HlsConstructor`                                                                                                            | —        | Custom `hls.js` constructor (bypasses dynamic import)                                                                                                                                                                                                           |
+| `dashConstructor`    | `DashConstructor`                                                                                                           | —        | Custom `dash.js` `MediaPlayer` factory (bypasses dynamic import)                                                                                                                                                                                                |
+| `onCanvasChange`     | `(index: number, canvas: CanvasInfo) => void`                                                                               | —        | Calls when canvas switches                                                                                                                                                                                                                                      |
+| `onPlayerInit`       | `(player: PlayerRef) => void`                                                                                               | —        | Runs once after manifest loads. See [Accessing player state outside Root](#accessing-player-state-outside-root)                                                                                                                                                 |
+| `onError`            | `(error: Error, info: { fatal: boolean; source: "manifest" \| "canvas" \| "media" \| "playback" \| "transcript" }) => void` | —        | Called for every reported error. `fatal: true` means the player will not become usable; `fatal: false` (a rejected `play()`, a transcript that failed to load) needs no action                                                                                  |
+| `preprocessManifest` | `(raw: unknown) => unknown`                                                                                                 | —        | Runs on the parsed manifest JSON before validation; its output is also what chapters are read from (`raw`). When set, the module-level manifest cache is bypassed                                                                                               |
+| `class`              | `string`                                                                                                                    | `""`     | CSS class for root container                                                                                                                                                                                                                                    |
 
 <a id="annotations-auto-precedence"></a>
 
@@ -377,6 +378,8 @@ The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mi
 
 You usually do not need to parse VTT yourself: `<IIIFPlayer.Root annotations="auto">` builds transcript annotations from the manifest (embedded `TextualBody` first, else the canvas's external WebVTT `supplementing` track). The building blocks are exported for custom pipelines: `selectTranscriptTrack`, `loadVTTTranscript`, `buildAnnotationsFromVTTCues`, `vttCueToPlainText` (cue text is reduced to plain text — tags stripped, entities decoded — via `media-captions`' `tokenizeVTTCue`). For the `"auto"` path, see the [live demo](https://umd-mith.github.io/svelte-iiif-transcript-player/auto-transcript-demo) ([source](./docs/src/components/AutoTranscriptDemo.svelte)); for a hand-rolled example, see [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte).
 
+`getPrimaryResource` now resolves `Choice` bodies (valid Presentation 3, and how Avalon wraps HLS renditions): a `Choice` resolves to its first `Sound`/`Video` member; a body array is walked in order, so `[Image, Choice{Video}]` → Image but `[Choice{Video}, Image]` → Video. A missing `hls.js`/`dashjs` for a stream that needs it is now a surfaced player error (`state.error`, `onError` `source: "media"`) in addition to the console warning.
+
 ### Using `annotation.metadata`
 
 The `metadata` field (`Record<string, unknown>`) holds consumer-specific data. Library components ignore metadata; access it in custom segment snippets.
@@ -623,6 +626,90 @@ interface SegmentSnippetProps {
 ```
 
 The package entry point exports all types.
+
+## Use without Svelte
+
+The package also ships a custom element, `<iiif-transcript-player>`, for pages with no Svelte (or any JS) build step — a plain HTML page, a CMS theme, a Rails view.
+
+**What fills the transcript panel:** embedded `TextualBody` supplementing annotations on the canvas first; otherwise an external WebVTT `supplementing` track (fetched on demand). A canvas with neither — for example one whose only supplement is a PDF — renders playback (and canvas navigation for multi-canvas manifests) and no transcript panel. A scripted page can pass its own annotations through the `annotations` property.
+
+### Script tag (IIFE)
+
+Until the package is on public npm, vendor the built file (`dist/element/iiif-transcript-player.iife.js` from a build, or from the published tarball) into your static assets; once published it is servable from a CDN at a pinned version.
+
+```html
+<iiif-transcript-player
+  manifest-url="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json"
+  style="min-height: 24rem"
+></iiif-transcript-player>
+<script src="/assets/iiif-transcript-player.iife.js"></script>
+```
+
+The IIFE bundles Svelte and hls.js (HLS plays without any other script). It does **not** support DASH (`dashjs` is not bundled; a DASH manifest surfaces a player error). Authenticated/restricted media is not supported. It measures about 744 kB minified (about 232 kB gzipped), against a build-enforced budget of 1 MB.
+
+### Module (ESM, with a bundler)
+
+```js
+import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+register(); // defines <iiif-transcript-player>; no side effects on import
+```
+
+Unlike the IIFE, this entry keeps `svelte` external, so the `svelte` peer dependency must be installed in your app — a bundler resolves it from your `node_modules` like any other import. `hls.js` / `dashjs` resolve the same way as optional peers, exactly as for the Svelte components. The ESM build is about 118 kB: it externalizes only `dependencies` and `peerDependencies`, so the library's own `src/lib` is inlined into it. An app that imports both `@umd-mith/svelte-iiif-transcript-player` and `@umd-mith/svelte-iiif-transcript-player/element` therefore ships two copies of the player code, with two separate `manifestCache` instances (a size and cache-duplication cost, not a correctness one). If you already have a Svelte build, use the components directly.
+
+### Attributes and properties
+
+| Attribute      | Property      | Type      | Default | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------- | ------------- | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manifest-url` | `manifestUrl` | `string`  | —       | Required. **Set once, before the element is connected.** To load another manifest, replace the element. A later write does not reload, but it is not inert either: it reaches the player and changes what the next internal retry fetches and evicts from the manifest cache. Connecting without it is a non-fatal host `playererror`. Clearing it (removing the attribute, or setting it to `""`) unmounts the player and resets `playerRef` to `null`.                                                                                    |
+| `canvas-index` | `canvasIndex` | `number`  | `0`     | Reactive and reflected: every canvas switch — yours or the player's own navigation — writes the live index back to the attribute, and both channels keep working afterwards. Validated: a value that is not a non-negative integer (`"abc"`) falls back to `0` and the attribute is repaired to `0`, and an index past the last canvas is ignored; either way you get a non-fatal host `playererror`, once per bad value per connection. **Removing** the attribute is not an error — it means "back to the default", canvas `0`, silently. |
+| `initial-time` | `initialTime` | `number`  | —       | Seconds. Applies to the first canvas only, and only on the element's first connection (see the reconnection note under Events). Validated: a value that is not a non-negative finite number is ignored with a non-fatal host `playererror`, and does not consume the once-per-element application.                                                                                                                                                                                                                                          |
+| `autoplay`     | `autoplay`    | `boolean` | `false` | Browsers may block it; a blocked autoplay is a non-fatal `playererror` (`source: "playback"`).                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+
+| Property (not an attribute) | Type                                         | Notes                                                                                                                                                                                                                               |
+| --------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `annotations`               | `Annotation[] \| "auto"`                     | Default `"auto"` (see above). Assign a prebuilt array to override.                                                                                                                                                                  |
+| `preprocessManifest`        | `(raw: unknown) => unknown`                  | Runs on the manifest JSON before validation. For manifests that need normalizing.                                                                                                                                                   |
+| `errorCallback`             | `(error, { fatal, source }) => void`         | Same payload as the `playererror` event.                                                                                                                                                                                            |
+| `playerRef`                 | `PlayerRef \| null \| undefined` (read-only) | Nullish until `playerrefavailable`. It stays nullish if the fatal error is a manifest or first-canvas failure; a fatal _media_ error can arrive after `playerrefavailable`, in which case `playerRef` is already set and stays set. |
+
+**Attributes vs properties — three rules.** Use attributes for initial configuration. For a `<script src>` host, set properties only after the element is defined — inside `customElements.whenDefined("iiif-transcript-player").then(…)`; a property written onto an element _before_ the defining script has run is lost for that key, and the attribute wins. After the element is upgraded, prefer one channel per key — attributes _or_ properties, not both — and never write the same key twice in one task. An attribute write goes through `attributeChangedCallback` into the component's props; a property write goes through the generated accessor and sets a local override inside the component, leaving those props holding the previous value. For `canvas-index` the element repairs that: every canvas switch writes the attribute explicitly, which refreshes the component's props, so attribute, props and property all hold the live index and a later write on either channel still lands. The repair rides on the switch, so a property write that never causes one — an index past the last canvas, or any write made before the manifest resolves — leaves the component's props holding the previous value; the host error tells you when that happened. What no element can repair is ordering — two writes issued in the _same_ task can resolve either way depending on internal flush state, so the same two lines are not guaranteed to give the same result twice. That is a Svelte custom-element property, not a rule we chose.
+
+### Events
+
+All events bubble and are composed.
+
+| Event                | `detail`                                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `playerrefavailable` | `{ playerRef }` — fired once per connection, after the manifest loads and the first canvas parses (not "playable")   |
+| `playererror`        | `{ error, fatal, source }` — `source` is `"manifest" \| "canvas" \| "media" \| "playback" \| "transcript" \| "host"` |
+| `canvaschange`       | `{ index, canvas }` — from the attribute/property or from the player's own canvas navigation                         |
+
+Listen for **both** `playerrefavailable` and `playererror`, and branch on `detail.fatal`: a fatal error means the player will not become usable (replace the element to retry); a non-fatal one (a blocked autoplay, a transcript that failed to load, a misused property) needs no action. `playererror` may fire before or after `playerrefavailable`. Do not block on `playerRef` becoming non-nullish.
+
+**Reconnection.** Moving the element out of the document and back in later — a tab or accordion that detaches its panel, a framework re-parenting a node — rebuilds the player: `playerrefavailable` fires again, `playerRef` is briefly nullish in between, and the manifest is re-read (from the in-memory cache — unless `preprocessManifest` is set, in which case the manifest is re-fetched over the network and the hook runs again). `canvas-index` is honoured on the way back in. `initial-time` is applied only on the element's first connection, so a rebuild does not rewind playback. A synchronous move (remove and re-append in the same task) is not a rebuild and changes nothing.
+
+### Theming
+
+The element renders in a shadow root, so page CSS does not reach it. Theme it with custom properties set on the element or any ancestor:
+
+`--iiif-player-font-family`, `--iiif-player-bg`, `--iiif-player-fg`, `--iiif-player-accent`, `--iiif-player-accent-fg`, `--iiif-player-control-bg`, `--iiif-player-control-fg`, `--iiif-player-transcript-bg`, `--iiif-player-segment-active-bg`, `--iiif-player-segment-highlight-bg`, `--iiif-player-segment-fg`, `--iiif-player-border`.
+
+`--iiif-player-accent-fg` is the text/icon color drawn over `--iiif-player-accent` (the play/skip buttons, the active canvas-nav button); `--iiif-player-segment-fg` is the text color drawn over the segment-active/highlight backgrounds. `--iiif-player-control-fg` is the text color of the control bar (the Time readout, the Speed select), drawn over `--iiif-player-control-bg`. All three are bg/fg pairs: remap each foreground alongside its background when theming for dark mode. Remapping only the page-level `--iiif-player-bg`/`--iiif-player-fg` leaves the control bar on its light default background with the page's foreground inherited onto it (white on `#f3f4f6`, about 1.07:1), and active/highlighted transcript segments and accent-colored buttons illegible the same way.
+
+```css
+iiif-transcript-player {
+  --iiif-player-accent: #7c3aed;
+  min-height: 24rem;
+}
+```
+
+Reserve space (`min-height` or `aspect-ratio`) to avoid layout shift — the element is empty until the script runs. Deeper restyling (`::part()`, custom segment rendering) is not available in this release.
+
+### Two worked examples
+
+Cookbook 0219 (video + VTT): the transcript panel populates from the VTT file and the video's native captions switch off once it does (they stay available in the native controls).
+
+AVAnnotate export (e.g. Scholarly Editing "Voices"): the panel populates from the embedded annotations; duplicate annotation ids are tolerated.
 
 ## Framework Integration
 

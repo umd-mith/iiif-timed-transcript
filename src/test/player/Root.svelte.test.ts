@@ -11,6 +11,7 @@ import {
   MANIFEST_WITH_CHAPTERS,
   MANIFEST_WITHOUT_CHAPTERS,
   MANIFEST_WITH_HLS,
+  MANIFEST_WITH_CHOICE_HLS,
   MANIFEST_WITH_VTT_CAPTIONS,
   MANIFEST_MULTI_CANVAS,
   MANIFEST_WITH_EMBEDDED_TRANSCRIPT,
@@ -364,6 +365,46 @@ describe("Root component", () => {
         expect(capturedCtx!.mediaStrategy).toBe("native");
         expect(capturedCtx!.hlsAdapter).toBeNull();
       });
+    });
+
+    test("plays a Choice of HLS renditions (first Video member) instead of failing", async () => {
+      mockFetchManifest(MANIFEST_WITH_CHOICE_HLS);
+      const MockHls = Object.assign(
+        function () {
+          return {
+            loadSource: vi.fn(),
+            attachMedia: vi.fn(),
+            destroy: vi.fn(),
+            on: vi.fn(),
+            off: vi.fn(),
+          };
+        },
+        {
+          isSupported: () => true,
+          Events: { MANIFEST_PARSED: "hlsManifestParsed", ERROR: "hlsError" },
+        },
+      ) as unknown as HlsConstructor;
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/choice-hls.json",
+          hlsConstructor: MockHls,
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBe(
+          "https://example.com/choice/high.m3u8",
+        );
+      });
+      expect(capturedCtx!.mediaType).toBe("video");
+      expect(capturedCtx!.state.error).toBeNull();
     });
   });
 
@@ -788,6 +829,39 @@ describe("Root component", () => {
       capturedCtx!.actions.switchCanvas(99);
 
       // Should still be on canvas 0
+      expect(capturedCtx!.canvasIndex).toBe(0);
+      expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio1.mp3");
+    });
+
+    test("switchCanvas ignores a non-integer index", async () => {
+      mockFetchManifest(MANIFEST_MULTI_CANVAS);
+
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/multi-canvas-non-integer.json",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx).not.toBeNull();
+        expect(capturedCtx!.mediaUrl).toBeTruthy();
+      });
+
+      // NaN passes every ordering guard (`NaN < 0`, `NaN >= len` and
+      // `NaN === 0` are all false), so without an explicit integer check it
+      // would tear down the media, set canvasIndex to NaN and silently
+      // reload canvas 0 with no onCanvasChange.
+      capturedCtx!.actions.switchCanvas(Number.NaN);
+      expect(capturedCtx!.canvasIndex).toBe(0);
+      expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio1.mp3");
+
+      capturedCtx!.actions.switchCanvas(1.5);
       expect(capturedCtx!.canvasIndex).toBe(0);
       expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio1.mp3");
     });
@@ -2767,6 +2841,151 @@ describe("Root component", () => {
       // The one-time write already happened for this (canvasIndex, mediaUrl)
       // load and is never undone — a flip does not re-arm Viewer's latch.
       expect(video.textTracks[0]!.mode).toBe("hidden");
+    });
+  });
+
+  describe("preprocessManifest", () => {
+    test("runs before validation: a manifest with a missing type loads once the hook adds it", async () => {
+      const url = "https://example.com/preprocess-type.json";
+      const { type: _omitted, ...withoutType } = MANIFEST_WITHOUT_CHAPTERS;
+      mockFetchRoutes({ [url]: { json: { ...withoutType, id: url } } });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          preprocessManifest: (raw) => ({
+            ...(raw as Record<string, unknown>),
+            type: "Manifest",
+          }),
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.mediaUrl).toBe("https://example.com/audio.mp3");
+      });
+      expect(capturedCtx!.state.error).toBeNull();
+    });
+
+    test("the same manifest without the hook is a fatal manifest error", async () => {
+      const url = "https://example.com/preprocess-type-nohook.json";
+      const { type: _omitted, ...withoutType } = MANIFEST_WITHOUT_CHAPTERS;
+      mockFetchRoutes({ [url]: { json: { ...withoutType, id: url } } });
+      const onError = vi.fn();
+
+      mount(Root, { target, props: { manifestUrl: url, onError } });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: true,
+        source: "manifest",
+      });
+    });
+
+    test("raw is the preprocessed document: chapters come from the hook's structures", async () => {
+      const url = "https://example.com/preprocess-raw.json";
+      mockFetchRoutes({
+        [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      });
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          preprocessManifest: (raw) => ({
+            ...(raw as Record<string, unknown>),
+            structures: MANIFEST_WITH_CHAPTERS.structures,
+          }),
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(capturedCtx!.chapters).toHaveLength(2);
+      });
+      expect(capturedCtx!.chapters[0]!.label).toBe("Introduction");
+    });
+
+    test("a throwing hook is reported as a fatal manifest error", async () => {
+      const url = "https://example.com/preprocess-throws.json";
+      mockFetchRoutes({
+        [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      });
+      const onError = vi.fn();
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: url,
+          preprocessManifest: () => {
+            throw new Error("hook failed");
+          },
+          onError,
+        },
+      });
+
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(onError.mock.calls[0]![0].message).toBe("hook failed");
+      expect(onError.mock.calls[0]![1]).toEqual({
+        fatal: true,
+        source: "manifest",
+      });
+    });
+
+    test("bypasses the module cache entirely when set — including delete on error", async () => {
+      const url = "https://example.com/preprocess-cache.json";
+      mockFetchRoutes({
+        [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS, id: url } },
+      });
+
+      // 1. A plain instance populates the cache.
+      mount(Root, { target, props: { manifestUrl: url } });
+      await vi.waitFor(() => {
+        expect(manifestCache.has(url)).toBe(true);
+      });
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+      // 2. A preprocessing instance whose hook throws: fetches again (no cache
+      //    read), does not evict the plain entry (no cache delete).
+      const target2 = document.createElement("div");
+      document.body.appendChild(target2);
+      const onError = vi.fn();
+      mount(Root, {
+        target: target2,
+        props: {
+          manifestUrl: url,
+          preprocessManifest: () => {
+            throw new Error("nope");
+          },
+          onError,
+        },
+      });
+      await vi.waitFor(() => {
+        expect(onError).toHaveBeenCalledTimes(1);
+      });
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+      expect(manifestCache.has(url)).toBe(true);
+
+      // 3. A second plain instance is served from the surviving cache entry.
+      const target3 = document.createElement("div");
+      document.body.appendChild(target3);
+      mount(Root, { target: target3, props: { manifestUrl: url } });
+      await new Promise((r) => setTimeout(r, 30));
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+
+      document.body.removeChild(target2);
+      document.body.removeChild(target3);
     });
   });
 });

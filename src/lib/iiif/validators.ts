@@ -33,9 +33,20 @@ const IIIFContext = z
 const ServiceReferenceSchema = z
   .object({
     id: IIIFIdentifier.optional(),
+    // Both `type` and `@type` are optional. IIIF Auth API 1.0 services are
+    // serialized in 2.x style — `@type`/`@id`, no `type` — and Avalon
+    // (av.lib.umd.edu) attaches them to every rendition of a restricted
+    // item. Requiring `type` rejected the service, which cascaded into
+    // rejecting the body, every AnnotationBodySchema member, and the whole
+    // manifest. An entry with neither key is accepted too: the library
+    // never reads `service` (auth is out of scope), so there is nothing to
+    // gain by killing a manifest over an unread field. Same principle as
+    // the `.catch(undefined)` keys below — degrade, don't kill.
     type: z
       .string()
+      .optional()
       .describe("Service type (ImageService3, AuthCookieService1, etc.)"),
+    "@type": z.string().optional().describe("IIIF 2.x-style service type"),
     profile: z.string().optional().describe("Service profile level"),
   })
   .loose() // Allow additional service-specific properties

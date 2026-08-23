@@ -249,7 +249,42 @@ function isExternalResource(
 }
 
 /**
- * Gets the primary content resource from a canvas (first painting annotation body)
+ * Resolves a Choice body to its first audio/video member, or undefined.
+ * No typed fallback: a Choice holding only Image/Text/Dataset members does
+ * not resolve, so isImageCanvas/isPDFCanvas keep today's result for it.
+ */
+function resolveChoice(
+  choice: ChoiceBodyData,
+): ContentResourceData | undefined {
+  // `?? []`: getPrimaryResource is public and may be handed unvalidated
+  // input, where `items` can be missing.
+  for (const item of choice.items ?? []) {
+    if (
+      isExternalResource(item as AnnotationBodyData) &&
+      (item.type === "Sound" || item.type === "Video")
+    ) {
+      return item as ContentResourceData;
+    }
+  }
+  return undefined;
+}
+
+/** Resolves one body member (plain or Choice) to a content resource, or undefined. */
+function resolveBodyMember(
+  body: AnnotationBodyData,
+): ContentResourceData | undefined {
+  if (isChoiceBody(body)) return resolveChoice(body);
+  return isExternalResource(body) ? body : undefined;
+}
+
+/**
+ * Gets the primary content resource from a canvas (first painting annotation body).
+ *
+ * - A Choice body resolves to its first Sound/Video member (or undefined).
+ * - A body array is walked in order; the first member that resolves wins —
+ *   so `[Image, Choice{Video}]` → Image, `[Choice{Video}, Image]` → Video,
+ *   `[Choice{Text}, Video]` → Video.
+ *
  * @param canvas - IIIF canvas
  * @returns Content resource object or undefined
  */
@@ -263,17 +298,15 @@ export function getPrimaryResource(
     return undefined;
   }
 
-  // Handle array of bodies - find first external resource
   if (Array.isArray(body)) {
-    return body.find(isExternalResource);
+    for (const member of body) {
+      const resolved = resolveBodyMember(member);
+      if (resolved) return resolved;
+    }
+    return undefined;
   }
 
-  // Handle single body
-  if (isExternalResource(body)) {
-    return body;
-  }
-
-  return undefined;
+  return resolveBodyMember(body);
 }
 
 /**
