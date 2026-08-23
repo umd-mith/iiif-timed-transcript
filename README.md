@@ -645,7 +645,7 @@ Until the package is on public npm, vendor the built file (`dist/element/iiif-tr
 <script src="/assets/iiif-transcript-player.iife.js"></script>
 ```
 
-The IIFE bundles Svelte and hls.js (HLS plays without any other script). It does **not** support DASH (`dashjs` is not bundled; a DASH manifest surfaces a player error). Authenticated/restricted media is not supported.
+The IIFE bundles Svelte and hls.js (HLS plays without any other script). It does **not** support DASH (`dashjs` is not bundled; a DASH manifest surfaces a player error). Authenticated/restricted media is not supported. It measures about 742 kB minified (about 232 kB gzipped), against a build-enforced budget of 1 MB.
 
 ### Module (ESM, with a bundler)
 
@@ -654,7 +654,7 @@ import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
 register(); // defines <iiif-transcript-player>; no side effects on import
 ```
 
-`hls.js` / `dashjs` resolve from your `node_modules` as optional peers, exactly as for the Svelte components.
+`hls.js` / `dashjs` resolve from your `node_modules` as optional peers, exactly as for the Svelte components. The ESM build is about 114 kB: it externalizes only `dependencies` and `peerDependencies`, so the library's own `src/lib` is inlined into it. An app that imports both `@umd-mith/svelte-iiif-transcript-player` and `@umd-mith/svelte-iiif-transcript-player/element` therefore ships two copies of the player code, with two separate `manifestCache` instances (a size and cache-duplication cost, not a correctness one). If you already have a Svelte build, use the components directly.
 
 ### Attributes and properties
 
@@ -672,7 +672,7 @@ register(); // defines <iiif-transcript-player>; no side effects on import
 | `errorCallback`             | `(error, { fatal, source }) => void` | Same payload as the `playererror` event.                                          |
 | `playerRef`                 | `PlayerRef` (read-only)              | Nullish until `playerrefavailable`; stays nullish after a fatal `playererror`.    |
 
-**Attributes vs properties — three rules.** Use attributes for initial configuration. For a `<script src>` host, set properties only after the element is defined — inside `customElements.whenDefined("iiif-transcript-player").then(…)`; a property written onto an element _before_ the defining script has run is lost for that key, and the attribute wins. After the element exists, an attribute write and a property write to the same key resolve deterministically only when they are separated by a microtask (`await Promise.resolve()`, or simply the next task/tick) — the later of the two then wins, as expected. Two writes issued in the _same_ task (e.g. `el.setAttribute("canvas-index", "1"); el.canvasIndex = 0;` back to back) do not resolve in call order: the property write flushes synchronously through the generated accessor, while the attribute write flushes on a later microtask through `attributeChangedCallback`, so the attribute can still win even though it was written first. Prefer one or the other per key after creation, or add the microtask boundary between them.
+**Attributes vs properties — three rules.** Use attributes for initial configuration. For a `<script src>` host, set properties only after the element is defined — inside `customElements.whenDefined("iiif-transcript-player").then(…)`; a property written onto an element _before_ the defining script has run is lost for that key, and the attribute wins. After the element is upgraded, use one channel per key — attributes _or_ properties, not both. Each works on its own; mixing them for the same key does not resolve the way call order suggests. An attribute write goes through `attributeChangedCallback` into the component's props; a property write goes through the generated accessor and sets a local override inside the component, leaving those props holding the previous value. So a property write followed (even a task later) by an attribute write that repeats that stale value is silently ignored, and two writes issued in the _same_ task can resolve either way depending on internal flush state — the same two lines are not guaranteed to give the same result twice. This is a Svelte custom-element property, not a rule we chose; the element cannot paper over it.
 
 ### Events
 

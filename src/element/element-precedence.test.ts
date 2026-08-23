@@ -92,7 +92,7 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     expect(await initialIndex(fresh)).toBe(1);
   });
 
-  test("case 3 — after creation, last write wins when the two writes are separated by a microtask (attribute then property, property then attribute)", async () => {
+  test("case 3 — after upgrade, each channel works on its own, but mixing them for one key is not reliable: a property write leaves the attribute channel holding a stale value", async () => {
     const url = "https://example.com/prec-case3.json";
     mockFetchRoutes({ [url]: { json: { ...MANIFEST_MULTI_CANVAS, id: url } } });
     const el = document.createElement(DEFAULT_TAG) as El;
@@ -100,28 +100,46 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     document.body.appendChild(el);
     await initialIndex(el);
 
+    // Why mixing is unreliable (measured, then traced in Svelte 5.53.3 —
+    // it is NOT that one of the writes defers; neither does):
+    //
+    //   attribute write -> attributeChangedCallback -> `$$c.$set(...)`
+    //     (svelte/src/internal/client/dom/elements/custom-element.js:194-199
+    //     -> svelte/src/legacy/legacy-client.js:109-113), i.e. a write to
+    //     the *props source* the component reads from;
+    //   property write  -> the generated accessor
+    //     (custom-element.js:313-327 -> legacy-client.js:136-145 -> the
+    //     compiled component's own `set canvasIndex`), i.e. `set(d, value)`
+    //     on the prop's derived
+    //     (svelte/src/internal/client/reactivity/props.js:403-416) — a
+    //     *local override* that leaves the props source untouched.
+    //
+    // Two consequences, both exercised below. (1) After a property write the
+    // props source is stale, so a later attribute write repeating that stale
+    // value is an equality no-op (sources.js:174-175) and is silently
+    // ignored; `reflect` does not help — it writes the attribute back with
+    // `$$r` set, which attributeChangedCallback ignores (custom-element.js
+    // :154-174, :195). (2) In the same task the local override is discarded
+    // whenever the derived recomputes (props.js:389-392), so which write
+    // wins depends on hidden flush state — measured over 20 same-task pairs,
+    // identical sequences from the same observable index resolved both ways.
+    // Hence the README's rule: one channel per key.
+
+    // The attribute channel on its own.
     el.setAttribute("canvas-index", "1");
-    // This await is load-bearing, not incidental spacing: a property write
-    // flushes synchronously through the generated accessor, while an
-    // attribute write only reaches props via attributeChangedCallback's
-    // Object.assign, which flushes on a later microtask. Two writes issued
-    // in the *same* task do not resolve in call order — see the README's
-    // "Attributes vs properties" section — so this test separates them with
-    // a microtask to pin the documented (and only reliable) "last write
-    // wins" behavior.
-    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(el.playerRef!.canvasIndex).toBe(1);
+
+    // The property channel on its own.
     el.canvasIndex = 0;
     await new Promise((r) => setTimeout(r, 50));
     expect(el.playerRef!.canvasIndex).toBe(0);
 
-    el.canvasIndex = 1;
-    el.setAttribute("canvas-index", "0");
+    // Mixed: the props source still holds 1 from the attribute write above,
+    // so this attribute write — a whole task later, and visibly a change —
+    // does nothing.
+    el.setAttribute("canvas-index", "1");
     await new Promise((r) => setTimeout(r, 50));
     expect(el.playerRef!.canvasIndex).toBe(0);
-
-    el.setAttribute("canvas-index", "0");
-    el.canvasIndex = 1;
-    await new Promise((r) => setTimeout(r, 50));
-    expect(el.playerRef!.canvasIndex).toBe(1);
   });
 });
