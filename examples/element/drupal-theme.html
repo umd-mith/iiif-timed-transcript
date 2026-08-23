@@ -21,7 +21,12 @@
         --iiif-player-transcript-bg: var(--black, #000);
         --iiif-player-border: var(--gray, #666);
         /* Remap the foreground tokens alongside the backgrounds above, or
-           accent buttons / active segments render illegible text. */
+           accent buttons / active segments render illegible text. The
+           control bar is its own bg/fg pair: leave --iiif-player-control-bg
+           at its light default and the Time readout and Speed select
+           inherit the white page foreground onto #f3f4f6 (~1.07:1). */
+        --iiif-player-control-bg: var(--black, #000);
+        --iiif-player-control-fg: var(--white, #fff);
         --iiif-player-accent-fg: var(--white, #fff);
         --iiif-player-segment-fg: var(--black, #000);
       }
