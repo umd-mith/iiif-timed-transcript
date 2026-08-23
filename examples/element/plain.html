@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>iiif-transcript-player — plain page smoke test</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 60rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      /* Hostile page CSS — must not leak into the element */
+      [data-annotation-id] {
+        outline: 4px dashed red;
+      }
+      button {
+        font-size: 2rem;
+      }
+      iiif-transcript-player {
+        min-height: 24rem;
+        --iiif-player-accent: #7c3aed;
+      }
+      #log {
+        font:
+          12px/1.4 ui-monospace,
+          monospace;
+        white-space: pre-wrap;
+        background: #f3f4f6;
+        padding: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Plain page</h1>
+    <p>IIFE loaded from <code>../../dist/element/</code>. Events below.</p>
+
+    <h2>IIIF Cookbook recipe 0219 (video + external VTT)</h2>
+    <iiif-transcript-player
+      id="cookbook"
+      manifest-url="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json"
+    ></iiif-transcript-player>
+
+    <h2>
+      Scholarly Editing "Voices" (AVAnnotate export, embedded text, duplicate
+      ids)
+    </h2>
+    <iiif-transcript-player
+      id="voices"
+      manifest-url="https://www.scholarlyediting.org/issues/43/voices/mediation-and-lived-experience.json"
+    ></iiif-transcript-player>
+
+    <h2>Events</h2>
+    <div id="log"></div>
+
+    <script src="../../dist/element/iiif-transcript-player.iife.js"></script>
+    <script>
+      const log = document.getElementById("log");
+      const say = (s) => (log.textContent += s + "\n");
+      for (const id of ["cookbook", "voices"]) {
+        const el = document.getElementById(id);
+        el.addEventListener("playerrefavailable", (e) =>
+          say(
+            `${id}: playerrefavailable canvasCount=${e.detail.playerRef.canvasCount}`,
+          ),
+        );
+        el.addEventListener("playererror", (e) =>
+          say(
+            `${id}: playererror fatal=${e.detail.fatal} source=${e.detail.source} ${e.detail.error.message}`,
+          ),
+        );
+        el.addEventListener("canvaschange", (e) =>
+          say(`${id}: canvaschange index=${e.detail.index}`),
+        );
+      }
+      // Properties after definition (the README rule for script-tag hosts)
+      customElements.whenDefined("iiif-transcript-player").then(() => {
+        say(
+          "defined; playerRef before ready = " +
+            document.getElementById("cookbook").playerRef,
+        );
+      });
+    </script>
+  </body>
+</html>
