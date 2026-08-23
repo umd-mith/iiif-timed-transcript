@@ -53,7 +53,7 @@
   "scripts": {
     "build": "svelte-kit sync && svelte-package && publint",
     "dev": "svelte-package --watch",
-    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"options_missing_custom_element:ignore\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/ && prettier --check .",
