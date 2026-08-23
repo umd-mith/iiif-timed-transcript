@@ -46,11 +46,17 @@ export declare class IIIFTranscriptPlayerElement extends HTMLElement {
   manifestUrl: string;
   /**
    * `canvas-index` attribute. Reactive and reflected. A value that is not a
-   * non-negative integer falls back to 0 and an out-of-range index is
-   * ignored; either is a non-fatal `host` error, reported once per value.
+   * non-negative integer falls back to 0 (and the attribute is repaired to
+   * 0) and an out-of-range index is ignored; either is a non-fatal `host`
+   * error, reported once per value per connection. Removing the attribute is
+   * not an error — it silently means the default, canvas 0.
    */
   canvasIndex: number;
-  /** `initial-time` attribute. Init-only, and only on the first connection. */
+  /**
+   * `initial-time` attribute. Init-only, and only on the first connection.
+   * A value that is not a non-negative finite number is ignored with a
+   * non-fatal `host` error and does not consume that one application.
+   */
   initialTime: number | undefined;
   /** `autoplay` attribute. */
   autoplay: boolean;

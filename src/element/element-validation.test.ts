@@ -74,6 +74,12 @@ describe("<iiif-transcript-player> host-input validation", () => {
     expect(hostErrors[0]!.error.message).toContain(
       "`canvas-index` must be a non-negative integer",
     );
+    // The reflected attribute is repaired to the value actually in use.
+    // Reflection writes `+value`, so without the repair the attribute is
+    // left reading the literal "NaN".
+    await vi.waitFor(() => {
+      expect(el.getAttribute("canvas-index")).toBe("0");
+    });
 
     // The channel is not poisoned: a good value afterwards still lands, and
     // attribute, property and player agree.
@@ -86,7 +92,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     expect(hostErrors).toHaveLength(1);
   });
 
-  test("removing canvas-index after a switch is a host error and returns the player to canvas 0", async () => {
+  test("removing canvas-index after a switch returns the player to canvas 0 with no host error", async () => {
     const url = "https://example.com/el-canvas-removed.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
@@ -104,19 +110,41 @@ describe("<iiif-transcript-player> host-input validation", () => {
     });
     expect(hostErrors).toHaveLength(0);
 
-    // What a framework binding does when its bound value becomes undefined.
+    // Removal is HTML for "back to the default", and it is what a framework
+    // binding does when its bound value becomes undefined — not misuse.
     // Svelte hands the removal to the component as `null`.
     el.removeAttribute("canvas-index");
     await vi.waitFor(() => {
-      expect(hostErrors).toHaveLength(1);
-    });
-    expect(hostErrors[0]!.error.message).toContain(
-      "`canvas-index` must be a non-negative integer",
-    );
-    await vi.waitFor(() => {
       expect(el.playerRef!.canvasIndex).toBe(0);
-      expect(el.getAttribute("canvas-index")).toBe("0");
     });
+    // The switch back to 0 reflects the live index, so the attribute
+    // reappears as "0"; what must not happen is a host error.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(hostErrors).toHaveLength(0);
+  });
+
+  test("removing canvas-index while already on canvas 0 changes nothing and does not re-add the attribute", async () => {
+    const url = "https://example.com/el-canvas-removed-at-zero.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
+    const el = document.createElement(DEFAULT_TAG) as El;
+    el.setAttribute("manifest-url", url);
+    el.setAttribute("canvas-index", "0");
+    const hostErrors = recordHostErrors(el);
+    document.body.appendChild(el);
+
+    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await untilShadow(el, "audio");
+    el.removeAttribute("canvas-index");
+
+    // No error, no canvas switch, and — because there is no switch to
+    // reflect — nothing re-adds the attribute. A host that removes it in a
+    // loop therefore has nothing to loop against.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(hostErrors).toHaveLength(0);
+    expect(el.playerRef!.canvasIndex).toBe(0);
+    expect(el.hasAttribute("canvas-index")).toBe(false);
   });
 
   test("an out-of-range canvas-index is a one-time host error and leaves the player on canvas 0", async () => {
@@ -144,6 +172,79 @@ describe("<iiif-transcript-player> host-input validation", () => {
     // Reported once, not once per effect run.
     await new Promise((r) => setTimeout(r, 50));
     expect(hostErrors).toHaveLength(1);
+  });
+
+  test("a non-numeric initial-time is a one-time host error, never seeks, and does not burn the once-per-host latch", async () => {
+    const url = "https://example.com/el-initial-time-nan.json";
+    // Real (silent) WAV media: a seek needs a media element that decodes.
+    const playable = withStubMedia(MANIFEST_MULTI_CANVAS, {
+      audio: silentWavDataUrl(3),
+    });
+    mockFetchRoutes({ [url]: { json: { ...playable, id: url } } });
+    const el = document.createElement(DEFAULT_TAG) as El;
+    el.setAttribute("manifest-url", url);
+    // Coerced with `+value`, so this arrives as NaN.
+    el.setAttribute("initial-time", "abc");
+    const hostErrors = recordHostErrors(el);
+    document.body.appendChild(el);
+
+    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await vi.waitFor(() => {
+      expect(hostErrors).toHaveLength(1);
+    });
+    expect(hostErrors[0]!.fatal).toBe(false);
+    expect(hostErrors[0]!.error.message).toContain("`initial-time`");
+    const audio = await untilShadow<HTMLAudioElement>(el, "audio");
+    await vi.waitFor(() => {
+      expect(el.playerRef!.state.isReady).toBe(true);
+    });
+    // Reported once, and nothing ever seeked.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(hostErrors).toHaveLength(1);
+    expect(audio.currentTime).toBe(0);
+
+    // The latch is per host and must not have been burned by a value that
+    // never applied: a valid initial-time on the next connection still works.
+    el.remove();
+    await new Promise((r) => setTimeout(r, 0));
+    el.setAttribute("initial-time", "1");
+    const again = waitForEvent<PlayerRefAvailableDetail>(
+      el,
+      "playerrefavailable",
+    );
+    document.body.appendChild(el);
+    await again;
+    await vi.waitFor(() => {
+      expect(shadow(el).querySelector("audio")!.currentTime).toBeGreaterThan(
+        0.9,
+      );
+    });
+  });
+
+  test("a negative initial-time is a one-time host error and never seeks", async () => {
+    const url = "https://example.com/el-initial-time-negative.json";
+    const playable = withStubMedia(MANIFEST_MULTI_CANVAS, {
+      audio: silentWavDataUrl(3),
+    });
+    mockFetchRoutes({ [url]: { json: { ...playable, id: url } } });
+    const el = document.createElement(DEFAULT_TAG) as El;
+    el.setAttribute("manifest-url", url);
+    el.setAttribute("initial-time", "-5");
+    const hostErrors = recordHostErrors(el);
+    document.body.appendChild(el);
+
+    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await vi.waitFor(() => {
+      expect(hostErrors).toHaveLength(1);
+    });
+    expect(hostErrors[0]!.error.message).toContain("`initial-time`");
+    const audio = await untilShadow<HTMLAudioElement>(el, "audio");
+    await vi.waitFor(() => {
+      expect(el.playerRef!.state.isReady).toBe(true);
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(hostErrors).toHaveLength(1);
+    expect(audio.currentTime).toBe(0);
   });
 
   test("connecting without manifest-url is a one-time host error", async () => {
@@ -176,6 +277,37 @@ describe("<iiif-transcript-player> host-input validation", () => {
     await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
     await new Promise((r) => setTimeout(r, 50));
     expect(hostErrors).toHaveLength(0);
+  });
+
+  test("clearing manifest-url clears playerRef, and setting it again fires playerrefavailable", async () => {
+    const url = "https://example.com/el-manifest-url-cleared.json";
+    const other = "https://example.com/el-manifest-url-cleared-2.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+      [other]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: other } },
+    });
+    const el = document.createElement(DEFAULT_TAG) as El;
+    el.setAttribute("manifest-url", url);
+    document.body.appendChild(el);
+    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    expect(el.playerRef).toBeTruthy();
+
+    // Removing the URL unmounts the player. A `playerRef` left pointing at
+    // the destroyed component would hand the host live-looking `actions`
+    // that do nothing.
+    el.removeAttribute("manifest-url");
+    await vi.waitFor(() => {
+      expect(el.playerRef == null).toBe(true);
+    });
+    expect(shadow(el).querySelector("audio")).toBeNull();
+
+    const again = waitForEvent<PlayerRefAvailableDetail>(
+      el,
+      "playerrefavailable",
+    );
+    el.setAttribute("manifest-url", other);
+    await again;
+    expect(el.playerRef).toBeTruthy();
   });
 });
 

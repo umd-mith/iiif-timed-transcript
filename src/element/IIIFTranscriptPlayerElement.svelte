@@ -165,19 +165,36 @@
   });
 
   // `canvas-index` is coerced with `+value` (custom-element.js:258-259), so
-  // `canvas-index="abc"` arrives as NaN and `removeAttribute("canvas-index")`
-  // — what a framework binding does when its bound value becomes undefined —
-  // arrives as null. Both would slip past every ordering guard downstream, so
-  // they are replaced with 0 here and reported as host errors. Reported per
-  // distinct bad value, so a host that keeps writing garbage gets one error
-  // per value rather than one per effect run. A plain array, not a Set:
-  // nothing here is reactive, and `includes` dedupes on SameValueZero, so NaN
-  // and null each match themselves.
+  // `canvas-index="abc"` arrives as NaN, and `removeAttribute("canvas-index")`
+  // arrives as null. The two are not the same kind of input:
+  //
+  //  - NaN (or a negative or fractional number) is misuse. It would slip past
+  //    every ordering guard downstream, so it is replaced with 0, reported as
+  //    a host error, and the reflected attribute is repaired (reflection
+  //    writes `+value`, so otherwise the attribute is left reading "NaN").
+  //  - A *removed* attribute is HTML for "back to the default", and it is
+  //    what a framework binding does when its bound value goes undefined.
+  //    That is not misuse: it silently means 0, with no report. Nothing
+  //    re-adds the attribute for a player already on canvas 0 (there is no
+  //    switch to reflect), so a host that removes it repeatedly has nothing
+  //    to loop against. From another canvas the switch back to 0 does reflect
+  //    "0" onto the attribute — the documented behaviour of every switch.
+  //
+  // Reported per distinct bad value, so a host that keeps writing garbage
+  // gets one error per value rather than one per effect run. Plain arrays,
+  // not Sets: nothing here is reactive, and `includes` dedupes on
+  // SameValueZero, so NaN matches itself. The two reporters keep separate
+  // lists so an index that is first seen as out-of-range and later as
+  // non-integer (or the reverse) still gets its own diagnostic.
+  const canvasIndexMissing = $derived(canvasIndex == null);
   const canvasIndexValid = $derived(
-    Number.isInteger(canvasIndex) && canvasIndex >= 0,
+    canvasIndexMissing || (Number.isInteger(canvasIndex) && canvasIndex >= 0),
   );
-  const safeCanvasIndex = $derived(canvasIndexValid ? canvasIndex : 0);
-  const reportedCanvasIndexes: unknown[] = [];
+  const safeCanvasIndex = $derived(
+    canvasIndexValid && !canvasIndexMissing ? canvasIndex : 0,
+  );
+  const reportedBadCanvasIndexes: unknown[] = [];
+  const reportedOutOfRangeIndexes: unknown[] = [];
   // `$effect.pre`, not `$effect`: a bad value is replaced with 0, which for a
   // player sitting on another canvas makes Root switch back — and that switch
   // rewrites the attribute (handleCanvasChange), which writes the prop again.
@@ -187,8 +204,17 @@
     const value = canvasIndex;
     if (canvasIndexValid) return;
     untrack(() => {
-      if (reportedCanvasIndexes.includes(value)) return;
-      reportedCanvasIndexes.push(value);
+      // Repair the reflected attribute for every bad value, not just the
+      // first: the attribute is a public channel and must never be left
+      // holding a value the player is not on. Deferred a microtask, like
+      // emit(): during the wrapper's first flush the host's `$$c` is not
+      // assigned yet, so attributeChangedCallback's `$set` would be dropped
+      // and the reflect effect would then write NaN back over the repair.
+      const host = $host();
+      const repaired = String(safeCanvasIndex);
+      queueMicrotask(() => host.setAttribute("canvas-index", repaired));
+      if (reportedBadCanvasIndexes.includes(value)) return;
+      reportedBadCanvasIndexes.push(value);
       report(
         new Error("`canvas-index` must be a non-negative integer; ignoring it"),
         { fatal: false, source: "host" },
@@ -203,10 +229,11 @@
   $effect(() => {
     const value = canvasIndex;
     const count = playerRefValue?.canvasCount ?? 0;
-    if (!canvasIndexValid || count === 0 || value < count) return;
+    if (!canvasIndexValid || canvasIndexMissing || count === 0 || value < count)
+      return;
     untrack(() => {
-      if (reportedCanvasIndexes.includes(value)) return;
-      reportedCanvasIndexes.push(value);
+      if (reportedOutOfRangeIndexes.includes(value)) return;
+      reportedOutOfRangeIndexes.push(value);
       report(
         new Error(
           `\`canvas-index\` ${value} is out of range for ${count} canvases; ignoring it`,
@@ -223,6 +250,11 @@
   let manifestUrlReported = false;
   $effect(() => {
     if (manifestUrl) return;
+    // No `manifest-url` means no Root: clearing it unmounts the player, and a
+    // `playerRef` still pointing at the destroyed component would hand the
+    // host live-looking `actions` that do nothing. (Safe to write here — this
+    // effect does not read `playerRefValue`.)
+    playerRefValue = null;
     const timer = setTimeout(() => {
       if (manifestUrlReported) return;
       manifestUrlReported = true;
@@ -241,12 +273,37 @@
     preprocessValid ? preprocessManifest : undefined,
   );
 
+  // `initial-time` is coerced with `+value` too, so `initial-time="abc"`
+  // arrives as NaN. Root's `seekTo` would drop it on its own `isFinite`
+  // guard as a bare console.warn — but by then the once-per-host latch below
+  // has been burned by a value that never seeked, so a later valid
+  // `initial-time` would be ignored. Validate here instead. A removed
+  // attribute (null) is "unset", like elsewhere, not misuse.
+  const initialTimeValid = $derived(
+    initialTime == null || (Number.isFinite(initialTime) && initialTime >= 0),
+  );
+  let initialTimeReported = false;
+  $effect(() => {
+    if (initialTimeValid || initialTimeReported) return;
+    initialTimeReported = true;
+    report(
+      new Error(
+        "`initial-time` must be a non-negative number of seconds; ignoring it",
+      ),
+      { fatal: false, source: "host" },
+    );
+  });
+
   // `initial-time` applies once per host, not once per inner component — see
   // initialTimeAppliedHosts above. The flag is read once, at setup, before the
-  // effect below records this connection.
+  // effect below records this connection. The latch is recorded only when a
+  // valid `initial-time` was really handed to a Root that exists — an invalid
+  // value, or no `manifest-url` (so no Root mounted at all), must not burn it.
   const initialTimeAlreadyApplied = initialTimeAppliedHosts.has($host());
   $effect(() => {
-    if (initialTime != null) initialTimeAppliedHosts.add($host());
+    if (manifestUrl && initialTime != null && initialTimeValid) {
+      initialTimeAppliedHosts.add($host());
+    }
   });
 
   // hls.js comes from the module-level default (set by the IIFE entry).
@@ -254,7 +311,7 @@
 
   // exactOptionalPropertyTypes: only pass optional Root props when defined.
   const optionalRootProps = $derived({
-    ...(initialTime != null && !initialTimeAlreadyApplied
+    ...(initialTime != null && initialTimeValid && !initialTimeAlreadyApplied
       ? { initialTime }
       : {}),
     ...(safePreprocess ? { preprocessManifest: safePreprocess } : {}),
