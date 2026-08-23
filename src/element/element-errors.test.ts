@@ -149,26 +149,28 @@ describe("<iiif-transcript-player> error contract", () => {
     el.setAttribute("manifest-url", url);
     const seen = recordEvents(el);
 
-    // The fixture's <video src> ("https://example.com/video.mp4") is a real,
-    // reachable domain with no actual video there, so headless Chromium
-    // issues a genuine network request and fires a native MediaError once it
-    // resolves to something that isn't playable video (MEDIA_ERR_SRC_NOT_SUPPORTED,
-    // code 4). That's unrelated to the transcript-tier error this test pins;
-    // swallow *only that exact confound* in the capture phase, ahead of
-    // Viewer's own bubble-phase `onerror` handler, so it can't be mistaken
-    // for a fatal media error. The check is narrowed to the known dummy URL
-    // and error code so a genuine implementation defect — e.g. a VTT/transcript
-    // failure incorrectly propagating into media-tier error state via some
-    // other code path — is not silently discarded here too; only this one
-    // known sandbox confound is. Media `error` events aren't composed, so the
-    // listener must live inside the shadow root (open shadow root exists
+    // The fixture's <video src> ("https://example.com/video.mp4") is a
+    // known-fake URL with nothing playable behind it, so the runner's
+    // network posture decides *how* it fails: a real, reachable domain with
+    // no video there yields MEDIA_ERR_SRC_NOT_SUPPORTED (code 4), while a
+    // network-restricted or offline runner (DNS/connection failure) yields
+    // MEDIA_ERR_NETWORK (code 2) instead. Either way it's unrelated to the
+    // transcript-tier error this test pins, so swallow *any* error on this
+    // known dummy URL in the capture phase, ahead of Viewer's own
+    // bubble-phase `onerror` handler, so it can't be mistaken for a fatal
+    // media error. The check is narrowed to the known dummy URL (not the
+    // error code, which varies by network posture) so a genuine
+    // implementation defect — e.g. a VTT/transcript failure incorrectly
+    // propagating into media-tier error state via some other code path — is
+    // not silently discarded here too; only confounds on this one known
+    // sandbox URL are. Media `error` events aren't composed, so the listener
+    // must live inside the shadow root (open shadow root exists
     // synchronously on creation).
     const swallowVideoError = (e: Event) => {
       const target = e.target;
       if (
         target instanceof HTMLVideoElement &&
-        target.currentSrc === "https://example.com/video.mp4" &&
-        target.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED
+        target.currentSrc === "https://example.com/video.mp4"
       ) {
         e.stopImmediatePropagation();
       }
