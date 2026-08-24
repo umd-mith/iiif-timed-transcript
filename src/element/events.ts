@@ -51,7 +51,7 @@ export type ErrorCallback = (
  * pinned by the postbuild probe.
  */
 export interface IIIFTranscriptPlayerElementEventMap extends HTMLElementEventMap {
-  playerrefavailable: CustomEvent<PlayerRefAvailableDetail>;
-  playererror: CustomEvent<PlayerErrorDetail>;
-  canvaschange: CustomEvent<CanvasChangeDetail>;
+  "iiif-player-ready": CustomEvent<PlayerRefAvailableDetail>;
+  "iiif-player-error": CustomEvent<PlayerErrorDetail>;
+  "iiif-player-canvas-change": CustomEvent<CanvasChangeDetail>;
 }

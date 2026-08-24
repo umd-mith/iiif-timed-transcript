@@ -55,12 +55,12 @@
       const log = document.getElementById("log");
       const el = document.getElementById("avalon");
       el.addEventListener(
-        "playerrefavailable",
+        "iiif-player-ready",
         (e) =>
           (log.textContent += `ready: ${e.detail.playerRef.mediaType}, canvases=${e.detail.playerRef.canvasCount}\n`),
       );
       el.addEventListener(
-        "playererror",
+        "iiif-player-error",
         (e) =>
           (log.textContent += `error: fatal=${e.detail.fatal} source=${e.detail.source} ${e.detail.error.message}\n`),
       );

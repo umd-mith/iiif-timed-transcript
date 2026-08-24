@@ -234,7 +234,7 @@
         );
       }
     }
-    emit<PlayerErrorDetail>("playererror", {
+    emit<PlayerErrorDetail>("iiif-player-error", {
       error,
       fatal: info.fatal,
       source: info.source,
@@ -246,7 +246,7 @@
   // string; a misuse is reported as a non-fatal "host" error and the safe
   // default goes to Root instead. These effects run in the wrapper's first
   // flush, before Root's manifest fetch can settle, so a host error always
-  // precedes playerrefavailable.
+  // precedes iiif-player-ready.
   const annotationsValid = $derived(
     annotations === "auto" || Array.isArray(annotations),
   );
@@ -462,7 +462,7 @@
 
   function handlePlayerInit(player: PlayerRef) {
     playerRefValue = player;
-    emit<PlayerRefAvailableDetail>("playerrefavailable", { playerRef: player });
+    emit<PlayerRefAvailableDetail>("iiif-player-ready", { playerRef: player });
   }
 
   function handleError(error: Error, info: PlayerErrorInfo) {
@@ -488,7 +488,7 @@
     // the index Root just switched to, and performCanvasSwitch returns
     // early on `index === player.canvasIndex`.
     $host().setAttribute("canvas-index", String(index));
-    emit<CanvasChangeDetail>("canvaschange", { index, canvas });
+    emit<CanvasChangeDetail>("iiif-player-canvas-change", { index, canvas });
   }
 </script>
 

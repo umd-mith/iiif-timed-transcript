@@ -57,7 +57,7 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
   async function expectInitialIndex(el: El, expected: number): Promise<void> {
     const { detail } = await waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     // Root applies the prop on first load; wait for it to settle.
     await vi.waitFor(() => {

@@ -84,7 +84,7 @@ describe("<iiif-transcript-player> basics", () => {
     expect(el.childNodes.length).toBe(0);
   });
 
-  test("playerRef is nullish before init and fires playerrefavailable with a usable ref", async () => {
+  test("playerRef is nullish before init and fires iiif-player-ready with a usable ref", async () => {
     const url = "https://example.com/el-ref.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_WITHOUT_CHAPTERS_STUB, id: url } },
@@ -96,7 +96,7 @@ describe("<iiif-transcript-player> basics", () => {
     el.setAttribute("manifest-url", url);
     const ready = waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     document.body.appendChild(el);
     // Synchronously after append: inner component not created yet.
@@ -119,7 +119,7 @@ describe("<iiif-transcript-player> basics", () => {
     const el = await mountElement({ "manifest-url": url, "canvas-index": "1" });
     const { detail } = await waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     expect(el.canvasIndex).toBe(1);
     expect(typeof el.canvasIndex).toBe("number");
