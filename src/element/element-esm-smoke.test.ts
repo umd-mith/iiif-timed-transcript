@@ -25,6 +25,7 @@ const DOCUMENTED_VALUE_EXPORTS = [
   "DEFAULT_TAG",
   "IIIFTranscriptPlayerElement",
   "register",
+  "registerTranslation",
 ];
 
 describe.skipIf(skip)("<iiif-transcript-player> built ESM", () => {
@@ -33,6 +34,7 @@ describe.skipIf(skip)("<iiif-transcript-player> built ESM", () => {
 
     expect(Object.keys(mod).sort()).toEqual(DOCUMENTED_VALUE_EXPORTS);
     expect(typeof mod["register"]).toBe("function");
+    expect(typeof mod["registerTranslation"]).toBe("function");
     expect(mod["DEFAULT_TAG"]).toBe("iiif-transcript-player");
     expect(typeof mod["IIIFTranscriptPlayerElement"]).toBe("function");
     expect(

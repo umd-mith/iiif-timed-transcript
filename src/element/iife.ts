@@ -4,6 +4,7 @@
 import Hls from "hls.js";
 import type { HlsConstructor } from "../lib/media/hlsUtils.js";
 import { setDefaultHlsConstructor } from "./mediaDefaults.js";
+import { registerTranslation } from "../lib/index.js";
 import {
   register,
   DEFAULT_TAG,
@@ -21,4 +22,9 @@ register();
 // dist/element/iiif-transcript-player.iife.d.ts — not reachable via the
 // package's `exports` map, see README) declare `window.IIIFTranscriptPlayer`
 // and nothing else. Keep this list and that declaration in step.
-export { register, DEFAULT_TAG, IIIFTranscriptPlayerElement };
+export {
+  register,
+  DEFAULT_TAG,
+  IIIFTranscriptPlayerElement,
+  registerTranslation,
+};

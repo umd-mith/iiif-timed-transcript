@@ -4,6 +4,7 @@
   import { getNextIndex, focusSegmentAtIndex } from "../transcript/keyboardNav";
   import { tryGetTranscriptContext } from "./transcript-context";
   import type { Annotation } from "../sync/types";
+  import { t } from "../i18n/registry.svelte";
 
   /**
    * Props passed to a custom segment snippet.
@@ -215,7 +216,7 @@
   <div
     class="segments-container {className}"
     role="group"
-    aria-label="Transcript segments"
+    aria-label={t("transcript.segmentsLabel")}
     tabindex="-1"
     onkeydown={handleKeydown}
     bind:this={containerEl}

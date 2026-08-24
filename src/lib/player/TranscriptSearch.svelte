@@ -2,6 +2,7 @@
   import Search from "../transcript/Search.svelte";
   import { tryGetTranscriptContext } from "./transcript-context";
   import type { Annotation } from "../sync/types";
+  import { t } from "../i18n/registry.svelte";
 
   interface Props {
     annotations?: Annotation[];
@@ -13,11 +14,15 @@
 
   let {
     annotations: annotationsProp,
-    placeholder = "Search transcript...",
+    placeholder: placeholderProp,
     debounceMs = 150,
     onmatchchange: onmatchchangeProp,
     class: className = "",
   }: Props = $props();
+
+  const placeholder = $derived(
+    placeholderProp ?? t("transcript.searchPlaceholder"),
+  );
 
   // Try to read TranscriptContext (available when inside Transcript)
   const transcriptCtx = tryGetTranscriptContext();

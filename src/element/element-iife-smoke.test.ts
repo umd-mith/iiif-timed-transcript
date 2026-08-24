@@ -47,6 +47,7 @@ describe.skipIf(skip)("<iiif-transcript-player> built IIFE", () => {
     expect(typeof globalApi?.["register"]).toBe("function");
     expect(globalApi?.["DEFAULT_TAG"]).toBe("iiif-transcript-player");
     expect(typeof globalApi?.["IIIFTranscriptPlayerElement"]).toBe("function");
+    expect(typeof globalApi?.["registerTranslation"]).toBe("function");
 
     const el = document.createElement("iiif-transcript-player");
     document.body.appendChild(el);

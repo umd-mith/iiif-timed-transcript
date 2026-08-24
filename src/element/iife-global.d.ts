@@ -29,6 +29,7 @@ import type {
   register,
   DEFAULT_TAG,
   IIIFTranscriptPlayerElement,
+  registerTranslation,
 } from "./index.js";
 
 declare global {
@@ -37,6 +38,7 @@ declare global {
       register: typeof register;
       DEFAULT_TAG: typeof DEFAULT_TAG;
       IIIFTranscriptPlayerElement: typeof IIIFTranscriptPlayerElement;
+      registerTranslation: typeof registerTranslation;
     };
   }
 }

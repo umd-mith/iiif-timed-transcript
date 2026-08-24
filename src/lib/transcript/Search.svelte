@@ -2,6 +2,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import type { Annotation } from "../sync/types";
+  import { t } from "../i18n/registry.svelte";
 
   interface Props {
     /** Array of annotations to search through */
@@ -26,11 +27,15 @@
 
   let {
     annotations,
-    placeholder = "Search transcript...",
+    placeholder: placeholderProp,
     debounceMs = 150,
     onmatchchange,
     class: className = "",
   }: Props = $props();
+
+  const placeholder = $derived(
+    placeholderProp ?? t("transcript.searchPlaceholder"),
+  );
 
   let query = $state("");
   let currentIndex = $state(0);
@@ -95,8 +100,11 @@
   // Match count display
   const matchCountDisplay = $derived.by(() => {
     if (!query.trim()) return "";
-    if (matches.length === 0) return "No matches";
-    return `${currentIndex + 1} of ${matches.length}`;
+    if (matches.length === 0) return t("transcript.searchNoMatches");
+    return t("transcript.searchMatchCount", {
+      current: currentIndex + 1,
+      total: matches.length,
+    });
   });
 </script>
 
@@ -105,7 +113,7 @@
     type="search"
     {placeholder}
     oninput={handleInput}
-    aria-label="Search transcript"
+    aria-label={t("transcript.searchLabel")}
     autocomplete="off"
     spellcheck="false"
   />
@@ -118,12 +126,16 @@
     <button
       type="button"
       onclick={navigatePrevious}
-      aria-label="Previous match"
+      aria-label={t("transcript.searchPrevious")}
     >
       ↑
     </button>
 
-    <button type="button" onclick={navigateNext} aria-label="Next match">
+    <button
+      type="button"
+      onclick={navigateNext}
+      aria-label={t("transcript.searchNext")}
+    >
       ↓
     </button>
   {/if}

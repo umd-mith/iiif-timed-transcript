@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { t } from "../i18n/registry.svelte";
+
   let {
     class: className = "",
     children,
@@ -11,7 +13,7 @@
 <div
   data-audio-controls
   role="group"
-  aria-label="Media controls"
+  aria-label={t("player.controlsLabel")}
   class={className}
 >
   {#if children}

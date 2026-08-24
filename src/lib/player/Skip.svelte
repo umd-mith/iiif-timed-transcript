@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getPlayerContext } from "./context";
+  import { t } from "../i18n/registry.svelte";
 
   let {
     seconds,
@@ -18,8 +19,8 @@
   let label = $derived(seconds >= 0 ? `+${seconds}s` : `${seconds}s`);
   let ariaLabel = $derived(
     seconds >= 0
-      ? `Skip forward ${seconds} seconds`
-      : `Skip back ${Math.abs(seconds)} seconds`,
+      ? t("player.skipForward", { seconds })
+      : t("player.skipBack", { seconds: Math.abs(seconds) }),
   );
 </script>
 

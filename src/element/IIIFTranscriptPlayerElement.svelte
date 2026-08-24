@@ -15,6 +15,8 @@
 />
 
 <script module lang="ts">
+  import { setLocale } from "../lib/index.js";
+
   // Hosts on which `initial-time` has already been applied. Svelte destroys
   // the inner component a microtask after `disconnectedCallback` and rebuilds
   // it on the next `connectedCallback` (custom-element.js:93-151, :201-211),
@@ -38,6 +40,7 @@
   interface SvelteCustomElementInstance extends HTMLElement {
     $$p_d: Record<string, unknown>;
     connectedCallback(): Promise<void>;
+    disconnectedCallback(): void;
   }
   interface SvelteCustomElementConstructor {
     new (...params: never[]): SvelteCustomElementInstance;
@@ -75,7 +78,43 @@
   function extend(Class: new () => HTMLElement) {
     const Base = Class as unknown as SvelteCustomElementConstructor;
     return class extends Base {
+      // DOM locale resolution (hardening spec 4.2): closest `lang` wins,
+      // falling back to `<html lang>`, falling back to English.
+      // `this.closest("[lang]")` already implements that whole order in one
+      // call — it checks the host itself first, then walks ancestors, and
+      // `<html>` is reachable the same way since it too can carry `lang`.
+      // Reactive to any `lang` mutation anywhere in the document (not just
+      // on this host) via a single MutationObserver on `documentElement`
+      // with `subtree: true` — cheaper than a Node-level observer per
+      // ancestor, and correct because a change to an *ancestor's* lang can
+      // change what this host's `closest("[lang]")` resolves to even when
+      // the host's own attribute didn't move.
+      //
+      // Sets the registry's shared `locale` (registry.svelte.ts's known
+      // limitation): two elements on one page with different `lang` will
+      // not get independently-localized chrome — the most recently
+      // connected (or most recently lang-mutated) element's resolution
+      // wins for both. Not addressed here; nothing today asks for two
+      // differently-localized players sharing a page.
+      #localeObserver: MutationObserver | undefined;
+
+      #resolveLocale(): void {
+        const match = this.closest("[lang]");
+        const value = match?.getAttribute("lang");
+        setLocale(value && value.trim() !== "" ? value : "en");
+      }
+
       async connectedCallback() {
+        this.#resolveLocale();
+        this.#localeObserver = new MutationObserver(() =>
+          this.#resolveLocale(),
+        );
+        this.#localeObserver.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["lang"],
+          subtree: true,
+        });
+
         const self = this as unknown as Record<string, unknown>;
         const captured: Record<string, unknown> = {};
         for (const key of Object.keys(this.$$p_d)) {
@@ -88,6 +127,12 @@
         for (const key of Object.keys(captured)) {
           self[key] = captured[key];
         }
+      }
+
+      disconnectedCallback() {
+        this.#localeObserver?.disconnect();
+        this.#localeObserver = undefined;
+        super.disconnectedCallback();
       }
 
       // 1.2: a no-op so browsers doing a `moveBefore()` move skip Svelte's

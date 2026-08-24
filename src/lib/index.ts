@@ -210,3 +210,15 @@ export type { HlsConstructor, HlsAdapter } from "./media/hlsUtils.js";
 
 export { isDashUrl, createDashAdapter } from "./media/dashUtils.js";
 export type { DashConstructor, DashAdapter } from "./media/dashUtils.js";
+
+// ============================================================================
+// i18n (hardening spec 4.2)
+// ============================================================================
+
+export {
+  t,
+  setLocale,
+  getLocale,
+  registerTranslation,
+} from "./i18n/registry.svelte.js";
+export type { TermKey } from "./i18n/terms.js";

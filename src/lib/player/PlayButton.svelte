@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { getPlayerContext } from "./context";
+  import { t } from "../i18n/registry.svelte";
 
   let {
     class: className = "",
@@ -18,10 +19,10 @@
 
   const label = $derived(
     state.isBuffering
-      ? (loading ?? "Loading...")
+      ? (loading ?? t("player.playButton.loading"))
       : state.isPlaying
-        ? (pause ?? "Pause")
-        : (play ?? "Play"),
+        ? (pause ?? t("player.playButton.pause"))
+        : (play ?? t("player.playButton.play")),
   );
 
   const labelIsSnippet = $derived(typeof label === "function");
