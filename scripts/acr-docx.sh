@@ -25,7 +25,8 @@ case "${1:-}" in
     ;;
   build)
     tmp="$(mktemp -d)"
-    pandoc "$MD" -f gfm -t docx -V lang=en-US \
+    python3 scripts/acr-strip-banner.py "$MD" "$tmp/src.md"
+    pandoc "$tmp/src.md" -f gfm -t docx -V lang=en-US \
       --metadata title="$TITLE" --metadata author="$AUTHOR" \
       --metadata date="$(date '+%-d %B %Y')" \
       -o "$tmp/raw.docx"
