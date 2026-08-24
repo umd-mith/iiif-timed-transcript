@@ -824,6 +824,18 @@ export function buildTranscriptAnnotations(
       text,
     };
 
+    // A2 (3.1.2): the first text body carrying a `language` code sets the
+    // annotation's language. TextualBodySchema already defines `language` as
+    // an optional per-body field (validators.ts) — the tier-1 counterpart to
+    // the VTT track's srclang derivation below (getSupplementaryVTTTracks).
+    // No 'en' fallback here: an annotation with no language info stays
+    // undefined and Segment renders with no `lang` attribute rather than
+    // guessing wrong.
+    const languageBody = item.textBodies.find((b) => b.language);
+    if (languageBody?.language) {
+      annotation.language = languageBody.language;
+    }
+
     if (item.tagBodies.length > 0) {
       annotation.metadata = {
         tags: item.tagBodies.map((b) => b.value),

@@ -130,6 +130,14 @@ export interface Annotation {
   /** Text content of the annotation */
   text: string;
   /**
+   * Optional BCP 47 language code for this annotation's text (e.g. "en",
+   * "es", "fr"). Sourced from the manifest's annotation body language (tier
+   * 1) or the selected VTT track's `srclang` (tier 2). Applied as `lang` on
+   * the rendered segment text ONLY — never on the transcript panel's
+   * `role="region"` element, which carries host-language chrome.
+   */
+  language?: string;
+  /**
    * Optional metadata for consumer-specific data.
    * Access in custom segment snippets via `annotation.metadata?.speaker`, etc.
    */
