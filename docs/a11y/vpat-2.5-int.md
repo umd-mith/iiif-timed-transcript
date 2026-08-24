@@ -13,7 +13,7 @@
 | **Evaluation Methods Used**         | Manual source review; manual and automated keyboard testing; automated layout measurement at a 320px viewport; automated RTL measurement; axe-core scanning and a committed contrast-ratio test in CI. Screen-reader, 200% text-only zoom, and forced-colors passes are **not yet run** — see the Evidence section. |
 | **Applicable Standards/Guidelines** | WCAG 2.1, Level A and AA only. **WCAG 2.2 is deliberately not claimed** — see the Scope note.                                                                                                                                                                                                                       |
 | **Scope: commit SHA**               | `e74e616`, on branch `feat/element-hardening-completion` **before that branch merged**. This report describes the element build at exactly that commit. Re-pin it to the merge SHA if the branch changes before merge.                                                                                              |
-| **Reviewed by**                     | _pending — see [`countersign-request.md`](countersign-request.md)_                                                                                                                                                                                                                                                  |
+| **Reviewed by**                     | _pending — request sent, see [`countersign-request.md`](countersign-request.md). Update this row to `reviewed by <reviewer name>, <date>, scope: element build at commit <scope-sha>` when a reply arrives. This report is not countersigned until then._                                                           |
 
 ## Scope note
 
