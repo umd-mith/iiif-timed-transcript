@@ -16,6 +16,15 @@ export interface ScrollControllerInput {
   scrollContainer: HTMLElement;
   /** Target annotation to scroll into view */
   targetAnnotation: Annotation;
+  /**
+   * A4: when false, this actor is a no-op. Set from the transcript panel's
+   * auto-scroll pause toggle. This also silences seek-driven scrolls
+   * (segment click, search-match seek) that route through this same
+   * actor — accepted: a user who paused auto-scroll has asked the panel
+   * to stop moving on its own. Does not affect Transcript.scrollToAnnotation
+   * or TranscriptSegments.scrollToAnnotation, which never invoke this actor.
+   */
+  autoScrollEnabled: boolean;
 }
 
 /**
@@ -26,7 +35,11 @@ export interface ScrollControllerInput {
  */
 export const scrollController = fromPromise(
   async ({ input }: { input: ScrollControllerInput }) => {
-    const { scrollContainer, targetAnnotation } = input;
+    const { scrollContainer, targetAnnotation, autoScrollEnabled } = input;
+
+    if (!autoScrollEnabled) {
+      return;
+    }
 
     // Find annotation element by data-annotation-id attribute
     // Page must render annotations with: <div data-annotation-id={ann.id}>

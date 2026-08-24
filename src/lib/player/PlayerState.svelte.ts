@@ -15,6 +15,7 @@ import type {
   TrackDefinition,
   CanvasInfo,
   TranscriptStatus,
+  CaptionsVerdict,
 } from "./context.js";
 import type { HlsAdapter } from "../media/hlsUtils.js";
 import type { DashAdapter } from "../media/dashUtils.js";
@@ -26,6 +27,10 @@ export interface PlayerStateManagerOptions {
   onSwitchCanvas?: (index: number) => void;
   /** A rejected `play()` (e.g. blocked autoplay, NotAllowedError). Not called for AbortError. */
   onPlaybackError?: (error: Error) => void;
+  /** USER_TOGGLE on the captions machine. */
+  onToggleCaptions?: () => void;
+  /** NATIVE_CHANGE on the captions machine, from Viewer's textTracks 'change' listener. */
+  onNativeCaptionChange?: (mode: "showing" | "hidden") => void;
 }
 
 export class PlayerStateManager implements PlayerContext {
@@ -53,6 +58,7 @@ export class PlayerStateManager implements PlayerContext {
   tracks = $state.raw<TrackDefinition[]>([]);
   transcriptStatus = $state<TranscriptStatus>("idle");
   transcriptPopulated = $state(false);
+  captionsState = $state<CaptionsVerdict>("unavailable");
 
   // Canvas navigation
   canvasIndex = $state(0);
@@ -128,13 +134,27 @@ export class PlayerStateManager implements PlayerContext {
     },
   };
 
+  toggleCaptions: () => void = () => {
+    this.onToggleCaptions?.();
+  };
+
+  reportNativeCaptionChange: (mode: "showing" | "hidden") => void = (mode) => {
+    this.onNativeCaptionChange?.(mode);
+  };
+
   private onRetry: (() => Promise<void>) | undefined;
   private onSwitchCanvas: ((index: number) => void) | undefined;
   private onPlaybackError: ((error: Error) => void) | undefined;
+  private onToggleCaptions: (() => void) | undefined;
+  private onNativeCaptionChange:
+    | ((mode: "showing" | "hidden") => void)
+    | undefined;
 
   constructor(options?: PlayerStateManagerOptions) {
     this.onRetry = options?.onRetry;
     this.onSwitchCanvas = options?.onSwitchCanvas;
     this.onPlaybackError = options?.onPlaybackError;
+    this.onToggleCaptions = options?.onToggleCaptions;
+    this.onNativeCaptionChange = options?.onNativeCaptionChange;
   }
 }

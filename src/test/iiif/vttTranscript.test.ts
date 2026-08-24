@@ -124,6 +124,23 @@ describe("buildAnnotationsFromVTTCues", () => {
       { annotationId: "tags-only", reason: "no-text-body" },
     ]);
   });
+
+  it("stamps every annotation with the language passed in", () => {
+    const result = buildAnnotationsFromVTTCues(
+      [cue(0, 1, "Bonjour", "c1"), cue(1, 2, "Au revoir", "c2")],
+      tokenizeVTTCue,
+      "fr",
+    );
+    expect(result.annotations.every((a) => a.language === "fr")).toBe(true);
+  });
+
+  it("leaves language undefined when none is passed", () => {
+    const result = buildAnnotationsFromVTTCues(
+      [cue(0, 1, "Hello", "c1")],
+      tokenizeVTTCue,
+    );
+    expect(result.annotations[0]!.language).toBeUndefined();
+  });
 });
 
 const VTT_OK = `WEBVTT
@@ -191,5 +208,11 @@ describe("loadVTTTranscript", () => {
     const result = await loadVTTTranscript("https://example.org/partial.vtt");
     expect(result.annotations).toHaveLength(1);
     expect(result.annotations[0]!.text).toBe("Good cue");
+  });
+
+  it("passes the language argument through to the built annotations", async () => {
+    mockFetchText(200, VTT_OK);
+    const result = await loadVTTTranscript("https://example.org/ok.vtt", "es");
+    expect(result.annotations.every((a) => a.language === "es")).toBe(true);
   });
 });

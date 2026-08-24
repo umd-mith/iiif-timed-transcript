@@ -37,7 +37,29 @@ export default defineConfig({
         test: {
           name: "element",
           include: ["src/element/**/*.test.ts"],
+          exclude: ["src/element/element-forced-colors.test.ts"],
           browser: browser(),
+        },
+      },
+      {
+        // Forced-colors (Windows High Contrast) emulation for the element
+        // suite. A dedicated project: contextOptions.forcedColors is set at
+        // browser-context creation (Playwright's browser.newContext) and
+        // applies to every test the project runs — it cannot be toggled
+        // per test inside the shared "element" project above.
+        plugins: [elementSveltePlugin()],
+        define: { __CI__: JSON.stringify(Boolean(process.env["CI"])) },
+        test: {
+          name: "element-forced-colors",
+          include: ["src/element/element-forced-colors.test.ts"],
+          browser: {
+            enabled: true,
+            provider: playwright({
+              contextOptions: { forcedColors: "active" },
+            }),
+            instances: [{ browser: "chromium" as const }],
+            headless: true,
+          },
         },
       },
     ],

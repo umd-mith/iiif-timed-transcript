@@ -57,55 +57,75 @@
     }
   });
 
-  // Native-caption policy (VTT design, requirement 5): tracks are attached
-  // exactly as today; once the transcript panel is populated — by whatever
-  // source — every attached text track is set to "hidden" ONE time per canvas
-  // load, so the viewer does not see the same text twice. We never write
-  // `mode` again, so a viewer who re-enables captions keeps them. The
-  // `default` attribute cannot express this: the browser consults it only at
-  // insertion, which on a VTT-only canvas happens while the panel is still
-  // empty. Because the write happens once, a host that hides the transcript
-  // panel again (toggle, tab, responsive breakpoint) does not get the native
-  // captions back — such a host should pass `tracks` explicitly, which is
-  // exempt from this policy (consumer's choice).
-  // `captionsHidden` is the once-per-canvas-load latch. It re-arms whenever
-  // the *load identity* — the (canvasIndex, mediaUrl) pair — changes. Keying
-  // on the url alone is not enough: Root's performCanvasSwitch writes
-  // `mediaUrl = ""` and loadCanvas writes the new url in one synchronous call
-  // chain, so Svelte batches them and this effect never observes the "" — two
-  // canvases painting the same media body with different VTT tracks would
-  // then look like no change at all, and the recreated `<track default>`
-  // would stay showing on top of a populated panel. The canvas index moves on
-  // every switch, so the pair always does.
-  let captionsHidden = false;
-  let lastSeenUrl = "";
-  let lastSeenCanvas = -1;
+  // Captions policy is owned by the captions state machine in Root
+  // (captionsMachine.ts) — ctx.captionsState is the machine's current
+  // verdict; ctx.reportNativeCaptionChange feeds native CC-menu changes
+  // back into it. Viewer is a pure sink: it applies the verdict to the DOM
+  // and reports what the DOM reports. It never decides policy itself.
+  //
+  // Only the selected track (index 0, matching the `default={i === 0}`
+  // wiring below) ever leaves "disabled": a multi-language Choice canvas
+  // must never show two caption tracks at once, so every other track is
+  // forced to "disabled" regardless of machine state. This runs for both
+  // context-discovered and explicit `tracks`-prop tracks — the machine
+  // policy is not exempt for an explicit prop the way the old latch was
+  // (behavior change, noted in the changeset).
   $effect(() => {
     const el = localMediaElement;
-    const populated = ctx.transcriptPopulated;
-    const url = ctx.mediaUrl;
-    const canvas = ctx.canvasIndex;
-    if (url !== lastSeenUrl || canvas !== lastSeenCanvas) {
-      lastSeenUrl = url;
-      lastSeenCanvas = canvas;
-      captionsHidden = false;
-    }
+    const verdict = ctx.captionsState;
     const trackCount = effectiveTracks.length;
-    const usingContextTracks = tracks.length === 0;
-    if (!el || !populated || !url || trackCount === 0 || !usingContextTracks) {
-      return;
-    }
-    if (!(el instanceof HTMLVideoElement)) return;
-    if (captionsHidden) return;
+    if (!el || !(el instanceof HTMLVideoElement)) return;
+    if (trackCount === 0) return;
     untrack(() => {
       const list = el.textTracks;
-      if (list.length === 0) return;
       for (let i = 0; i < list.length; i++) {
         const track = list[i];
-        if (track) track.mode = "hidden";
+        if (!track) continue;
+        if (i !== 0) {
+          track.mode = "disabled";
+          continue;
+        }
+        // "unavailable"/"browserDefault": leave the browser's own default
+        // selection alone — the machine has not decided anything yet.
+        if (verdict === "showing") track.mode = "showing";
+        else if (verdict === "hidden" || verdict === "autoHidden")
+          track.mode = "hidden";
       }
-      captionsHidden = true;
     });
+  });
+
+  // The browser mutates TextTrack.mode behind our backs via the native CC
+  // menu. This listener is an input to the machine, not policy: it reports
+  // what the DOM says, and the machine (in Root) decides what that means.
+  //
+  // A `<track default>` element makes the browser select and show that
+  // track on its own (HTML spec's "honor user preferences for automatic
+  // text track selection"), and that selection queues its own 'change'
+  // event on textTracks — indistinguishable, from this listener's view,
+  // from a real native CC-menu action. Left unfiltered, that echo would
+  // reach the machine as a NATIVE_CHANGE before it ever sees
+  // TRANSCRIPT_POPULATED, jumping straight to userControlled and defeating
+  // the auto-hide policy on every load. The listener is recreated (and this
+  // flag reset) whenever `el` changes, so each canvas/media load gets its
+  // own one-time skip.
+  $effect(() => {
+    const el = localMediaElement;
+    if (!el || !(el instanceof HTMLVideoElement)) return;
+    const list = el.textTracks;
+    let skippedInitialSelection = false;
+    const handleChange = () => {
+      if (!skippedInitialSelection) {
+        skippedInitialSelection = true;
+        return;
+      }
+      const selected = list[0];
+      if (!selected) return;
+      if (selected.mode === "showing" || selected.mode === "hidden") {
+        ctx.reportNativeCaptionChange(selected.mode);
+      }
+    };
+    list.addEventListener("change", handleChange);
+    return () => list.removeEventListener("change", handleChange);
   });
 
   // Update context's mediaElement when ours is mounted

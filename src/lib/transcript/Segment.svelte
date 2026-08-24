@@ -43,7 +43,9 @@
      * </Segment>
      * ```
      */
-    text?: Snippet<[{ annotation: Annotation }]> | undefined;
+    text?:
+      | Snippet<[{ annotation: Annotation; language: string | undefined }]>
+      | undefined;
     tabindex?: number;
   }
 
@@ -76,9 +78,9 @@
 >
   <span class="timestamp">{formatTimestamp(annotation.startTime)}</span>
   {#if text}
-    {@render text({ annotation })}
+    {@render text({ annotation, language: annotation.language })}
   {:else}
-    <p class="text">{annotation.text}</p>
+    <p class="text" lang={annotation.language}>{annotation.text}</p>
   {/if}
 </div>
 

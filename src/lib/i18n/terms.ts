@@ -17,6 +17,7 @@ export type TermKey =
   | "transcript.segmentsLabel"
   // Reserved for the a11y spec's A3 (auto-scroll pause control).
   | "transcript.autoscrollPause"
+  | "transcript.autoscrollResume"
   // Reserved for the a11y spec's A5 (transcript status announcements).
   | "transcript.loadedAnnouncement"
   | "transcript.unavailableAnnouncement"
@@ -54,6 +55,7 @@ export const EN_TERMS: Record<TermKey, string> = {
   "transcript.searchMatchCount": "{current} of {total}",
   "transcript.segmentsLabel": "Transcript segments",
   "transcript.autoscrollPause": "Pause auto-scroll",
+  "transcript.autoscrollResume": "Resume auto-scroll",
   "transcript.loadedAnnouncement": "Transcript loaded, {count} segments",
   "transcript.unavailableAnnouncement": "Transcript unavailable",
   "player.errorLabel": "Error:",

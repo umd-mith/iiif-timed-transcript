@@ -499,11 +499,12 @@
           <IIIFPlayer.Skip seconds={30} />
           <IIIFPlayer.Speed />
           <IIIFPlayer.Time />
+          <IIIFPlayer.Captions />
         </IIIFPlayer.Controls>
         {#if (playerRefValue?.canvasCount ?? 0) > 1}
           <IIIFPlayer.CanvasNav />
         {/if}
-        {#if player.annotations.length > 0 || player.transcriptStatus === "loading"}
+        {#if player.annotations.length > 0 || player.transcriptStatus === "loading" || player.transcriptStatus === "error"}
           <IIIFPlayer.Transcript>
             <IIIFPlayer.TranscriptSearch />
             <IIIFPlayer.TranscriptSegments />
@@ -555,7 +556,7 @@
     padding: 0.5rem;
     background: var(--iiif-player-control-bg, #f3f4f6);
     color: var(--iiif-player-control-fg, inherit);
-    border: 1px solid var(--iiif-player-border, #e5e7eb);
+    border: 1px solid var(--iiif-player-border, #767676);
     border-radius: 4px;
   }
 
@@ -595,7 +596,7 @@
 
   .iiif-tp :global(nav.canvas-nav button) {
     padding: 0.25rem 0.5rem;
-    border: 1px solid var(--iiif-player-border, #e5e7eb);
+    border: 1px solid var(--iiif-player-border, #767676);
     border-radius: 4px;
     width: auto;
   }
@@ -607,7 +608,7 @@
 
   .iiif-tp :global(.transcript-panel) {
     background: var(--iiif-player-transcript-bg, transparent);
-    border: 1px solid var(--iiif-player-border, #e5e7eb);
+    border: 1px solid var(--iiif-player-border, #767676);
     border-radius: 4px;
     padding: 0.5rem;
     max-height: 24rem;
@@ -617,7 +618,7 @@
     width: 100%;
     box-sizing: border-box;
     padding: 0.375rem 0.5rem;
-    border: 1px solid var(--iiif-player-border, #e5e7eb);
+    border: 1px solid var(--iiif-player-border, #767676);
     border-radius: 4px;
     font: inherit;
   }
@@ -625,16 +626,41 @@
   .iiif-tp :global([data-annotation-id]) {
     padding: 0.375rem 0.5rem;
     border-radius: 4px;
+    border-inline-start: 4px solid transparent;
   }
 
   .iiif-tp :global([data-annotation-id][data-state="active"]) {
     background: var(--iiif-player-segment-active-bg, #fef3c7);
     color: var(--iiif-player-segment-fg, #1a1a1a);
+    border-inline-start-color: var(--iiif-player-segment-indicator, #1d4ed8);
   }
 
   .iiif-tp :global([data-annotation-id][data-highlighted="true"]),
   .iiif-tp :global([data-annotation-id][data-current-match="true"]) {
     background: var(--iiif-player-segment-highlight-bg, #dbeafe);
     color: var(--iiif-player-segment-fg, #1a1a1a);
+    border-inline-start-color: var(--iiif-player-segment-indicator, #1d4ed8);
+  }
+
+  .iiif-tp :global(nav.canvas-nav button:focus),
+  .iiif-tp :global([data-annotation-id]:focus) {
+    outline-color: var(--iiif-player-focus, #1d4ed8);
+  }
+
+  @media (forced-colors: active) {
+    .iiif-tp :global([data-annotation-id][data-state="active"]),
+    .iiif-tp :global([data-annotation-id][data-highlighted="true"]),
+    .iiif-tp :global([data-annotation-id][data-current-match="true"]) {
+      border-inline-start-color: Highlight;
+    }
+
+    .iiif-tp :global(nav.canvas-nav button[data-state="active"]) {
+      border-color: Highlight;
+    }
+
+    .iiif-tp :global(nav.canvas-nav button:focus),
+    .iiif-tp :global([data-annotation-id]:focus) {
+      outline-color: Highlight;
+    }
   }
 </style>

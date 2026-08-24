@@ -71,6 +71,7 @@ export function vttCueToPlainText(
 export function buildAnnotationsFromVTTCues(
   cues: readonly VTTCue[],
   tokenize: VTTCueTokenizer,
+  language?: string,
 ): TranscriptAnnotationResult {
   const annotations: Annotation[] = [];
   const skipped: SkippedAnnotation[] = [];
@@ -108,12 +109,16 @@ export function buildAnnotationsFromVTTCues(
     }
     seenIds.add(id);
 
-    annotations.push({
+    const annotation: Annotation = {
       id,
       startTime: cue.startTime,
       endTime: cue.endTime,
       text,
-    });
+    };
+    if (language) {
+      annotation.language = language;
+    }
+    annotations.push(annotation);
   }
 
   return { annotations, skipped };
@@ -129,6 +134,7 @@ export function buildAnnotationsFromVTTCues(
  */
 export async function loadVTTTranscript(
   url: string,
+  language?: string,
 ): Promise<TranscriptAnnotationResult> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -151,5 +157,5 @@ export async function loadVTTTranscript(
     );
   }
 
-  return buildAnnotationsFromVTTCues(cues, tokenizeVTTCue);
+  return buildAnnotationsFromVTTCues(cues, tokenizeVTTCue, language);
 }

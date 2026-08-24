@@ -974,42 +974,24 @@ describe("Viewer", () => {
     });
   });
 
-  describe("native captions when the transcript panel is populated", () => {
-    const twoTracks = [
+  describe("captions verdict application (machine-driven)", () => {
+    const twoTracks: TrackDefinition[] = [
       {
         src: "https://example.com/en.vtt",
-        kind: "captions" as const,
+        kind: "captions",
         srclang: "en",
         label: "English",
       },
       {
         src: "https://example.com/fr.vtt",
-        kind: "captions" as const,
+        kind: "captions",
         srclang: "fr",
         label: "Français",
       },
     ];
 
-    // A second canvas's tracks: different `src`, so the keyed {#each} in
-    // Viewer recreates the <track> elements the way a real canvas switch does.
-    const otherTracks: TrackDefinition[] = [
-      {
-        src: "https://example.com/canvas-2-en.vtt",
-        kind: "captions",
-        srclang: "en",
-        label: "English",
-      },
-      {
-        src: "https://example.com/canvas-2-de.vtt",
-        kind: "captions",
-        srclang: "de",
-        label: "Deutsch",
-      },
-    ];
-
     function mountVideo(
       ctx: ReturnType<typeof createReactiveMockPlayerContext>,
-      viewerProps: Record<string, unknown> = {},
     ): HTMLVideoElement {
       target = document.createElement("div");
       document.body.appendChild(target);
@@ -1017,279 +999,101 @@ describe("Viewer", () => {
         target,
         props: {
           context: ctx,
-          children: createChildSnippet(target, Viewer, viewerProps),
+          children: createChildSnippet(target, Viewer),
         },
       });
       flushSync();
       return target.querySelector("video") as HTMLVideoElement;
     }
 
-    test("sets every context track to hidden once the panel is populated", async () => {
+    test("browserDefault leaves the browser's own default-track selection alone", async () => {
       const ctx = createReactiveMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
         tracks: twoTracks,
-        transcriptPopulated: true,
+        captionsState: "browserDefault",
       });
       const video = mountVideo(ctx);
-
-      await vi.waitFor(() => {
-        expect(video.textTracks.length).toBe(2);
-        expect(video.textTracks[0]!.mode).toBe("hidden");
-        expect(video.textTracks[1]!.mode).toBe("hidden");
-      });
-      // The browser's automatic default-track selection must not flip it back.
-      await new Promise((r) => setTimeout(r, 100));
-      expect(video.textTracks[0]!.mode).toBe("hidden");
-    });
-
-    test("leaves the default track showing while the panel is empty", async () => {
-      const ctx = createReactiveMockPlayerContext({
-        mediaUrl: "https://example.com/video.mp4",
-        mediaType: "video",
-        tracks: twoTracks,
-        transcriptPopulated: false,
-      });
-      const video = mountVideo(ctx);
-
       await vi.waitFor(() => {
         expect(video.textTracks[0]!.mode).toBe("showing");
       });
     });
 
-    test("hides captions when the panel populates later", async () => {
+    test("autoHidden hides the selected track", async () => {
       const ctx = createReactiveMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
         tracks: twoTracks,
-        transcriptPopulated: false,
+        captionsState: "autoHidden",
       });
       const video = mountVideo(ctx);
-      await vi.waitFor(() => {
-        expect(video.textTracks[0]!.mode).toBe("showing");
-      });
-
-      ctx.transcriptPopulated = true;
-      flushSync();
       await vi.waitFor(() => {
         expect(video.textTracks[0]!.mode).toBe("hidden");
       });
     });
 
-    test("writes mode once per canvas load and never again", async () => {
+    test("showing/hidden verdicts apply to the selected track", async () => {
       const ctx = createReactiveMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
         tracks: twoTracks,
-        transcriptPopulated: true,
+        captionsState: "hidden",
       });
       const video = mountVideo(ctx);
       await vi.waitFor(() => {
         expect(video.textTracks[0]!.mode).toBe("hidden");
-        expect(video.textTracks[1]!.mode).toBe("hidden");
       });
 
-      // Panel empties (a consumer that conditionally renders <Transcript>):
-      // the library leaves `mode` alone — documented limitation, a host that
-      // needs captions back should pass `tracks` explicitly.
-      ctx.transcriptPopulated = false;
+      ctx.captionsState = "showing";
       flushSync();
-      await new Promise((r) => setTimeout(r, 50));
-      expect(video.textTracks[0]!.mode).toBe("hidden");
-      expect(video.textTracks[1]!.mode).toBe("hidden");
-
-      // A viewer's own choice survives a repopulate on the same canvas:
-      // the library never writes `mode` a second time.
-      video.textTracks[0]!.mode = "showing";
-      video.textTracks[1]!.mode = "disabled";
-      ctx.transcriptPopulated = true;
-      flushSync();
-      await new Promise((r) => setTimeout(r, 50));
-      expect(video.textTracks[0]!.mode).toBe("showing");
-      expect(video.textTracks[1]!.mode).toBe("disabled");
-    });
-
-    test("does not touch an explicit tracks prop", async () => {
-      const ctx = createReactiveMockPlayerContext({
-        mediaUrl: "https://example.com/video.mp4",
-        mediaType: "video",
-        transcriptPopulated: true,
-      });
-      const video = mountVideo(ctx, { tracks: twoTracks });
-
       await vi.waitFor(() => {
         expect(video.textTracks[0]!.mode).toBe("showing");
       });
     });
 
-    // Root's performCanvasSwitch writes `mediaUrl = ""` and loadCanvas writes
-    // the new url in ONE synchronous call chain, so Svelte batches them and
-    // Viewer's effect never observes the "". These helpers drive the switch
-    // the way Root really does: every write, then a single flush.
-    function switchCanvas(
-      ctx: ReturnType<typeof createReactiveMockPlayerContext>,
-      next: {
-        canvasIndex: number;
-        mediaUrl: string;
-        tracks: TrackDefinition[];
-      },
-    ) {
-      ctx.mediaUrl = "";
-      ctx.transcriptPopulated = false;
-      ctx.tracks = [];
-      ctx.canvasIndex = next.canvasIndex;
-      ctx.mediaUrl = next.mediaUrl;
-      ctx.tracks = next.tracks;
-      flushSync();
-    }
-
-    test("starts over on a canvas switch (new mediaUrl)", async () => {
+    test("only the selected track ever leaves disabled on a multi-track canvas", async () => {
       const ctx = createReactiveMockPlayerContext({
-        mediaUrl: "https://example.com/video-1.mp4",
+        mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
-        canvasIndex: 0,
         tracks: twoTracks,
-        transcriptPopulated: true,
+        captionsState: "showing",
       });
       const video = mountVideo(ctx);
       await vi.waitFor(() => {
-        expect(video.textTracks[0]!.mode).toBe("hidden");
+        expect(video.textTracks[0]!.mode).toBe("showing");
+        expect(video.textTracks[1]!.mode).toBe("disabled");
       });
 
-      switchCanvas(ctx, {
-        canvasIndex: 1,
-        mediaUrl: "https://example.com/video-2.mp4",
-        tracks: otherTracks,
-      });
-      const video2 = target.querySelector("video") as HTMLVideoElement;
-      await vi.waitFor(() => {
-        expect(video2.textTracks[0]!.mode).toBe("showing");
-      });
-
-      ctx.transcriptPopulated = true;
+      // Toggling the verdict never promotes the second track either.
+      ctx.captionsState = "hidden";
       flushSync();
       await vi.waitFor(() => {
-        expect(video2.textTracks[0]!.mode).toBe("hidden");
+        expect(video.textTracks[0]!.mode).toBe("hidden");
+        expect(video.textTracks[1]!.mode).toBe("disabled");
       });
     });
 
-    test("re-arms when a canvas is revisited (A -> B -> A)", async () => {
-      const urlA = "https://example.com/video-a.mp4";
-      const urlB = "https://example.com/video-b.mp4";
+    test("a native textTracks 'change' reports the selected track's mode back to the context", async () => {
+      const reportNativeCaptionChange = vi.fn();
       const ctx = createReactiveMockPlayerContext({
-        mediaUrl: urlA,
+        mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
-        canvasIndex: 0,
         tracks: twoTracks,
-        transcriptPopulated: true,
+        captionsState: "showing",
+        reportNativeCaptionChange,
       });
       const video = mountVideo(ctx);
       await vi.waitFor(() => {
-        expect(video.textTracks[0]!.mode).toBe("hidden");
+        expect(video.textTracks[0]!.mode).toBe("showing");
       });
+      reportNativeCaptionChange.mockClear();
 
-      // A -> B: canvas-scoped tracks are replaced, so every <track default>
-      // is recreated and the browser selects the new first one.
-      switchCanvas(ctx, {
-        canvasIndex: 1,
-        mediaUrl: urlB,
-        tracks: otherTracks,
-      });
-      const videoB = target.querySelector("video") as HTMLVideoElement;
-      await vi.waitFor(() => {
-        expect(videoB.textTracks[0]!.mode).toBe("showing");
-      });
+      // Simulate the user picking "Off" from the browser's native CC menu.
+      video.textTracks[0]!.mode = "hidden";
+      video.textTracks.dispatchEvent(new Event("change"));
 
-      // B -> A: a "last URL written" latch would still hold urlA here and
-      // short-circuit, leaving the fresh default track showing on top of a
-      // populated panel.
-      switchCanvas(ctx, {
-        canvasIndex: 0,
-        mediaUrl: urlA,
-        tracks: twoTracks,
-      });
-      const videoA2 = target.querySelector("video") as HTMLVideoElement;
       await vi.waitFor(() => {
-        expect(videoA2.textTracks[0]!.mode).toBe("showing");
-      });
-
-      ctx.transcriptPopulated = true;
-      flushSync();
-      await vi.waitFor(() => {
-        expect(videoA2.textTracks[0]!.mode).toBe("hidden");
-        expect(videoA2.textTracks[1]!.mode).toBe("hidden");
-      });
-    });
-
-    test("recreates a <track> the next canvas reuses by src", async () => {
-      // Two canvases whose caption tracks share a `src`. Keyed only on the
-      // src, the {#each} would reuse the very same <track> node across the
-      // switch and its TextTrack.mode would survive as "hidden" — captions
-      // silently off on a canvas whose panel is empty.
-      const sharedTrack: TrackDefinition = {
-        src: "https://example.com/shared-en.vtt",
-        kind: "captions",
-        srclang: "en",
-        label: "English",
-      };
-      const ctx = createReactiveMockPlayerContext({
-        mediaUrl: "https://example.com/video-1.mp4",
-        mediaType: "video",
-        canvasIndex: 0,
-        tracks: [sharedTrack],
-        transcriptPopulated: true,
-      });
-      const video = mountVideo(ctx);
-      await vi.waitFor(() => {
-        expect(video.textTracks[0]!.mode).toBe("hidden");
-      });
-
-      // Canvas 1: different media, same track src, and an empty panel.
-      switchCanvas(ctx, {
-        canvasIndex: 1,
-        mediaUrl: "https://example.com/video-2.mp4",
-        tracks: [{ ...sharedTrack }],
-      });
-      const video2 = target.querySelector("video") as HTMLVideoElement;
-      await vi.waitFor(() => {
-        expect(video2.textTracks[0]!.mode).toBe("showing");
-      });
-    });
-
-    test("re-arms for two canvases that share one media file", async () => {
-      // Same media body painted by both canvases, different VTT tracks. The
-      // url never changes across the switch, so a url-only latch never
-      // re-arms and canvas 1's fresh <track default> stays showing on top of
-      // a populated panel.
-      const sharedUrl = "https://example.com/shared-video.mp4";
-      const ctx = createReactiveMockPlayerContext({
-        mediaUrl: sharedUrl,
-        mediaType: "video",
-        canvasIndex: 0,
-        tracks: twoTracks,
-        transcriptPopulated: true,
-      });
-      const video = mountVideo(ctx);
-      await vi.waitFor(() => {
-        expect(video.textTracks[0]!.mode).toBe("hidden");
-      });
-
-      switchCanvas(ctx, {
-        canvasIndex: 1,
-        mediaUrl: sharedUrl,
-        tracks: otherTracks,
-      });
-      const video2 = target.querySelector("video") as HTMLVideoElement;
-      await vi.waitFor(() => {
-        expect(video2.textTracks).toHaveLength(otherTracks.length);
-        expect(video2.textTracks[0]!.mode).toBe("showing");
-      });
-
-      ctx.transcriptPopulated = true;
-      flushSync();
-      await vi.waitFor(() => {
-        expect(video2.textTracks[0]!.mode).toBe("hidden");
-        expect(video2.textTracks[1]!.mode).toBe("hidden");
+        expect(reportNativeCaptionChange).toHaveBeenCalledWith("hidden");
       });
     });
   });

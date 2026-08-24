@@ -45,6 +45,7 @@ function createInitialContext(): SyncContext {
     scrollContainer: null,
     annotations: [],
     priorityLockDuration: 1000,
+    autoScrollEnabled: true,
   };
 }
 
@@ -233,6 +234,19 @@ export const syncMachine = setup({
         timestamp: 0,
       }),
     }),
+
+    /**
+     * Toggle the auto-scroll pause flag (A4). Internal transition — no
+     * state change, just context.
+     */
+    setAutoScrollEnabled: assign({
+      autoScrollEnabled: ({ context, event }) => {
+        if (event.type === "SET_AUTO_SCROLL_ENABLED") {
+          return event.enabled;
+        }
+        return context.autoScrollEnabled;
+      },
+    }),
   },
 }).createMachine({
   id: "sync",
@@ -269,6 +283,9 @@ export const syncMachine = setup({
             "acquireMediaPriority",
           ],
         },
+        SET_AUTO_SCROLL_ENABLED: {
+          actions: ["setAutoScrollEnabled"],
+        },
         RESET: {
           target: "idle",
           actions: ["clearSync"],
@@ -296,6 +313,9 @@ export const syncMachine = setup({
             "acquireScrollPriority",
           ],
         },
+        SET_AUTO_SCROLL_ENABLED: {
+          actions: ["setAutoScrollEnabled"],
+        },
         RESET: {
           target: "idle",
           actions: ["clearSync"],
@@ -319,6 +339,7 @@ export const syncMachine = setup({
           return {
             scrollContainer: context.scrollContainer!,
             targetAnnotation: activeAnnotation,
+            autoScrollEnabled: context.autoScrollEnabled,
           };
         },
         onDone: "ready",
@@ -334,6 +355,9 @@ export const syncMachine = setup({
             "updateAnnotationIndex",
             "acquireMediaPriority",
           ],
+        },
+        SET_AUTO_SCROLL_ENABLED: {
+          actions: ["setAutoScrollEnabled"],
         },
         RESET: {
           target: "idle",

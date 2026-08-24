@@ -24,6 +24,7 @@
  *     <IIIFPlayer.Skip seconds={10} />
  *     <IIIFPlayer.Speed />
  *     <IIIFPlayer.Time />
+ *     <IIIFPlayer.Captions />
  *   </IIIFPlayer.Controls>
  *   <IIIFPlayer.Transcript annotations={...}>
  *     <IIIFPlayer.TranscriptSearch />

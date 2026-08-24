@@ -78,7 +78,7 @@
      * **Caution:** If using `{@html}`, ensure annotation text is sanitized
      * to prevent XSS. The default rendering escapes text automatically.
      */
-    text?: Snippet<[{ annotation: Annotation }]>;
+    text?: Snippet<[{ annotation: Annotation; language: string | undefined }]>;
     class?: string;
   }
 
@@ -211,6 +211,17 @@
     non-interactive grouping element, svelte-check flags
     a11y_no_noninteractive_element_interactions — suppressed intentionally on
     the next line; the keyboard enhancement is additive over accessible text.
+
+    Same read-first reasoning shapes each individual segment (Segment.svelte):
+    it's a `role="button"` <div>, not a native <button>. A native button's
+    content commonly resists text selection (UA stylesheets and form-control
+    rendering suppress it, since a button's standard semantic is "trigger an
+    action," not "contain selectable prose") — wrong for a surface users read
+    and copy from. The div gets the accessibility-tree button semantics (name,
+    role, Enter/Space activation) via `role="button"` plus the keydown handler,
+    without inheriting that suppression; Segment.svelte's `all: unset` reset
+    keeps `user-select` at its default so the text stays selectable by
+    construction.
   -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
