@@ -879,6 +879,124 @@ Targets modern evergreen browsers. Requires:
 
 HLS streaming requires either Safari (native) or `hls.js` (other browsers).
 
+## Accessibility
+
+`<iiif-transcript-player>` targets **WCAG 2.1 Level AA**. A VPAT 2.5 INT
+Accessibility Conformance Report is committed at
+[`docs/a11y/vpat-2.5-int.md`](docs/a11y/vpat-2.5-int.md), backed by the manual
+test scripts in [`docs/a11y/`](docs/a11y/) and by the axe-core and
+contrast-ratio tests that run in CI. This section covers what a developer
+embedding the component needs to know; the report is the row-by-row source.
+
+### Keyboard model
+
+Every control in the element's fixed composition — Play, Progress, Skip,
+Speed, the Captions toggle on a video canvas with caption tracks, canvas
+navigation, chapters, the auto-scroll pause toggle, and search — is reachable
+with **Tab** in visual order, and each is a real `<button>`, `<select>`, or
+`<input type="range">`. Nothing is a custom widget imitating a native
+control's keyboard behavior, and nothing traps focus: Tab from the last
+control leaves the shadow tree for the next element on the host page.
+
+The transcript panel is a **composite widget**. It takes exactly one Tab stop
+(a roving `tabindex`), and once focus is inside it, **Arrow Up/Down**,
+**Home**, and **End** move between segments, with Up and Down wrapping at the
+ends. **Enter** or **Space** on a focused segment seeks the media to that
+segment's start time and leaves focus where it was. Tab moves focus out of
+the panel entirely rather than to the next segment — the standard composite
+widget behavior, and the same thing a native `<select>`'s open listbox does.
+
+Switching canvases resets the panel's roving-tabindex entry point to the new
+canvas's first segment. It does not leave a stale reference in the previous
+canvas's DOM.
+
+### What is announced, and when
+
+Two `aria-live="polite"` regions exist.
+
+The **segment announcer** inside the transcript panel announces the active
+segment's text, but only on **user-initiated** changes — a segment click, an
+Enter or Space seek, a search-driven seek. It stays silent as segments change
+under auto-playing media, which is what keeps the panel from narrating an
+entire recording at someone.
+
+The **transcript status announcer** shares that persistent live-region
+container and carries one-shot messages: `Transcript loaded, N segments` on
+success and `Transcript unavailable` on failure. The failure case covers both
+a missing transcript and a transcript resource, such as a WebVTT file, that
+fails to load. The container stays mounted even when the panel is showing its
+empty state, so a screen-reader user gets the same signal a sighted user gets
+from the visible "No transcript available." text.
+
+A fatal error — an unreachable or invalid manifest — renders a `role="alert"`
+banner, which assistive technology announces immediately. That interrupting
+announcement is deliberately a different thing from the polite status
+messages above, matching the difference between "the manifest is broken" and
+"this one transcript track didn't load."
+
+The search match counter is `aria-live="polite"` and updates as you type,
+without focus moving to it.
+
+### Known limitations
+
+- **1.2.5 Audio Description is not supported.** There is no affordance for an
+  audio-description track: caption tracks are the only kind built from
+  manifest annotations, and no alternate-audio-track affordance exists. No
+  manifest in the current consumer base carries a `descriptions` track. This
+  is a documented gap rather than an oversight, and the conformance report
+  carries it as **Does Not Support** rather than hiding it. If you have a
+  manifest that needs audio description, open an issue — that's the condition
+  under which we'd revisit it.
+- **Caption and transcript content is the manifest publisher's
+  responsibility.** The component renders whatever caption tracks and
+  transcript annotations the manifest supplies; it neither generates nor
+  validates them. A page embedding this component with a manifest carrying
+  neither will not satisfy WCAG 1.2.2 or 1.2.3, whatever the component does.
+- **This is a component, not a page.** WCAG conformance is defined at the page
+  level. The report describes the component evaluated in isolation on a
+  minimal host page. Page language, bypass blocks, page title, and consistent
+  navigation across a site belong to the embedding page and are marked Not
+  Applicable there for that reason — not because the component is exempt from
+  good judgment about them.
+
+### Theming responsibility
+
+Every contrast claim in the report — 1.4.3 text contrast, 1.4.11 non-text
+contrast — holds for the **shipped default** `--iiif-player-*` values, which a
+committed contrast test locks. Remap those tokens and the resulting contrast
+is yours to verify: the report cannot certify a palette it has never seen. If
+your host page sets a custom `--iiif-player-accent` or similar, re-run or
+adapt the contrast test before shipping.
+
+### Forced colors and RTL
+
+Under `forced-colors: active` (Windows contrast themes), state that would
+otherwise be carried by background color alone — active segment, search
+highlight, focus — also carries a border, so it survives the operating system
+stripping backgrounds.
+
+The component respects `dir="rtl"` inherited from an ancestor. Layout, text
+alignment, and the state-indicator borders use logical CSS properties
+(`margin-inline-start`, `border-inline-start`) rather than physical ones, so
+they land on the correct edge under RTL. See
+[`docs/a11y/forced-colors-rtl.md`](docs/a11y/forced-colors-rtl.md) for both
+test scripts and their recorded results.
+
+### Why transcript segments are `role="button"` divs
+
+Transcript segments are `<div role="button">` with explicit Enter and Space
+handling, not native `<button>` elements. That is deliberate. A transcript is
+a reading and text-selection surface — a patron selecting and copying a
+quoted line is a core use case — and a native button's content commonly
+resists selection, since a button's standard semantic is "trigger an action,"
+not "contain selectable prose." The div gets full button semantics from
+`role="button"` plus the keydown handler without inheriting that suppression.
+
+The same reasoning makes the segment list a labelled `role="group"` rather
+than a `role="toolbar"`: a toolbar implies a row of action controls, which is
+the wrong model for a primarily readable list with keyboard navigation
+layered on top.
+
 ## Contributing
 
 Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
