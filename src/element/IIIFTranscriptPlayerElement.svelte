@@ -89,6 +89,14 @@
           self[key] = captured[key];
         }
       }
+
+      // 1.2: a no-op so browsers doing a `moveBefore()` move skip Svelte's
+      // disconnect/reconnect teardown (custom-element.js:201-211) entirely —
+      // state-preserving moves for hosts using the modern API. Zero effect
+      // on hosts that never call `moveBefore()`; AJAX *replacement* (remove
+      // + a brand-new node) still rebuilds, same as before (README,
+      // "Reconnection").
+      connectedMoveCallback() {}
     };
   }
 </script>
