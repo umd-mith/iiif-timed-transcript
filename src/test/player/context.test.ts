@@ -40,6 +40,8 @@ describe("getPlayerContext", () => {
         playbackRate: 1,
         isReady: false,
         error: null,
+        hasEnded: false,
+        isSeeking: false,
       },
       mediaElement: null,
       mediaUrl: "https://example.com/test.mp3",
@@ -108,6 +110,8 @@ describe("PlayerContext chapter types", () => {
       playbackRate: 1,
       isReady: true,
       error: null,
+      hasEnded: false,
+      isSeeking: false,
     };
 
     const chapters: Chapter[] = [

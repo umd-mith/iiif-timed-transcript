@@ -34,6 +34,11 @@ export interface CanvasChangeDetail {
   index: number;
   canvas: CanvasInfo;
 }
+/** Empty today; kept as an object (not `void`) so hosts can safely read `.detail` and future fields can be added non-breaking. */
+export type PlaybackEventDetail = Record<string, never>;
+export interface RateChangeDetail {
+  rate: number;
+}
 export type ErrorCallback = (
   error: Error,
   info: { fatal: boolean; source: ElementErrorSource },
@@ -94,6 +99,11 @@ export interface IIIFTranscriptPlayerElementEventMap extends HTMLElementEventMap
   "iiif-player-ready": CustomEvent<PlayerRefAvailableDetail>;
   "iiif-player-error": CustomEvent<PlayerErrorDetail>;
   "iiif-player-canvas-change": CustomEvent<CanvasChangeDetail>;
+  "iiif-player-play": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-pause": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-ended": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-seeked": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-rate-change": CustomEvent<RateChangeDetail>;
 }
 
 /** Defines the element as `tagName` (default `"iiif-transcript-player"`). Warns and no-ops if already defined. */

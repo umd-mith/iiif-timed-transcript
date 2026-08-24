@@ -173,8 +173,10 @@
   import type {
     CanvasChangeDetail,
     ErrorCallback,
+    PlaybackEventDetail,
     PlayerErrorDetail,
     PlayerRefAvailableDetail,
+    RateChangeDetail,
   } from "./events.js";
 
   let {
@@ -490,6 +492,58 @@
     $host().setAttribute("canvas-index", String(index));
     emit<CanvasChangeDetail>("iiif-player-canvas-change", { index, canvas });
   }
+
+  // Playback events are derived from actual player.state transitions
+  // (Shoelace's "state-driven only" rule), never from a programmatic prop
+  // write — a canvas switch resets several PlayerState fields via
+  // resetTransientPlaybackState() but never actually starts playback, so
+  // it must never look like a `play` transition here.
+  let prevPlaybackState: {
+    isPlaying: boolean;
+    hasEnded: boolean;
+    isSeeking: boolean;
+    playbackRate: number;
+  } | null = null;
+
+  $effect(() => {
+    const state = playerRefValue?.state;
+    if (!state) return;
+    const current = {
+      isPlaying: state.isPlaying,
+      hasEnded: state.hasEnded,
+      isSeeking: state.isSeeking,
+      playbackRate: state.playbackRate,
+    };
+    const prev = prevPlaybackState;
+    prevPlaybackState = current;
+    // The first observation establishes the baseline; nothing transitioned
+    // yet, so there is nothing to report.
+    if (!prev) return;
+
+    const justEnded = current.hasEnded && !prev.hasEnded;
+    if (justEnded) {
+      emit<PlaybackEventDetail>("iiif-player-ended", {});
+    }
+    if (current.isPlaying !== prev.isPlaying) {
+      if (current.isPlaying) {
+        emit<PlaybackEventDetail>("iiif-player-play", {});
+      } else if (!justEnded) {
+        // Ordering pin (3.2 in the hardening spec): HTML fires `pause`
+        // then `ended` in one queued task, so this flush sees isPlaying
+        // and hasEnded flip together. Suppress `iiif-player-pause` in
+        // that case — `iiif-player-ended` already reported it, by design.
+        emit<PlaybackEventDetail>("iiif-player-pause", {});
+      }
+    }
+    if (prev.isSeeking && !current.isSeeking) {
+      emit<PlaybackEventDetail>("iiif-player-seeked", {});
+    }
+    if (current.playbackRate !== prev.playbackRate) {
+      emit<RateChangeDetail>("iiif-player-rate-change", {
+        rate: current.playbackRate,
+      });
+    }
+  });
 </script>
 
 <div class="iiif-tp">
