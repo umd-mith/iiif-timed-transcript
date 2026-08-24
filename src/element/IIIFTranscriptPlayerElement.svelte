@@ -10,6 +10,7 @@
       preprocessManifest: { attribute: "preprocessmanifest" },
       errorCallback: { attribute: "errorcallback" },
     },
+    extend,
   }}
 />
 
@@ -22,6 +23,74 @@
   // to `initial-time` behind the user's back. Keyed on the host element, so
   // the record survives the rebuild and dies with the node.
   const initialTimeAppliedHosts = new WeakSet<HTMLElement>();
+
+  /**
+   * Minimal typing for the private fields this dance reaches into directly
+   * on the generated custom-element instance
+   * (svelte/internal/client/dom/elements/custom-element.js): `$$p_d` is the
+   * props-definition map, assigned in the base class's own constructor
+   * (custom-element.js:300) before any subclass `connectedCallback` runs, so
+   * `Object.keys(this.$$p_d)` is always exactly the `customElement.props`
+   * map above — it cannot drift from a hand-duplicated key list.
+   * `connectedCallback` is Svelte's generated async upgrade routine
+   * (custom-element.js:93-184).
+   */
+  interface SvelteCustomElementInstance extends HTMLElement {
+    $$p_d: Record<string, unknown>;
+    connectedCallback(): Promise<void>;
+  }
+  interface SvelteCustomElementConstructor {
+    new (...params: never[]): SvelteCustomElementInstance;
+  }
+
+  /**
+   * The standard custom-element upgrade dance (WHATWG custom-elements spec,
+   * "upgrades"): a property set on the element before it upgrades — before
+   * `define()` runs, or before this element's own subclass is defined — must
+   * win over a same-name attribute once it does upgrade, and must not
+   * permanently shadow the prototype accessor afterward.
+   *
+   * Svelte's generated `connectedCallback` already ports and deletes an
+   * attribute-less pre-upgrade own property (custom-element.js:133-142) —
+   * but when the SAME key is also present as an attribute, its earlier
+   * attribute loop (custom-element.js:126-132) has already written that
+   * key into `$$d`, so the port loop's `!(key in this.$$d)` guard skips it:
+   * the pre-upgrade property is left as a permanent own-property shadow, and
+   * the attribute's value — not the property's — is what the component gets.
+   *
+   * The fix: capture and delete every declared prop that is currently an own
+   * property BEFORE deferring to Svelte's `connectedCallback` (so its
+   * attribute loop can never make the port loop think the key is already
+   * spoken for, and its port loop finds nothing left to port), then
+   * re-assign each captured value through the prototype accessor AFTER the
+   * component exists — an ordinary property write, indistinguishable from a
+   * host writing it post-upgrade, which already wins over the attribute
+   * (README, "Attributes vs properties"). Applied uniformly to every
+   * declared prop (not just ones with a same-name attribute) so there is one
+   * code path instead of two: the cost is that a pre-upgrade property with
+   * no attribute now mounts at its default and is reassigned a tick later,
+   * instead of mounting with the right value the first time — invisible to
+   * a host (same task, before paint), and covered by case 2b below.
+   */
+  function extend(Class: new () => HTMLElement) {
+    const Base = Class as unknown as SvelteCustomElementConstructor;
+    return class extends Base {
+      async connectedCallback() {
+        const self = this as unknown as Record<string, unknown>;
+        const captured: Record<string, unknown> = {};
+        for (const key of Object.keys(this.$$p_d)) {
+          if (Object.prototype.hasOwnProperty.call(this, key)) {
+            captured[key] = self[key];
+            delete self[key];
+          }
+        }
+        await super.connectedCallback();
+        for (const key of Object.keys(captured)) {
+          self[key] = captured[key];
+        }
+      }
+    };
+  }
 </script>
 
 <script lang="ts">
