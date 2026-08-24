@@ -758,6 +758,30 @@ iiif-transcript-player:not(:defined) {
 }
 ```
 
+### Embedding in a CMS (Drupal, WordPress)
+
+A CMS theme typically emits the element as static markup and loads the script with `defer` (or a theme's own async loader), independent of when the surrounding page finishes rendering.
+
+**`defer` is safe.** `defer` guarantees the script runs after the DOM is parsed but says nothing about _when_ relative to other deferred scripts — the element itself does not care about that ordering. Attribute-driven markup (`manifest-url`, `canvas-index`, `initial-time`, `autoplay`, `label`, `crossorigin`) works regardless of definition timing: the browser upgrades any already-parsed `<iiif-transcript-player>` tags the moment `register()` runs, wherever that falls in the load sequence.
+
+**Property writes need no `whenDefined` gate.** Earlier guidance here recommended wrapping any pre-definition property write in `customElements.whenDefined("iiif-transcript-player").then(…)`. That workaround is no longer needed: a property set on the element before its defining script has run now survives the upgrade and wins over any same-named attribute (see "Attributes vs properties" above).
+
+**Listener hygiene under AJAX re-attachment.** CMS admin UIs (Drupal's AJAX framework, WordPress block editors with live-preview panels) commonly detach and re-attach DOM subtrees rather than fully reloading the page. Two rules follow directly from the Reconnection behavior documented above:
+
+- Add listeners with `{ once: true }` or an explicit `removeEventListener` on teardown when your theme JS re-runs on every AJAX response — otherwise a listener attached on first render survives cleanup and a listener attached on the second render duplicates it, so `iiif-player-error` handlers fire twice for one error.
+- Never cache `playerRef` as a page-level singleton. Treat every `iiif-player-ready` event's `detail.playerRef` as the current one and nothing more: a detach/re-attach rebuilds the player, fires the event again, and the old reference's `actions` no longer control anything on screen.
+
+**Reserve height.** The element is empty (no size) until its defining script runs. Reserve space with `min-height` or `aspect-ratio` to avoid layout shift, and hide it entirely until upgrade if your theme is sensitive to flash-of-undefined-element:
+
+```css
+iiif-transcript-player:not(:defined) {
+  display: block;
+  min-height: 24rem;
+}
+```
+
+A full worked example against a real institutional theme (UMD Libraries' Drupal design system, loaded from its CDN) is in [`examples/element/drupal-theme.html`](./examples/element/drupal-theme.html) — dark-mode toggle, CSP-safe host CSS, and the reserve-height pattern above, all in one page.
+
 ### Two worked examples
 
 Cookbook 0219 (video + VTT): the transcript panel populates from the VTT file and the video's native captions switch off once it does (they stay available in the native controls).

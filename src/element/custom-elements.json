@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "README.md",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "element/index.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "IIIFTranscriptPlayerElement",
+          "tagName": "iiif-transcript-player",
+          "customElement": true,
+          "attributes": [
+            {
+              "name": "manifest-url",
+              "type": { "text": "string" },
+              "fieldName": "manifestUrl"
+            },
+            {
+              "name": "canvas-index",
+              "type": { "text": "number" },
+              "default": "0",
+              "fieldName": "canvasIndex"
+            },
+            {
+              "name": "initial-time",
+              "type": { "text": "number" },
+              "fieldName": "initialTime"
+            },
+            {
+              "name": "autoplay",
+              "type": { "text": "boolean" },
+              "default": "false",
+              "fieldName": "autoplay"
+            },
+            {
+              "name": "label",
+              "type": { "text": "string" },
+              "fieldName": "label"
+            },
+            {
+              "name": "crossorigin",
+              "type": { "text": "string" },
+              "fieldName": "crossorigin"
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "annotations",
+              "type": { "text": "Annotation[] | \"auto\"" },
+              "default": "\"auto\""
+            },
+            {
+              "kind": "field",
+              "name": "preprocessManifest",
+              "type": { "text": "((raw: unknown) => unknown) | undefined" }
+            },
+            {
+              "kind": "field",
+              "name": "errorCallback",
+              "type": { "text": "ErrorCallback | undefined" }
+            },
+            {
+              "kind": "field",
+              "name": "playerRef",
+              "type": { "text": "PlayerRef | null | undefined" },
+              "readonly": true
+            }
+          ],
+          "events": [
+            {
+              "name": "iiif-player-ready",
+              "type": { "text": "CustomEvent<PlayerRefAvailableDetail>" }
+            },
+            {
+              "name": "iiif-player-error",
+              "type": { "text": "CustomEvent<PlayerErrorDetail>" }
+            },
+            {
+              "name": "iiif-player-canvas-change",
+              "type": { "text": "CustomEvent<CanvasChangeDetail>" }
+            },
+            {
+              "name": "iiif-player-play",
+              "type": { "text": "CustomEvent<PlaybackEventDetail>" }
+            },
+            {
+              "name": "iiif-player-pause",
+              "type": { "text": "CustomEvent<PlaybackEventDetail>" }
+            },
+            {
+              "name": "iiif-player-ended",
+              "type": { "text": "CustomEvent<PlaybackEventDetail>" }
+            },
+            {
+              "name": "iiif-player-seeked",
+              "type": { "text": "CustomEvent<PlaybackEventDetail>" }
+            },
+            {
+              "name": "iiif-player-rate-change",
+              "type": { "text": "CustomEvent<RateChangeDetail>" }
+            }
+          ],
+          "cssProperties": [
+            { "name": "--iiif-player-font-family" },
+            { "name": "--iiif-player-bg" },
+            { "name": "--iiif-player-fg" },
+            { "name": "--iiif-player-accent" },
+            { "name": "--iiif-player-accent-fg" },
+            { "name": "--iiif-player-control-bg" },
+            { "name": "--iiif-player-control-fg" },
+            { "name": "--iiif-player-transcript-bg" },
+            { "name": "--iiif-player-segment-active-bg" },
+            { "name": "--iiif-player-segment-highlight-bg" },
+            { "name": "--iiif-player-segment-fg" },
+            { "name": "--iiif-player-border" }
+          ],
+          "cssParts": [
+            { "name": "controls" },
+            { "name": "transcript" },
+            { "name": "segment" },
+            { "name": "segment-active" }
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "iiif-transcript-player",
+          "declaration": {
+            "name": "IIIFTranscriptPlayerElement",
+            "module": "element/index.js"
+          }
+        }
+      ]
+    }
+  ]
+}

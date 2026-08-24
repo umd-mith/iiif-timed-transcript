@@ -31,6 +31,13 @@ const iifeTypesOut = resolve(
   root,
   "dist/element/iiif-transcript-player.iife.d.ts",
 );
+const cem = resolve(root, "src/element/custom-elements.json");
+const cemOut = resolve(root, "dist/element/custom-elements.json");
+const wrapperSource = resolve(
+  root,
+  "src/element/IIIFTranscriptPlayerElement.svelte",
+);
+const publicTypesSource = types; // already resolved above as public-types.d.ts
 
 const IIFE_BUDGET_BYTES = 1 * 1024 * 1024; // 1 MB minified (spec: "Size budget")
 
@@ -39,7 +46,7 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-for (const file of [esm, iife, types, iifeTypes]) {
+for (const file of [esm, iife, types, iifeTypes, cem]) {
   if (!existsSync(file)) fail(`missing ${file}`);
 }
 
@@ -121,6 +128,63 @@ if (!/dashjs/.test(iifeSource)) {
 
 copyFileSync(types, typesOut);
 copyFileSync(iifeTypes, iifeTypesOut);
+copyFileSync(cem, cemOut);
+
+// custom-elements.json is hand-authored (src/element/custom-elements.json)
+// and must not silently drift from the two files that actually declare the
+// element's public surface. This is a string/regex check, matching the
+// convention the rest of this script already uses for the IIFE (no AST
+// tooling in the build).
+const cemJson = JSON.parse(readFileSync(cem, "utf8"));
+const declaration = cemJson.modules[0].declarations[0];
+const cemAttributeNames = declaration.attributes.map((a) => a.name).sort();
+const cemEventNames = declaration.events.map((e) => e.name).sort();
+
+// Attributes that are technically wired with an `attribute:` entry in the
+// svelte:options props block but are documented and intended as
+// property-only (README's second attributes table) — excluded from the
+// CEM's public attribute list on purpose.
+const PROPERTY_ONLY_KEYS = new Set([
+  "annotations",
+  "preprocessmanifest",
+  "errorcallback",
+]);
+const wrapperSourceText = readFileSync(wrapperSource, "utf8");
+const realAttributeNames = [
+  ...wrapperSourceText.matchAll(/attribute:\s*"([^"]+)"/g),
+]
+  .map((m) => m[1])
+  .filter((name) => !PROPERTY_ONLY_KEYS.has(name))
+  .sort();
+
+if (JSON.stringify(cemAttributeNames) !== JSON.stringify(realAttributeNames)) {
+  fail(
+    `custom-elements.json attributes ${JSON.stringify(cemAttributeNames)} ` +
+      `do not match the wrapper's declared attributes ${JSON.stringify(realAttributeNames)}`,
+  );
+}
+
+const publicTypesText = readFileSync(publicTypesSource, "utf8");
+const eventMapMatch = publicTypesText.match(
+  /IIIFTranscriptPlayerElementEventMap extends HTMLElementEventMap \{([^}]*)\}/,
+);
+if (!eventMapMatch) {
+  fail(
+    "could not find IIIFTranscriptPlayerElementEventMap in public-types.d.ts",
+  );
+}
+const realEventNames = [
+  ...eventMapMatch[1].matchAll(/^\s*"?([a-zA-Z-]+)"?:\s*CustomEvent/gm),
+]
+  .map((m) => m[1])
+  .sort();
+
+if (JSON.stringify(cemEventNames) !== JSON.stringify(realEventNames)) {
+  fail(
+    `custom-elements.json events ${JSON.stringify(cemEventNames)} do not ` +
+      `match the declared event map ${JSON.stringify(realEventNames)}`,
+  );
+}
 
 // public-types.d.ts is hand-maintained and, unlike src/**, is never compiled
 // by `pnpm typecheck` (tsconfig.json excludes dist and sets skipLibCheck).
