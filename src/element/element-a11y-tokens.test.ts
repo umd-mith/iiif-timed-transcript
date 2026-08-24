@@ -114,4 +114,44 @@ describe("<iiif-transcript-player> a11y tokens (1.4.11 / 1.4.1 / focus ring)", (
       );
     });
   });
+
+  // 1.4.1 Use of Color. The active canvas-nav button used to be marked by an
+  // accent background and nothing else, so which canvas you were on was
+  // conveyed by hue alone. `aria-current` is programmatic, not a visual
+  // means, and the forced-colors rule below only fires under a contrast
+  // theme. These two tests pin the same reserve-then-color pattern the
+  // segments use, so the indicator's presence — not its hue — is the signal.
+  test("active canvas-nav button carries a non-color border-inline-start indicator", async () => {
+    const url = "https://example.com/a11y-token-canvas-active.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
+    const el = await mountElement({ "manifest-url": url });
+    const button = await untilShadow<HTMLElement>(
+      el,
+      'nav.canvas-nav button[data-state="active"]',
+    );
+    const style = getComputedStyle(button);
+
+    expect(style.borderInlineStartWidth).toBe("4px");
+    expect(style.borderInlineStartStyle).toBe("solid");
+    expect(style.borderInlineStartColor).not.toBe("rgba(0, 0, 0, 0)");
+    expect(style.borderInlineStartColor).not.toBe(style.backgroundColor);
+  });
+
+  test("inactive canvas-nav button reserves the same border width (no layout shift on canvas change)", async () => {
+    const url = "https://example.com/a11y-token-canvas-inactive.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
+    const el = await mountElement({ "manifest-url": url });
+    await untilShadow(el, "nav.canvas-nav button[data-canvas-index]");
+    const inactive = shadow(el).querySelector<HTMLElement>(
+      'nav.canvas-nav button[data-state="inactive"]',
+    )!;
+    const style = getComputedStyle(inactive);
+
+    expect(style.borderInlineStartWidth).toBe("4px");
+    expect(style.borderInlineStartColor).toBe("rgba(0, 0, 0, 0)");
+  });
 });
