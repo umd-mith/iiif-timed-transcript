@@ -703,11 +703,18 @@ Unlike the IIFE, this entry keeps `svelte` external, so the `svelte` peer depend
 
 All events bubble and are composed.
 
-| Event                       | `detail`                                                                                                             |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `iiif-player-ready`         | `{ playerRef }` — fired once per connection, after the manifest loads and the first canvas parses (not "playable")   |
-| `iiif-player-error`         | `{ error, fatal, source }` — `source` is `"manifest" \| "canvas" \| "media" \| "playback" \| "transcript" \| "host"` |
-| `iiif-player-canvas-change` | `{ index, canvas }` — from the attribute/property or from the player's own canvas navigation                         |
+| Event                       | Detail                                                                                                                              |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `iiif-player-ready`         | `{ playerRef }` — fired once per connection, after the manifest loads and the first canvas parses (not "playable")                  |
+| `iiif-player-error`         | `{ error, fatal, source }` — `source` is `"manifest" \| "canvas" \| "media" \| "playback" \| "transcript" \| "host"`                |
+| `iiif-player-canvas-change` | `{ index, canvas }` — from the attribute/property or from the player's own canvas navigation                                        |
+| `iiif-player-play`          | `{}` — playback started (a real transition, not a programmatic prop write)                                                          |
+| `iiif-player-pause`         | `{}` — playback stopped without reaching the end (suppressed when the same flush also flipped `hasEnded` — see `iiif-player-ended`) |
+| `iiif-player-ended`         | `{}` — playback reached the end of the media                                                                                        |
+| `iiif-player-seeked`        | `{}` — a seek completed (fires on `seeked`, not on `seeking`)                                                                       |
+| `iiif-player-rate-change`   | `{ rate }` — the playback rate changed                                                                                              |
+
+No `timeupdate`-equivalent event ships — too chatty for a bubbling event. Hosts needing fine-grained time reads should use `playerRef.state.currentTime` (updated on every native `timeupdate`) instead of listening for an event per frame.
 
 Listen for **both** `iiif-player-ready` and `iiif-player-error`, and branch on `detail.fatal`: a fatal error means the player will not become usable (replace the element to retry); a non-fatal one (a blocked autoplay, a transcript that failed to load, a misused property) needs no action. `iiif-player-error` may fire before or after `iiif-player-ready`. Do not block on `playerRef` becoming non-nullish.
 
