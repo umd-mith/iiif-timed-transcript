@@ -13,6 +13,7 @@
   import {
     getFirstCanvas,
     getPrimaryResource,
+    hasAuthService,
     getPosterUrl,
     isAudioCanvas,
     isVideoCanvas,
@@ -504,6 +505,23 @@
       const primaryResource = getPrimaryResource(canvas);
       if (!primaryResource?.id) {
         throw new Error("No media resource found in canvas");
+      }
+
+      // Detected here, not left for the <video>/<audio> element to fail on:
+      // by the time playback would error, the wrapper has already reported
+      // a "media" fatal error and there is no way to tell an auth lock
+      // apart from a broken URL. Returning here (not throwing) means this
+      // canvas never reaches `player.mediaUrl = …`, so the generic media
+      // failure this would otherwise cause never fires — one error, not two.
+      if (hasAuthService(primaryResource)) {
+        currentCanvas = null;
+        const err = new Error(
+          "This resource requires authentication and cannot be played.",
+        );
+        player.state.error = err;
+        player.state.isReady = false;
+        reportError(err, { fatal: true, source: "auth" });
+        return;
       }
 
       player.mediaUrl = primaryResource.id;

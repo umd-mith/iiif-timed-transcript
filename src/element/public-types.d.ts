@@ -20,6 +20,7 @@ export type ElementErrorSource =
   | "media"
   | "playback"
   | "transcript"
+  | "auth"
   | "host";
 
 export interface PlayerErrorDetail {
@@ -73,6 +74,8 @@ export declare class IIIFTranscriptPlayerElement extends HTMLElement {
    * localized generic name.
    */
   label: string;
+  /** `crossorigin` attribute. Forwarded to the underlying media element. */
+  crossorigin: string;
   /** Property only. Default `"auto"`. */
   annotations: Annotation[] | "auto";
   /** Property only. Runs on the parsed manifest JSON before validation. */

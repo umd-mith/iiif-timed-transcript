@@ -80,7 +80,8 @@ export type PlayerErrorSource =
   | "canvas"
   | "media"
   | "playback"
-  | "transcript";
+  | "transcript"
+  | "auth";
 
 export interface PlayerErrorInfo {
   /** `true`: the player will not become usable (manifest/canvas/media). `false`: recoverable (transcript, playback). */

@@ -7,6 +7,7 @@
       initialTime: { attribute: "initial-time", type: "Number" },
       autoplay: { attribute: "autoplay", type: "Boolean" },
       label: { attribute: "label", type: "String" },
+      crossorigin: { attribute: "crossorigin", type: "String" },
       annotations: { attribute: "annotations" },
       preprocessManifest: { attribute: "preprocessmanifest" },
       errorCallback: { attribute: "errorcallback" },
@@ -186,6 +187,7 @@
     initialTime,
     autoplay = false,
     label,
+    crossorigin,
     annotations = "auto",
     preprocessManifest,
     errorCallback,
@@ -197,6 +199,12 @@
     /** `label` attribute. Host-settable accessible name for the element's
      * top-level region. Falls back to the localized generic name. */
     label?: string;
+    /**
+     * `crossorigin` attribute. Forwarded to the underlying media element.
+     * Any value other than "anonymous"/"use-credentials" is passed through
+     * unvalidated, same as the native HTML attribute.
+     */
+    crossorigin?: string;
     annotations?: Annotation[] | "auto";
     preprocessManifest?: ((raw: unknown) => unknown) | undefined;
     errorCallback?: ErrorCallback | undefined;
@@ -474,6 +482,17 @@
     ...(hlsDefault ? { hlsConstructor: hlsDefault } : {}),
   });
 
+  // exactOptionalPropertyTypes: Viewer's crossOrigin prop is
+  // `"anonymous" | "use-credentials"` (no explicit `| undefined`), so it can
+  // only be passed when it is actually one of those two values.
+  const optionalViewerProps = $derived<{
+    crossOrigin?: "anonymous" | "use-credentials";
+  }>(
+    crossorigin === "anonymous" || crossorigin === "use-credentials"
+      ? { crossOrigin: crossorigin }
+      : {},
+  );
+
   function handlePlayerInit(player: PlayerRef) {
     playerRefValue = player;
     emit<PlayerRefAvailableDetail>("iiif-player-ready", { playerRef: player });
@@ -571,7 +590,7 @@
       onCanvasChange={handleCanvasChange}
     >
       {#snippet children({ player })}
-        <IIIFPlayer.Viewer />
+        <IIIFPlayer.Viewer {...optionalViewerProps} />
         <IIIFPlayer.Controls>
           <IIIFPlayer.PlayButton />
           <IIIFPlayer.Progress />
