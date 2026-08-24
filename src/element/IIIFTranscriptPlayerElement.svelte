@@ -499,6 +499,7 @@
           <IIIFPlayer.Skip seconds={30} />
           <IIIFPlayer.Speed />
           <IIIFPlayer.Time />
+          <IIIFPlayer.Captions />
         </IIIFPlayer.Controls>
         {#if (playerRefValue?.canvasCount ?? 0) > 1}
           <IIIFPlayer.CanvasNav />
