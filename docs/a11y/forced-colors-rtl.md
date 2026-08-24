@@ -54,7 +54,7 @@ Load the player with `dir="rtl"` set on the element or on an ancestor.
      does not always inherit `dir` the way authors expect, so confirm it
      rather than assuming.
 2. Look at the non-color indicator on active and highlighted segments.
-   - **Check:** the border renders on the correct *logical* start edge —
+   - **Check:** the border renders on the correct _logical_ start edge —
      the right edge under RTL. This is where a physical `border-left` that
      should have been `border-inline-start` shows itself.
 3. Look at the control bar.
@@ -87,16 +87,16 @@ Rows recorded below were taken on `feat/element-hardening-completion`
 before that branch merged. Re-pin them to the merge SHA if the branch
 changes before merge.
 
-| Commit SHA | Date | Tester | Pass | Check | Pass/Fail | Notes |
-|---|---|---|---|---|---|---|
-| | | | Forced-colors | 1. Text legible | | |
-| | | | Forced-colors | 2. Non-color indicators visible | | |
-| | | | Forced-colors | 3. Focus indicators visible | | |
-| | | | Forced-colors | 4. Panel/control borders visible | | |
-| | | | Forced-colors | 5. Captions toggle state distinguishable | | |
-| | | | Forced-colors (2nd theme) | Repeat checks 1-5 | | |
-| `e74e616` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | RTL | 1. dir inherits into shadow tree | ✅ | With `dir="rtl"` on the element, the shadow wrapper and the segments both compute `direction: rtl`. |
-| `e74e616` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | RTL | 2. Inline-start border on correct edge | ✅ | The segment indicator computes `border-right-width: 4px` and `border-left-width: 0px` under RTL — logical, not physical. |
-| | | | RTL | 3. Control bar layout sensible | | Needs a human judgment call, not a measurement. |
-| | | | RTL | 4. Segment text shapes/flows correctly | | Needs a fixture carrying real Arabic or Hebrew transcript text. |
-| `e74e616` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | RTL | 5. Search input RTL behavior | ⚠️ | The input computes `direction: rtl` with `text-align: start`, so alignment follows direction. Cursor behavior while typing was not exercised — re-check by hand. |
+| Commit SHA | Date       | Tester                                      | Pass                      | Check                                    | Pass/Fail | Notes                                                                                                                                                            |
+| ---------- | ---------- | ------------------------------------------- | ------------------------- | ---------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|            |            |                                             | Forced-colors             | 1. Text legible                          |           |                                                                                                                                                                  |
+|            |            |                                             | Forced-colors             | 2. Non-color indicators visible          |           |                                                                                                                                                                  |
+|            |            |                                             | Forced-colors             | 3. Focus indicators visible              |           |                                                                                                                                                                  |
+|            |            |                                             | Forced-colors             | 4. Panel/control borders visible         |           |                                                                                                                                                                  |
+|            |            |                                             | Forced-colors             | 5. Captions toggle state distinguishable |           |                                                                                                                                                                  |
+|            |            |                                             | Forced-colors (2nd theme) | Repeat checks 1-5                        |           |                                                                                                                                                                  |
+| `e74e616`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | RTL                       | 1. dir inherits into shadow tree         | ✅        | With `dir="rtl"` on the element, the shadow wrapper and the segments both compute `direction: rtl`.                                                              |
+| `e74e616`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | RTL                       | 2. Inline-start border on correct edge   | ✅        | The segment indicator computes `border-right-width: 4px` and `border-left-width: 0px` under RTL — logical, not physical.                                         |
+|            |            |                                             | RTL                       | 3. Control bar layout sensible           |           | Needs a human judgment call, not a measurement.                                                                                                                  |
+|            |            |                                             | RTL                       | 4. Segment text shapes/flows correctly   |           | Needs a fixture carrying real Arabic or Hebrew transcript text.                                                                                                  |
+| `e74e616`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | RTL                       | 5. Search input RTL behavior             | ⚠️        | The input computes `direction: rtl` with `text-align: start`, so alignment follows direction. Cursor behavior while typing was not exercised — re-check by hand. |

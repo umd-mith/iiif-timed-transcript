@@ -44,7 +44,7 @@ Run this sequence on `examples/element/plain.html` first (single-canvas),
 then repeat on the chapters demo (still single-canvas, plus chapter
 navigation — not to be confused with the multi-canvas pass below).
 
-1. Load the page. Click once anywhere *outside* the player to establish a
+1. Load the page. Click once anywhere _outside_ the player to establish a
    known focus origin, then press **Tab**.
    - **Check:** focus lands on the first control inside the player's shadow
      tree — the Play button in the fixed composition — and is neither
@@ -67,14 +67,14 @@ navigation — not to be confused with the multi-canvas pass below).
    one segment — the roving-tabindex entry point, normally the first
    segment, or the active segment if media has been playing.
    - **Check:** only one segment is in the tab sequence. Pressing Tab again
-     moves focus *out* of the transcript panel entirely, not to the next
+     moves focus _out_ of the transcript panel entirely, not to the next
      segment.
 4. With focus on a segment, press **ArrowDown**.
    - **Check:** focus moves to the next segment. The previously focused
      segment leaves the tab sequence (`tabindex="-1"`); the newly focused
      one enters it (`tabindex="0"`).
 5. Press **ArrowUp** from the first segment.
-   - **Check:** focus wraps to the *last* segment.
+   - **Check:** focus wraps to the _last_ segment.
 6. Press **End**, then **Home**.
    - **Check:** End moves focus to the last segment; Home moves focus to
      the first.
@@ -82,7 +82,7 @@ navigation — not to be confused with the multi-canvas pass below).
    - **Check:** the media seeks to that segment's start time. Focus stays
      on the segment and does not jump to the media element.
 8. With focus on a different segment, press **Space**.
-   - **Check:** same seek behavior as Enter. The page does *not* scroll —
+   - **Check:** same seek behavior as Enter. The page does _not_ scroll —
      Space is not falling through to the browser's scroll-the-page default.
 9. Tab to the search input.
    - **Check:** it is reachable, has a visible focus ring, and typing a
@@ -103,7 +103,7 @@ Run this section against the multi-canvas fixture page, `/canvas-nav-demo`.
 
 1. Tab to the canvas-nav control bar.
    - **Check:** every canvas button is reachable via Tab and Shift+Tab, and
-     has a visible focus ring on both the *active* and the *inactive*
+     has a visible focus ring on both the _active_ and the _inactive_
      button. The active button carries an accent-colored background, so
      this is where a ring that borrowed `currentColor` would disappear.
 2. With focus on a non-active canvas button, press **Enter**.
@@ -111,7 +111,7 @@ Run this section against the multi-canvas fixture page, `/canvas-nav-demo`.
      ends up.
 3. After the switch, Tab into the transcript panel again.
    - **Check:** the roving-tabindex entry point is a real segment in the
-     *new* canvas's transcript, not a stale reference into the old
+     _new_ canvas's transcript, not a stale reference into the old
      canvas's DOM. On this fixture the segment text names its own canvas,
      so a stale reference is visible immediately.
 4. Repeat steps 4–8 of the main walkthrough (arrow navigation, Home/End,
@@ -134,22 +134,22 @@ Rows recorded below were taken on `feat/element-hardening-completion`
 before that branch merged. Re-pin them to the merge SHA if the branch
 changes before merge.
 
-| Commit SHA | Date | Tester | Check | Pass/Fail | Notes |
-|---|---|---|---|---|---|
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 1 (initial Tab entry) | ✅ | Tab from the link preceding the player enters the shadow tree. First stop was Progress rather than Play, because headless Chromium disabled the H.264-dependent controls — the entry itself is confirmed, the identity of the first stop is not. |
-| | | | Walkthrough step 2 (control-bar order) | | Not evaluable headlessly: Play, Skip back, Skip forward and Speed were `disabled` and absent from the tab sequence. Needs a real browser. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 2 (focus ring, incl. active canvas-nav button) | ✅ | Measured computed styles under focus. Both the active and the inactive canvas-nav button render `2px solid rgb(29, 78, 216)` at `outline-offset: 2px`, so the ring sits outside the accent background against the white panel. No white-on-white and no accent-on-accent ring. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 3 (single roving-tabindex entry point) | ✅ | Exactly one of 107 segments carried `tabindex="0"`; Tab from the search input landed on it. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 4 (ArrowDown) | ✅ | Focus moved to the next segment; `tabindex="0"` moved with it, count stayed at one. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 5 (ArrowUp wrap) | ✅ | ArrowUp from the first segment wrapped to the last (9:12 of a 9:32 canvas); ArrowDown from the last wrapped back to the first. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 6 (Home/End) | ✅ | End moved focus to the last segment, Home back to the first. |
-| | | | Walkthrough step 7 (Enter seeks, focus stays) | | Not evaluable headlessly: no decodable media, so there is nothing to seek. |
-| | | | Walkthrough step 8 (Space seeks, no page scroll) | | Not evaluable headlessly, as above. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 9 (search input reachable) | ✅ | Reached by Tab and focusable. Note the observed order: the search input comes **before** the segments, not after — the search UI sits above the segment list in the panel. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 10 (Tab exits player — no trap) | ✅ | Tab from a focused segment left the shadow tree and landed on the link following the player. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 11 (Shift+Tab mirrors forward order) | ✅ | Shift+Tab from the following link re-entered the panel at the same segment, then moved to the search input — the exact reverse of the forward order across the shadow boundary. Only the panel boundary was sampled; the full reverse sweep of the control bar needs a real browser. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Multi-canvas step 1 (canvas-nav focus rings) | ✅ | See step 2's note; both states measured. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Multi-canvas step 2 (Enter switches canvas, focus not lost) | ✅ | Enter on a focused canvas-nav button switched the canvas and left focus on that same button. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Multi-canvas step 3 (fresh roving-tabindex entry post-switch) | ✅ | After switching, the panel held the new canvas's segments and `tabindex="0"` was back on its first segment. Confirmed in both directions (4 embedded segments ↔ 107 WebVTT cues). |
-| | | | Multi-canvas step 4 (nav/seek works post-switch) | | Arrow navigation post-switch was not re-run; the seek half is blocked on media, as in steps 7 and 8. |
-| `70acb01` | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Multi-canvas step 5 (no dead focus spot on second switch) | ✅ | Activating a canvas-nav button while a segment held focus left focus on the activated button. Console carried no error — only the expected development warning that canvas 2 has no caption tracks. A synthetic `.click()` that skips the focus step drops focus to `<body>`, but no real pointer or keyboard input produces that sequence. |
+| Commit SHA | Date       | Tester                                      | Check                                                           | Pass/Fail | Notes                                                                                                                                                                                                                                                                                                                                       |
+| ---------- | ---------- | ------------------------------------------- | --------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 1 (initial Tab entry)                          | ✅        | Tab from the link preceding the player enters the shadow tree. First stop was Progress rather than Play, because headless Chromium disabled the H.264-dependent controls — the entry itself is confirmed, the identity of the first stop is not.                                                                                            |
+|            |            |                                             | Walkthrough step 2 (control-bar order)                          |           | Not evaluable headlessly: Play, Skip back, Skip forward and Speed were `disabled` and absent from the tab sequence. Needs a real browser.                                                                                                                                                                                                   |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 2 (focus ring, incl. active canvas-nav button) | ✅        | Measured computed styles under focus. Both the active and the inactive canvas-nav button render `2px solid rgb(29, 78, 216)` at `outline-offset: 2px`, so the ring sits outside the accent background against the white panel. No white-on-white and no accent-on-accent ring.                                                              |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 3 (single roving-tabindex entry point)         | ✅        | Exactly one of 107 segments carried `tabindex="0"`; Tab from the search input landed on it.                                                                                                                                                                                                                                                 |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 4 (ArrowDown)                                  | ✅        | Focus moved to the next segment; `tabindex="0"` moved with it, count stayed at one.                                                                                                                                                                                                                                                         |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 5 (ArrowUp wrap)                               | ✅        | ArrowUp from the first segment wrapped to the last (9:12 of a 9:32 canvas); ArrowDown from the last wrapped back to the first.                                                                                                                                                                                                              |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 6 (Home/End)                                   | ✅        | End moved focus to the last segment, Home back to the first.                                                                                                                                                                                                                                                                                |
+|            |            |                                             | Walkthrough step 7 (Enter seeks, focus stays)                   |           | Not evaluable headlessly: no decodable media, so there is nothing to seek.                                                                                                                                                                                                                                                                  |
+|            |            |                                             | Walkthrough step 8 (Space seeks, no page scroll)                |           | Not evaluable headlessly, as above.                                                                                                                                                                                                                                                                                                         |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 9 (search input reachable)                     | ✅        | Reached by Tab and focusable. Note the observed order: the search input comes **before** the segments, not after — the search UI sits above the segment list in the panel.                                                                                                                                                                  |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 10 (Tab exits player — no trap)                | ✅        | Tab from a focused segment left the shadow tree and landed on the link following the player.                                                                                                                                                                                                                                                |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Walkthrough step 11 (Shift+Tab mirrors forward order)           | ✅        | Shift+Tab from the following link re-entered the panel at the same segment, then moved to the search input — the exact reverse of the forward order across the shadow boundary. Only the panel boundary was sampled; the full reverse sweep of the control bar needs a real browser.                                                        |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Multi-canvas step 1 (canvas-nav focus rings)                    | ✅        | See step 2's note; both states measured.                                                                                                                                                                                                                                                                                                    |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Multi-canvas step 2 (Enter switches canvas, focus not lost)     | ✅        | Enter on a focused canvas-nav button switched the canvas and left focus on that same button.                                                                                                                                                                                                                                                |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Multi-canvas step 3 (fresh roving-tabindex entry post-switch)   | ✅        | After switching, the panel held the new canvas's segments and `tabindex="0"` was back on its first segment. Confirmed in both directions (4 embedded segments ↔ 107 WebVTT cues).                                                                                                                                                           |
+|            |            |                                             | Multi-canvas step 4 (nav/seek works post-switch)                |           | Arrow navigation post-switch was not re-run; the seek half is blocked on media, as in steps 7 and 8.                                                                                                                                                                                                                                        |
+| `70acb01`  | 2026-08-24 | Claude Code (headless Chromium, CDP-driven) | Multi-canvas step 5 (no dead focus spot on second switch)       | ✅        | Activating a canvas-nav button while a segment held focus left focus on the activated button. Console carried no error — only the expected development warning that canvas 2 has no caption tracks. A synthetic `.click()` that skips the focus step drops focus to `<body>`, but no real pointer or keyboard input produces that sequence. |

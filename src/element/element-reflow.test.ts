@@ -156,7 +156,10 @@ describe("<iiif-transcript-player> reflow at 320px", () => {
       [url]: { json: { ...MANIFEST_REFLOW_STUB, id: url } },
     });
     const el = await mountElement({ "manifest-url": url, style: NARROW });
-    const controls = await untilShadow<HTMLElement>(el, "[data-audio-controls]");
+    const controls = await untilShadow<HTMLElement>(
+      el,
+      "[data-audio-controls]",
+    );
 
     expect(controls.scrollWidth).toBeLessThanOrEqual(controls.clientWidth + 1);
   });

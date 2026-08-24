@@ -22,11 +22,11 @@ deliberately out of scope unless procurement asks for it later.
 **Fixture recipes for the two error checks.** Both are host-page edits, not
 code changes:
 
-- *Manifest 404.* Point a `<iiif-transcript-player manifest-url="…">` at a
+- _Manifest 404._ Point a `<iiif-transcript-player manifest-url="…">` at a
   URL that returns 404. The element renders a `role="alert"` banner. The
   automated equivalent is in `src/element/element-errors.test.ts`, which
   awaits `[role="alert"]` in the shadow tree.
-- *Transcript 404.* Serve a manifest whose video canvas carries a caption
+- _Transcript 404._ Serve a manifest whose video canvas carries a caption
   track whose `id` returns 404, while the manifest itself and everything
   else load fine. This is a non-fatal `playererror`: no `role="alert"`
   appears, the panel is simply empty, and the only signal available to
@@ -69,7 +69,7 @@ Run NVDA in its default configuration against Firefox (latest stable).
 5. **Single announcer fire on segment seek.** Activate a segment to seek.
    - **Check:** NVDA announces that segment's text exactly once.
    - **Check:** let playback continue for 30 seconds or more without
-     touching anything. NVDA does *not* announce each segment as playback
+     touching anything. NVDA does _not_ announce each segment as playback
      auto-advances — the announcer is gated on user-initiated interaction.
 6. **Transcript load completion.** Reload the page.
    - **Check:** once the transcript populates, NVDA announces
@@ -127,25 +127,25 @@ navigate, VO+Space to activate.
 
 Every row here needs a human running a real screen reader. Nothing in this
 script can be driven automatically: what is being tested is what the
-assistive technology *says*, which no DOM assertion can stand in for.
+assistive technology _says_, which no DOM assertion can stand in for.
 
-| Commit SHA | Date | Tester | AT/Browser | Check | Pass/Fail | Notes |
-|---|---|---|---|---|---|---|
-| | | | NVDA+Firefox | 1. Region label | | |
-| | | | NVDA+Firefox | 2. Browse mode | | |
-| | | | NVDA+Firefox | 3. Focus mode through segments | | |
-| | | | NVDA+Firefox | 4. Search match counter | | |
-| | | | NVDA+Firefox | 5. Single announcer fire | | |
-| | | | NVDA+Firefox | 6. Transcript load completion | | |
-| | | | NVDA+Firefox | 7. Manifest 404 alert | | |
-| | | | NVDA+Firefox | 8. Transcript 404 announcement | | |
-| | | | NVDA+Firefox | 9. Canvas switch | | |
-| | | | VoiceOver+Safari | 1. Region label | | |
-| | | | VoiceOver+Safari | 2. Reading through segments | | |
-| | | | VoiceOver+Safari | 3. Interaction mode through segments | | |
-| | | | VoiceOver+Safari | 4. Search match counter | | |
-| | | | VoiceOver+Safari | 5. Single announcer fire | | |
-| | | | VoiceOver+Safari | 6. Transcript load completion | | |
-| | | | VoiceOver+Safari | 7. Manifest 404 alert | | |
-| | | | VoiceOver+Safari | 8. Transcript 404 announcement | | |
-| | | | VoiceOver+Safari | 9. Canvas switch | | |
+| Commit SHA | Date | Tester | AT/Browser       | Check                                | Pass/Fail | Notes |
+| ---------- | ---- | ------ | ---------------- | ------------------------------------ | --------- | ----- |
+|            |      |        | NVDA+Firefox     | 1. Region label                      |           |       |
+|            |      |        | NVDA+Firefox     | 2. Browse mode                       |           |       |
+|            |      |        | NVDA+Firefox     | 3. Focus mode through segments       |           |       |
+|            |      |        | NVDA+Firefox     | 4. Search match counter              |           |       |
+|            |      |        | NVDA+Firefox     | 5. Single announcer fire             |           |       |
+|            |      |        | NVDA+Firefox     | 6. Transcript load completion        |           |       |
+|            |      |        | NVDA+Firefox     | 7. Manifest 404 alert                |           |       |
+|            |      |        | NVDA+Firefox     | 8. Transcript 404 announcement       |           |       |
+|            |      |        | NVDA+Firefox     | 9. Canvas switch                     |           |       |
+|            |      |        | VoiceOver+Safari | 1. Region label                      |           |       |
+|            |      |        | VoiceOver+Safari | 2. Reading through segments          |           |       |
+|            |      |        | VoiceOver+Safari | 3. Interaction mode through segments |           |       |
+|            |      |        | VoiceOver+Safari | 4. Search match counter              |           |       |
+|            |      |        | VoiceOver+Safari | 5. Single announcer fire             |           |       |
+|            |      |        | VoiceOver+Safari | 6. Transcript load completion        |           |       |
+|            |      |        | VoiceOver+Safari | 7. Manifest 404 alert                |           |       |
+|            |      |        | VoiceOver+Safari | 8. Transcript 404 announcement       |           |       |
+|            |      |        | VoiceOver+Safari | 9. Canvas switch                     |           |       |
