@@ -108,9 +108,10 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
   id="player"
   manifest-url="https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest.json"
   label="Beyond Images: Avalon and IIIF-AV (Indiana University)"
+  crossorigin="anonymous"
 ></iiif-transcript-player>`}</code></pre>
 					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">manifest-url</code> is the only required attribute. <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">label</code> sets the accessible name a screen reader announces for the player region — worth setting whenever a page could hold more than one player. The transcript switch, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">annotations = "auto"</code>, is set as a <em>property</em> in the script below rather than an attribute, because its other accepted value is a full array of transcript segments — data an attribute string can't carry.
+						<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">manifest-url</code> is the only required attribute. <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">label</code> sets the accessible name a screen reader announces for the player region — worth setting whenever a page could hold more than one player. <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">crossorigin="anonymous"</code> lets the closed-caption <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">&lt;track&gt;</code> load from the repository's domain — browsers require CORS mode for cross-origin text tracks, and an embedding page is by definition on a different origin than the repository. The transcript switch, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">annotations = "auto"</code>, is set as a <em>property</em> in the script below rather than an attribute, because its other accepted value is a full array of transcript segments — data an attribute string can't carry.
 					</p>
 				</div>
 
@@ -203,6 +204,7 @@ iiif-transcript-player:state(error)   { outline: 4px solid #b91c1c; }`}</code></
 							id="player"
 							manifest-url={manifestUrl}
 							label="Beyond Images: Avalon and IIIF-AV (Indiana University)"
+							crossorigin="anonymous"
 						></iiif-transcript-player>
 					</div>
 
