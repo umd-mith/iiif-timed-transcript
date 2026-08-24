@@ -17,7 +17,7 @@ type Seen = { type: string; detail: unknown };
 
 function recordEvents(el: HTMLElement): Seen[] {
   const seen: Seen[] = [];
-  for (const type of ["playerrefavailable", "playererror"]) {
+  for (const type of ["iiif-player-ready", "iiif-player-error"]) {
     el.addEventListener(type, (e) =>
       seen.push({ type, detail: (e as CustomEvent).detail }),
     );
@@ -104,7 +104,7 @@ describe("<iiif-transcript-player> IIIF Auth API 1 detection", () => {
     manifestCache.clear();
   });
 
-  test("a canvas whose media has an AuthCookieService1 fires exactly one fatal playererror with source 'auth'", async () => {
+  test("a canvas whose media has an AuthCookieService1 fires exactly one fatal iiif-player-error with source 'auth'", async () => {
     const url = "https://example.com/el-auth.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_WITH_AUTH_SERVICE, id: url } },
@@ -122,14 +122,14 @@ describe("<iiif-transcript-player> IIIF Auth API 1 detection", () => {
       expect(
         seen.some(
           (s) =>
-            s.type === "playererror" &&
+            s.type === "iiif-player-error" &&
             (s.detail as PlayerErrorDetail).source === "auth",
         ),
       ).toBe(true);
     });
     const authEvents = seen.filter(
       (s) =>
-        s.type === "playererror" &&
+        s.type === "iiif-player-error" &&
         (s.detail as PlayerErrorDetail).source === "auth",
     );
     expect(authEvents).toHaveLength(1);
@@ -142,7 +142,7 @@ describe("<iiif-transcript-player> IIIF Auth API 1 detection", () => {
     expect(
       seen.filter(
         (s) =>
-          s.type === "playererror" &&
+          s.type === "iiif-player-error" &&
           (s.detail as PlayerErrorDetail).source === "media",
       ),
     ).toHaveLength(0);
@@ -158,12 +158,12 @@ describe("<iiif-transcript-player> IIIF Auth API 1 detection", () => {
     document.body.appendChild(el);
 
     await vi.waitFor(() => {
-      expect(seen.some((s) => s.type === "playerrefavailable")).toBe(true);
+      expect(seen.some((s) => s.type === "iiif-player-ready")).toBe(true);
     });
     expect(
       seen.filter(
         (s) =>
-          s.type === "playererror" &&
+          s.type === "iiif-player-error" &&
           (s.detail as PlayerErrorDetail).source === "auth",
       ),
     ).toHaveLength(0);
