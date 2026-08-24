@@ -101,4 +101,19 @@ describe("SyncController media-driven auto-scroll", () => {
     expect(segments.a3.scrollIntoView).toHaveBeenCalled();
     ctrl.destroy();
   });
+
+  it("setAutoScrollEnabled sends SET_AUTO_SCROLL_ENABLED to the underlying actor", () => {
+    const viewer = createMockViewer(() => 0);
+    const { container } = createContainer();
+    const ctrl = new SyncController();
+    ctrl.initialize(viewer, container, annotations);
+
+    ctrl.setAutoScrollEnabled(false);
+
+    // @ts-expect-error -- reaching into the private actor field for this one assertion
+    const ctx = ctrl.actor!.getSnapshot().context;
+    expect(ctx.autoScrollEnabled).toBe(false);
+
+    ctrl.destroy();
+  });
 });
