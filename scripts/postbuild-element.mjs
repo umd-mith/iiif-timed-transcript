@@ -42,6 +42,27 @@ for (const file of [esm, iife, types, iifeTypes]) {
   if (!existsSync(file)) fail(`missing ${file}`);
 }
 
+// 1.4 packaging (design 2026-08-23-element-hardening-design.md §1.4):
+// `sideEffects` must mark exactly the IIFE's register-on-import file (so
+// bundlers can tree-shake the ESM element out of graphs that never call
+// register()), and the `./element/iife` export must be gone from the
+// exports map (it resolved a classic script as a module; iife-global.d.ts
+// documents the failure instead of preventing it). The file stays in
+// "files" — only the export entry goes.
+const pkgPath = resolve(root, "package.json");
+const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+const expectedSideEffects = ["dist/element/iiif-transcript-player.iife.js"];
+if (JSON.stringify(pkg.sideEffects) !== JSON.stringify(expectedSideEffects)) {
+  fail(
+    `package.json "sideEffects" must be exactly ${JSON.stringify(expectedSideEffects)}, got ${JSON.stringify(pkg.sideEffects)}`,
+  );
+}
+if (Object.prototype.hasOwnProperty.call(pkg.exports ?? {}, "./element/iife")) {
+  fail(
+    'package.json "exports" still has "./element/iife" — remove the entry (design 1.4); the file stays in "files"',
+  );
+}
+
 const esmSource = readFileSync(esm, "utf8");
 // Compiled Svelte 5 output legitimately *imports from* "svelte/internal/client"
 // (and "svelte/internal/disclose-version") when externalized correctly — those

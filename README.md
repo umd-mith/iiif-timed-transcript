@@ -647,6 +647,8 @@ Until the package is on public npm, vendor the built file (`dist/element/iiif-tr
 
 The IIFE bundles Svelte and hls.js (HLS plays without any other script). It does **not** support DASH (`dashjs` is not bundled; a DASH manifest surfaces a player error). Authenticated/restricted media is not supported. It measures about 744 kB minified (about 232 kB gzipped), against a build-enforced budget of 1 MB.
 
+**TypeScript hosts:** the IIFE's declaration file (`iiif-transcript-player.iife.d.ts`, declaring `window.IIIFTranscriptPlayer`) is not resolvable through the package's `exports` map — only the ESM entry (`./element`, below) is. Reference the shipped file directly instead: add `/// <reference path="node_modules/@umd-mith/svelte-iiif-transcript-player/dist/element/iiif-transcript-player.iife.d.ts" />` to a `.ts` file that uses the global, or add that concrete path to `tsconfig.json`'s `include`.
+
 ### Module (ESM, with a bundler)
 
 ```js
