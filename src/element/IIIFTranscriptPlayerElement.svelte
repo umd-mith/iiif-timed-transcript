@@ -799,6 +799,16 @@
     border-inline-start-color: var(--iiif-player-segment-indicator, #1d4ed8);
   }
 
+  /* The search's previous/next controls move a cursor through the matches,
+     but without this rule the current match renders identically to every
+     other one, so pressing them changes nothing a user can see. An outline
+     rather than a background keeps the distinction from resting on hue
+     alone, and sits outside the border box so it does not shift the row. */
+  .iiif-tp :global([data-annotation-id][data-current-match="true"]) {
+    outline: 2px solid var(--iiif-player-segment-indicator, #1d4ed8);
+    outline-offset: -2px;
+  }
+
   .iiif-tp :global(nav.canvas-nav button:focus),
   .iiif-tp :global([data-annotation-id]:focus) {
     outline-color: var(--iiif-player-focus, #1d4ed8);

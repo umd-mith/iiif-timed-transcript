@@ -154,4 +154,27 @@ describe("<iiif-transcript-player> a11y tokens (1.4.11 / 1.4.1 / focus ring)", (
     expect(style.borderInlineStartWidth).toBe("4px");
     expect(style.borderInlineStartColor).toBe("rgba(0, 0, 0, 0)");
   });
+  // The search previous/next controls move a cursor through the matches. If
+  // the current match renders identically to the others, activating them
+  // changes nothing a user can perceive.
+  test("the current search match is visually distinct from other matches", async () => {
+    const url = "https://example.com/a11y-token-current-match.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_WITH_EMBEDDED_TRANSCRIPT_STUB, id: url } },
+    });
+    const el = await mountElement({ "manifest-url": url });
+    const segment = await untilShadow<HTMLElement>(el, "[data-annotation-id]");
+
+    segment.setAttribute("data-highlighted", "true");
+    await vi.waitFor(() => {
+      expect(getComputedStyle(segment).outlineStyle).toBe("none");
+    });
+    const highlighted = getComputedStyle(segment).outlineStyle;
+
+    segment.setAttribute("data-current-match", "true");
+    await vi.waitFor(() => {
+      expect(getComputedStyle(segment).outlineStyle).not.toBe(highlighted);
+    });
+    expect(getComputedStyle(segment).outlineWidth).toBe("2px");
+  });
 });

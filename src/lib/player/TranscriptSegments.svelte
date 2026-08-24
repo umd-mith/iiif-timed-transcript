@@ -283,6 +283,6 @@
   .empty-message {
     padding: 1rem;
     text-align: center;
-    color: #595959;
+    color: var(--iiif-player-muted-fg, #595959);
   }
 </style>
