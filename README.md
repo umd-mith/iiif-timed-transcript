@@ -738,7 +738,23 @@ iiif-transcript-player {
 }
 ```
 
-Reserve space (`min-height` or `aspect-ratio`) to avoid layout shift — the element is empty until the script runs; see "Recommended CSP" below for a `:defined`-scoped version of this rule. Deeper restyling beyond custom properties is available through `::part()`: `controls`, `transcript`, `segment` (plus `segment-active` on the active segment). Internal selectors are not a stable API.
+Reserve space (`min-height` or `aspect-ratio`) to avoid layout shift — the element is empty until the script runs; see "Recommended CSP" below for a `:defined`-scoped version of this rule. Deeper restyling beyond custom properties is available through `::part()`: `controls`, `transcript`, `segment` (plus `segment-active` on the active segment), `button` (shared by every control-bar button — play, skip, captions), `speed` (the playback-rate `<select>`), and `progress` (the seek slider). One rule per part restyles the whole bar coherently:
+
+```css
+iiif-transcript-player::part(controls) {
+  background: #14532d;
+}
+iiif-transcript-player::part(button),
+iiif-transcript-player::part(speed) {
+  background: #166534;
+  color: #fff;
+}
+iiif-transcript-player::part(progress) {
+  accent-color: #86efac;
+}
+```
+
+Internal selectors are not a stable API.
 
 ### Recommended CSP
 

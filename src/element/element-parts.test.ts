@@ -36,6 +36,9 @@ describe("<iiif-transcript-player> ::part() surface", () => {
       iiif-transcript-player::part(controls) { background-color: rgb(1, 2, 3); }
       iiif-transcript-player::part(transcript) { border-top-color: rgb(4, 5, 6); }
       iiif-transcript-player::part(segment) { color: rgb(7, 8, 9); }
+      iiif-transcript-player::part(button) { background-color: rgb(10, 11, 12); }
+      iiif-transcript-player::part(speed) { background-color: rgb(13, 14, 15); }
+      iiif-transcript-player::part(progress) { background-color: rgb(16, 17, 18); }
     `;
     document.head.appendChild(pageStyle);
   });
@@ -71,5 +74,42 @@ describe("<iiif-transcript-player> ::part() surface", () => {
     )[1] as HTMLElement;
     expect(segment.getAttribute("part")).toBe("segment");
     expect(getComputedStyle(segment).color).toBe("rgb(7, 8, 9)");
+  });
+
+  test("every control-bar button carries part='button' and is reachable from page CSS", async () => {
+    const url = "https://example.com/parts-buttons.json";
+    mockFetchRoutes({ [url]: { json: { ...MANIFEST_STUB, id: url } } });
+    const el = await mountElement({ "manifest-url": url });
+    await untilShadow(el, "[data-annotation-id]");
+
+    const controls = shadow(el).querySelector(
+      "[data-audio-controls]",
+    ) as HTMLElement;
+    // Play and the two skips; the captions toggle only renders when the
+    // canvas has caption tracks (this fixture has none) — its part="button"
+    // is asserted in Captions.svelte.test.ts.
+    const buttons = controls.querySelectorAll("button");
+    expect(buttons.length).toBeGreaterThanOrEqual(3);
+    for (const button of buttons) {
+      expect(button.getAttribute("part")).toBe("button");
+      expect(getComputedStyle(button).backgroundColor).toBe("rgb(10, 11, 12)");
+    }
+  });
+
+  test("::part(speed) and ::part(progress) reach the select and the slider", async () => {
+    const url = "https://example.com/parts-speed-progress.json";
+    mockFetchRoutes({ [url]: { json: { ...MANIFEST_STUB, id: url } } });
+    const el = await mountElement({ "manifest-url": url });
+    await untilShadow(el, "[data-annotation-id]");
+
+    const speed = shadow(el).querySelector("select") as HTMLElement;
+    expect(speed.getAttribute("part")).toBe("speed");
+    expect(getComputedStyle(speed).backgroundColor).toBe("rgb(13, 14, 15)");
+
+    const progress = shadow(el).querySelector(
+      'input[type="range"]',
+    ) as HTMLElement;
+    expect(progress.getAttribute("part")).toBe("progress");
+    expect(getComputedStyle(progress).backgroundColor).toBe("rgb(16, 17, 18)");
   });
 });

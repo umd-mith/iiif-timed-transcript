@@ -121,7 +121,10 @@
             { "name": "controls" },
             { "name": "transcript" },
             { "name": "segment" },
-            { "name": "segment-active" }
+            { "name": "segment-active" },
+            { "name": "button" },
+            { "name": "speed" },
+            { "name": "progress" }
           ]
         }
       ],
