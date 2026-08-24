@@ -124,6 +124,11 @@
   // SyncController instance
   let syncController: SyncController | null = $state.raw(null);
 
+  // A4: auto-scroll pause toggle. Default matches the machine's
+  // autoScrollEnabled default (true) — this component owns the UI state,
+  // the machine owns the gate.
+  let autoScrollEnabled = $state(true);
+
   // Derived active annotation ID from SyncController
   let activeAnnotationId = $derived.by(() => {
     if (!syncController || syncController.activeAnnotations.length === 0) {
@@ -251,6 +256,14 @@
     };
   });
 
+  // Push the panel's auto-scroll flag to whichever controller instance is
+  // current. Separate from the controller-creation effect above so
+  // toggling the flag doesn't tear down and recreate the controller.
+  $effect(() => {
+    const enabled = autoScrollEnabled;
+    syncController?.setAutoScrollEnabled(enabled);
+  });
+
   // Reset user interaction flag after announcement has been processed
   $effect(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- track activeAnnotationId
@@ -313,6 +326,16 @@
       <p class="empty-message">{t("transcript.unavailable")}</p>
     {/if}
   {:else if children}
+    <button
+      type="button"
+      class="auto-scroll-toggle"
+      aria-pressed={!autoScrollEnabled}
+      onclick={() => (autoScrollEnabled = !autoScrollEnabled)}
+    >
+      {autoScrollEnabled
+        ? t("transcript.autoscrollPause")
+        : t("transcript.autoscrollResume")}
+    </button>
     {@render children()}
   {/if}
 

@@ -98,6 +98,78 @@ describe("Transcript", () => {
     expect(panel?.hasAttribute("lang")).toBe(false);
   });
 
+  describe("auto-scroll pause toggle (A4)", () => {
+    test("renders a toggle with aria-pressed reflecting the paused state", () => {
+      const ctx = createMockPlayerContext();
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+            children: (() => {}) as unknown as Snippet,
+          }),
+        },
+      });
+      flushSync();
+
+      const toggle = target.querySelector(
+        ".auto-scroll-toggle",
+      ) as HTMLButtonElement;
+      expect(toggle).not.toBeNull();
+      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+
+      toggle.click();
+      flushSync();
+
+      expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    });
+
+    test("scrollToAnnotation still scrolls after auto-scroll is paused", () => {
+      const ctx = createMockPlayerContext();
+      let capturedTranscriptCtx: TranscriptContext | null = null;
+
+      // Use the wrapper that properly composes Transcript + TranscriptSegments
+      // (same pattern as the existing "scrollToAnnotation scrolls matching
+      // element into view" test above), so segments render inside the scroll
+      // container and the toggle button (rendered by Transcript's own
+      // children branch) is reachable.
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, TestTranscriptWithSegments, {
+            annotations: mockAnnotations,
+            onContextReady: (c: TranscriptContext) => {
+              capturedTranscriptCtx = c;
+            },
+          }),
+        },
+      });
+      flushSync();
+
+      const toggle = target.querySelector(
+        ".auto-scroll-toggle",
+      ) as HTMLButtonElement;
+      toggle.click();
+      flushSync();
+      expect(toggle.getAttribute("aria-pressed")).toBe("true");
+
+      const segmentEl = target.querySelector(
+        '[data-annotation-id="a2"]',
+      ) as HTMLElement;
+      const scrollIntoView = vi.fn();
+      segmentEl.scrollIntoView = scrollIntoView;
+
+      expect(capturedTranscriptCtx).not.toBeNull();
+      const scrolled = capturedTranscriptCtx!.actions.scrollToAnnotation("a2");
+
+      expect(scrolled).toBe(true);
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    });
+  });
+
   test("empty-state message is reactive to locale — proves t() is live, not baked in at mount", () => {
     const ctx = createMockPlayerContext();
 
