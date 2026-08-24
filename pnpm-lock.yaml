@@ -143,6 +143,9 @@ importers:
       astro:
         specifier: ^5.17.1
         version: 5.18.0(@types/node@12.20.55)(jiti@1.21.7)(rollup@4.59.0)(typescript@5.9.3)(yaml@2.8.2)
+      hls.js:
+        specifier: ^1.6.15
+        version: 1.6.15
       media-captions:
         specifier: ^0.0.18
         version: 0.0.18
