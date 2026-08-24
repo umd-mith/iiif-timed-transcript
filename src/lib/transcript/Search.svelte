@@ -9,7 +9,7 @@
     annotations: Annotation[];
     /**
      * Placeholder text for search input.
-     * @default "Search transcript..."
+     * @default "Search transcript…"
      */
     placeholder?: string;
     /**

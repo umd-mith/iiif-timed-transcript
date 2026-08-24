@@ -46,7 +46,7 @@ export type TermKey =
 export const EN_TERMS: Record<TermKey, string> = {
   "transcript.loading": "Loading transcript…",
   "transcript.unavailable": "No transcript available.",
-  "transcript.searchPlaceholder": "Search transcript...",
+  "transcript.searchPlaceholder": "Search transcript…",
   "transcript.searchLabel": "Search transcript",
   "transcript.searchPrevious": "Previous match",
   "transcript.searchNext": "Next match",
@@ -60,7 +60,7 @@ export const EN_TERMS: Record<TermKey, string> = {
   "player.controlsLabel": "Media controls",
   "player.playButton.play": "Play",
   "player.playButton.pause": "Pause",
-  "player.playButton.loading": "Loading...",
+  "player.playButton.loading": "Loading…",
   "player.skipForward": "Skip forward {seconds} seconds",
   "player.skipBack": "Skip back {seconds} seconds",
   "player.speedLabel": "Playback speed",

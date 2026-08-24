@@ -305,7 +305,7 @@
       {#if loading}
         {@render loading()}
       {:else}
-        <p class="loading-message">Loading transcript…</p>
+        <p class="loading-message">{t("transcript.loading")}</p>
       {/if}
     {:else if empty}
       {@render empty()}

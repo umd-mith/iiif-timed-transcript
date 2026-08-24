@@ -43,7 +43,7 @@ describe("Transcript.Search", () => {
 
     const input = target.querySelector('input[type="search"]');
     expect(input).not.toBeNull();
-    expect(input?.getAttribute("placeholder")).toBe("Search transcript...");
+    expect(input?.getAttribute("placeholder")).toBe("Search transcript…");
   });
 
   it("fires onmatchchange with matches when query finds results", async () => {
