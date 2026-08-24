@@ -721,6 +721,8 @@ No `timeupdate`-equivalent event ships — too chatty for a bubbling event. Host
 
 Listen for **both** `iiif-player-ready` and `iiif-player-error`, and branch on `detail.fatal`: a fatal error means the player will not become usable (replace the element to retry); a non-fatal one (a blocked autoplay, a transcript that failed to load, a misused property) needs no action. `iiif-player-error` may fire before or after `iiif-player-ready`. Do not block on `playerRef` becoming non-nullish.
 
+`source: "auth"` means the media sits behind an IIIF Auth login. This player does not implement IIIF Auth login flows — it names the failure so your page can send the viewer to the provider's own login or viewer instead.
+
 **Reconnection.** Moving the element out of the document and back in later — a tab or accordion that detaches its panel, a framework re-parenting a node — rebuilds the player: `iiif-player-ready` fires again, `playerRef` is briefly nullish in between, and the manifest is re-read (from the in-memory cache — unless `preprocessManifest` is set, in which case the manifest is re-fetched over the network and the hook runs again). `canvas-index` is honoured on the way back in. `initial-time` is applied only on the element's first connection, so a rebuild does not rewind playback. A synchronous move (remove and re-append in the same task) is not a rebuild and changes nothing.
 
 ### Theming
