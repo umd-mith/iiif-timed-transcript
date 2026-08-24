@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CSP harness</title>
+  </head>
+  <body>
+    <iiif-transcript-player id="p"></iiif-transcript-player>
+    <script>
+      window.__cspViolations = [];
+      document.addEventListener("securitypolicyviolation", (e) => {
+        window.__cspViolations.push({
+          directive: e.violatedDirective,
+          blockedURI: e.blockedURI,
+        });
+      });
+    </script>
+    <script src="../../dist/element/iiif-transcript-player.iife.js"></script>
+    <script>
+      window.IIIFTranscriptPlayer.register();
+    </script>
+  </body>
+</html>

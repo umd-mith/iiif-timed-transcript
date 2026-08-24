@@ -66,6 +66,7 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"options_missing_custom_element:ignore\"",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:csp": "node scripts/csp-harness/run.mjs",
     "lint": "eslint src/ && prettier --check .",
     "format": "prettier --write .",
     "changeset": "changeset",
