@@ -3,6 +3,10 @@ import type { Chapter } from "@umd-mith/iiif-media-parsers";
 import type { HlsAdapter } from "../media/hlsUtils.js";
 import type { DashAdapter } from "../media/dashUtils.js";
 import type { Annotation } from "../sync/types.js";
+// Re-exported (not just imported): PlayerState.svelte.ts pulls it in from
+// "./context.js" alongside the other PlayerContext-adjacent types.
+export type { CaptionsVerdict } from "./captionsMachine.js";
+import type { CaptionsVerdict } from "./captionsMachine.js";
 
 export interface TrackDefinition {
   src: string;
@@ -92,6 +96,20 @@ export interface PlayerContext {
    * the same text. Internal wiring — not on PlayerRef.
    */
   transcriptPopulated: boolean;
+  /**
+   * Current verdict of the captions state machine (`captionsMachine.ts`).
+   * Viewer applies it to the selected `<track>`'s `mode`; IIIFPlayer.Captions
+   * reads it for `aria-pressed`. Internal wiring — not on PlayerRef.
+   */
+  readonly captionsState: CaptionsVerdict;
+  /** Sends USER_TOGGLE to the captions machine. Internal wiring — not on PlayerRef. */
+  toggleCaptions: () => void;
+  /**
+   * Feeds a native `textTracks` "change" read-back (the browser's own CC
+   * menu) into the captions machine as NATIVE_CHANGE. Internal wiring — not
+   * on PlayerRef.
+   */
+  reportNativeCaptionChange: (mode: "showing" | "hidden") => void;
   actions: PlayerActions;
 }
 

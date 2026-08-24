@@ -57,6 +57,9 @@ describe("getPlayerContext", () => {
       canvases: [],
       transcriptStatus: "idle",
       transcriptPopulated: false,
+      captionsState: "unavailable",
+      toggleCaptions: vi.fn(),
+      reportNativeCaptionChange: vi.fn(),
       actions: {
         play: vi.fn(),
         pause: vi.fn(),
@@ -130,6 +133,9 @@ describe("PlayerContext chapter types", () => {
       canvases: [],
       transcriptStatus: "idle",
       transcriptPopulated: false,
+      captionsState: "unavailable",
+      toggleCaptions: () => {},
+      reportNativeCaptionChange: () => {},
       actions: {
         play: async () => {},
         pause: () => {},

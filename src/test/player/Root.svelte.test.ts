@@ -2988,4 +2988,60 @@ describe("Root component", () => {
       document.body.removeChild(target3);
     });
   });
+
+  describe("captions machine wiring", () => {
+    test("USER_TOGGLE mid-load wins over a later TRANSCRIPT_POPULATED", async () => {
+      mockFetchManifest(MANIFEST_WITH_VTT_CAPTIONS);
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/captions-mid-load-toggle.json",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+      flushSync();
+
+      await vi.waitFor(() => {
+        expect(capturedCtx?.captionsState).toBe("browserDefault");
+      });
+
+      // User toggles captions off before the transcript panel populates.
+      capturedCtx!.toggleCaptions();
+      flushSync();
+      expect(capturedCtx!.captionsState).toBe("hidden");
+
+      // The transcript panel populates afterwards — must NOT override it.
+      capturedCtx!.transcriptPopulated = true;
+      flushSync();
+      expect(capturedCtx!.captionsState).toBe("hidden");
+    });
+
+    test("a native CC menu change (via Viewer) updates the machine end-to-end", async () => {
+      mockFetchManifest(MANIFEST_WITH_VTT_CAPTIONS);
+      let capturedCtx: PlayerContext | null = null;
+
+      mount(Root, {
+        target,
+        props: {
+          manifestUrl: "https://example.com/captions-native-change.json",
+          children: createContextCapture(target, (ctx) => {
+            capturedCtx = ctx;
+          }),
+        },
+      });
+      flushSync();
+
+      await vi.waitFor(() => {
+        expect(capturedCtx?.captionsState).toBe("browserDefault");
+      });
+
+      capturedCtx!.reportNativeCaptionChange("hidden");
+      flushSync();
+      expect(capturedCtx!.captionsState).toBe("hidden");
+    });
+  });
 });

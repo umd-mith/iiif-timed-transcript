@@ -109,6 +109,9 @@ export function createMockPlayerContext(
     canvases: [],
     transcriptStatus: "idle",
     transcriptPopulated: false,
+    captionsState: "unavailable",
+    toggleCaptions: vi.fn(),
+    reportNativeCaptionChange: vi.fn(),
     actions: {
       play: vi.fn(),
       pause: vi.fn(),
