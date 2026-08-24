@@ -1,0 +1,158 @@
+{
+  "@context": "http://iiif.io/api/presentation/3/context.json",
+  "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y.json",
+  "type": "Manifest",
+  "label": {
+    "en": ["Accessibility fixture: multi-canvas navigation"]
+  },
+  "summary": {
+    "en": [
+      "A synthetic two-canvas manifest built for the manual accessibility test scripts in docs/a11y/. Canvas 1 draws its transcript from an external WebVTT track; canvas 2 draws its transcript from embedded TextualBody annotations. The two canvases are unrelated works, deliberately paired so that switching between them exercises both transcript paths and makes a stale-reference bug obvious. Media is hotlinked from the public IIIF Cookbook fixture server."
+    ]
+  },
+  "items": [
+    {
+      "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/1",
+      "type": "Canvas",
+      "label": {
+        "en": ["1. Lunchroom Manners (WebVTT transcript)"]
+      },
+      "width": 480,
+      "height": 360,
+      "duration": 572.034,
+      "items": [
+        {
+          "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/1/page/1",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/1/page/1/annotation/1",
+              "type": "Annotation",
+              "motivation": "painting",
+              "body": {
+                "id": "https://fixtures.iiif.io/video/indiana/lunchroom_manners/high/lunchroom_manners_1024kb.mp4",
+                "type": "Video",
+                "format": "video/mp4",
+                "width": 480,
+                "height": 360,
+                "duration": 572.034
+              },
+              "target": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/1"
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/1/annotations/1",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/1/annotations/1/annotation/1",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "id": "https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.vtt",
+                "type": "Text",
+                "format": "text/vtt",
+                "label": {
+                  "en": ["Captions in WebVTT format"]
+                },
+                "language": "en"
+              },
+              "target": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2",
+      "type": "Canvas",
+      "label": {
+        "en": ["2. L'Elisir d'Amore, Atto Primo (embedded transcript)"]
+      },
+      "width": 1920,
+      "height": 1080,
+      "duration": 3971.24,
+      "items": [
+        {
+          "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2/page/1",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2/page/1/annotation/1",
+              "type": "Annotation",
+              "motivation": "painting",
+              "body": {
+                "id": "https://fixtures.iiif.io/video/indiana/donizetti-elixir/vae0637_accessH264_low_act_1.mp4",
+                "type": "Video",
+                "format": "video/mp4",
+                "width": 1920,
+                "height": 1080,
+                "duration": 3971.24
+              },
+              "target": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2"
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2/annotations/1",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2/annotations/1/annotation/1",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "Canvas 2, segment 1. Embedded transcript text, not fetched from a WebVTT file.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2#t=0,20"
+            },
+            {
+              "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2/annotations/1/annotation/2",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "Canvas 2, segment 2. If a canvas switch left a stale reference behind, arrow-key navigation would land here on canvas 1's segments instead.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2#t=20,45"
+            },
+            {
+              "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2/annotations/1/annotation/3",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "Canvas 2, segment 3. Four segments is enough to check Home, End, and arrow wrapping without scrolling the panel.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2#t=45,80"
+            },
+            {
+              "id": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2/annotations/1/annotation/4",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "type": "TextualBody",
+                "value": "Canvas 2, segment 4. The last segment: ArrowDown from here should wrap to segment 1.",
+                "format": "text/plain",
+                "language": "en"
+              },
+              "target": "https://umd-mith.github.io/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y/canvas/2#t=80,120"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

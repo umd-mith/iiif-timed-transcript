@@ -1,0 +1,164 @@
+---
+const manifestUrl = '/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y.json';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Multi-canvas Accessibility Fixture - IIIF Transcript Player</title>
+		<meta name="description" content="A deliberately plain two-canvas fixture page for the manual accessibility test scripts in docs/a11y/. Exercises canvas navigation, the roving-tabindex transcript panel across a canvas switch, and both transcript sources." />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+	</head>
+	<body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
+		<!-- Navigation -->
+		<nav class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+				<div class="flex items-center justify-between h-16">
+					<div class="flex items-center">
+						<a href="." class="text-xl font-serif font-bold text-ink-900 tracking-tight">
+							IIIF Transcript Player
+						</a>
+					</div>
+					<div class="hidden md:flex items-center space-x-8">
+						<a href="." class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Home</a>
+						<a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
+							GitHub
+						</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<!-- Hero -->
+		<section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
+			<div class="max-w-4xl mx-auto">
+				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">TEST FIXTURE · WEB COMPONENT</div>
+				<h1 class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight">
+					Multi-canvas Accessibility Fixture
+				</h1>
+				<p class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed">
+					This is not a showcase. It is the fixture page the manual accessibility test scripts in <a href="https://github.com/umd-mith/svelte-iiif-transcript-player/tree/main/docs/a11y" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline"><code class="font-mono text-base bg-parchment-200 px-1.5 py-0.5 rounded">docs/a11y/</code></a> call for. Every other demo on this site renders a single canvas, so none of them can exercise what happens to keyboard focus and screen-reader announcements when the canvas changes underneath the transcript panel.
+				</p>
+				<p class="text-base text-ink-500 mb-4 max-w-3xl font-serif leading-relaxed">
+					The page is styled as plainly as the site chrome allows: no <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">::part()</code> overrides, no custom property remapping. What you see is the element's shipped default appearance, which is what the Accessibility Conformance Report's contrast and focus-visibility claims are scoped to.
+				</p>
+
+				<!-- What the fixture manifest is -->
+				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">What the fixture manifest is</h3>
+					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
+						A synthetic IIIF Presentation 3 manifest with two canvases, committed at <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">docs/public/fixtures/canvas-nav-a11y.json</code>. The two canvases are unrelated works, paired on purpose: each draws its transcript from a different source, so a stale reference surviving a canvas switch shows up as visibly wrong text rather than as a subtle off-by-one.
+					</p>
+					<ul class="text-sm text-ink-600 space-y-2 font-serif leading-relaxed">
+						<li><strong>Canvas 1 — Lunchroom Manners.</strong> Transcript comes from an external WebVTT track (a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> annotation, fetched on demand). Because that track is also a caption track on a video canvas, this canvas is where the Captions toggle appears.</li>
+						<li><strong>Canvas 2 — L'Elisir d'Amore, Atto Primo.</strong> Transcript comes from four embedded <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">TextualBody</code> annotations. Each segment names itself ("Canvas 2, segment 1…"), so it is obvious at a glance which canvas's segments the panel is actually holding.</li>
+					</ul>
+					<p class="text-sm text-ink-500 mt-4 font-serif leading-relaxed">
+						Media is hotlinked from the public IIIF Cookbook fixture server. If <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">fixtures.iiif.io</code> is down, the manifest still parses and the transcript panel still populates — only playback fails.
+					</p>
+				</div>
+
+				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">The markup this page runs</h3>
+					<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code>{`<iiif-transcript-player
+  manifest-url="./fixtures/canvas-nav-a11y.json"
+  label="Multi-canvas accessibility fixture"
+  crossorigin="anonymous"
+></iiif-transcript-player>`}</code></pre>
+					<p class="text-sm text-ink-500 mt-4 font-serif leading-relaxed">
+						<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">crossorigin="anonymous"</code> is required here and nowhere else on this page: canvas 1's WebVTT file lives on another origin, and a browser refuses a cross-origin <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">&lt;track&gt;</code> without it. Canvas navigation is part of the element's fixed composition — the page does not opt into it.
+					</p>
+				</div>
+
+				<div class="flex flex-wrap items-center gap-6 text-sm text-ink-500 border-t border-l-4 border-terracotta-300 pt-6 pl-6">
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Two canvases</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Two transcript sources</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Roving tabindex across a switch</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Shipped default styling</span>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- The fixture itself -->
+		<section class="py-16 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200">
+			<div class="max-w-7xl mx-auto">
+				<div class="mb-8">
+					<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4">
+						The fixture
+					</h2>
+					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
+						There is one focusable link before the player and one after it, so the Tab-in and Tab-out checks in <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">docs/a11y/keyboard-walkthrough.md</code> have somewhere unambiguous to land on either side.
+					</p>
+				</div>
+
+				<p class="mb-6">
+					<a href="#after-player" class="text-terracotta-500 hover:text-terracotta-600 underline font-medium">Focus target before the player</a>
+				</p>
+
+				<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
+					<iiif-transcript-player
+						id="player"
+						manifest-url={manifestUrl}
+						label="Multi-canvas accessibility fixture"
+						crossorigin="anonymous"
+					></iiif-transcript-player>
+				</div>
+
+				<p class="mt-6">
+					<a id="after-player" href="#player" class="text-terracotta-500 hover:text-terracotta-600 underline font-medium">Focus target after the player</a>
+				</p>
+
+				<div class="mt-6 text-sm text-ink-500">
+					<p>
+						Fixture manifest:
+						<a href={manifestUrl} target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline break-all">
+							{manifestUrl}
+						</a>
+					</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Footer -->
+		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
+			<div class="max-w-7xl mx-auto text-center">
+				<p class="mb-4">
+					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
+				</p>
+				<p class="text-sm">
+					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
+				</p>
+			</div>
+		</footer>
+
+		<style is:global>
+			/* Deliberately minimal: width only, so the element's shipped defaults
+			   are what gets audited. No ::part() overrides, no token remapping. */
+			iiif-transcript-player {
+				display: block;
+				width: 100%;
+			}
+		</style>
+
+		<script>
+			import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+			register();
+		</script>
+	</body>
+</html>
