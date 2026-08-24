@@ -43,6 +43,14 @@ export interface SyncContext {
   annotations: Annotation[];
   /** Duration to lock sync priority after user interaction (milliseconds) */
   priorityLockDuration: number;
+  /**
+   * When false, the mediaDriven scrollController actor is a no-op — the
+   * user paused auto-scroll from the transcript panel. Annotation
+   * tracking, the media priority lock, and consumer scroll APIs
+   * (Transcript.scrollToAnnotation, TranscriptSegments.scrollToAnnotation)
+   * are unaffected; only the automatic scroll-into-view is silenced.
+   */
+  autoScrollEnabled: boolean;
 }
 
 /**
@@ -58,6 +66,7 @@ export type SyncEvent =
     }
   | { type: "VIDEO_TIME_UPDATE"; currentTime: number }
   | { type: "TRANSCRIPT_SCROLL"; scrollProgress: number; mappedTime: number }
+  | { type: "SET_AUTO_SCROLL_ENABLED"; enabled: boolean }
   | { type: "RESET" };
 
 /**
