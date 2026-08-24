@@ -4,6 +4,7 @@
   import { untrack } from "svelte";
   import { getPlayerContext } from "./context";
   import { formatTimestamp } from "../transcript/utils";
+  import { t } from "../i18n/registry.svelte";
 
   interface Props {
     onActiveChapterChange?: (chapter: Chapter | null) => void;
@@ -42,12 +43,12 @@
   }
 </script>
 
-<nav class="chapters-nav {className}" aria-label="Chapters">
+<nav class="chapters-nav {className}" aria-label={t("player.chaptersLabel")}>
   {#if chapters.length === 0}
     {#if empty}
       {@render empty()}
     {:else}
-      <p class="empty-message">No chapters available.</p>
+      <p class="empty-message">{t("player.chaptersEmpty")}</p>
     {/if}
   {:else}
     {#each chapters as ch (ch.id)}

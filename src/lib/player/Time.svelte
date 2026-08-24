@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getPlayerContext } from "./context";
   import { formatTimestamp } from "../transcript/utils";
+  import { t } from "../i18n/registry.svelte";
 
   let {
     class: className = "",
@@ -18,7 +19,7 @@
 <div
   data-audio-control="time"
   role="timer"
-  aria-label="Playback time"
+  aria-label={t("player.timeLabel")}
   class={className}
 >
   {formatted}

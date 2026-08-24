@@ -9,6 +9,7 @@
   import type { Annotation, IIIFMediaViewerRef } from "../sync/types";
   import type { Snippet } from "svelte";
   import { SyncController } from "../sync/SyncController.svelte";
+  import { t } from "../i18n/registry.svelte";
 
   interface Props {
     /** Array of transcript annotations with timing and text */
@@ -304,12 +305,12 @@
       {#if loading}
         {@render loading()}
       {:else}
-        <p class="loading-message">Loading transcript…</p>
+        <p class="loading-message">{t("transcript.loading")}</p>
       {/if}
     {:else if empty}
       {@render empty()}
     {:else}
-      <p class="empty-message">No transcript available.</p>
+      <p class="empty-message">{t("transcript.unavailable")}</p>
     {/if}
   {:else if children}
     {@render children()}

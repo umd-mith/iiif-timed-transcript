@@ -41,6 +41,7 @@
     selectTranscriptTrack,
     loadVTTTranscript,
   } from "../iiif/vttTranscript";
+  import { t, setLocale } from "../i18n/registry.svelte";
 
   // Props
   let {
@@ -55,6 +56,7 @@
     onPlayerInit,
     onError,
     preprocessManifest,
+    locale,
     class: className = "",
     children,
   }: {
@@ -80,6 +82,15 @@
      * set, Root bypasses the module-level manifest cache entirely.
      */
     preprocessManifest?: (raw: unknown) => unknown;
+    /**
+     * Sets the term registry's locale for Svelte-API consumers (element
+     * hosts resolve their own locale from the DOM instead — see 4.2).
+     * Omitted means "whatever the registry already has" — English by
+     * default. The registry is one shared module-level state, so the last
+     * `locale` prop (or `setLocale` call) to run wins across every Root on
+     * the page.
+     */
+    locale?: string;
     class?: string;
     children?: import("svelte").Snippet<
       [
@@ -112,6 +123,10 @@
 
   // Provide context — the class instance satisfies PlayerContext
   setPlayerContext(player);
+
+  $effect(() => {
+    if (locale != null) setLocale(locale);
+  });
 
   // Apply initialTime (first canvas load only) and autoplay (every canvas load)
   let initialTimeApplied = false;
@@ -674,7 +689,7 @@
 <div class="iiif-player-root {className}">
   {#if player.state.error}
     <div role="alert" class="error">
-      <strong>Error:</strong>
+      <strong>{t("player.errorLabel")}</strong>
       {player.state.error.message}
     </div>
   {/if}

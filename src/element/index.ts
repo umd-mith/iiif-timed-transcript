@@ -12,3 +12,4 @@ export type {
   IIIFTranscriptPlayerElementEventMap,
 } from "./events.js";
 export type { PlayerRef, CanvasInfo, Annotation } from "../lib/index.js";
+export { registerTranslation } from "../lib/index.js";

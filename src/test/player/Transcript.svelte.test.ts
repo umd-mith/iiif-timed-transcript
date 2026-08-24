@@ -11,6 +11,7 @@ import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 import { createReactiveMockPlayerContext } from "./reactive-context.svelte";
 import type { Annotation } from "../../lib/sync/types";
 import type { TranscriptContext } from "../../lib/player/transcript-context";
+import { registerTranslation, setLocale } from "../../lib/i18n/registry.svelte";
 
 describe("Transcript", () => {
   let target: HTMLElement;
@@ -68,6 +69,33 @@ describe("Transcript", () => {
     const emptyMessage = target.querySelector(".empty-message");
     expect(emptyMessage).not.toBeNull();
     expect(emptyMessage?.textContent).toContain("No transcript available");
+  });
+
+  test("empty-state message is reactive to locale — proves t() is live, not baked in at mount", () => {
+    const ctx = createMockPlayerContext();
+
+    mount(TestContextProvider, {
+      target,
+      props: {
+        context: ctx,
+        children: createChildSnippet(target, Transcript, { annotations: [] }),
+      },
+    });
+    flushSync();
+
+    const emptyMessage = target.querySelector(".empty-message");
+    expect(emptyMessage?.textContent).toBe("No transcript available.");
+
+    registerTranslation("fr", {
+      "transcript.unavailable": "Aucune transcription disponible.",
+    });
+    setLocale("fr");
+    flushSync();
+
+    expect(emptyMessage?.textContent).toBe("Aucune transcription disponible.");
+
+    setLocale("en");
+    flushSync();
   });
 
   describe("context annotations fallback", () => {

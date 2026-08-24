@@ -25,6 +25,9 @@
   "homepage": "https://github.com/umd-mith/svelte-iiif-transcript-player#readme",
   "type": "module",
   "svelte": "./dist/index.js",
+  "sideEffects": [
+    "dist/element/iiif-transcript-player.iife.js"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -34,10 +37,6 @@
     "./element": {
       "types": "./dist/element/index.d.ts",
       "default": "./dist/element/index.js"
-    },
-    "./element/iife": {
-      "types": "./dist/element/iiif-transcript-player.iife.d.ts",
-      "default": "./dist/element/iiif-transcript-player.iife.js"
     }
   },
   "files": [

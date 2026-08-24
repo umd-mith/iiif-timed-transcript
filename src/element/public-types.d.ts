@@ -2,6 +2,7 @@ import type {
   Annotation,
   CanvasInfo,
   PlayerRef,
+  TermKey,
 } from "@umd-mith/svelte-iiif-transcript-player";
 
 // Re-exported so `import type { Annotation } from
@@ -97,6 +98,12 @@ export interface IIIFTranscriptPlayerElementEventMap extends HTMLElementEventMap
 
 /** Defines the element as `tagName` (default `"iiif-transcript-player"`). Warns and no-ops if already defined. */
 export declare function register(tagName?: string): void;
+
+/** Merges `terms` into whatever is already registered for `locale` (hardening spec 4.2). */
+export declare function registerTranslation(
+  locale: string,
+  terms: Partial<Record<TermKey, string>>,
+): void;
 
 declare global {
   interface HTMLElementTagNameMap {
