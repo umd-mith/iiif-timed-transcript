@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "2.1.0",
   "readme": "README.md",
   "modules": [
     {
@@ -115,7 +115,15 @@
             { "name": "--iiif-player-segment-active-bg" },
             { "name": "--iiif-player-segment-highlight-bg" },
             { "name": "--iiif-player-segment-fg" },
-            { "name": "--iiif-player-border" }
+            { "name": "--iiif-player-border" },
+            {
+              "name": "--iiif-player-focus",
+              "description": "Focus-ring color. The default (#1d4ed8) keeps at least 3:1 contrast against every surface it outlines over (WCAG 1.4.11); an override should do the same."
+            },
+            {
+              "name": "--iiif-player-segment-indicator",
+              "description": "Color of the non-color-alone active-segment edge marker. The default (#1d4ed8) keeps at least 3:1 contrast against the segment state backgrounds (WCAG 1.4.11); an override should do the same."
+            }
           ],
           "cssParts": [
             { "name": "controls" },
@@ -125,6 +133,20 @@
             { "name": "button" },
             { "name": "speed" },
             { "name": "progress" }
+          ],
+          "cssStates": [
+            {
+              "name": "playing",
+              "description": "Set while playback is running — style the host with :state(playing)."
+            },
+            {
+              "name": "loading",
+              "description": "Set while the manifest or media is loading."
+            },
+            {
+              "name": "error",
+              "description": "Set while the player is in a fatal error state."
+            }
           ]
         }
       ],

@@ -7,6 +7,7 @@
 // which declare a window global and no module exports).
 import {
   readFileSync,
+  readdirSync,
   statSync,
   copyFileSync,
   existsSync,
@@ -183,6 +184,84 @@ if (JSON.stringify(cemEventNames) !== JSON.stringify(realEventNames)) {
   fail(
     `custom-elements.json events ${JSON.stringify(cemEventNames)} do not ` +
       `match the declared event map ${JSON.stringify(realEventNames)}`,
+  );
+}
+
+// The styling surface (custom properties, parts, custom states) drifts just
+// as silently as attributes and events — the ::part additions in 57451bd
+// stayed honest only because the CEM edit was remembered by hand. Same
+// regex-based convention, reading each name list from the source that
+// actually declares it.
+const cemCssPropertyNames = (declaration.cssProperties ?? [])
+  .map((p) => p.name)
+  .sort();
+const realCssPropertyNames = [
+  ...new Set(
+    [...wrapperSourceText.matchAll(/var\((--iiif-player-[a-z-]+)/g)].map(
+      (m) => m[1],
+    ),
+  ),
+].sort();
+if (
+  JSON.stringify(cemCssPropertyNames) !== JSON.stringify(realCssPropertyNames)
+) {
+  fail(
+    `custom-elements.json cssProperties ${JSON.stringify(cemCssPropertyNames)} ` +
+      `do not match the tokens the wrapper CSS consumes ${JSON.stringify(realCssPropertyNames)}`,
+  );
+}
+
+// part= attributes live in the lib components the wrapper composes, so walk
+// every .svelte file under src/lib plus the wrapper itself. A part is either
+// a literal (part="controls") or an expression holding string literals
+// (part={isActive ? "segment segment-active" : "segment"}); multi-part
+// values are whitespace-separated token lists.
+const svelteFiles = [wrapperSource];
+const collectSvelte = (dir) => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const entryPath = resolve(dir, entry.name);
+    if (entry.isDirectory()) collectSvelte(entryPath);
+    else if (entry.name.endsWith(".svelte")) svelteFiles.push(entryPath);
+  }
+};
+collectSvelte(resolve(root, "src/lib"));
+const realPartNames = new Set();
+for (const file of svelteFiles) {
+  const text = readFileSync(file, "utf8");
+  for (const m of text.matchAll(/\spart=(?:"([^"]+)"|\{([^}]+)\})/g)) {
+    const literals =
+      m[1] != null
+        ? [m[1]]
+        : [...m[2].matchAll(/"([^"]+)"/g)].map((inner) => inner[1]);
+    for (const literal of literals) {
+      for (const name of literal.split(/\s+/)) realPartNames.add(name);
+    }
+  }
+}
+const cemPartNames = (declaration.cssParts ?? []).map((p) => p.name).sort();
+const sortedRealPartNames = [...realPartNames].sort();
+if (JSON.stringify(cemPartNames) !== JSON.stringify(sortedRealPartNames)) {
+  fail(
+    `custom-elements.json cssParts ${JSON.stringify(cemPartNames)} do not ` +
+      `match the part attributes in the components ${JSON.stringify(sortedRealPartNames)}`,
+  );
+}
+
+// Custom states are added/deleted on internals.states in the wrapper script.
+const cemStateNames = (declaration.cssStates ?? []).map((s) => s.name).sort();
+const realStateNames = [
+  ...new Set(
+    [
+      ...wrapperSourceText.matchAll(
+        /internals\.states\[[^\]]+\]\("([a-z-]+)"\)/g,
+      ),
+    ].map((m) => m[1]),
+  ),
+].sort();
+if (JSON.stringify(cemStateNames) !== JSON.stringify(realStateNames)) {
+  fail(
+    `custom-elements.json cssStates ${JSON.stringify(cemStateNames)} do not ` +
+      `match the wrapper's internals.states calls ${JSON.stringify(realStateNames)}`,
   );
 }
 
