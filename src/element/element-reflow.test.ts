@@ -181,4 +181,33 @@ describe("<iiif-transcript-player> reflow at 320px", () => {
       container.clientWidth + 1,
     );
   });
+
+  test("canvas navigation wraps instead of overflowing a 320px host", async () => {
+    const url = "https://example.com/reflow-canvas-nav.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_REFLOW_STUB, id: url } },
+    });
+    const el = await mountElement({ "manifest-url": url, style: NARROW });
+    const nav = await untilShadow<HTMLElement>(el, "nav.canvas-nav");
+
+    expect(getComputedStyle(nav).flexWrap).toBe("wrap");
+    expect(nav.scrollWidth).toBeLessThanOrEqual(nav.clientWidth + 1);
+  });
+
+  test("the search input stays inside its column at a 320px host", async () => {
+    const url = "https://example.com/reflow-search.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_REFLOW_STUB, id: url } },
+    });
+    const el = await mountElement({ "manifest-url": url, style: NARROW });
+    const input = await untilShadow<HTMLElement>(el, 'input[type="search"]');
+    const container = input.parentElement!;
+
+    // border-box sizing is what keeps the input's own padding and border from
+    // pushing it past the column that holds it.
+    expect(getComputedStyle(input).boxSizing).toBe("border-box");
+    expect(input.getBoundingClientRect().width).toBeLessThanOrEqual(
+      container.clientWidth + 1,
+    );
+  });
 });

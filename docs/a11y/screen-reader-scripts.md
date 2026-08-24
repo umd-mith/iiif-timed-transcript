@@ -14,6 +14,8 @@ deliberately out of scope unless procurement asks for it later.
 
 - `examples/element/plain.html` for the single-canvas passes. Build first
   (`pnpm run build`); the page loads the IIFE bundle from `dist/element/`.
+  Its style block deliberately remaps tokens to prove they do not leak, which
+  does not affect anything a screen reader reports.
 - The multi-canvas fixture page, `/canvas-nav-demo` on the docs site, for
   the canvas-switch check (check 9). See
   [`keyboard-walkthrough.md`](keyboard-walkthrough.md) for how to run the
@@ -28,22 +30,26 @@ code changes:
   awaits `[role="alert"]` in the shadow tree.
 - _Transcript 404._ Serve a manifest whose video canvas carries a caption
   track whose `id` returns 404, while the manifest itself and everything
-  else load fine. This is a non-fatal `playererror`: no `role="alert"`
+  else load fine. This is a non-fatal `iiif-player-error`: no `role="alert"`
   appears, the panel is simply empty, and the only signal available to
   assistive technology is the status announcement this script checks. The
-  automated equivalent is the `element-errors.test.ts` case named "a 404
-  VTT is a non-fatal transcript playererror strictly after
-  playerrefavailable".
+  automated equivalent is `src/element/element-errors.test.ts:204`, "a 404
+  VTT is a non-fatal transcript iiif-player-error strictly after
+  iiif-player-ready; the player and its native caption track survive".
 
-**Expected announcement wording**, as shipped in the term registry
-(`src/lib/i18n/terms.ts`) — check against these strings rather than
-paraphrasing:
+**Expected announcement wording.** Check against these strings rather than
+paraphrasing. All but the last come from the term registry
+(`src/lib/i18n/terms.ts`) and are localizable:
 
 - Transcript loaded: `Transcript loaded, {count} segments`
 - Transcript failed or absent: `Transcript unavailable`
 - Search match counter: `{current} of {total}`, or `No matches`
-- Transcript region label: `Media transcript`
 - Segment list label: `Transcript segments`
+- Transcript region label: `Media transcript` — **not** from the registry.
+  It is a hard-coded default prop (`src/lib/player/Transcript.svelte:52`) and
+  is therefore not localizable, unlike every string above it. A host can
+  override it per instance. Worth flagging in your notes if a non-English
+  page reads it out in English.
 
 ## NVDA + Firefox script
 

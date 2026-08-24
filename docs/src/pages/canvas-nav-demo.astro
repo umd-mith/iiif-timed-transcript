@@ -1,5 +1,5 @@
 ---
-const manifestUrl = '/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y.json';
+const manifestUrl = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/fixtures/canvas-nav-a11y.json`;
 ---
 
 <!doctype html>
@@ -65,7 +65,8 @@ const manifestUrl = '/svelte-iiif-transcript-player/fixtures/canvas-nav-a11y.jso
 				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
 					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">The markup this page runs</h3>
 					<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code>{`<iiif-transcript-player
-  manifest-url="./fixtures/canvas-nav-a11y.json"
+  id="player"
+  manifest-url="${manifestUrl}"
   label="Multi-canvas accessibility fixture"
   crossorigin="anonymous"
 ></iiif-transcript-player>`}</code></pre>

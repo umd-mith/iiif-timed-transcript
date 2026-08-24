@@ -64,19 +64,25 @@ export interface ContrastPair {
  * changes, update the hex here in the same commit — this table is the
  * regression guard, not a description of intent.
  *
- * Deliberately excluded for now: `--iiif-player-border` (currently
- * `#e5e7eb`, ~1.24:1 against white — the 1.4.11 defect the a11y spec's A3
- * fixes) and any focus-outline pair (A3 introduces `--iiif-player-focus`;
- * today's outline uses `currentColor`, which resolves to
- * `--iiif-player-accent-fg` and is white-on-white on the active canvas
- * button). A3 adds both once fixed — do not add them here ahead of that
- * fix or this test fails on the very defect it exists to catch.
+ * The border and focus-outline pairs that this table once excluded — while
+ * `--iiif-player-border` was `#e5e7eb` and the outline still resolved to
+ * `currentColor` — are now included, since both defects are fixed. See the
+ * dedicated assertions in contrast.test.ts.
  */
 export const TOKEN_CONTRAST_PAIRS: ContrastPair[] = [
   {
     name: "base text on player background (--iiif-player-fg / --iiif-player-bg)",
     fg: "#1a1a1a",
     bg: "#ffffff",
+    kind: "text",
+    minRatio: 4.5,
+  },
+  {
+    // The conformance report cites this ratio under 1.4.3; without it here
+    // the figure was computed but not regression-locked.
+    name: "control text on control-bar background (--iiif-player-control-fg / --iiif-player-control-bg)",
+    fg: "#1a1a1a",
+    bg: "#f3f4f6",
     kind: "text",
     minRatio: 4.5,
   },

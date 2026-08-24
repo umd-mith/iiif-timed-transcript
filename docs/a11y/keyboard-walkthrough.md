@@ -10,9 +10,13 @@ Home, End, Enter, Space, Escape.
 
 ## Pages used
 
-- **`examples/element/plain.html`** — a styling-free host page, for the
-  single-canvas pass. Open it after `pnpm run build`, since it loads the
-  built IIFE bundle from `dist/element/`.
+- **`examples/element/plain.html`** — a bare host page for the single-canvas
+  pass. Open it after `pnpm run build`, since it loads the built IIFE bundle
+  from `dist/element/`. Note that its style block is deliberately hostile: it
+  remaps `--iiif-player-accent` and other tokens to prove they do not leak.
+  That makes it the right page for keyboard order and trap checks, and the
+  wrong page for judging the shipped default appearance — use the
+  multi-canvas fixture page below for anything about default colors.
 - **The multi-canvas fixture page**, `/canvas-nav-demo` on the docs site
   (`cd docs && pnpm install && pnpm run dev`, which opens at
   `http://localhost:4321/svelte-iiif-transcript-player`). Its manifest,
@@ -24,8 +28,10 @@ Home, End, Enter, Space, Escape.
   off-by-one. The page applies no `::part()` overrides and no token
   remapping, so what is audited is the element's shipped default
   appearance.
-- **The chapters demo** (`/chapters-demo`), single-canvas, for the chapter
-  buttons at the end of the control-bar order.
+  **Not used:** the chapters demo (`/chapters-demo`). The element's fixed
+  composition contains no chapters component, and that page is built on the
+  Svelte compound API rather than on `<iiif-transcript-player>`, so it is a
+  different product surface from the one this script scopes itself to.
 
 ## Browser requirement
 
@@ -41,8 +47,8 @@ reason.
 ## Walkthrough
 
 Run this sequence on `examples/element/plain.html` first (single-canvas),
-then repeat on the chapters demo (still single-canvas, plus chapter
-navigation — not to be confused with the multi-canvas pass below).
+then repeat on the multi-canvas fixture page, whose canvas navigation adds
+stops the bare page does not have.
 
 1. Load the page. Click once anywhere _outside_ the player to establish a
    known focus origin, then press **Tab**.
@@ -53,8 +59,9 @@ navigation — not to be confused with the multi-canvas pass below).
    source order: Play → Progress → Skip back → Skip forward → Speed → the
    Captions toggle, if this canvas has caption tracks → canvas-nav buttons,
    if the manifest has more than one canvas → the auto-scroll pause toggle
-   → the search input → the transcript segments → chapter buttons, if the
-   manifest has ranges. Time is not focusable; it is a `role="timer"`.
+   → the search input → the transcript segments. Time is not focusable; it
+   is a `role="timer"`. There are no chapter buttons: the element's fixed
+   composition does not include a chapters component.
    - **Check:** every enabled control receives visible focus, in the order
      it appears on screen. No control is skipped. No control is visited
      twice.
@@ -130,9 +137,10 @@ One row per numbered check across both passes. Use ✅/❌; a ❌ row needs a
 linked issue. Blank rows have not been run — they need a real browser and,
 for the seek checks, working media playback.
 
-Rows recorded below were taken on `feat/element-hardening-completion`
-before that branch merged. Re-pin them to the merge SHA if the branch
-changes before merge.
+The commit SHAs below are element builds on branch `docs/a11y-acr`, which
+had not merged when these rows were recorded. They are not reachable from
+`feat/element-hardening-completion` or from `main`. Check out `docs/a11y-acr`
+to reach them, and re-pin every row to the merge SHA once the branch lands.
 
 | Commit SHA | Date       | Tester                                      | Check                                                           | Pass/Fail | Notes                                                                                                                                                                                                                                                                                                                                       |
 | ---------- | ---------- | ------------------------------------------- | --------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

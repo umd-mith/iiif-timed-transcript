@@ -6,9 +6,10 @@ scripts do. What they verify is that the non-color state indicators behind
 the 1.4.1 Use of Color and 1.4.11 Non-text Contrast rows survive two
 conditions that strip or mirror the styling those rows depend on.
 
-**Pages used:** `examples/element/plain.html` for both passes, plus the
-multi-canvas fixture page `/canvas-nav-demo` where a canvas-nav check is
-called for. For the RTL pass, an RTL fixture is useful but not required to
+**Pages used:** the multi-canvas fixture page `/canvas-nav-demo`, which
+applies no token overrides and so shows the shipped default appearance the
+forced-colors pass needs to judge. `examples/element/plain.html` is
+deliberately hostile to tokens and is the wrong page for this script. For the RTL pass, an RTL fixture is useful but not required to
 start: the shape is a manifest whose transcript annotations carry Arabic or
 Hebrew text, mirroring the local fixture in
 `src/element/element-rtl.test.ts`. Setting `dir="rtl"` on the element or an
@@ -83,9 +84,10 @@ indicator lands on — and leaves the script-shaping half (row 4) for a run
 against real RTL content. `src/element/element-rtl.test.ts` covers the same
 inheritance and indicator-edge assertions on every test run.
 
-Rows recorded below were taken on `feat/element-hardening-completion`
-before that branch merged. Re-pin them to the merge SHA if the branch
-changes before merge.
+The commit SHAs below are element builds on branch `docs/a11y-acr`, which
+had not merged when these rows were recorded. They are not reachable from
+`feat/element-hardening-completion` or from `main`. Check out `docs/a11y-acr`
+to reach them, and re-pin every row to the merge SHA once the branch lands.
 
 | Commit SHA | Date       | Tester                                      | Pass                      | Check                                    | Pass/Fail | Notes                                                                                                                                                            |
 | ---------- | ---------- | ------------------------------------------- | ------------------------- | ---------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |

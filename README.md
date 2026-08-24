@@ -892,7 +892,7 @@ embedding the component needs to know; the report is the row-by-row source.
 
 Every control in the element's fixed composition — Play, Progress, Skip,
 Speed, the Captions toggle on a video canvas with caption tracks, canvas
-navigation, chapters, the auto-scroll pause toggle, and search — is reachable
+navigation, the auto-scroll pause toggle, and search — is reachable
 with **Tab** in visual order, and each is a real `<button>`, `<select>`, or
 `<input type="range">`. Nothing is a custom widget imitating a native
 control's keyboard behavior, and nothing traps focus: Tab from the last
@@ -912,21 +912,27 @@ canvas's DOM.
 
 ### What is announced, and when
 
-Two `aria-live="polite"` regions exist.
+The transcript panel has **one** `aria-live="polite"` region, written by two
+different things. This matters, because they can overwrite each other.
 
-The **segment announcer** inside the transcript panel announces the active
-segment's text, but only on **user-initiated** changes — a segment click, an
-Enter or Space seek, a search-driven seek. It stays silent as segments change
-under auto-playing media, which is what keeps the panel from narrating an
-entire recording at someone.
+The **segment announcer** puts the active segment's text into that region,
+but only on **user-initiated** changes — a segment click, an Enter or Space
+seek, a search-driven seek. It stays silent as segments change under
+auto-playing media, which keeps the panel from narrating an entire recording
+at someone.
 
-The **transcript status announcer** shares that persistent live-region
-container and carries one-shot messages: `Transcript loaded, N segments` on
-success and `Transcript unavailable` on failure. The failure case covers both
-a missing transcript and a transcript resource, such as a WebVTT file, that
-fails to load. The container stays mounted even when the panel is showing its
-empty state, so a screen-reader user gets the same signal a sighted user gets
-from the visible "No transcript available." text.
+The **transcript status announcer** puts one-shot messages into the same
+region: `Transcript loaded, N segments` on success and `Transcript
+unavailable` on failure. The failure case covers both a missing transcript
+and a transcript resource, such as a WebVTT file, that fails to load. Note
+that the status fires on a transition into `ready` or `error`, so a canvas
+whose transcript comes from embedded annotations — already present, never
+`loading` — announces nothing. The region stays mounted even when the panel
+is showing its empty state, so a screen-reader user gets the same signal a
+sighted user gets from the visible "No transcript available." text.
+
+Because both write to one node, a status message arriving while a segment
+announcement is still being read replaces it. Nothing is queued.
 
 A fatal error — an unreachable or invalid manifest — renders a `role="alert"`
 banner, which assistive technology announces immediately. That interrupting
@@ -976,9 +982,9 @@ highlight, focus — also carries a border, so it survives the operating system
 stripping backgrounds.
 
 The component respects `dir="rtl"` inherited from an ancestor. Layout, text
-alignment, and the state-indicator borders use logical CSS properties
-(`margin-inline-start`, `border-inline-start`) rather than physical ones, so
-they land on the correct edge under RTL. See
+alignment, and the state-indicator borders use the logical CSS property
+`border-inline-start` rather than a physical `border-left`, so they land on
+the correct edge under RTL. See
 [`docs/a11y/forced-colors-rtl.md`](docs/a11y/forced-colors-rtl.md) for both
 test scripts and their recorded results.
 

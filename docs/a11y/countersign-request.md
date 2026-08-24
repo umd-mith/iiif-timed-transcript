@@ -21,10 +21,11 @@ third-party audit — by breaking the author-equals-assessor identity.
 A review pass against committed evidence, not an audit from scratch. There
 is also real testing we cannot do ourselves, described in the next section.
 
-1. **Read the report** at `docs/a11y/vpat-2.5-int.md`, checked out at commit
-   `e74e616` — the SHA recorded in the report's own "Scope: commit SHA" row.
-   Please pull that exact commit rather than the tip of `main`: the claims
-   are pinned to it.
+1. **Read the report** at `docs/a11y/vpat-2.5-int.md`, checked out at the tip of
+   branch `docs/a11y-acr` — not `main`, and not the element-build SHA in the
+   report's Product Information table. That SHA names the element surface the
+   claims describe, but the report and its evidence were written across the
+   branch, so no single mid-branch commit holds both.
 2. **Spot-check the evidence** the Remarks cite:
    - [`keyboard-walkthrough.md`](keyboard-walkthrough.md)
    - [`screen-reader-scripts.md`](screen-reader-scripts.md)
@@ -78,6 +79,43 @@ Two rows are claimed and worth your skepticism: **2.1.2 No Keyboard Trap**
 and **2.4.3 Focus Order** rest on recorded keyboard results, and 2.4.3 names
 the two things about it still unconfirmed. If you disagree with either
 reading, say so — that is exactly the disagreement this request is for.
+
+## Context you may find useful
+
+There is no settled house style to copy here, which is part of why we want a
+second reader.
+
+**Avalon Media System has no conformance report.** Avalon is the repository
+platform many of the collections that would embed this component actually
+run, and it publishes no VPAT. Its community opened
+[avalonmediasystem/avalon#6852](https://github.com/avalonmediasystem/avalon/issues/6852)
+in May 2026 to write one, with the same rationale we're working from — "it's
+now expected that software platforms will have this available" — and the
+issue is still open with its single task unchecked. So there is no peer
+artifact in this software category to check our wording against.
+
+**Audio description is a shared gap, not an idiosyncratic one.** Avalon
+tracks audio-description support as open work
+([#6397](https://github.com/avalonmediasystem/avalon/issues/6397),
+[#6665](https://github.com/avalonmediasystem/avalon/issues/6665)). We say
+this here rather than in the report because it is context for a reviewer, not
+a defence: our 1.2.5 row reads Does Not Support and should be judged on its
+own terms.
+
+**The nearest published comparison is a commercial one.** The Avalon issue
+cites Swank Motion Pictures' K-12 streaming platform ACR (September 2025,
+audited by Accessiblü) as its model. Two things there are worth knowing when
+you read ours. First, that report punts the whole 1.2.x block to "dependent
+on the specific licensed content and not evaluated," where ours scores the
+component's own behavior and separates it from manifest content — we think
+ours is more useful to a buyer, but it's a real divergence and we'd like your
+read on it. Second, it marks several Level A and AA criteria "Not Evaluated"
+despite its own Terms section saying that level is for Level AAA only. Ours
+does the same thing on **five** rows — 1.3.4, 1.4.4, 1.4.12, 2.5.2 and 4.1.2
+— deliberately, and the report now declares the deviation in full under
+Terms rather than leaving a reader to notice it. If you think the format
+requires a scored level instead, tell us: the remedy we would prefer is to
+run the outstanding passes and score the rows properly.
 
 ## What we are not asking for
 

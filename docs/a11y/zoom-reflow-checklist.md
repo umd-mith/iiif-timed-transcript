@@ -62,16 +62,21 @@ Resize the viewport to 320px wide at 100% zoom.
 
 ## Results
 
-Rows 1–5 of the 320px section are also locked by
-`src/element/element-reflow.test.ts`, which asserts the same two overflow
-conditions in real Chromium on every run, so they cannot regress silently.
+Four of the five 320px rows are locked by
+`src/element/element-reflow.test.ts`, which asserts the same conditions in
+real Chromium on every run: row 2 (the control bar wraps), row 3 (a segment
+stays inside its column), row 4 (canvas navigation wraps) and row 5 (the
+search input stays in its column). Row 1 — no page-level horizontal scroll —
+has no standing assertion, because it is a property of a whole page and this
+component is not one; it stays a one-time observation.
 The 200% section needs a human: text-only zoom is a browser chrome setting
 with no automation surface, and "is anything clipped" is a judgment a DOM
 measurement cannot make.
 
-Rows recorded below were taken on `feat/element-hardening-completion`
-before that branch merged. Re-pin them to the merge SHA if the branch
-changes before merge.
+The commit SHAs below are element builds on branch `docs/a11y-acr`, which
+had not merged when these rows were recorded. They are not reachable from
+`feat/element-hardening-completion` or from `main`. Check out `docs/a11y-acr`
+to reach them, and re-pin every row to the merge SHA once the branch lands.
 
 | Commit SHA | Date       | Tester                                      | Mode           | Check                                  | Pass/Fail | Notes                                                                                                                                                                                                                                                                                               |
 | ---------- | ---------- | ------------------------------------------- | -------------- | -------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

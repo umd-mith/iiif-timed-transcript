@@ -24,4 +24,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      # Separate from `pnpm test`: the a11y artifact check reads markdown with
+      # node:fs, which the browser-mode Vitest projects have no access to.
+      - run: pnpm run test:a11y-docs
       - run: pnpm build
