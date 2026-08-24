@@ -16,6 +16,7 @@
 
 <script module lang="ts">
   import { setLocale } from "../lib/index.js";
+  import { hoistShadowStyles, warnIfNoStylesFound } from "./cssHoist.js";
 
   // Hosts on which `initial-time` has already been applied. Svelte destroys
   // the inner component a microtask after `disconnectedCallback` and rebuilds
@@ -98,6 +99,11 @@
       // differently-localized players sharing a page.
       #localeObserver: MutationObserver | undefined;
 
+      // CSP-safe style hoist (hardening spec 2.1): hoists Svelte's injected
+      // style nodes into adoptedStyleSheets on connect, and again on every
+      // later mutation (a canvas switch mounts new lib components lazily).
+      #styleObserver: MutationObserver | undefined;
+
       #resolveLocale(): void {
         const match = this.closest("[lang]");
         const value = match?.getAttribute("lang");
@@ -124,6 +130,12 @@
           }
         }
         await super.connectedCallback();
+        hoistShadowStyles(this.shadowRoot!);
+        this.#styleObserver = new MutationObserver(() => {
+          hoistShadowStyles(this.shadowRoot!);
+        });
+        this.#styleObserver.observe(this.shadowRoot!, { childList: true });
+        setTimeout(() => warnIfNoStylesFound(this.shadowRoot!), 0);
         for (const key of Object.keys(captured)) {
           self[key] = captured[key];
         }
@@ -132,6 +144,8 @@
       disconnectedCallback() {
         this.#localeObserver?.disconnect();
         this.#localeObserver = undefined;
+        this.#styleObserver?.disconnect();
+        this.#styleObserver = undefined;
         super.disconnectedCallback();
       }
 
