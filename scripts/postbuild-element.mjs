@@ -16,6 +16,7 @@ import {
 } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import process from "node:process";
 import { execFileSync } from "node:child_process";
 
 // fileURLToPath, not `.pathname`: the latter keeps percent-encoding (a repo

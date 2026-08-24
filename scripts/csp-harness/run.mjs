@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { existsSync } from "node:fs";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { startCspServer } from "./server.mjs";
