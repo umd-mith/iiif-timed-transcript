@@ -106,6 +106,17 @@
       // later mutation (a canvas switch mounts new lib components lazily).
       #styleObserver: MutationObserver | undefined;
 
+      // Set once in the constructor (attachInternals() may be called at
+      // most once per element) so the inner Svelte component ($host()) can
+      // reflect player state onto it as custom states — see the
+      // `internals.states` effect in the component script below.
+      __internals?: ElementInternals;
+
+      constructor(...params: never[]) {
+        super(...params);
+        this.__internals = this.attachInternals();
+      }
+
       #resolveLocale(): void {
         const match = this.closest("[lang]");
         const value = match?.getAttribute("lang");
@@ -233,6 +244,7 @@
     error: Error,
     info: { fatal: boolean; source: PlayerErrorDetail["source"] },
   ) {
+    if (info.fatal) hasFatalHostError = true;
     // Read untracked: report() runs inside host-validation $effects (below),
     // and a tracked read of errorCallback here would make those effects
     // depend on it — so a later `el.errorCallback = fn` (the documented
@@ -415,6 +427,31 @@
       });
     }, 0);
     return () => clearTimeout(timer);
+  });
+
+  // Fatal errors that happen before playerRefValue is ever set (a manifest
+  // or first-canvas failure — report()'s `fatal: true` path) need their own
+  // flag: PlayerRef.state doesn't exist yet to read `.error` off of.
+  let hasFatalHostError = $state(false);
+
+  const isPlayingState = $derived(playerRefValue?.state.isPlaying ?? false);
+  // "loading": the manifest/first canvas hasn't resolved yet. Deliberately
+  // narrower than isBuffering (a mid-playback stall) — a host wanting a
+  // spinner during startup only, not every rebuffer, wants this one.
+  const isLoadingState = $derived(
+    !playerRefValue || !playerRefValue.state.isReady,
+  );
+  const isErrorState = $derived(
+    hasFatalHostError || playerRefValue?.state.error != null,
+  );
+
+  $effect(() => {
+    const internals = ($host() as unknown as { __internals?: ElementInternals })
+      .__internals;
+    if (!internals) return;
+    internals.states[isPlayingState ? "add" : "delete"]("playing");
+    internals.states[isLoadingState ? "add" : "delete"]("loading");
+    internals.states[isErrorState ? "add" : "delete"]("error");
   });
 
   const safeAnnotations = $derived<Annotation[] | "auto">(
