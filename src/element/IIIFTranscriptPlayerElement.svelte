@@ -504,7 +504,7 @@
         {#if (playerRefValue?.canvasCount ?? 0) > 1}
           <IIIFPlayer.CanvasNav />
         {/if}
-        {#if player.annotations.length > 0 || player.transcriptStatus === "loading"}
+        {#if player.annotations.length > 0 || player.transcriptStatus === "loading" || player.transcriptStatus === "error"}
           <IIIFPlayer.Transcript>
             <IIIFPlayer.TranscriptSearch />
             <IIIFPlayer.TranscriptSegments />
