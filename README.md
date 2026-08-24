@@ -413,6 +413,29 @@ const speakers = new Map(
 const paragraphs = mergeIntoParagraphs(annotations, { speakers });
 ```
 
+## Interface Language (i18n)
+
+All of the player's interface text (button labels, transcript messages) comes from a translation registry. English is built in. A host adds a language with `registerTranslation`, and rendered strings update in place:
+
+```ts
+import {
+  registerTranslation,
+  setLocale,
+} from "@umd-mith/svelte-iiif-transcript-player";
+
+registerTranslation("fr", {
+  "player.playButton.play": "Lecture",
+  "transcript.unavailable": "Aucune transcription disponible.",
+});
+setLocale("fr"); // or <IIIFPlayer.Root locale="fr">
+```
+
+A key a locale does not cover falls back to English, key by key. The `TermKey` type lists every key. Script-tag hosts call `window.IIIFTranscriptPlayer.registerTranslation`; ESM element hosts import it from `…/element`.
+
+**Who sets the language differs by consumer, on purpose.** The `<iiif-transcript-player>` element reads the page language itself: the nearest `lang` attribute wins, then `<html lang>`, then English — and it follows later `lang` changes automatically. Svelte-API hosts set the language explicitly, with the `locale` prop on `Root` or a `setLocale` call. A Svelte application usually runs its own i18n and should stay in charge of language selection; the element serves pages that have no such machinery.
+
+**One shared language per page.** The locale is a single module-level value. Every player on a page shows the same language, and the last write wins. Two players with different languages on one page is not supported.
+
 ## Advanced Patterns
 
 ### Custom Segment Snippets
