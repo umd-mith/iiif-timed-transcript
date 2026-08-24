@@ -6,6 +6,7 @@
       canvasIndex: { attribute: "canvas-index", type: "Number", reflect: true },
       initialTime: { attribute: "initial-time", type: "Number" },
       autoplay: { attribute: "autoplay", type: "Boolean" },
+      label: { attribute: "label", type: "String" },
       annotations: { attribute: "annotations" },
       preprocessManifest: { attribute: "preprocessmanifest" },
       errorCallback: { attribute: "errorcallback" },
@@ -162,7 +163,7 @@
 
 <script lang="ts">
   import { untrack } from "svelte";
-  import { IIIFPlayer } from "../lib/index.js";
+  import { IIIFPlayer, t } from "../lib/index.js";
   import type {
     Annotation,
     CanvasInfo,
@@ -184,6 +185,7 @@
     canvasIndex = 0,
     initialTime,
     autoplay = false,
+    label,
     annotations = "auto",
     preprocessManifest,
     errorCallback,
@@ -192,6 +194,9 @@
     canvasIndex?: number;
     initialTime?: number | undefined;
     autoplay?: boolean;
+    /** `label` attribute. Host-settable accessible name for the element's
+     * top-level region. Falls back to the localized generic name. */
+    label?: string;
     annotations?: Annotation[] | "auto";
     preprocessManifest?: ((raw: unknown) => unknown) | undefined;
     errorCallback?: ErrorCallback | undefined;
@@ -411,6 +416,13 @@
     preprocessValid ? preprocessManifest : undefined,
   );
 
+  // A blank/whitespace-only label attribute (e.g. `label=""`) is treated
+  // like "not set" rather than an empty accessible name — an empty
+  // aria-label is worse than the localized default, not more specific.
+  const effectiveLabel = $derived(
+    label && label.trim() !== "" ? label : t("playerRegionLabel"),
+  );
+
   // `initial-time` is coerced with `+value` too, so `initial-time="abc"`
   // arrives as NaN. Root's `seekTo` would drop it on its own `isFinite`
   // guard as a bare console.warn — but by then the once-per-host latch below
@@ -546,7 +558,7 @@
   });
 </script>
 
-<div class="iiif-tp">
+<div class="iiif-tp" role="region" aria-label={effectiveLabel}>
   {#if manifestUrl}
     <IIIFPlayer.Root
       {manifestUrl}

@@ -66,6 +66,13 @@ export declare class IIIFTranscriptPlayerElement extends HTMLElement {
   initialTime: number | undefined;
   /** `autoplay` attribute. */
   autoplay: boolean;
+  /**
+   * `label` attribute. Host-settable accessible name for the element's
+   * top-level region (`role="region"`), for distinguishing multiple
+   * players on one page to assistive technology. Default is the
+   * localized generic name.
+   */
+  label: string;
   /** Property only. Default `"auto"`. */
   annotations: Annotation[] | "auto";
   /** Property only. Runs on the parsed manifest JSON before validation. */
