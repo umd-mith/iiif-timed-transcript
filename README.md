@@ -728,7 +728,25 @@ iiif-transcript-player {
 }
 ```
 
-Reserve space (`min-height` or `aspect-ratio`) to avoid layout shift — the element is empty until the script runs. Deeper restyling (`::part()`, custom segment rendering) is not available in this release.
+Reserve space (`min-height` or `aspect-ratio`) to avoid layout shift — the element is empty until the script runs; see "Recommended CSP" below for a `:defined`-scoped version of this rule. Deeper restyling beyond custom properties is available through `::part()`: `controls`, `transcript`, `segment` (plus `segment-active` on the active segment). Internal selectors are not a stable API.
+
+### Recommended CSP
+
+The element's shadow-root styles apply via `adoptedStyleSheets` (constructable stylesheets), not inline `<style>` text or `style=` attributes, so a strict `style-src` needs no `'unsafe-inline'`:
+
+| Directive    | Value                                                               | Why                                                                                                                                                                          |
+| ------------ | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `style-src`  | `'self'` (or your usual restrictive value)                          | The element never relies on inline `<style>` text or a `style=` attribute taking effect — CSSOM construction is exempt from `style-src` regardless of the directive's value. |
+| `script-src` | `'self'` (plus your CDN host, if the script tag is loaded from one) | The bundle has no `eval`; no `'unsafe-eval'` exception is needed.                                                                                                            |
+
+Reserve the element's height before it upgrades, scoped to the pre-upgrade window with `:defined` so the rule stops applying once the shadow DOM has its own layout:
+
+```css
+iiif-transcript-player:not(:defined) {
+  display: block;
+  min-height: 24rem; /* match your expected player height */
+}
+```
 
 ### Two worked examples
 
