@@ -580,7 +580,7 @@
     player.annotations = [];
     if (track) {
       player.transcriptStatus = "loading";
-      resolveVTTTranscript(track.src);
+      resolveVTTTranscript(track.src, track.srclang);
     } else {
       player.transcriptStatus = "ready";
     }
@@ -639,10 +639,10 @@
   // player.state.error is never written. Stale results (canvas switched, the
   // annotations prop flipped mode, or Root destroyed while fetching) are
   // dropped via transcriptGeneration.
-  async function resolveVTTTranscript(url: string) {
+  async function resolveVTTTranscript(url: string, language?: string) {
     const generation = transcriptGeneration;
     try {
-      const result = await loadVTTTranscript(url);
+      const result = await loadVTTTranscript(url, language);
       if (destroyed || generation !== transcriptGeneration) return;
       player.annotations = result.annotations;
       player.transcriptStatus = "ready";

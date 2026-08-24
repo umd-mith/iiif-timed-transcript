@@ -1651,8 +1651,20 @@ describe("Root component", () => {
         expect(capturedCtx!.transcriptStatus).toBe("ready");
       });
       expect(capturedCtx!.annotations).toEqual([
-        { id: "c1", startTime: 0, endTime: 2, text: "First caption & more" },
-        { id: "c2", startTime: 2, endTime: 4, text: "Second caption" },
+        {
+          id: "c1",
+          startTime: 0,
+          endTime: 2,
+          text: "First caption & more",
+          language: "fr",
+        },
+        {
+          id: "c2",
+          startTime: 2,
+          endTime: 4,
+          text: "Second caption",
+          language: "fr",
+        },
       ]);
       expect(onError).not.toHaveBeenCalled();
       expect(capturedCtx!.state.error).toBeNull();
@@ -2072,8 +2084,20 @@ describe("Root component", () => {
         expect(capturedCtx!.transcriptStatus).toBe("ready");
       });
       expect(capturedCtx!.annotations).toEqual([
-        { id: "c1", startTime: 0, endTime: 2, text: "First caption & more" },
-        { id: "c2", startTime: 2, endTime: 4, text: "Second caption" },
+        {
+          id: "c1",
+          startTime: 0,
+          endTime: 2,
+          text: "First caption & more",
+          language: "fr",
+        },
+        {
+          id: "c2",
+          startTime: 2,
+          endTime: 4,
+          text: "Second caption",
+          language: "fr",
+        },
       ]);
     });
 
