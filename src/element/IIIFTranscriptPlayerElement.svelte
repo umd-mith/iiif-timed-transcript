@@ -646,4 +646,21 @@
   .iiif-tp :global([data-annotation-id]:focus) {
     outline-color: var(--iiif-player-focus, #1d4ed8);
   }
+
+  @media (forced-colors: active) {
+    .iiif-tp :global([data-annotation-id][data-state="active"]),
+    .iiif-tp :global([data-annotation-id][data-highlighted="true"]),
+    .iiif-tp :global([data-annotation-id][data-current-match="true"]) {
+      border-inline-start-color: Highlight;
+    }
+
+    .iiif-tp :global(nav.canvas-nav button[data-state="active"]) {
+      border-color: Highlight;
+    }
+
+    .iiif-tp :global(nav.canvas-nav button:focus),
+    .iiif-tp :global([data-annotation-id]:focus) {
+      outline-color: Highlight;
+    }
+  }
 </style>
