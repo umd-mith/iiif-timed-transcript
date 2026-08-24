@@ -170,6 +170,92 @@ describe("Transcript", () => {
     });
   });
 
+  describe("transcript status announcements (A5)", () => {
+    test("the sr-only live region is mounted while status is loading, before any text", () => {
+      const ctx = createReactiveMockPlayerContext({
+        transcriptStatus: "loading",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {}),
+        },
+      });
+      flushSync();
+
+      const liveRegion = target.querySelector(".sr-only");
+      expect(liveRegion).not.toBeNull();
+      expect(liveRegion?.textContent).toBe("");
+    });
+
+    test("announces completion once transcriptStatus flips loading -> ready", () => {
+      const ctx = createReactiveMockPlayerContext({
+        transcriptStatus: "loading",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {}),
+        },
+      });
+      flushSync();
+
+      ctx.annotations = mockAnnotations;
+      ctx.transcriptStatus = "ready";
+      flushSync();
+
+      const liveRegion = target.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toContain(
+        "Transcript loaded, 3 segments",
+      );
+    });
+
+    test("announces failure once transcriptStatus flips loading -> error", () => {
+      const ctx = createReactiveMockPlayerContext({
+        transcriptStatus: "loading",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {}),
+        },
+      });
+      flushSync();
+
+      ctx.transcriptStatus = "error";
+      flushSync();
+
+      const liveRegion = target.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toContain("Transcript unavailable");
+    });
+
+    test("does not announce a status that was never loading (e.g. tier-1 idle -> ready)", () => {
+      const ctx = createReactiveMockPlayerContext({ transcriptStatus: "idle" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {}),
+        },
+      });
+      flushSync();
+
+      ctx.annotations = mockAnnotations;
+      ctx.transcriptStatus = "ready";
+      flushSync();
+
+      const liveRegion = target.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toBe("");
+    });
+  });
+
   test("empty-state message is reactive to locale — proves t() is live, not baked in at mount", () => {
     const ctx = createMockPlayerContext();
 
