@@ -78,7 +78,7 @@
      * **Caution:** If using `{@html}`, ensure annotation text is sanitized
      * to prevent XSS. The default rendering escapes text automatically.
      */
-    text?: Snippet<[{ annotation: Annotation }]>;
+    text?: Snippet<[{ annotation: Annotation; language: string | undefined }]>;
     class?: string;
   }
 

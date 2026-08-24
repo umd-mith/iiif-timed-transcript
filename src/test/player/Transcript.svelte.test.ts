@@ -71,6 +71,33 @@ describe("Transcript", () => {
     expect(emptyMessage?.textContent).toContain("No transcript available");
   });
 
+  test("region has no lang attribute even when a segment carries a content language", () => {
+    const ctx = createMockPlayerContext();
+
+    mount(TestContextProvider, {
+      target,
+      props: {
+        context: ctx,
+        children: createChildSnippet(target, Transcript, {
+          annotations: [
+            {
+              id: "a1",
+              startTime: 0,
+              endTime: 5,
+              text: "Hola",
+              language: "es",
+            },
+          ],
+        }),
+      },
+    });
+    flushSync();
+
+    const panel = target.querySelector('[role="region"]');
+    expect(panel).not.toBeNull();
+    expect(panel?.hasAttribute("lang")).toBe(false);
+  });
+
   test("empty-state message is reactive to locale — proves t() is live, not baked in at mount", () => {
     const ctx = createMockPlayerContext();
 
