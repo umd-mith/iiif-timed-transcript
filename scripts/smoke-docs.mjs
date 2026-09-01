@@ -41,12 +41,7 @@ function collectRoutes(dir) {
 // Routes with a known, tracked breakage are exempt from *failing* the build,
 // but every run logs a loud SKIP so the breakage stays visible and isn't
 // forgotten. Remove an entry once its underlying issue is fixed.
-const KNOWN_BROKEN_ROUTES = new Map([
-  [
-    "/avannotate-demo",
-    "AVAnnotate 'voices' demo has no working manifest: the upstream URL 404s (site reorganized to an event structure), and a recovered archived export mounts but its canvas-0 audio (a 51-min archive.org session) is misaligned with its ~6-min span of transcript annotations, so transcript and audio don't match. Needs a correctly-aligned manifest before re-enabling.",
-  ],
-]);
+const KNOWN_BROKEN_ROUTES = new Map(); // currently none
 
 const routes = [...new Set(collectRoutes(DIST))].sort();
 if (routes.length === 0) {
