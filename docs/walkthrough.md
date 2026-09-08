@@ -1,4 +1,4 @@
-# How svelte-iiif-transcript-player Works
+# How iiif-timed-transcript Works
 
 _2026-02-26T16:40:25Z by Showboat 0.6.1_
 
@@ -6,7 +6,7 @@ _2026-02-26T16:40:25Z by Showboat 0.6.1_
 
 ## What this library does
 
-`@umd-mith/svelte-iiif-transcript-player` is a Svelte 5 component library for playing audio/video from IIIF manifests with synchronized, searchable transcripts. It fetches media URLs from a IIIF Presentation API manifest, renders an `<audio>` or `<video>` element, and keeps a scrolling transcript panel in sync with playback.
+`@umd-mith/iiif-timed-transcript` is a Svelte 5 component library for playing audio/video from IIIF manifests with synchronized, searchable transcripts. It fetches media URLs from a IIIF Presentation API manifest, renders an `<audio>` or `<video>` element, and keeps a scrolling transcript panel in sync with playback.
 
 The library exposes a single compound component namespace — `IIIFPlayer` — with composable pieces you assemble in your template. There is no monolithic "drop in one tag" mode; you choose which controls to render and where.
 
@@ -137,7 +137,7 @@ cat src/lib/index.ts
  * @example
  * ```svelte
  * <script>
- *   import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+ *   import { IIIFPlayer } from '@umd-mith/iiif-timed-transcript';
  * </script>
  *
  * <IIIFPlayer.Root manifestUrl="..." canvasIndex={0}>
@@ -423,7 +423,7 @@ Here's the minimal Svelte 5 code to get a working player with transcript:
 
 ```svelte
 <script>
-  import { IIIFPlayer } from "@umd-mith/svelte-iiif-transcript-player";
+  import { IIIFPlayer } from "@umd-mith/iiif-timed-transcript";
 
   // Annotations must be provided by the consumer — the library doesn't parse VTT.
   // Each annotation needs { id, startTime, endTime, text }.
@@ -658,7 +658,7 @@ However, **the `overflow-hidden` conflict we found IS a real bug** that would pr
 | 4   | No VTT parser included — annotations are BYO          | Design discussion | Should leverage `@umd-mith/iiif-media-parsers`        |
 
 ```bash
-cd docs && pnpm run dev --port 4322 &>/dev/null & sleep 3 && echo 'Dev server running' && curl -s -o /dev/null -w '%{http_code}' http://localhost:4322/svelte-iiif-transcript-player && echo ' — page loads OK'
+cd docs && pnpm run dev --port 4322 &>/dev/null & sleep 3 && echo 'Dev server running' && curl -s -o /dev/null -w '%{http_code}' http://localhost:4322/iiif-timed-transcript && echo ' — page loads OK'
 ```
 
 ```output

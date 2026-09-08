@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getPlayerContext } from "@umd-mith/svelte-iiif-transcript-player";
+  import { getPlayerContext } from "@umd-mith/iiif-timed-transcript";
   const { state } = getPlayerContext();
 </script>
 

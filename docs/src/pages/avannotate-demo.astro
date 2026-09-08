@@ -27,7 +27,7 @@ const manifestUrl = 'https://avannotate.github.io/voices/manifests/spaces-and-dr
 					</div>
 					<div class="hidden md:flex items-center space-x-8">
 						<a href="." class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Home</a>
-						<a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
+						<a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
 							GitHub
 						</a>
 					</div>
@@ -54,7 +54,7 @@ const manifestUrl = 'https://avannotate.github.io/voices/manifests/spaces-and-dr
 				<!-- How it works -->
 				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
 					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">How it works</h3>
-					<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-typescript">{`import { ManifestSchema, getFirstCanvas, buildTranscriptAnnotations } from '@umd-mith/svelte-iiif-transcript-player';
+					<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-typescript">{`import { ManifestSchema, getFirstCanvas, buildTranscriptAnnotations } from '@umd-mith/iiif-timed-transcript';
 
 // 1. Fetch and validate the IIIF manifest
 const manifest = await fetch(manifestUrl).then(r => r.json());
@@ -130,7 +130,7 @@ const { annotations, skipped } = buildTranscriptAnnotations(canvas);
 					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
 				</p>
 				<p class="text-sm">
-					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
+					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
 				</p>
 			</div>
 		</footer>

@@ -15,7 +15,7 @@
     getFirstCanvas,
     buildTranscriptAnnotations,
     type Annotation,
-  } from "@umd-mith/svelte-iiif-transcript-player";
+  } from "@umd-mith/iiif-timed-transcript";
   import BufferingOverlay from "./BufferingOverlay.svelte";
 
   // Props

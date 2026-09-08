@@ -2,11 +2,11 @@
 
 **Date**: 2025-02-25
 **Test Environment**: Astro 5.17.3 + Svelte 5.53.5
-**Library Version**: @umd-mith/svelte-iiif-transcript-player@0.0.1
+**Library Version**: @umd-mith/iiif-timed-transcript@0.0.1
 
 ## Test Objective
 
-Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works correctly in Astro's islands architecture with `client:load` hydration.
+Validate that the extracted OSS library (`iiif-timed-transcript`) works correctly in Astro's islands architecture with `client:load` hydration.
 
 ## Test Manifest
 
@@ -38,7 +38,7 @@ Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works 
 
 ### ✅ Component Import
 
-- All components import correctly from `@umd-mith/svelte-iiif-transcript-player`
+- All components import correctly from `@umd-mith/iiif-timed-transcript`
 - TypeScript types available and working
 - No module resolution issues
 
@@ -143,7 +143,7 @@ Validate that the extracted OSS library (`svelte-iiif-transcript-player`) works 
     IIIFMediaViewer,
     AudioPlayerControls,
     TranscriptPanel,
-  } from "@umd-mith/svelte-iiif-transcript-player";
+  } from "@umd-mith/iiif-timed-transcript";
 
   let viewer = $state(null);
   let annotations = $state<Annotation[]>([]);

@@ -45,7 +45,7 @@ jobs:
         run: pnpm run build
 
       - name: Build docs
-        run: pnpm --filter svelte-iiif-transcript-player-docs run build
+        run: pnpm --filter iiif-timed-transcript-docs run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

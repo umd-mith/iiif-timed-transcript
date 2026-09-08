@@ -27,7 +27,7 @@ const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file
 					</div>
 					<div class="hidden md:flex items-center space-x-8">
 						<a href="." class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Home</a>
-						<a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
+						<a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
 							GitHub
 						</a>
 					</div>
@@ -46,14 +46,14 @@ const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file
 					This demo passes <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">annotations="auto"</code> to <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">Root</code>. The host writes no VTT-parsing code: the player reads the transcript out of the IIIF manifest itself.
 				</p>
 				<p class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed">
-					<code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">"auto"</code> looks first for embedded <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">TextualBody</code> annotations on the canvas (the <a href="/svelte-iiif-transcript-player/htmlannotations-demo" class="text-terracotta-500 hover:text-terracotta-600 underline">AVAnnotate shape</a>). When there are none — as in this IIIF Cookbook manifest — it fetches the canvas's external WebVTT <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">supplementing</code> track, reduces each cue to plain text, and builds the transcript from it. The status strip above the transcript reads <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">transcriptStatus</code> (<code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">loading</code> → <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">ready</code>) from Root's children snippet. Because the transcript panel now shows the same text, <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">Viewer</code> hides the native caption track once per canvas so it isn't displayed twice.
+					<code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">"auto"</code> looks first for embedded <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">TextualBody</code> annotations on the canvas (the <a href="/iiif-timed-transcript/htmlannotations-demo" class="text-terracotta-500 hover:text-terracotta-600 underline">AVAnnotate shape</a>). When there are none — as in this IIIF Cookbook manifest — it fetches the canvas's external WebVTT <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">supplementing</code> track, reduces each cue to plain text, and builds the transcript from it. The status strip above the transcript reads <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">transcriptStatus</code> (<code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">loading</code> → <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">ready</code>) from Root's children snippet. Because the transcript panel now shows the same text, <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">Viewer</code> hides the native caption track once per canvas so it isn't displayed twice.
 				</p>
 
 				<!-- How it works -->
 				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
 					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">How it works</h3>
 					<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<script>
-  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+  import { IIIFPlayer } from '@umd-mith/iiif-timed-transcript';
 </script>
 
 <IIIFPlayer.Root {manifestUrl} annotations="auto">
@@ -102,7 +102,7 @@ const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file
 						Lunchroom Manners (IIIF Cookbook)
 					</h2>
 					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
-						The same manifest as the <a href="/svelte-iiif-transcript-player/" class="text-terracotta-500 hover:text-terracotta-600 underline">home-page demo</a>, which parses the VTT by hand with <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">media-captions</code> and passes an <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">annotations</code> array. Here the array comes from the player.
+						The same manifest as the <a href="/iiif-timed-transcript/" class="text-terracotta-500 hover:text-terracotta-600 underline">home-page demo</a>, which parses the VTT by hand with <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">media-captions</code> and passes an <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">annotations</code> array. Here the array comes from the player.
 					</p>
 				</div>
 
@@ -118,7 +118,7 @@ const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file
 						</a>
 					</p>
 					<p class="mt-2">
-						Precedence and caveats (a manifest that carries both editorial notes and a VTT transcript shows the notes) are in the <a href="https://github.com/umd-mith/svelte-iiif-transcript-player#annotations-auto-precedence" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">README</a>.
+						Precedence and caveats (a manifest that carries both editorial notes and a VTT transcript shows the notes) are in the <a href="https://github.com/umd-mith/iiif-timed-transcript#annotations-auto-precedence" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">README</a>.
 					</p>
 				</div>
 			</div>
@@ -131,7 +131,7 @@ const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file
 					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
 				</p>
 				<p class="text-sm">
-					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
+					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
 				</p>
 			</div>
 		</footer>

@@ -1,5 +1,5 @@
 {
-  "name": "@umd-mith/svelte-iiif-transcript-player",
+  "name": "@umd-mith/iiif-timed-transcript",
   "version": "0.15.0",
   "packageManager": "pnpm@11.3.0",
   "description": "Svelte 5 component library for synchronized IIIF media playback with transcript navigation",
@@ -17,12 +17,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/umd-mith/svelte-iiif-transcript-player.git"
+    "url": "git+https://github.com/umd-mith/iiif-timed-transcript.git"
   },
   "bugs": {
-    "url": "https://github.com/umd-mith/svelte-iiif-transcript-player/issues"
+    "url": "https://github.com/umd-mith/iiif-timed-transcript/issues"
   },
-  "homepage": "https://github.com/umd-mith/svelte-iiif-transcript-player#readme",
+  "homepage": "https://github.com/umd-mith/iiif-timed-transcript#readme",
   "customElements": "dist/element/custom-elements.json",
   "type": "module",
   "svelte": "./dist/index.js",

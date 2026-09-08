@@ -6,7 +6,7 @@
    * the host. The status strip above the transcript reads `transcriptStatus`
    * and the resolved annotation count from Root's children snippet.
    */
-  import { IIIFPlayer } from "@umd-mith/svelte-iiif-transcript-player";
+  import { IIIFPlayer } from "@umd-mith/iiif-timed-transcript";
 
   let { manifestUrl }: { manifestUrl: string } = $props();
 

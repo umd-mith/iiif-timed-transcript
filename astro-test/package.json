@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@astrojs/svelte": "^7.2.5",
-    "@umd-mith/svelte-iiif-transcript-player": "link:..",
+    "@umd-mith/iiif-timed-transcript": "link:..",
     "astro": "^5.17.1",
     "svelte": "^5.53.5",
     "typescript": "^5.9.3"

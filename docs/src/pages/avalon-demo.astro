@@ -25,7 +25,7 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 					</div>
 					<div class="hidden md:flex items-center space-x-8">
 						<a href="." class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Home</a>
-						<a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
+						<a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
 							GitHub
 						</a>
 					</div>
@@ -118,7 +118,7 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 				<!-- Step 4: register + wire -->
 				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
 					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">4 — Register, then listen</h3>
-					<pre class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+					<pre class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`import { register } from "@umd-mith/iiif-timed-transcript/element";
 register(); // defines <iiif-transcript-player>; until now it was an unknown element
 
 const el = document.getElementById("player");
@@ -236,7 +236,7 @@ iiif-transcript-player:state(error)   { outline: 4px solid #b91c1c; }`}</code></
 					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
 				</p>
 				<p class="text-sm">
-					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
+					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
 				</p>
 			</div>
 		</footer>
@@ -282,7 +282,7 @@ iiif-transcript-player:state(error)   { outline: 4px solid #b91c1c; }`}</code></
 
 		<!-- The wiring from step 4, verbatim (plus the log renderer) -->
 		<script>
-			import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+			import { register } from "@umd-mith/iiif-timed-transcript/element";
 			register(); // defines <iiif-transcript-player>; until now it was an unknown element
 
 			const el = document.getElementById("player")!;
