@@ -71,6 +71,6 @@ export function warnIfNoStylesFound(
     "[iiif-transcript-player] no <style> nodes found in the shadow root — " +
       "the CSS hoist (cssHoist.ts) found nothing to adopt. If Svelte's " +
       "style-injection shape changed, styles are not applying under a " +
-      "strict CSP. See docs/plans/2026-08-23-element-hardening-design.md §2.1.",
+      "strict CSP.",
   );
 }
