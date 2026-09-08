@@ -20,10 +20,6 @@ if (!parsed.success) {
 
 const manifestSource = JSON.stringify(manifestJson, null, 2);
 
-const audioUrl =
-	'https://mith-uta.s3.amazonaws.com/data/audio/cpb-aacip-500-1c1tjk8d.mp3';
-const vttUrl =
-	'https://mith-uta.s3.amazonaws.com/data/transcripts/cpb-aacip-500-1c1tjk8d/cpb-aacip-500-1c1tjk8d.vtt';
 const episodeUrl =
 	'https://www.unlockingtheairwaves.org/episode/cpb-aacip-500-1c1tjk8d/';
 ---
@@ -70,10 +66,10 @@ const episodeUrl =
 					<a href="https://www.unlockingtheairwaves.org/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Unlocking the Airwaves</a> reunites the scattered recordings of the National Association of Educational Broadcasters. It is a plain site: each program is an <code class="font-mono text-base bg-parchment-200 px-1.5 py-0.5 rounded">&lt;audio&gt;</code> tag and a caption <code class="font-mono text-base bg-parchment-200 px-1.5 py-0.5 rounded">&lt;track&gt;</code>, two files on S3. There is no IIIF manifest, no API, nothing this player was built to consume.
 				</p>
 				<p class="text-base text-ink-500 mb-4 max-w-3xl font-serif leading-relaxed">
-					This page plays one of its programs anyway — <em>American language: Americans as makers of words</em>, a 1954 talk by Mitford M. Mathews, editor of the <em>Dictionary of Americanisms</em>, on how Americans coin new words. The lexicographer's own broadcast, made searchable. The only new thing between the S3 files and the player is a twenty-line manifest this page authors.
+					This page plays one of its programs anyway — <em>American language: Americans as makers of words</em>, a 1954 talk by Mitford M. Mathews, editor of the <em>Dictionary of Americanisms</em>, on how Americans coin new words. Between the two S3 files and the player, this page adds one thing: a small IIIF manifest.
 				</p>
 				<p class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed">
-					This is the inverse of the <a href={`${import.meta.env.BASE_URL}/avalon-demo`} class="text-terracotta-500 hover:text-terracotta-600 underline">Avalon demo</a>. There, a repository publishes a rich manifest and the element consumes it as-is. Here, nothing speaks IIIF and we author the manifest — the on-ramp for the far larger set of AV pages that have media and captions but no manifest. <strong>Every host-page block below is the code this page actually runs.</strong>
+					This is the inverse of the <a href={`${import.meta.env.BASE_URL}/avalon-demo`} class="text-terracotta-500 hover:text-terracotta-600 underline">Avalon demo</a>. There, a repository publishes a complete manifest and the element uses it unchanged. Here, no IIIF exists at the source and this page authors the manifest. That is the more common case: most audiovisual pages on the web have media and captions but no manifest. <strong>Every host-page block below is the code this page actually runs.</strong>
 				</p>
 
 				<h2 class="text-2xl font-serif font-bold text-ink-900 mb-4">What the source publishes</h2>
@@ -90,7 +86,7 @@ const episodeUrl =
          src="https://mith-uta.s3.amazonaws.com/data/transcripts/…/cpb-aacip-500-1c1tjk8d.vtt">
 </audio>`}</code></pre>
 					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						That is enough to play and to caption, but not to navigate: the transcript is trapped inside the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">&lt;track&gt;</code>, invisible as text, unsearchable, with no way to click a line and seek. IIIF is what turns those cues into a first-class, addressable transcript.
+						That is enough to play and to caption, but not to navigate: the transcript is only inside the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">&lt;track&gt;</code> — not shown as text, not searchable, with no way to click a line and seek. A IIIF manifest makes the same cues addressable, so the player can list, search, and seek to them.
 					</p>
 				</div>
 
@@ -134,7 +130,7 @@ const el = document.getElementById("player");
 // supplementing VTT track — no VTT parsing in this page
 el.annotations = "auto";`}</code></pre>
 					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						With <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">annotations = "auto"</code> the element finds no embedded text annotations, falls to the canvas's <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> VTT track, fetches it, reduces each cue to plain text, and builds the click-to-seek, searchable transcript. The event log beside the live player fills as the element's events reach the page.
+						With <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">annotations = "auto"</code> the element finds no embedded text annotations, falls back to the canvas's <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> VTT track, fetches it, reduces each cue to plain text, and builds the click-to-seek, searchable transcript. The event log beside the live player records each event the element emits.
 					</p>
 				</div>
 			</div>
@@ -148,7 +144,7 @@ el.annotations = "auto";`}</code></pre>
 						The code above, running
 					</h2>
 					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
-						The audio streams from S3; the transcript is built from the same bucket's VTT, located through nothing but the manifest this page authored. Click any line to seek; type in the search box to filter.
+						The audio streams from S3; the transcript is built from the same bucket's VTT, located using only the manifest this page authored. Click any line to seek; type in the search box to filter.
 					</p>
 				</div>
 
@@ -177,7 +173,7 @@ el.annotations = "auto";`}</code></pre>
 						· <a href={episodeUrl} target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">episode on Unlocking the Airwaves</a>
 					</p>
 					<p>
-						<span class="font-medium text-ink-700">On the transcript:</span> it is machine-generated by Pop Up Archive and never hand-corrected, so expect errors — mis-heard names, dropped punctuation, the occasional wrong word. It is shown as the archive serves it. Even a noisy transcript is enough to search the audio and jump to a moment, which is the point: the manifest does not improve the text, it makes whatever text exists addressable.
+						<span class="font-medium text-ink-700">On the transcript:</span> it is machine-generated by Pop Up Archive and never hand-corrected, so expect errors — misheard names, dropped punctuation, the occasional wrong word. It is shown as the archive serves it. Even an inaccurate transcript is enough to search the recording and seek to a point in it, which is the point: the manifest does not improve the text, it makes whatever text exists addressable.
 					</p>
 				</div>
 			</div>
@@ -198,7 +194,7 @@ el.annotations = "auto";`}</code></pre>
 			</div>
 		</footer>
 
-		<!-- Demo CSS: the site's palette reaching into the shadow boundary -->
+		<!-- Demo CSS: the site's palette applied across the shadow boundary -->
 		<style is:global>
 			/* tokens: theme colors inherit through the shadow boundary */
 			iiif-transcript-player {
