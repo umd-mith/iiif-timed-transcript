@@ -6,7 +6,7 @@ import { spawn } from "node:child_process";
 import { readdirSync, existsSync } from "node:fs";
 import { join, relative } from "node:path";
 
-const BASE = "/svelte-iiif-transcript-player"; // keep in sync with docs/astro.config.mjs
+const BASE = "/iiif-timed-transcript"; // keep in sync with docs/astro.config.mjs
 const PORT = 4321;
 const ORIGIN = `http://localhost:${PORT}`;
 const DIST = "docs/dist";
@@ -55,7 +55,7 @@ const preview = spawn(
   "pnpm",
   [
     "--filter",
-    "svelte-iiif-transcript-player-docs",
+    "iiif-timed-transcript-docs",
     "exec",
     "astro",
     "preview",

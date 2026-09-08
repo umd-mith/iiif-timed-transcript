@@ -44,7 +44,7 @@ const manifestUrl =
               >Home</a
             >
             <a
-              href="https://github.com/umd-mith/svelte-iiif-transcript-player"
+              href="https://github.com/umd-mith/iiif-timed-transcript"
               target="_blank"
               rel="noopener"
               class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
@@ -88,7 +88,7 @@ const manifestUrl =
             class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
             >TextualBody</code
           > annotations on the canvas (the <a
-            href="/svelte-iiif-transcript-player/htmlannotations-demo"
+            href="/iiif-timed-transcript/htmlannotations-demo"
             class="text-terracotta-500 hover:text-terracotta-600 underline"
             >AVAnnotate shape</a
           >). When there are none — as in this IIIF Cookbook manifest — it
@@ -119,7 +119,7 @@ const manifestUrl =
           </h3>
           <pre
             class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<script>
-  import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+  import { IIIFPlayer } from '@umd-mith/iiif-timed-transcript';
 </script>
 
 <IIIFPlayer.Root {manifestUrl} annotations="auto">
@@ -177,7 +177,7 @@ const manifestUrl =
           </h2>
           <p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
             The same manifest as the <a
-              href="/svelte-iiif-transcript-player/"
+              href="/iiif-timed-transcript/"
               class="text-terracotta-500 hover:text-terracotta-600 underline"
               >home-page demo</a
             >, which parses the VTT by hand with <code
@@ -209,7 +209,7 @@ const manifestUrl =
           <p class="mt-2">
             Precedence and caveats (a manifest that carries both editorial notes
             and a VTT transcript shows the notes) are in the <a
-              href="https://github.com/umd-mith/svelte-iiif-transcript-player#annotations-auto-precedence"
+              href="https://github.com/umd-mith/iiif-timed-transcript#annotations-auto-precedence"
               target="_blank"
               rel="noopener"
               class="text-terracotta-500 hover:text-terracotta-600 underline"
@@ -234,7 +234,7 @@ const manifestUrl =
         </p>
         <p class="text-sm">
           Licensed under BSD-3-Clause-Clear • <a
-            href="https://github.com/umd-mith/svelte-iiif-transcript-player"
+            href="https://github.com/umd-mith/iiif-timed-transcript"
             target="_blank"
             rel="noopener"
             class="text-terracotta-400 hover:text-terracotta-300"

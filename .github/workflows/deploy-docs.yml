@@ -44,7 +44,7 @@ jobs:
         run: pnpm run build
 
       - name: Build docs
-        run: pnpm --filter svelte-iiif-transcript-player-docs run build
+        run: pnpm --filter iiif-timed-transcript-docs run build
 
       - name: Install Chromium for smoke check
         run: pnpm exec playwright install chromium

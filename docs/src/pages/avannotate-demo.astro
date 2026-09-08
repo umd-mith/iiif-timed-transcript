@@ -44,7 +44,7 @@ const manifestUrl =
               >Home</a
             >
             <a
-              href="https://github.com/umd-mith/svelte-iiif-transcript-player"
+              href="https://github.com/umd-mith/iiif-timed-transcript"
               target="_blank"
               rel="noopener"
               class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
@@ -119,7 +119,7 @@ const manifestUrl =
             How it works
           </h3>
           <pre
-            class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-typescript">{`import { ManifestSchema, getFirstCanvas, buildTranscriptAnnotations } from '@umd-mith/svelte-iiif-transcript-player';
+            class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-typescript">{`import { ManifestSchema, getFirstCanvas, buildTranscriptAnnotations } from '@umd-mith/iiif-timed-transcript';
 
 // 1. Fetch and validate the IIIF manifest
 const manifest = await fetch(manifestUrl).then(r => r.json());
@@ -219,7 +219,7 @@ const { annotations, skipped } = buildTranscriptAnnotations(canvas);
         </p>
         <p class="text-sm">
           Licensed under BSD-3-Clause-Clear • <a
-            href="https://github.com/umd-mith/svelte-iiif-transcript-player"
+            href="https://github.com/umd-mith/iiif-timed-transcript"
             target="_blank"
             rel="noopener"
             class="text-terracotta-400 hover:text-terracotta-300"

@@ -1,9 +1,9 @@
-# @umd-mith/svelte-iiif-transcript-player
+# @umd-mith/iiif-timed-transcript
 
-[![npm](https://img.shields.io/npm/v/@umd-mith/svelte-iiif-transcript-player)](https://www.npmjs.com/package/@umd-mith/svelte-iiif-transcript-player)
-[![CI](https://github.com/umd-mith/svelte-iiif-transcript-player/actions/workflows/ci.yml/badge.svg)](https://github.com/umd-mith/svelte-iiif-transcript-player/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@umd-mith/iiif-timed-transcript)](https://www.npmjs.com/package/@umd-mith/iiif-timed-transcript)
+[![CI](https://github.com/umd-mith/iiif-timed-transcript/actions/workflows/ci.yml/badge.svg)](https://github.com/umd-mith/iiif-timed-transcript/actions/workflows/ci.yml)
 [![License: BSD-3-Clause-Clear](https://img.shields.io/badge/License-BSD--3--Clause--Clear-blue.svg)](./LICENSE)
-[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://umd-mith.github.io/svelte-iiif-transcript-player)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://umd-mith.github.io/iiif-timed-transcript)
 
 Svelte 5 components that synchronize media playback with timed transcripts from [IIIF](https://iiif.io/) manifests. Designed for digital humanities projects, oral history archives, and anywhere time-based annotations meet audio/video.
 
@@ -21,7 +21,7 @@ The compound component API lets you compose custom player layouts from small, fo
 ## Install
 
 ```bash
-npm install @umd-mith/svelte-iiif-transcript-player
+npm install @umd-mith/iiif-timed-transcript
 ```
 
 Optional peers for adaptive streaming — install only what your manifests need:
@@ -39,8 +39,8 @@ npm install dashjs    # MPEG-DASH (.mpd) sources
 ### Local Development
 
 ```bash
-git clone https://github.com/umd-mith/svelte-iiif-transcript-player.git
-cd svelte-iiif-transcript-player
+git clone https://github.com/umd-mith/iiif-timed-transcript.git
+cd iiif-timed-transcript
 pnpm install
 pnpm run build
 ```
@@ -49,7 +49,7 @@ pnpm run build
 
 ```svelte
 <script>
-  import { IIIFPlayer } from "@umd-mith/svelte-iiif-transcript-player";
+  import { IIIFPlayer } from "@umd-mith/iiif-timed-transcript";
 
   const manifestUrl = "https://example.org/manifest.json";
   const annotations = [
@@ -357,7 +357,7 @@ interface Annotation {
 
 The companion package [`@umd-mith/iiif-media-parsers`](https://github.com/umd-mith/iiif-media-parsers) parses IIIF annotation targets, media fragments, ranges, and VTT speaker segments. This library re-exports its key functions (`parseMediaFragment`, `parseAnnotationTarget`, `parseRanges`, `parseVTTSpeakers`) and types (`Chapter`, `SpeakerSegment`, `TemporalFragment`, `SpatialFragment`, `ParsedAnnotationTarget`) so consumers need only one import source.
 
-You usually do not need to parse VTT yourself: `<IIIFPlayer.Root annotations="auto">` builds transcript annotations from the manifest (embedded `TextualBody` first, else the canvas's external WebVTT `supplementing` track). The building blocks are exported for custom pipelines: `selectTranscriptTrack`, `loadVTTTranscript`, `buildAnnotationsFromVTTCues`, `vttCueToPlainText` (cue text is reduced to plain text — tags stripped, entities decoded — via `media-captions`' `tokenizeVTTCue`). For the `"auto"` path, see the [live demo](https://umd-mith.github.io/svelte-iiif-transcript-player/auto-transcript-demo) ([source](./docs/src/components/AutoTranscriptDemo.svelte)); for a hand-rolled example, see [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte).
+You usually do not need to parse VTT yourself: `<IIIFPlayer.Root annotations="auto">` builds transcript annotations from the manifest (embedded `TextualBody` first, else the canvas's external WebVTT `supplementing` track). The building blocks are exported for custom pipelines: `selectTranscriptTrack`, `loadVTTTranscript`, `buildAnnotationsFromVTTCues`, `vttCueToPlainText` (cue text is reduced to plain text — tags stripped, entities decoded — via `media-captions`' `tokenizeVTTCue`). For the `"auto"` path, see the [live demo](https://umd-mith.github.io/iiif-timed-transcript/auto-transcript-demo) ([source](./docs/src/components/AutoTranscriptDemo.svelte)); for a hand-rolled example, see [`docs/src/components/IIIFTranscriptDemo.svelte`](./docs/src/components/IIIFTranscriptDemo.svelte).
 
 `getPrimaryResource` now resolves `Choice` bodies (valid Presentation 3, and how Avalon wraps HLS renditions): a `Choice` resolves to its first `Sound`/`Video` member; a body array is walked in order, so `[Image, Choice{Video}]` → Image but `[Choice{Video}, Image]` → Video. A missing `hls.js`/`dashjs` for a stream that needs it is now a surfaced player error (`state.error`, `onError` `source: "media"`) in addition to the console warning.
 
@@ -383,7 +383,7 @@ The `metadata` field (`Record<string, unknown>`) holds consumer-specific data. L
 ### Paragraph Merging
 
 ```ts
-import { mergeIntoParagraphs } from "@umd-mith/svelte-iiif-transcript-player";
+import { mergeIntoParagraphs } from "@umd-mith/iiif-timed-transcript";
 
 const speakers = new Map(
   annotations
@@ -402,7 +402,7 @@ All of the player's interface text (button labels, transcript messages) comes fr
 import {
   registerTranslation,
   setLocale,
-} from "@umd-mith/svelte-iiif-transcript-player";
+} from "@umd-mith/iiif-timed-transcript";
 
 registerTranslation("fr", {
   "player.playButton.play": "Lecture",
@@ -477,7 +477,7 @@ Use `onPlayerInit` to get a reactive `PlayerRef` in sibling or parent components
   import {
     IIIFPlayer,
     type PlayerRef,
-  } from "@umd-mith/svelte-iiif-transcript-player";
+  } from "@umd-mith/iiif-timed-transcript";
 
   let player = $state<PlayerRef | null>(null);
 
@@ -517,7 +517,7 @@ Use `onPlayerInit` to get a reactive `PlayerRef` in sibling or parent components
 
 ```svelte
 <script lang="ts">
-  import { tryGetPlayerContext } from "@umd-mith/svelte-iiif-transcript-player";
+  import { tryGetPlayerContext } from "@umd-mith/iiif-timed-transcript";
 
   let { isPlaying: isPlayingProp = false }: { isPlaying?: boolean } = $props();
 
@@ -652,16 +652,16 @@ Until the package is on public npm, vendor the built file (`dist/element/iiif-tr
 
 The IIFE bundles Svelte and hls.js (HLS plays without any other script). It does **not** support DASH (`dashjs` is not bundled; a DASH manifest surfaces a player error). Authenticated/restricted media is not supported. It measures about 744 kB minified (about 232 kB gzipped), against a build-enforced budget of 1 MB.
 
-**TypeScript hosts:** the IIFE's declaration file (`iiif-transcript-player.iife.d.ts`, declaring `window.IIIFTranscriptPlayer`) is not resolvable through the package's `exports` map — only the ESM entry (`./element`, below) is. Reference the shipped file directly instead: add `/// <reference path="node_modules/@umd-mith/svelte-iiif-transcript-player/dist/element/iiif-transcript-player.iife.d.ts" />` to a `.ts` file that uses the global, or add that concrete path to `tsconfig.json`'s `include`.
+**TypeScript hosts:** the IIFE's declaration file (`iiif-transcript-player.iife.d.ts`, declaring `window.IIIFTranscriptPlayer`) is not resolvable through the package's `exports` map — only the ESM entry (`./element`, below) is. Reference the shipped file directly instead: add `/// <reference path="node_modules/@umd-mith/iiif-timed-transcript/dist/element/iiif-transcript-player.iife.d.ts" />` to a `.ts` file that uses the global, or add that concrete path to `tsconfig.json`'s `include`.
 
 ### Module (ESM, with a bundler)
 
 ```js
-import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+import { register } from "@umd-mith/iiif-timed-transcript/element";
 register(); // defines <iiif-transcript-player>; no side effects on import
 ```
 
-Unlike the IIFE, this entry keeps `svelte` external, so the `svelte` peer dependency must be installed in your app — a bundler resolves it from your `node_modules` like any other import. `hls.js` / `dashjs` resolve the same way as optional peers, exactly as for the Svelte components. The ESM build is about 118 kB: it externalizes only `dependencies` and `peerDependencies`, so the library's own `src/lib` is inlined into it. An app that imports both `@umd-mith/svelte-iiif-transcript-player` and `@umd-mith/svelte-iiif-transcript-player/element` therefore ships two copies of the player code, with two separate `manifestCache` instances (a size and cache-duplication cost, not a correctness one). If you already have a Svelte build, use the components directly.
+Unlike the IIFE, this entry keeps `svelte` external, so the `svelte` peer dependency must be installed in your app — a bundler resolves it from your `node_modules` like any other import. `hls.js` / `dashjs` resolve the same way as optional peers, exactly as for the Svelte components. The ESM build is about 118 kB: it externalizes only `dependencies` and `peerDependencies`, so the library's own `src/lib` is inlined into it. An app that imports both `@umd-mith/iiif-timed-transcript` and `@umd-mith/iiif-timed-transcript/element` therefore ships two copies of the player code, with two separate `manifestCache` instances (a size and cache-duplication cost, not a correctness one). If you already have a Svelte build, use the components directly.
 
 ### Attributes and properties
 
@@ -799,7 +799,7 @@ The compound components work in Astro islands. Create a Svelte wrapper component
   import {
     IIIFPlayer,
     type Annotation,
-  } from "@umd-mith/svelte-iiif-transcript-player";
+  } from "@umd-mith/iiif-timed-transcript";
 
   let {
     manifestUrl,
@@ -846,7 +846,7 @@ pnpm install
 pnpm run dev
 ```
 
-Opens at `http://localhost:4321/svelte-iiif-transcript-player` with live demos against real IIIF manifests.
+Opens at `http://localhost:4321/iiif-timed-transcript` with live demos against real IIIF manifests.
 
 ## Browser Support
 

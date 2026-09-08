@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Release script for @umd-mith/svelte-iiif-transcript-player
+# Release script for @umd-mith/iiif-timed-transcript
 # Usage: ./scripts/release.sh [--dry-run] [--no-publish] [version]
 # Example: ./scripts/release.sh 0.16.0
 #          ./scripts/release.sh --dry-run 0.16.0
@@ -122,9 +122,9 @@ if [[ "$DRY_RUN" == true ]]; then
     echo "  Run without --dry-run to execute"
 elif [[ "$NO_PUBLISH" == true ]]; then
     info "Tagged v$NEW_VERSION (CI will publish via OIDC)"
-    echo "  - GitHub: https://github.com/umd-mith/svelte-iiif-transcript-player/releases/tag/v$NEW_VERSION"
+    echo "  - GitHub: https://github.com/umd-mith/iiif-timed-transcript/releases/tag/v$NEW_VERSION"
 else
     info "Released v$NEW_VERSION"
-    echo "  - npm: https://www.npmjs.com/package/@umd-mith/svelte-iiif-transcript-player"
-    echo "  - GitHub: https://github.com/umd-mith/svelte-iiif-transcript-player/releases/tag/v$NEW_VERSION"
+    echo "  - npm: https://www.npmjs.com/package/@umd-mith/iiif-timed-transcript"
+    echo "  - GitHub: https://github.com/umd-mith/iiif-timed-transcript/releases/tag/v$NEW_VERSION"
 fi

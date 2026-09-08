@@ -42,7 +42,7 @@ const manifestUrl =
               >Home</a
             >
             <a
-              href="https://github.com/umd-mith/svelte-iiif-transcript-player"
+              href="https://github.com/umd-mith/iiif-timed-transcript"
               target="_blank"
               rel="noopener"
               class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
@@ -259,7 +259,7 @@ const manifestUrl =
             4 — Register, then listen
           </h3>
           <pre
-            class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+            class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`import { register } from "@umd-mith/iiif-timed-transcript/element";
 register(); // defines <iiif-transcript-player>; until now it was an unknown element
 
 const el = document.getElementById("player");
@@ -478,7 +478,7 @@ iiif-transcript-player:state(error)   { outline: 4px solid #b91c1c; }`}</code></
         </p>
         <p class="text-sm">
           Licensed under BSD-3-Clause-Clear • <a
-            href="https://github.com/umd-mith/svelte-iiif-transcript-player"
+            href="https://github.com/umd-mith/iiif-timed-transcript"
             target="_blank"
             rel="noopener"
             class="text-terracotta-400 hover:text-terracotta-300"
@@ -529,7 +529,7 @@ iiif-transcript-player:state(error)   { outline: 4px solid #b91c1c; }`}</code></
 
     <!-- The wiring from step 4, verbatim (plus the log renderer) -->
     <script>
-      import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+      import { register } from "@umd-mith/iiif-timed-transcript/element";
       register(); // defines <iiif-transcript-player>; until now it was an unknown element
 
       const el = document.getElementById("player")!;

@@ -3,8 +3,8 @@
 ## Setup
 
 ```bash
-git clone git@github.com:umd-mith/svelte-iiif-transcript-player.git
-cd svelte-iiif-transcript-player
+git clone git@github.com:umd-mith/iiif-timed-transcript.git
+cd iiif-timed-transcript
 pnpm install
 pnpm exec playwright install chromium
 ```
@@ -36,4 +36,4 @@ are stored in the repo.
    This tests, type-checks, builds, bumps the version, dates the changelog,
    commits, tags `vX.Y.Z`, and pushes the branch and tag.
 4. The pushed tag triggers `.github/workflows/publish.yml`, which publishes
-   `@umd-mith/svelte-iiif-transcript-player` to npm with provenance.
+   `@umd-mith/iiif-timed-transcript` to npm with provenance.

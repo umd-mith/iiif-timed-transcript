@@ -3,10 +3,10 @@ import type {
   CanvasInfo,
   PlayerRef,
   TermKey,
-} from "@umd-mith/svelte-iiif-transcript-player";
+} from "@umd-mith/iiif-timed-transcript";
 
 // Re-exported so `import type { Annotation } from
-// "@umd-mith/svelte-iiif-transcript-player/element"` — which compiles fine
+// "@umd-mith/iiif-timed-transcript/element"` — which compiles fine
 // against src/element/index.ts (see its own re-export of these three) —
 // also compiles against the *published* types. Without this, the shipped
 // .d.ts (this file, copied verbatim to dist/element/index.d.ts) only

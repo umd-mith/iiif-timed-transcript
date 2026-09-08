@@ -25,5 +25,5 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm --filter svelte-iiif-transcript-player-docs run build
+      - run: pnpm --filter iiif-timed-transcript-docs run build
       - run: pnpm run smoke:docs

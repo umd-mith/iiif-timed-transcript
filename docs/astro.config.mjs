@@ -5,7 +5,7 @@ import tailwind from "@astrojs/tailwind";
 // https://astro.build/config
 export default defineConfig({
   site: "https://umd-mith.github.io",
-  base: "/svelte-iiif-transcript-player",
+  base: "/iiif-timed-transcript",
   integrations: [
     svelte(),
     tailwind({
