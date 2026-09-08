@@ -7,8 +7,10 @@
     type TranscriptContext,
   } from "./transcript-context";
   import type { Annotation, IIIFMediaViewerRef } from "../sync/types";
+  import type { TranscriptStatus } from "./context";
   import type { Snippet } from "svelte";
   import { SyncController } from "../sync/SyncController.svelte";
+  import { t } from "../i18n/registry.svelte";
 
   interface Props {
     /** Array of transcript annotations with timing and text */
@@ -122,6 +124,11 @@
 
   // SyncController instance
   let syncController: SyncController | null = $state.raw(null);
+
+  // A4: auto-scroll pause toggle. Default matches the machine's
+  // autoScrollEnabled default (true) — this component owns the UI state,
+  // the machine owns the gate.
+  let autoScrollEnabled = $state(true);
 
   // Derived active annotation ID from SyncController
   let activeAnnotationId = $derived.by(() => {
@@ -250,16 +257,51 @@
     };
   });
 
-  // Reset user interaction flag after announcement has been processed
+  // Push the panel's auto-scroll flag to whichever controller instance is
+  // current. Separate from the controller-creation effect above so
+  // toggling the flag doesn't tear down and recreate the controller.
   $effect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- track activeAnnotationId
-    activeAnnotationId;
-    if (lastInteractionWasUser) {
-      // Allow one render cycle for the live region to update, then reset
+    const enabled = autoScrollEnabled;
+    syncController?.setAutoScrollEnabled(enabled);
+  });
+
+  // Single sr-only announcement channel (A5): swaps text rather than
+  // mounting/unmounting the live region, since inserting a live region
+  // simultaneously with its content is unreliable across SR/browser pairs.
+  let announcementText = $state("");
+
+  // Segment announcements: user-initiated active-annotation changes only
+  // (existing gating, now writing into the shared channel instead of the
+  // template computing it inline).
+  $effect(() => {
+    const id = activeAnnotationId;
+    if (announceActiveSegment && lastInteractionWasUser) {
+      const activeAnnotation = resolvedAnnotations.find((a) => a.id === id);
       untrack(() => {
+        announcementText = activeAnnotation ? activeAnnotation.text : "";
         lastInteractionWasUser = false;
       });
     }
+  });
+
+  // Status announcements (A5, closes the 4.1.3 gap): fire once per
+  // loading -> ready / loading -> error transition, regardless of
+  // announceActiveSegment (these are one-shot status messages, not
+  // segment announcements). idle -> ready (tier-1 embedded annotations,
+  // which never pass through "loading") intentionally does not announce —
+  // there is nothing that was silently failing to report there.
+  let lastTranscriptStatus: TranscriptStatus | undefined;
+  $effect(() => {
+    const status = playerContext.transcriptStatus;
+    const count = resolvedAnnotations.length;
+    untrack(() => {
+      if (lastTranscriptStatus === "loading" && status === "ready") {
+        announcementText = t("transcript.loadedAnnouncement", { count });
+      } else if (lastTranscriptStatus === "loading" && status === "error") {
+        announcementText = t("transcript.unavailableAnnouncement");
+      }
+      lastTranscriptStatus = status;
+    });
   });
 
   // Fire onActiveAnnotationChange when active annotation changes
@@ -304,28 +346,33 @@
       {#if loading}
         {@render loading()}
       {:else}
-        <p class="loading-message">Loading transcript…</p>
+        <p class="loading-message">{t("transcript.loading")}</p>
       {/if}
     {:else if empty}
       {@render empty()}
     {:else}
-      <p class="empty-message">No transcript available.</p>
+      <p class="empty-message">{t("transcript.unavailable")}</p>
     {/if}
   {:else if children}
+    <button
+      type="button"
+      class="auto-scroll-toggle"
+      aria-pressed={!autoScrollEnabled}
+      onclick={() => (autoScrollEnabled = !autoScrollEnabled)}
+    >
+      {autoScrollEnabled
+        ? t("transcript.autoscrollPause")
+        : t("transcript.autoscrollResume")}
+    </button>
     {@render children()}
   {/if}
 
-  <!-- Screen reader announcements for active segment (user-initiated changes only) -->
-  {#if announceActiveSegment && activeAnnotationId && lastInteractionWasUser}
-    {@const activeAnnotation = resolvedAnnotations.find(
-      (a) => a.id === activeAnnotationId,
-    )}
-    {#if activeAnnotation}
-      <div aria-live="polite" aria-atomic="true" class="sr-only">
-        {activeAnnotation.text}
-      </div>
-    {/if}
-  {/if}
+  <!-- Screen reader announcements: active segment (user-initiated) and
+       transcript load/failure status (A5). Persistently mounted — see the
+       announcementText effects above. -->
+  <div aria-live="polite" aria-atomic="true" class="sr-only">
+    {announcementText}
+  </div>
 </div>
 
 <style>

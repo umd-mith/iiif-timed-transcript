@@ -30,6 +30,10 @@ type El = HTMLElement & { canvasIndex?: number; playerRef?: PlayerRef | null };
 // A second tag lets us create an element *before* its definition (case 2):
 // the default tag is already defined by the time any test runs.
 const UPGRADE_TAG = "iiif-tp-precedence-upgrade";
+// A third tag for the attribute-less pin (case 2b): its own tag keeps the
+// "not yet defined" precondition true independently of UPGRADE_TAG, which
+// case 2 already defines during this same test run.
+const UPGRADE_TAG_NO_ATTR = "iiif-tp-precedence-upgrade-no-attr";
 
 describe("<iiif-transcript-player> attribute/property precedence", () => {
   beforeAll(() => {
@@ -41,6 +45,7 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
   afterEach(() => {
     removeAllElements();
     removeAllElements(UPGRADE_TAG);
+    removeAllElements(UPGRADE_TAG_NO_ATTR);
     manifestCache.clear();
   });
 
@@ -76,14 +81,18 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     await expectInitialIndex(el, 1);
   });
 
-  test("case 2 — upgrade in place: the attribute wins over a pre-upgrade property write, which then shadows the accessor for good; a fresh element behaves like case 1", async () => {
+  test("case 2 — upgrade in place: a pre-upgrade property write wins over a same-name attribute (the standard custom-element upgrade dance), and does not shadow the accessor afterward", async () => {
     const url = "https://example.com/prec-case2.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
     });
 
     // Element exists before the tag is defined (like markup parsed before the
-    // IIFE <script> runs).
+    // IIFE <script> runs) — the case that actually triggers the shadowing
+    // bug (design 1.1): Svelte's generated connectedCallback attribute loop
+    // (custom-element.js:126-132) runs before the property-port loop
+    // (custom-element.js:133-142), so the SAME key being present as an
+    // attribute is what made the port loop skip the pre-upgrade property.
     expect(customElements.get(UPGRADE_TAG)).toBeUndefined();
     const el = document.createElement(UPGRADE_TAG) as El;
     el.setAttribute("manifest-url", url);
@@ -92,22 +101,45 @@ describe("<iiif-transcript-player> attribute/property precedence", () => {
     document.body.appendChild(el);
 
     register(UPGRADE_TAG); // define() upgrades existing elements synchronously
-    await expectInitialIndex(el, 0); // attribute won
+    await expectInitialIndex(el, 1); // the property won, not the attribute
 
-    // The dead own property still shadows the prototype accessor: a later
-    // write to this key on this element goes nowhere.
-    el.canvasIndex = 1;
-    await new Promise((r) => setTimeout(r, 50));
-    expect(el.playerRef!.canvasIndex).toBe(0);
-    expect(Object.prototype.hasOwnProperty.call(el, "canvasIndex")).toBe(true);
+    // No own property is left shadowing the prototype accessor.
+    expect(Object.prototype.hasOwnProperty.call(el, "canvasIndex")).toBe(false);
 
-    // A fresh element of the now-defined tag: case-1 semantics.
+    // A later write on the same key still reaches the player.
+    el.canvasIndex = 0;
+    await vi.waitFor(() => {
+      expect(el.playerRef!.canvasIndex).toBe(0);
+    });
+
+    // A fresh element of the now-defined tag: identical (case-1) semantics.
     const fresh = document.createElement(UPGRADE_TAG) as El;
     fresh.setAttribute("manifest-url", url);
     fresh.setAttribute("canvas-index", "0");
     fresh.canvasIndex = 1;
     document.body.appendChild(fresh);
     await expectInitialIndex(fresh, 1);
+  });
+
+  test("case 2b — upgrade in place, no attribute: a pre-upgrade property write with nothing to shadow upgrades cleanly (already-correct Svelte behavior; a regression pin, not a fix)", async () => {
+    const url = "https://example.com/prec-case2b.json";
+    mockFetchRoutes({
+      [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
+    });
+
+    // Same create-before-define shape as case 2, but no `canvas-index`
+    // attribute at all — nothing for the attribute loop to win with, so this
+    // path was already correct before 1.1 (design 1.1: "the attribute-less
+    // paths already work today"). No such regression test existed before.
+    expect(customElements.get(UPGRADE_TAG_NO_ATTR)).toBeUndefined();
+    const el = document.createElement(UPGRADE_TAG_NO_ATTR) as El;
+    el.setAttribute("manifest-url", url);
+    el.canvasIndex = 1;
+    document.body.appendChild(el);
+
+    register(UPGRADE_TAG_NO_ATTR);
+    await expectInitialIndex(el, 1);
+    expect(Object.prototype.hasOwnProperty.call(el, "canvasIndex")).toBe(false);
   });
 
   test("case 3 — after upgrade each channel works on its own, and an attribute write still lands after a property write, because every canvas switch refreshes the props source", async () => {

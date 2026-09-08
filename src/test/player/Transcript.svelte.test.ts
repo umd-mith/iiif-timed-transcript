@@ -11,6 +11,7 @@ import { createMockPlayerContext, createChildSnippet } from "./test-utils";
 import { createReactiveMockPlayerContext } from "./reactive-context.svelte";
 import type { Annotation } from "../../lib/sync/types";
 import type { TranscriptContext } from "../../lib/player/transcript-context";
+import { registerTranslation, setLocale } from "../../lib/i18n/registry.svelte";
 
 describe("Transcript", () => {
   let target: HTMLElement;
@@ -68,6 +69,218 @@ describe("Transcript", () => {
     const emptyMessage = target.querySelector(".empty-message");
     expect(emptyMessage).not.toBeNull();
     expect(emptyMessage?.textContent).toContain("No transcript available");
+  });
+
+  test("region has no lang attribute even when a segment carries a content language", () => {
+    const ctx = createMockPlayerContext();
+
+    mount(TestContextProvider, {
+      target,
+      props: {
+        context: ctx,
+        children: createChildSnippet(target, Transcript, {
+          annotations: [
+            {
+              id: "a1",
+              startTime: 0,
+              endTime: 5,
+              text: "Hola",
+              language: "es",
+            },
+          ],
+        }),
+      },
+    });
+    flushSync();
+
+    const panel = target.querySelector('[role="region"]');
+    expect(panel).not.toBeNull();
+    expect(panel?.hasAttribute("lang")).toBe(false);
+  });
+
+  describe("auto-scroll pause toggle (A4)", () => {
+    test("renders a toggle with aria-pressed reflecting the paused state", () => {
+      const ctx = createMockPlayerContext();
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {
+            annotations: mockAnnotations,
+            children: (() => {}) as unknown as Snippet,
+          }),
+        },
+      });
+      flushSync();
+
+      const toggle = target.querySelector(
+        ".auto-scroll-toggle",
+      ) as HTMLButtonElement;
+      expect(toggle).not.toBeNull();
+      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+
+      toggle.click();
+      flushSync();
+
+      expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    });
+
+    test("scrollToAnnotation still scrolls after auto-scroll is paused", () => {
+      const ctx = createMockPlayerContext();
+      let capturedTranscriptCtx: TranscriptContext | null = null;
+
+      // Use the wrapper that properly composes Transcript + TranscriptSegments
+      // (same pattern as the existing "scrollToAnnotation scrolls matching
+      // element into view" test above), so segments render inside the scroll
+      // container and the toggle button (rendered by Transcript's own
+      // children branch) is reachable.
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, TestTranscriptWithSegments, {
+            annotations: mockAnnotations,
+            onContextReady: (c: TranscriptContext) => {
+              capturedTranscriptCtx = c;
+            },
+          }),
+        },
+      });
+      flushSync();
+
+      const toggle = target.querySelector(
+        ".auto-scroll-toggle",
+      ) as HTMLButtonElement;
+      toggle.click();
+      flushSync();
+      expect(toggle.getAttribute("aria-pressed")).toBe("true");
+
+      const segmentEl = target.querySelector(
+        '[data-annotation-id="a2"]',
+      ) as HTMLElement;
+      const scrollIntoView = vi.fn();
+      segmentEl.scrollIntoView = scrollIntoView;
+
+      expect(capturedTranscriptCtx).not.toBeNull();
+      const scrolled = capturedTranscriptCtx!.actions.scrollToAnnotation("a2");
+
+      expect(scrolled).toBe(true);
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("transcript status announcements (A5)", () => {
+    test("the sr-only live region is mounted while status is loading, before any text", () => {
+      const ctx = createReactiveMockPlayerContext({
+        transcriptStatus: "loading",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {}),
+        },
+      });
+      flushSync();
+
+      const liveRegion = target.querySelector(".sr-only");
+      expect(liveRegion).not.toBeNull();
+      expect(liveRegion?.textContent).toBe("");
+    });
+
+    test("announces completion once transcriptStatus flips loading -> ready", () => {
+      const ctx = createReactiveMockPlayerContext({
+        transcriptStatus: "loading",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {}),
+        },
+      });
+      flushSync();
+
+      ctx.annotations = mockAnnotations;
+      ctx.transcriptStatus = "ready";
+      flushSync();
+
+      const liveRegion = target.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toContain(
+        "Transcript loaded, 3 segments",
+      );
+    });
+
+    test("announces failure once transcriptStatus flips loading -> error", () => {
+      const ctx = createReactiveMockPlayerContext({
+        transcriptStatus: "loading",
+      });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {}),
+        },
+      });
+      flushSync();
+
+      ctx.transcriptStatus = "error";
+      flushSync();
+
+      const liveRegion = target.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toContain("Transcript unavailable");
+    });
+
+    test("does not announce a status that was never loading (e.g. tier-1 idle -> ready)", () => {
+      const ctx = createReactiveMockPlayerContext({ transcriptStatus: "idle" });
+
+      mount(TestContextProvider, {
+        target,
+        props: {
+          context: ctx,
+          children: createChildSnippet(target, Transcript, {}),
+        },
+      });
+      flushSync();
+
+      ctx.annotations = mockAnnotations;
+      ctx.transcriptStatus = "ready";
+      flushSync();
+
+      const liveRegion = target.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toBe("");
+    });
+  });
+
+  test("empty-state message is reactive to locale — proves t() is live, not baked in at mount", () => {
+    const ctx = createMockPlayerContext();
+
+    mount(TestContextProvider, {
+      target,
+      props: {
+        context: ctx,
+        children: createChildSnippet(target, Transcript, { annotations: [] }),
+      },
+    });
+    flushSync();
+
+    const emptyMessage = target.querySelector(".empty-message");
+    expect(emptyMessage?.textContent).toBe("No transcript available.");
+
+    registerTranslation("fr", {
+      "transcript.unavailable": "Aucune transcription disponible.",
+    });
+    setLocale("fr");
+    flushSync();
+
+    expect(emptyMessage?.textContent).toBe("Aucune transcription disponible.");
+
+    setLocale("en");
+    flushSync();
   });
 
   describe("context annotations fallback", () => {

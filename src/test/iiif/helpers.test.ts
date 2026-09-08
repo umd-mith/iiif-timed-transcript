@@ -1232,6 +1232,59 @@ describe("buildTranscriptAnnotations", () => {
     expect(annotations[0]!.metadata).toBeUndefined();
   });
 
+  it("sets annotation.language from the first text body that carries a language code", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/lang-1",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              type: "TextualBody",
+              value: "Hola, bienvenidos.",
+              format: "text/plain",
+              language: "es",
+            },
+            target: "https://example.org/canvas/1#t=0,5",
+          },
+        ],
+      },
+    ]);
+
+    const { annotations } = buildTranscriptAnnotations(canvas);
+
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]!.language).toBe("es");
+  });
+
+  it("leaves annotation.language undefined when no text body carries a language code", () => {
+    const canvas = createSupplementaryCanvas([
+      {
+        id: "https://example.org/page/supp",
+        type: "AnnotationPage",
+        items: [
+          {
+            id: "https://example.org/annotation/no-lang",
+            type: "Annotation",
+            motivation: "supplementing",
+            body: {
+              type: "TextualBody",
+              value: "No language here.",
+            },
+            target: "https://example.org/canvas/1#t=0,5",
+          },
+        ],
+      },
+    ]);
+
+    const { annotations } = buildTranscriptAnnotations(canvas);
+
+    expect(annotations[0]!.language).toBeUndefined();
+  });
+
   it("should return empty result for canvas with only VTT annotations", () => {
     // VTT annotations (type: "Text") are filtered out upstream by
     // getSupplementaryTextualBodies — they never reach the skip logic

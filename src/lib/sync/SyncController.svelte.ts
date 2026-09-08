@@ -257,6 +257,13 @@ export class SyncController {
   }
 
   /**
+   * Toggle the auto-scroll pause flag (A4). No-ops before initialize().
+   */
+  setAutoScrollEnabled(enabled: boolean): void {
+    this.actor?.send({ type: "SET_AUTO_SCROLL_ENABLED", enabled });
+  }
+
+  /**
    * Check if the controller is ready (machine is in ready state).
    */
   get isReady(): boolean {

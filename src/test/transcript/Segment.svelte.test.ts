@@ -3,6 +3,7 @@ import { mount } from "svelte";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { flushSync } from "svelte";
 import Segment from "../../lib/transcript/Segment.svelte";
+import TestSegmentTextSnippetWrapper from "./TestSegmentTextSnippetWrapper.svelte";
 
 describe("Transcript.Segment", () => {
   const mockAnnotation = {
@@ -148,5 +149,44 @@ describe("Transcript.Segment", () => {
 
     const segment = target.querySelector("[data-annotation-id]");
     expect(segment?.getAttribute("role")).toBe("button");
+  });
+
+  it("applies lang on the default text path when annotation.language is set", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    mount(Segment, {
+      target,
+      props: { annotation: { ...mockAnnotation, language: "es" } },
+    });
+    flushSync();
+
+    const text = target.querySelector(".text");
+    expect(text?.getAttribute("lang")).toBe("es");
+  });
+
+  it("omits lang when annotation.language is absent", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    mount(Segment, { target, props: { annotation: mockAnnotation } });
+    flushSync();
+
+    const text = target.querySelector(".text");
+    expect(text?.hasAttribute("lang")).toBe(false);
+  });
+
+  it("passes language to a custom text snippet", () => {
+    target = document.createElement("div");
+    document.body.appendChild(target);
+
+    mount(TestSegmentTextSnippetWrapper, {
+      target,
+      props: { annotation: { ...mockAnnotation, language: "fr" } },
+    });
+    flushSync();
+
+    const custom = target.querySelector(".custom-text");
+    expect(custom?.getAttribute("data-language")).toBe("fr");
   });
 });

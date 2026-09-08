@@ -43,6 +43,14 @@ export interface SyncContext {
   annotations: Annotation[];
   /** Duration to lock sync priority after user interaction (milliseconds) */
   priorityLockDuration: number;
+  /**
+   * When false, the mediaDriven scrollController actor is a no-op — the
+   * user paused auto-scroll from the transcript panel. Annotation
+   * tracking, the media priority lock, and consumer scroll APIs
+   * (Transcript.scrollToAnnotation, TranscriptSegments.scrollToAnnotation)
+   * are unaffected; only the automatic scroll-into-view is silenced.
+   */
+  autoScrollEnabled: boolean;
 }
 
 /**
@@ -58,6 +66,7 @@ export type SyncEvent =
     }
   | { type: "VIDEO_TIME_UPDATE"; currentTime: number }
   | { type: "TRANSCRIPT_SCROLL"; scrollProgress: number; mappedTime: number }
+  | { type: "SET_AUTO_SCROLL_ENABLED"; enabled: boolean }
   | { type: "RESET" };
 
 /**
@@ -129,6 +138,14 @@ export interface Annotation {
   endTime: number;
   /** Text content of the annotation */
   text: string;
+  /**
+   * Optional BCP 47 language code for this annotation's text (e.g. "en",
+   * "es", "fr"). Sourced from the manifest's annotation body language (tier
+   * 1) or the selected VTT track's `srclang` (tier 2). Applied as `lang` on
+   * the rendered segment text ONLY — never on the transcript panel's
+   * `role="region"` element, which carries host-language chrome.
+   */
+  language?: string;
   /**
    * Optional metadata for consumer-specific data.
    * Access in custom segment snippets via `annotation.metadata?.speaker`, etc.

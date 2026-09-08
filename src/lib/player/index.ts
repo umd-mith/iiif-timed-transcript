@@ -12,6 +12,7 @@ import TranscriptSearch from "./TranscriptSearch.svelte";
 import TranscriptSegments from "./TranscriptSegments.svelte";
 import Chapters from "./Chapters.svelte";
 import CanvasNav from "./CanvasNav.svelte";
+import Captions from "./Captions.svelte";
 
 /**
  * IIIF Player compound component namespace.
@@ -46,6 +47,7 @@ export const IIIFPlayer: {
   TranscriptSegments: typeof TranscriptSegments;
   Chapters: typeof Chapters;
   CanvasNav: typeof CanvasNav;
+  Captions: typeof Captions;
 } = {
   Root,
   Viewer,
@@ -60,6 +62,7 @@ export const IIIFPlayer: {
   TranscriptSegments,
   Chapters,
   CanvasNav,
+  Captions,
 };
 
 // Export player context accessors for custom child components

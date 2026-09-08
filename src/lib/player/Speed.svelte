@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getPlayerContext } from "./context";
+  import { t } from "../i18n/registry.svelte";
 
   let {
     rates = [0.5, 0.75, 1, 1.25, 1.5, 2],
@@ -23,7 +24,7 @@
   disabled={!state.isReady}
   value={state.playbackRate}
   onchange={handleChange}
-  aria-label="Playback speed"
+  aria-label={t("player.speedLabel")}
   class={className}
 >
   {#each rates as rate (rate)}

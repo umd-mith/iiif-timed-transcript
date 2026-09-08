@@ -471,4 +471,101 @@ describe("syncMachine", () => {
       actor.stop();
     });
   });
+
+  describe("autoScrollEnabled gate", () => {
+    function createMockScrollContainerWithSpy(
+      scrollIntoView: ReturnType<typeof vi.fn>,
+    ): HTMLElement {
+      const el = document.createElement("div");
+      const segment = document.createElement("div");
+      segment.scrollIntoView =
+        scrollIntoView as unknown as typeof segment.scrollIntoView;
+      el.querySelector = vi.fn(() => segment);
+      return el;
+    }
+
+    it("defaults autoScrollEnabled to true", () => {
+      const actor = createActor(syncMachine);
+      actor.start();
+      expect(actor.getSnapshot().context.autoScrollEnabled).toBe(true);
+      actor.stop();
+    });
+
+    it("SET_AUTO_SCROLL_ENABLED updates context from any state", () => {
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer: createMockViewer(),
+        scrollContainer: createMockScrollContainer(),
+        annotations,
+      });
+
+      actor.send({ type: "SET_AUTO_SCROLL_ENABLED", enabled: false });
+
+      expect(actor.getSnapshot().context.autoScrollEnabled).toBe(false);
+      actor.stop();
+    });
+
+    it("scrollController does not scroll when autoScrollEnabled is false", async () => {
+      const scrollIntoView = vi.fn();
+      const scrollContainer = createMockScrollContainerWithSpy(scrollIntoView);
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer: createMockViewer(),
+        scrollContainer,
+        annotations,
+      });
+      actor.send({ type: "SET_AUTO_SCROLL_ENABLED", enabled: false });
+
+      actor.send({ type: "VIDEO_TIME_UPDATE", currentTime: 2 });
+
+      await vi.waitFor(() => {
+        expect(actor.getSnapshot().value).toBe("ready");
+      });
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      actor.stop();
+    });
+
+    it("scrollController still scrolls when autoScrollEnabled is true (default)", async () => {
+      const scrollIntoView = vi.fn();
+      const scrollContainer = createMockScrollContainerWithSpy(scrollIntoView);
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer: createMockViewer(),
+        scrollContainer,
+        annotations,
+      });
+
+      actor.send({ type: "VIDEO_TIME_UPDATE", currentTime: 2 });
+
+      await vi.waitFor(() => {
+        expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      });
+      actor.stop();
+    });
+
+    it("acquires media priority and tracks annotationIndex even when disabled (only the scroll itself is gated)", () => {
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer: createMockViewer(),
+        scrollContainer: createMockScrollContainer(),
+        annotations,
+      });
+      actor.send({ type: "SET_AUTO_SCROLL_ENABLED", enabled: false });
+
+      actor.send({ type: "VIDEO_TIME_UPDATE", currentTime: 7 });
+
+      const ctx = actor.getSnapshot().context;
+      expect(ctx.syncPriority.direction).toBe("media");
+      expect(ctx.annotationIndex).toBe(1);
+      actor.stop();
+    });
+  });
 });

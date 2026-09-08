@@ -8,6 +8,8 @@
     type TranscriptStatus,
   } from "./context";
   import { PlayerStateManager } from "./PlayerState.svelte";
+  import { createActor } from "xstate";
+  import { captionsMachine, captionsVerdict } from "./captionsMachine.js";
   import {
     getFirstCanvas,
     getPrimaryResource,
@@ -41,6 +43,7 @@
     selectTranscriptTrack,
     loadVTTTranscript,
   } from "../iiif/vttTranscript";
+  import { t, setLocale } from "../i18n/registry.svelte";
 
   // Props
   let {
@@ -55,6 +58,7 @@
     onPlayerInit,
     onError,
     preprocessManifest,
+    locale,
     class: className = "",
     children,
   }: {
@@ -80,6 +84,15 @@
      * set, Root bypasses the module-level manifest cache entirely.
      */
     preprocessManifest?: (raw: unknown) => unknown;
+    /**
+     * Sets the term registry's locale for Svelte-API consumers (element
+     * hosts resolve their own locale from the DOM instead — see 4.2).
+     * Omitted means "whatever the registry already has" — English by
+     * default. The registry is one shared module-level state, so the last
+     * `locale` prop (or `setLocale` call) to run wins across every Root on
+     * the page.
+     */
+    locale?: string;
     class?: string;
     children?: import("svelte").Snippet<
       [
@@ -102,16 +115,40 @@
     null,
   );
 
+  // The captions machine's actor reference: declared before `player` so the
+  // onToggleCaptions/onNativeCaptionChange closures below can capture it —
+  // they only run later (after a click or a native 'change' event), by
+  // which point the actor has been assigned further down.
+  let captionsActor: ReturnType<typeof createActor<typeof captionsMachine>>;
+
   // Create reactive state manager — onRetry delegates to loadManifest
   const player = new PlayerStateManager({
     onRetry: () => fetchManifestData(),
     onSwitchCanvas: (index: number) => performCanvasSwitch(index),
     onPlaybackError: (error: Error) =>
       reportError(error, { fatal: false, source: "playback" }),
+    onToggleCaptions: () => captionsActor.send({ type: "USER_TOGGLE" }),
+    onNativeCaptionChange: (mode) =>
+      captionsActor.send({ type: "NATIVE_CHANGE", mode }),
   });
 
   // Provide context — the class instance satisfies PlayerContext
   setPlayerContext(player);
+
+  // Captions policy (WCAG 1.2.2): a small state machine, the same pattern
+  // syncMachine uses for media/transcript sync. loadCanvas below feeds it
+  // CANVAS_SWITCH/TRACKS_CHANGED; the transcriptPopulated watcher feeds it
+  // TRANSCRIPT_POPULATED; Viewer feeds it NATIVE_CHANGE via
+  // onNativeCaptionChange above. player.captionsState mirrors its verdict.
+  captionsActor = createActor(captionsMachine);
+  captionsActor.subscribe((snapshot) => {
+    player.captionsState = captionsVerdict(snapshot.value);
+  });
+  captionsActor.start();
+
+  $effect(() => {
+    if (locale != null) setLocale(locale);
+  });
 
   // Apply initialTime (first canvas load only) and autoplay (every canvas load)
   let initialTimeApplied = false;
@@ -243,6 +280,16 @@
         performCanvasSwitch(propIndex);
       }
     });
+  });
+
+  // Feed the captions machine when the transcript panel populates — the
+  // same signal the old Viewer-owned latch used to key off, now routed
+  // through the machine so a user's toggle is never rewritten by a later
+  // populate (TRANSCRIPT_POPULATED is unhandled in userControlled).
+  $effect(() => {
+    if (player.transcriptPopulated) {
+      captionsActor.send({ type: "TRANSCRIPT_POPULATED" });
+    }
   });
 
   function performCanvasSwitch(index: number) {
@@ -407,6 +454,12 @@
     player.tracks = [];
     player.chapters = [];
     player.transcriptPopulated = false;
+    // Every load is a canvas switch (including the first): reset the
+    // machine's tracks-known state to false up front so a canvas that
+    // throws below (non-AV, no primary resource) still lands on
+    // "unavailable" rather than carrying the previous canvas's verdict.
+    captionsActor.send({ type: "CANVAS_SWITCH" });
+    captionsActor.send({ type: "TRACKS_CHANGED", hasTracks: false });
     if (annotations === "auto") {
       player.annotations = [];
       player.transcriptStatus = "idle";
@@ -462,6 +515,9 @@
 
       // Discover VTT caption tracks from canvas.annotations (recipe 0219)
       player.tracks = getSupplementaryVTTTracks(canvas);
+      if (player.mediaType === "video" && player.tracks.length > 0) {
+        captionsActor.send({ type: "TRACKS_CHANGED", hasTracks: true });
+      }
 
       // Only now is the canvas genuinely resolved: media type, primary
       // resource and tracks all agree with it. Assigning earlier would let a
@@ -524,7 +580,7 @@
     player.annotations = [];
     if (track) {
       player.transcriptStatus = "loading";
-      resolveVTTTranscript(track.src);
+      resolveVTTTranscript(track.src, track.srclang);
     } else {
       player.transcriptStatus = "ready";
     }
@@ -583,10 +639,10 @@
   // player.state.error is never written. Stale results (canvas switched, the
   // annotations prop flipped mode, or Root destroyed while fetching) are
   // dropped via transcriptGeneration.
-  async function resolveVTTTranscript(url: string) {
+  async function resolveVTTTranscript(url: string, language?: string) {
     const generation = transcriptGeneration;
     try {
-      const result = await loadVTTTranscript(url);
+      const result = await loadVTTTranscript(url, language);
       if (destroyed || generation !== transcriptGeneration) return;
       player.annotations = result.annotations;
       player.transcriptStatus = "ready";
@@ -674,7 +730,7 @@
 <div class="iiif-player-root {className}">
   {#if player.state.error}
     <div role="alert" class="error">
-      <strong>Error:</strong>
+      <strong>{t("player.errorLabel")}</strong>
       {player.state.error.message}
     </div>
   {/if}

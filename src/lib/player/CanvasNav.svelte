@@ -3,6 +3,7 @@
   import type { Snippet } from "svelte";
   import { getPlayerContext } from "./context";
   import { formatTimestamp } from "../transcript/utils";
+  import { t } from "../i18n/registry.svelte";
 
   interface Props {
     onCanvasChange?: (canvas: CanvasInfo) => void;
@@ -32,7 +33,7 @@
   }
 </script>
 
-<nav class="canvas-nav {className}" aria-label="Canvases">
+<nav class="canvas-nav {className}" aria-label={t("player.canvasNavLabel")}>
   {#if canvases.length <= 1}
     {#if empty}
       {@render empty()}

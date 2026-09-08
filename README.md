@@ -394,6 +394,29 @@ const speakers = new Map(
 const paragraphs = mergeIntoParagraphs(annotations, { speakers });
 ```
 
+## Interface Language (i18n)
+
+All of the player's interface text (button labels, transcript messages) comes from a translation registry. English is built in. A host adds a language with `registerTranslation`, and rendered strings update in place:
+
+```ts
+import {
+  registerTranslation,
+  setLocale,
+} from "@umd-mith/svelte-iiif-transcript-player";
+
+registerTranslation("fr", {
+  "player.playButton.play": "Lecture",
+  "transcript.unavailable": "Aucune transcription disponible.",
+});
+setLocale("fr"); // or <IIIFPlayer.Root locale="fr">
+```
+
+A key a locale does not cover falls back to English, key by key. The `TermKey` type lists every key. Script-tag hosts call `window.IIIFTranscriptPlayer.registerTranslation`; ESM element hosts import it from `…/element`.
+
+**Who sets the language differs by consumer, on purpose.** The `<iiif-transcript-player>` element reads the page language itself: the nearest `lang` attribute wins, then `<html lang>`, then English — and it follows later `lang` changes automatically. Svelte-API hosts set the language explicitly, with the `locale` prop on `Root` or a `setLocale` call. A Svelte application usually runs its own i18n and should stay in charge of language selection; the element serves pages that have no such machinery.
+
+**One shared language per page.** The locale is a single module-level value. Every player on a page shows the same language, and the last write wins. Two players with different languages on one page is not supported.
+
 ## Advanced Patterns
 
 ### Custom Segment Snippets
@@ -628,6 +651,8 @@ Until the package is on public npm, vendor the built file (`dist/element/iiif-tr
 
 The IIFE bundles Svelte and hls.js (HLS plays without any other script). It does **not** support DASH (`dashjs` is not bundled; a DASH manifest surfaces a player error). Authenticated/restricted media is not supported. It measures about 744 kB minified (about 232 kB gzipped), against a build-enforced budget of 1 MB.
 
+**TypeScript hosts:** the IIFE's declaration file (`iiif-transcript-player.iife.d.ts`, declaring `window.IIIFTranscriptPlayer`) is not resolvable through the package's `exports` map — only the ESM entry (`./element`, below) is. Reference the shipped file directly instead: add `/// <reference path="node_modules/@umd-mith/svelte-iiif-transcript-player/dist/element/iiif-transcript-player.iife.d.ts" />` to a `.ts` file that uses the global, or add that concrete path to `tsconfig.json`'s `include`.
+
 ### Module (ESM, with a bundler)
 
 ```js
@@ -653,7 +678,7 @@ Unlike the IIFE, this entry keeps `svelte` external, so the `svelte` peer depend
 | `errorCallback`             | `(error, { fatal, source }) => void`         | Same payload as the `playererror` event.                                                                                                                                                                                            |
 | `playerRef`                 | `PlayerRef \| null \| undefined` (read-only) | Nullish until `playerrefavailable`. It stays nullish if the fatal error is a manifest or first-canvas failure; a fatal _media_ error can arrive after `playerrefavailable`, in which case `playerRef` is already set and stays set. |
 
-**Attributes vs properties — three rules.** Use attributes for initial configuration. For a `<script src>` host, set properties only after the element is defined — inside `customElements.whenDefined("iiif-transcript-player").then(…)`; a property written onto an element _before_ the defining script has run is lost for that key, and the attribute wins. After the element is upgraded, prefer one channel per key — attributes _or_ properties, not both — and never write the same key twice in one task. An attribute write goes through `attributeChangedCallback` into the component's props; a property write goes through the generated accessor and sets a local override inside the component, leaving those props holding the previous value. For `canvas-index` the element repairs that: every canvas switch writes the attribute explicitly, which refreshes the component's props, so attribute, props and property all hold the live index and a later write on either channel still lands. The repair rides on the switch, so a property write that never causes one — an index past the last canvas, or any write made before the manifest resolves — leaves the component's props holding the previous value; the host error tells you when that happened. What no element can repair is ordering — two writes issued in the _same_ task can resolve either way depending on internal flush state, so the same two lines are not guaranteed to give the same result twice. That is a Svelte custom-element property, not a rule we chose.
+**Attributes vs properties — two rules.** Use attributes for initial configuration; a property written onto an element before it is upgraded — before the defining `<script>` has run, or before `customElements.define()` is called — is queued and takes effect once the element upgrades, winning over any same-name attribute (the standard custom-element upgrade dance; not a rule this library adds). After the element is upgraded, prefer one channel per key — attributes _or_ properties, not both — and never write the same key twice in one task. An attribute write goes through `attributeChangedCallback` into the component's props; a property write goes through the generated accessor and sets a local override inside the component, leaving those props holding the previous value. For `canvas-index` the element repairs that: every canvas switch writes the attribute explicitly, which refreshes the component's props, so attribute, props and property all hold the live index and a later write on either channel still lands. The repair rides on the switch, so a property write that never causes one — an index past the last canvas, or any write made before the manifest resolves — leaves the component's props holding the previous value; the host error tells you when that happened. What no element can repair is ordering — two writes issued in the _same_ task can resolve either way depending on internal flush state, so the same two lines are not guaranteed to give the same result twice. That is a Svelte custom-element property, not a rule we chose.
 
 ### Events
 
