@@ -32,7 +32,7 @@ are stored in the repo.
 
 1. Ensure changes are on `main` and CI is green.
 2. Move the new changes under `## [Unreleased]` in `CHANGELOG.md`.
-3. Run `pnpm run release --no-publish X.Y.Z` (add `--dry-run` first to preview).
+3. Run `pnpm run release X.Y.Z` (add `--dry-run` first to preview).
    This tests, type-checks, builds, bumps the version, dates the changelog,
    commits, tags `vX.Y.Z`, and pushes the branch and tag.
 4. The pushed tag triggers `.github/workflows/publish.yml`, which publishes
