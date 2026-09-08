@@ -1,12 +1,12 @@
 ---
-import HTMLAnnotationsDemo from '../components/HTMLAnnotationsDemo.svelte';
+import HTMLAnnotationsDemo from "../components/HTMLAnnotationsDemo.svelte";
 import {
-	ManifestSchema,
-	getFirstCanvas,
-	buildTranscriptAnnotations,
-	type Annotation
-} from '@umd-mith/iiif-timed-transcript';
-import manifestJson from '../../public/fixtures/historyunerased.json';
+  ManifestSchema,
+  getFirstCanvas,
+  buildTranscriptAnnotations,
+  type Annotation,
+} from "@umd-mith/iiif-timed-transcript";
+import manifestJson from "../../public/fixtures/historyunerased.json";
 
 const manifestUrl = `${import.meta.env.BASE_URL}/fixtures/historyunerased.json`;
 
@@ -14,110 +14,174 @@ const manifestUrl = `${import.meta.env.BASE_URL}/fixtures/historyunerased.json`;
 const { data: manifest } = ManifestSchema.safeParse(manifestJson);
 const canvas = manifest ? getFirstCanvas(manifest) : undefined;
 
-let transcript = '';
+let transcript = "";
 let annotations: Annotation[] = [];
 if (canvas) {
-	// Path A: Annotations embedded directly in the manifest
-	const result = buildTranscriptAnnotations(canvas);
-	annotations = result.annotations;
-	transcript = annotations.map((a) => a.text).join(' ');
+  // Path A: Annotations embedded directly in the manifest
+  const result = buildTranscriptAnnotations(canvas);
+  annotations = result.annotations;
+  transcript = annotations.map((a) => a.text).join(" ");
 }
 
 // Structured data: VideoObject with transcript for search engines and AI
 const jsonLd = {
-	"@context": "https://schema.org",
-	"@type": "VideoObject",
-	"name": manifest?.label?.en?.[0] ?? "Lunchroom Manners",
-	"description": "An educational film about lunchroom manners, with synchronized transcript. Demonstrates the IIIF Transcript Player component library.",
-	"thumbnailUrl": "https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.jpg",
-	"uploadDate": "2024-01-01",
-	"contentUrl": "https://fixtures.iiif.io/video/indiana/lunchroom_manners/high/lunchroom_manners-high.mp4",
-	"transcript": transcript,
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  name: manifest?.label?.en?.[0] ?? "Lunchroom Manners",
+  description:
+    "An educational film about lunchroom manners, with synchronized transcript. Demonstrates the IIIF Transcript Player component library.",
+  thumbnailUrl:
+    "https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.jpg",
+  uploadDate: "2024-01-01",
+  contentUrl:
+    "https://fixtures.iiif.io/video/indiana/lunchroom_manners/high/lunchroom_manners-high.mp4",
+  transcript: transcript,
 };
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>HTML Annotations Demo - IIIF Transcript Player</title>
-		<meta name="description" content="Demonstration of the IIIF Transcript Player with supplementary annotations from an AVAnnotate manifest." />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-	</head>
-	<body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
-		<!-- Navigation -->
-		<nav class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200">
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div class="flex items-center justify-between h-16">
-					<div class="flex items-center">
-						<a href="." class="text-xl font-serif font-bold text-ink-900 tracking-tight">
-							IIIF Transcript Player
-						</a>
-					</div>
-					<div class="hidden md:flex items-center space-x-8">
-						<a href="." class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Home</a>
-						<a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
-							GitHub
-						</a>
-					</div>
-				</div>
-			</div>
-		</nav>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTML Annotations Demo - IIIF Transcript Player</title>
+    <meta
+      name="description"
+      content="Demonstration of the IIIF Transcript Player with supplementary annotations from a IIIF manifest."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
+    <!-- Navigation -->
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <a
+              href="."
+              class="text-xl font-serif font-bold text-ink-900 tracking-tight"
+            >
+              IIIF Transcript Player
+            </a>
+          </div>
+          <div class="hidden md:flex items-center space-x-8">
+            <a
+              href="."
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+              >Home</a
+            >
+            <a
+              href="https://github.com/umd-mith/iiif-timed-transcript"
+              target="_blank"
+              rel="noopener"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
 
-		<!-- Hero -->
-		<section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
-			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">DEMO</div>
-				<h1 class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight">
-					AVAnnotate: Supplementary Annotations
-				</h1>
-				<p class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed">
-					This transcript includes HTML formatting which can be rendered by passing a <code>text</code> snippet to the <code>TranscriptSegments</code> component.
-				</p>
-		</section>
-			
+    <!-- Hero -->
+    <section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">
+          DEMO
+        </div>
+        <h1
+          class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight"
+        >
+          IIIF Manifest With Supplementary Annotations
+        </h1>
+        <p
+          class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed"
+        >
+          This transcript includes HTML formatting which can be rendered by
+          passing a <code>text</code> snippet to the <code
+            >TranscriptSegments</code
+          > component.
+        </p>
+      </div>
 
-		<!-- Live Demo -->
-		<section class="py-16 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200">
-			<div class="max-w-7xl mx-auto">
-				<div class="mb-8">
-					<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4">
-						<em>History UnErased</em>: An Interview with Deb Fowler and Kathleen Barker
-					</h2>
-					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
-						This conversation by <em>Scholarly Editing</em> Co-Managing Editors, Robert Riter and Jenifer Ishee features a discussion with Debra Fowler and Kathleen Barker of History UnErased, the “nation's premier provider of K-12 LGBTQ-inclusive and intersectional US history curriculum.” First published in <a class="underline" href="https://scholarlyediting.org/issues/41/history-unerased-an-interview-with-deb-fowler-and-kathleen-barker/"><em>Scholarly Editing</em>, vol 41, 2024</a>. CC BY-NC-SA 4.0.
-					</p>
-				</div>
+      <!-- Live Demo -->
+      <section
+        class="py-16 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200"
+      >
+        <div class="max-w-7xl mx-auto">
+          <div class="mb-8">
+            <h2
+              class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4"
+            >
+              <em>History UnErased</em>: An Interview with Deb Fowler and
+              Kathleen Barker
+            </h2>
+            <p
+              class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed"
+            >
+              This conversation by <em>Scholarly Editing</em> Co-Managing Editors,
+              Robert Riter and Jenifer Ishee features a discussion with Debra Fowler
+              and Kathleen Barker of History UnErased, the “nation's premier provider
+              of K-12 LGBTQ-inclusive and intersectional US history curriculum.” First
+              published in <a
+                class="underline"
+                href="https://scholarlyediting.org/issues/41/history-unerased-an-interview-with-deb-fowler-and-kathleen-barker/"
+                ><em>Scholarly Editing</em>, vol 41, 2024</a
+              >. CC BY-NC-SA 4.0.
+            </p>
+          </div>
 
-				<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
-					<HTMLAnnotationsDemo client:load {manifestUrl} {annotations}/>
-				</div>
+          <div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
+            <HTMLAnnotationsDemo client:load {manifestUrl} {annotations} />
+          </div>
 
-				<div class="mt-6 text-sm text-ink-500">
-					<p>
-						Source manifest:
-						<a href={manifestUrl} target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline break-all">
-							{manifestUrl}
-						</a>
-					</p>
-				</div>
-			</div>
-		</section>
+          <div class="mt-6 text-sm text-ink-500">
+            <p>
+              Source manifest:
+              <a
+                href={manifestUrl}
+                target="_blank"
+                rel="noopener"
+                class="text-terracotta-500 hover:text-terracotta-600 underline break-all"
+              >
+                {manifestUrl}
+              </a>
+            </p>
+          </div>
+        </div>
+      </section>
 
-		<!-- Footer -->
-		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
-			<div class="max-w-7xl mx-auto text-center">
-				<p class="mb-4">
-					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
-				</p>
-				<p class="text-sm">
-					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
-				</p>
-			</div>
-		</footer>
-	</body>
+      <!-- Footer -->
+      <footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
+        <div class="max-w-7xl mx-auto text-center">
+          <p class="mb-4">
+            Built by <a
+              href="https://mith.umd.edu"
+              target="_blank"
+              rel="noopener"
+              class="text-terracotta-400 hover:text-terracotta-300"
+              >Maryland Institute for Technology in the Humanities</a
+            >
+          </p>
+          <p class="text-sm">
+            Licensed under BSD-3-Clause-Clear • <a
+              href="https://github.com/umd-mith/iiif-timed-transcript"
+              target="_blank"
+              rel="noopener"
+              class="text-terracotta-400 hover:text-terracotta-300"
+              >View on GitHub</a
+            >
+          </p>
+        </div>
+      </footer>
+    </section>
+  </body>
 </html>

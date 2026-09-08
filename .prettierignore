@@ -1,3 +1,6 @@
 dist/
 .svelte-kit/
 docs/.astro/
+
+# Tool-generated lockfile — pnpm owns its format; prettier must not rewrite it
+pnpm-lock.yaml

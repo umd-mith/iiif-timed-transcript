@@ -1,15 +1,17 @@
 ---
-import IIIFTranscriptDemo from '../components/IIIFTranscriptDemo.svelte';
-import { parseText } from 'media-captions';
+import IIIFTranscriptDemo from "../components/IIIFTranscriptDemo.svelte";
+import { parseText } from "media-captions";
 import {
-	ManifestSchema,
-	getFirstCanvas,
-	buildTranscriptAnnotations,
-	getSupplementaryVTTTracks,
-} from '@umd-mith/iiif-timed-transcript';
+  ManifestSchema,
+  getFirstCanvas,
+  buildTranscriptAnnotations,
+  getSupplementaryVTTTracks,
+} from "@umd-mith/iiif-timed-transcript";
 
-const manifestUrl = 'https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json';
-const vttUrl = 'https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.vtt';
+const manifestUrl =
+  "https://iiif.io/api/cookbook/recipe/0219-using-caption-file/manifest.json";
+const vttUrl =
+  "https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.vtt";
 
 // Extract transcript from IIIF manifest at build time for SEO structured data.
 // Strategy: try embedded annotations first, fall back to referenced VTT.
@@ -18,187 +20,337 @@ const manifestJson = await manifestResponse.json();
 const { data: manifest } = ManifestSchema.safeParse(manifestJson);
 const canvas = manifest ? getFirstCanvas(manifest) : undefined;
 
-let transcript = '';
+let transcript = "";
 if (canvas) {
-	// Path A: Annotations embedded directly in the manifest
-	const { annotations } = buildTranscriptAnnotations(canvas);
-	if (annotations.length > 0) {
-		transcript = annotations.map((a) => a.text).join(' ');
-	} else {
-		// Path B: Manifest references an external VTT file (recipe 0219)
-		const vttTracks = getSupplementaryVTTTracks(canvas);
-		if (vttTracks.length > 0) {
-			const vttText = await fetch(vttTracks[0].src).then((r) => r.text());
-			const { cues } = await parseText(vttText, { type: 'vtt' });
-			transcript = cues.map((cue) => cue.text).join(' ');
-		}
-	}
+  // Path A: Annotations embedded directly in the manifest
+  const { annotations } = buildTranscriptAnnotations(canvas);
+  if (annotations.length > 0) {
+    transcript = annotations.map((a) => a.text).join(" ");
+  } else {
+    // Path B: Manifest references an external VTT file (recipe 0219)
+    const vttTracks = getSupplementaryVTTTracks(canvas);
+    if (vttTracks.length > 0) {
+      const vttText = await fetch(vttTracks[0].src).then((r) => r.text());
+      const { cues } = await parseText(vttText, { type: "vtt" });
+      transcript = cues.map((cue) => cue.text).join(" ");
+    }
+  }
 }
 
 // Structured data: VideoObject with transcript for search engines and AI
 const jsonLd = {
-	"@context": "https://schema.org",
-	"@type": "VideoObject",
-	"name": manifest?.label?.en?.[0] ?? "Lunchroom Manners",
-	"description": "An educational film about lunchroom manners, with synchronized transcript. Demonstrates the IIIF Transcript Player component library.",
-	"thumbnailUrl": "https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.jpg",
-	"uploadDate": "2024-01-01",
-	"contentUrl": "https://fixtures.iiif.io/video/indiana/lunchroom_manners/high/lunchroom_manners-high.mp4",
-	"transcript": transcript,
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  name: manifest?.label?.en?.[0] ?? "Lunchroom Manners",
+  description:
+    "An educational film about lunchroom manners, with synchronized transcript. Demonstrates the IIIF Transcript Player component library.",
+  thumbnailUrl:
+    "https://fixtures.iiif.io/video/indiana/lunchroom_manners/lunchroom_manners.jpg",
+  uploadDate: "2024-01-01",
+  contentUrl:
+    "https://fixtures.iiif.io/video/indiana/lunchroom_manners/high/lunchroom_manners-high.mp4",
+  transcript: transcript,
 };
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>IIIF Transcript Player - Synchronized Media & Transcripts</title>
-		<meta name="description" content="Svelte 5 component library for synchronized IIIF media playback with transcript navigation. Open source, unstyled primitives, TypeScript support." />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-	</head>
-	<body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
-		<!-- Navigation -->
-		<nav class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200">
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div class="flex items-center justify-between h-16">
-					<div class="flex items-center">
-						<a href="#" class="text-xl font-serif font-bold text-ink-900 tracking-tight">
-							IIIF Transcript Player
-						</a>
-					</div>
-					<div class="hidden md:flex items-center space-x-8">
-						<a href="#demo" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Demo</a>
-						<a href="#seo" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">SEO</a>
-						<a href="#getting-started" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Get Started</a>
-						<a href="#components" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Components</a>
-						<a href="#styling" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Styling</a>
-						<a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
-							GitHub
-						</a>
-					</div>
-				</div>
-			</div>
-		</nav>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IIIF Transcript Player - Synchronized Media & Transcripts</title>
+    <meta
+      name="description"
+      content="Svelte 5 component library for synchronized IIIF media playback with transcript navigation. Open source, unstyled primitives, TypeScript support."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
+    <!-- Navigation -->
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <a
+              href="#"
+              class="text-xl font-serif font-bold text-ink-900 tracking-tight"
+            >
+              IIIF Transcript Player
+            </a>
+          </div>
+          <div class="hidden md:flex items-center space-x-8">
+            <a
+              href="#demo"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+              >Demo</a
+            >
+            <a
+              href="#seo"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+              >SEO</a
+            >
+            <a
+              href="#getting-started"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+              >Get Started</a
+            >
+            <a
+              href="#components"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+              >Components</a
+            >
+            <a
+              href="#styling"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+              >Styling</a
+            >
+            <a
+              href="https://github.com/umd-mith/iiif-timed-transcript"
+              target="_blank"
+              rel="noopener"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
 
-		<!-- Hero Section -->
-		<section id="hero" class="pt-32 pb-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
-			<div class="max-w-4xl mx-auto">
-				<!-- Editorial number mark (like manuscript folios) -->
-				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">001</div>
+    <!-- Hero Section -->
+    <section
+      id="hero"
+      class="pt-32 pb-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200"
+    >
+      <div class="max-w-4xl mx-auto">
+        <!-- Editorial number mark (like manuscript folios) -->
+        <div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">
+          001
+        </div>
 
-				<h1 class="text-6xl md:text-7xl font-serif font-bold text-ink-900 mb-8 leading-tight">
-					Synchronized Media<br />& Transcript Player
-				</h1>
-				<p class="text-xl md:text-2xl text-ink-600 mb-4 max-w-2xl font-serif leading-relaxed">
-					A Svelte 5 component library for bidirectional synchronization between IIIF media playback and transcript navigation. Unstyled primitives for scholarly and archival applications.
-				</p>
-				<p class="text-base text-ink-500 mb-10 max-w-2xl font-serif leading-relaxed">
-					Built on <a href="https://iiif.io" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">IIIF</a> (International Image Interoperability Framework) — the standard used by libraries, museums, and archives worldwide.
-				</p>
-				<div class="flex items-center gap-4 mb-12">
-					<a href="#demo" class="group px-8 py-4 bg-terracotta-500 text-white font-medium hover:bg-terracotta-600 transition-all duration-200 border-2 border-terracotta-600 hover:border-terracotta-700 hover:shadow-lg">
-						<span class="inline-flex items-center gap-2">
-							See Live Demo
-							<svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-							</svg>
-						</span>
-					</a>
-					<a href="#getting-started" class="px-8 py-4 border-2 border-ink-300 text-ink-700 font-medium hover:border-terracotta-500 hover:text-terracotta-600 transition-colors">
-						Get Started
-					</a>
-				</div>
-				<div class="flex flex-wrap items-center gap-6 text-sm text-ink-500 border-t border-l-4 border-terracotta-300 pt-6 pl-6">
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
-						<span class="font-medium">IIIF Compliant</span>
-					</div>
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
-						<span class="font-medium">TypeScript</span>
-					</div>
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
-						<span class="font-medium">Unstyled Primitives</span>
-					</div>
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
-						<span class="font-medium">Open Source</span>
-					</div>
-				</div>
-			</div>
-		</section>
+        <h1
+          class="text-6xl md:text-7xl font-serif font-bold text-ink-900 mb-8 leading-tight"
+        >
+          An IIIF-Native Player<br />for Audio, Video &amp; Transcripts
+        </h1>
+        <p
+          class="text-xl md:text-2xl text-ink-600 mb-4 max-w-2xl font-serif leading-relaxed"
+        >
+          A Svelte 5 component library for bidirectional synchronization between
+          IIIF media playback and transcript navigation. Unstyled primitives for
+          scholarly and archival applications.
+        </p>
+        <p
+          class="text-base text-ink-500 mb-10 max-w-2xl font-serif leading-relaxed"
+        >
+          Built on <a
+            href="https://iiif.io"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-500 hover:text-terracotta-600 underline"
+            >IIIF</a
+          > (International Image Interoperability Framework) — the standard used by
+          libraries, museums, and archives worldwide.
+        </p>
+        <div class="flex items-center gap-4 mb-12">
+          <a
+            href="#demo"
+            class="group px-8 py-4 bg-terracotta-500 text-white font-medium hover:bg-terracotta-600 transition-all duration-200 border-2 border-terracotta-600 hover:border-terracotta-700 hover:shadow-lg"
+          >
+            <span class="inline-flex items-center gap-2">
+              See Live Demo
+              <svg
+                class="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"></path>
+              </svg>
+            </span>
+          </a>
+          <a
+            href="#getting-started"
+            class="px-8 py-4 border-2 border-ink-300 text-ink-700 font-medium hover:border-terracotta-500 hover:text-terracotta-600 transition-colors"
+          >
+            Get Started
+          </a>
+        </div>
+        <div
+          class="flex flex-wrap items-center gap-6 text-sm text-ink-500 border-t border-l-4 border-terracotta-300 pt-6 pl-6"
+        >
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+            <span class="font-medium">IIIF Compliant</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+            <span class="font-medium">TypeScript</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+            <span class="font-medium">Unstyled Primitives</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+            <span class="font-medium">Open Source</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- Live Demo Section -->
-		<section id="demo" class="py-24 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200">
-			<div class="max-w-7xl mx-auto">
-				<div class="mb-12">
-					<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">002</div>
-					<h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">Live Demonstration</h2>
-					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
-						Watch the components in action with a real IIIF video and VTT captions from the IIIF Cookbook. Click transcript segments to seek; play video to auto-scroll the active cue.
-					</p>
-				</div>
+    <!-- Live Demo Section -->
+    <section
+      id="demo"
+      class="py-24 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200"
+    >
+      <div class="max-w-7xl mx-auto">
+        <div class="mb-12">
+          <div
+            class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider"
+          >
+            002
+          </div>
+          <h2
+            class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6"
+          >
+            Live Demonstration
+          </h2>
+          <p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
+            Watch the components in action with a real IIIF video and VTT
+            captions from the IIIF Cookbook. Click transcript segments to seek;
+            play video to auto-scroll the active cue.
+          </p>
+        </div>
 
-				<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
-					<IIIFTranscriptDemo client:load {manifestUrl} {vttUrl} />
-				</div>
+        <div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
+          <IIIFTranscriptDemo client:load {manifestUrl} {vttUrl} />
+        </div>
 
-				<div class="mt-8 p-6 bg-parchment-200 border-2 border-ink-200">
-					<p class="text-ink-600 font-serif">
-						See also: <a href="/iiif-timed-transcript/auto-transcript-demo" class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold">annotations="auto" Demo</a> — the same manifest, with the player building the transcript from the manifest's VTT track instead of the host parsing it.
-					</p>
-					<p class="text-ink-600 font-serif">
-						See also: <a href="/iiif-timed-transcript/avannotate-demo" class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold">AVAnnotate Demo</a> — supplementary annotations from <code class="font-mono text-sm bg-parchment-100 px-1 py-0.5 rounded">canvas.annotations</code> with multi-body speaker tags.
-					</p>
-					<p class="text-ink-600 font-serif">
-						See also: <a href="/iiif-timed-transcript/htmlannotations-demo" class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold">HTML Annotations Demo</a> — with transcript annotations that include HTML formatting.
-					</p>
-					<p class="text-ink-600 font-serif">
-						See also: <a href="/iiif-timed-transcript/avalon-demo" class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold">Avalon Demo</a> — an audio item from IU Media Collections Online, played from its published IIIF manifest.
-					</p>
-					<p class="text-ink-600 font-serif">
-						See also: <a href="/iiif-timed-transcript/airwaves-demo" class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold">Unlocking the Airwaves Demo</a> — a 1954 NAEB radio program with no IIIF at the source, played by wrapping its S3 audio and VTT in a hand-authored manifest.
-					</p>
-				</div>
-			</div>
-		</section>
+        <div class="mt-8 p-6 bg-parchment-200 border-2 border-ink-200">
+          <p class="text-ink-600 font-serif">
+            See also: <a
+              href="/iiif-timed-transcript/auto-transcript-demo"
+              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
+              >annotations="auto" Demo</a
+            > — the same manifest, with the player building the transcript from the
+            manifest's VTT track instead of the host parsing it.
+          </p>
+          <p class="text-ink-600 font-serif">
+            See also: <a
+              href="/iiif-timed-transcript/avannotate-demo"
+              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
+              >AVAnnotate Demo</a
+            > — supplementary annotations from <code
+              class="font-mono text-sm bg-parchment-100 px-1 py-0.5 rounded"
+              >canvas.annotations</code
+            > with multi-body speaker tags.
+          </p>
+          <p class="text-ink-600 font-serif">
+            See also: <a
+              href="/iiif-timed-transcript/htmlannotations-demo"
+              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
+              >HTML Annotations Demo</a
+            > — with transcript annotations that include HTML formatting.
+          </p>
+          <p class="text-ink-600 font-serif">
+            See also: <a
+              href="/iiif-timed-transcript/avalon-demo"
+              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
+              >Avalon Demo</a
+            > — an audio item from IU Media Collections Online, played from its published
+            IIIF manifest.
+          </p>
+          <p class="text-ink-600 font-serif">
+            See also: <a
+              href="/iiif-timed-transcript/airwaves-demo"
+              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
+              >Unlocking the Airwaves Demo</a
+            > — a 1954 NAEB radio program with no IIIF at the source, played by wrapping
+            its S3 audio and VTT in a hand-authored manifest.
+          </p>
+        </div>
+      </div>
+    </section>
 
-		<!-- SEO Structured Data Section -->
-		<section id="seo" class="py-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
-			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">003</div>
-				<h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">SEO: Structured Data from VTT</h2>
-				<p class="text-lg text-ink-600 mb-8 max-w-3xl font-serif leading-relaxed">
-					Transcript text is invisible to search engines when it only lives inside a VTT file. By parsing VTT at build time with
-					<a href="https://github.com/vidstack/captions" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">media-captions</a>,
-					you can inject the full transcript into <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">Schema.org/VideoObject</code> structured data — making every word indexable by Google, Bing, and AI systems.
-				</p>
+    <!-- SEO Structured Data Section -->
+    <section
+      id="seo"
+      class="py-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200"
+    >
+      <div class="max-w-4xl mx-auto">
+        <div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">
+          003
+        </div>
+        <h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">
+          SEO: Structured Data from VTT
+        </h2>
+        <p
+          class="text-lg text-ink-600 mb-8 max-w-3xl font-serif leading-relaxed"
+        >
+          Transcript text is invisible to search engines when it only lives
+          inside a VTT file. By parsing VTT at build time with
+          <a
+            href="https://github.com/vidstack/captions"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-500 hover:text-terracotta-600 underline"
+            >media-captions</a
+          >, you can inject the full transcript into <code
+            class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
+            >Schema.org/VideoObject</code
+          > structured data — making every word indexable by Google, Bing, and AI
+          systems.
+        </p>
 
-				<div class="bg-amber-50 border-l-4 border-amber-400 p-5 mb-8">
-					<p class="text-amber-900 font-serif">
-						<strong class="font-semibold">This page practices what it preaches.</strong>
-						View source on this page to see the <code class="font-mono text-sm bg-amber-100 px-1 py-0.5 rounded">&lt;script type="application/ld+json"&gt;</code>
-						in the <code class="font-mono text-sm bg-amber-100 px-1 py-0.5 rounded">&lt;head&gt;</code> — generated at build time from the same IIIF manifest that powers the interactive demo above.
-					</p>
-				</div>
+        <div class="bg-amber-50 border-l-4 border-amber-400 p-5 mb-8">
+          <p class="text-amber-900 font-serif">
+            <strong class="font-semibold"
+              >This page practices what it preaches.</strong
+            >
+            View source on this page to see the <code
+              class="font-mono text-sm bg-amber-100 px-1 py-0.5 rounded"
+              >&lt;script type="application/ld+json"&gt;</code
+            >
+            in the <code
+              class="font-mono text-sm bg-amber-100 px-1 py-0.5 rounded"
+              >&lt;head&gt;</code
+            > — generated at build time from the same IIIF manifest that powers the
+            interactive demo above.
+          </p>
+        </div>
 
-				<div class="space-y-10">
-					<!-- The pattern -->
-					<div class="border-l-4 border-terracotta-400 pl-8">
-						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">The Pattern: IIIF Manifest → Structured Data</h3>
-						<p class="text-ink-600 mb-4 font-serif">
-							In an Astro page, the frontmatter runs at build time on the server.
-							Fetch the same IIIF manifest the player uses, extract the transcript text, and inject it as
-							<code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">Schema.org</code> structured data.
-							The manifest is the single source of truth for both the player and search engines.
-						</p>
-						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
-							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-astro">{`---
+        <div class="space-y-10">
+          <!-- The pattern -->
+          <div class="border-l-4 border-terracotta-400 pl-8">
+            <h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">
+              The Pattern: IIIF Manifest → Structured Data
+            </h3>
+            <p class="text-ink-600 mb-4 font-serif">
+              In an Astro page, the frontmatter runs at build time on the
+              server. Fetch the same IIIF manifest the player uses, extract the
+              transcript text, and inject it as
+              <code
+                class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
+                >Schema.org</code
+              > structured data. The manifest is the single source of truth for both
+              the player and search engines.
+            </p>
+            <div class="bg-parchment-200 border-2 border-ink-200 p-6">
+              <pre
+                class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-astro">{`---
 // Astro frontmatter — runs at build time
 import { parseText } from 'media-captions';
 import {
@@ -243,69 +395,127 @@ const jsonLd = {
   <script type="application/ld+json"
     set:html={JSON.stringify(jsonLd)} />
 </head>`}</code></pre>
-						</div>
-						<p class="text-ink-500 text-sm mt-3 font-serif">
-							Path A handles manifests with embedded transcript annotations (like the
-							<a href="/iiif-timed-transcript/avannotate-demo" class="text-terracotta-500 hover:text-terracotta-600 underline">AVAnnotate demo</a>).
-							Path B handles manifests that reference an external VTT file
-							(<a href="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">IIIF Cookbook recipe 0219</a>),
-							using <a href="https://github.com/vidstack/captions" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">media-captions</a> as a lightweight VTT parser.
-						</p>
-					</div>
+            </div>
+            <p class="text-ink-500 text-sm mt-3 font-serif">
+              Path A handles manifests with embedded transcript annotations
+              (like the
+              <a
+                href="/iiif-timed-transcript/avannotate-demo"
+                class="text-terracotta-500 hover:text-terracotta-600 underline"
+                >AVAnnotate demo</a
+              >). Path B handles manifests that reference an external VTT file (<a
+                href="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/"
+                target="_blank"
+                rel="noopener"
+                class="text-terracotta-500 hover:text-terracotta-600 underline"
+                >IIIF Cookbook recipe 0219</a
+              >), using <a
+                href="https://github.com/vidstack/captions"
+                target="_blank"
+                rel="noopener"
+                class="text-terracotta-500 hover:text-terracotta-600 underline"
+                >media-captions</a
+              > as a lightweight VTT parser.
+            </p>
+          </div>
 
-					<!-- Why media-captions -->
-					<div class="border-l-4 border-terracotta-400 pl-8">
-						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Why <code class="font-mono">media-captions</code>?</h3>
-						<p class="text-ink-600 mb-6 font-serif">
-							<a href="https://github.com/vidstack/captions" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">media-captions</a>
-							is the caption parsing library from the
-							<a href="https://vidstack.io" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Vidstack</a> project
-							(3,400+ GitHub stars). MIT licensed, actively maintained, and built specifically to address
-							the gaps in native browser caption support.
-						</p>
-						<div class="grid sm:grid-cols-2 gap-6">
-							<div class="bg-parchment-100 border border-ink-200 p-5">
-								<h4 class="font-semibold text-ink-900 mb-2">W3C WebVTT spec-compliant</h4>
-								<p class="text-ink-600 text-sm font-serif">
-									Follows the <a href="https://www.w3.org/TR/webvtt1/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">W3C WebVTT specification</a>
-									for parsing and rendering — correct cue settings, region positioning, and collision detection.
-									Not a regex approximation, but a proper spec implementation.
-								</p>
-							</div>
-							<div class="bg-parchment-100 border border-ink-200 p-5">
-								<h4 class="font-semibold text-ink-900 mb-2">Accessibility-driven</h4>
-								<p class="text-ink-600 text-sm font-serif">
-									Built to meet FCC Communications and Video Accessibility Act requirements.
-									Correct caption positioning matters for WCAG compliance — native browser <code class="font-mono text-xs">::cue</code> styling is too limited for
-									accessible overlay rendering.
-								</p>
-							</div>
-							<div class="bg-parchment-100 border border-ink-200 p-5">
-								<h4 class="font-semibold text-ink-900 mb-2">Same library, both sides</h4>
-								<p class="text-ink-600 text-sm font-serif">
-									Works in Astro frontmatter (Node/build time) and in Svelte components (browser/runtime).
-									One dependency for SEO extraction and interactive playback — no environment-specific forks.
-								</p>
-							</div>
-							<div class="bg-parchment-100 border border-ink-200 p-5">
-								<h4 class="font-semibold text-ink-900 mb-2">Multi-format, ~5kB</h4>
-								<p class="text-ink-600 text-sm font-serif">
-									Parses VTT, SRT, and SSA/ASS. TypeScript-native with proper <code class="font-mono text-xs">VTTCue</code> types.
-									Tree-shakes to just the parser you use. Zero dependencies.
-								</p>
-							</div>
-						</div>
-					</div>
+          <!-- Why media-captions -->
+          <div class="border-l-4 border-terracotta-400 pl-8">
+            <h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">
+              Why <code class="font-mono">media-captions</code>?
+            </h3>
+            <p class="text-ink-600 mb-6 font-serif">
+              <a
+                href="https://github.com/vidstack/captions"
+                target="_blank"
+                rel="noopener"
+                class="text-terracotta-500 hover:text-terracotta-600 underline"
+                >media-captions</a
+              >
+              is the caption parsing library from the
+              <a
+                href="https://vidstack.io"
+                target="_blank"
+                rel="noopener"
+                class="text-terracotta-500 hover:text-terracotta-600 underline"
+                >Vidstack</a
+              > project (3,400+ GitHub stars). MIT licensed, actively maintained,
+              and built specifically to address the gaps in native browser caption
+              support.
+            </p>
+            <div class="grid sm:grid-cols-2 gap-6">
+              <div class="bg-parchment-100 border border-ink-200 p-5">
+                <h4 class="font-semibold text-ink-900 mb-2">
+                  W3C WebVTT spec-compliant
+                </h4>
+                <p class="text-ink-600 text-sm font-serif">
+                  Follows the <a
+                    href="https://www.w3.org/TR/webvtt1/"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-terracotta-500 hover:text-terracotta-600 underline"
+                    >W3C WebVTT specification</a
+                  >
+                  for parsing and rendering — correct cue settings, region positioning,
+                  and collision detection. Not a regex approximation, but a proper
+                  spec implementation.
+                </p>
+              </div>
+              <div class="bg-parchment-100 border border-ink-200 p-5">
+                <h4 class="font-semibold text-ink-900 mb-2">
+                  Accessibility-driven
+                </h4>
+                <p class="text-ink-600 text-sm font-serif">
+                  Built to meet FCC Communications and Video Accessibility Act
+                  requirements. Correct caption positioning matters for WCAG
+                  compliance — native browser <code class="font-mono text-xs"
+                    >::cue</code
+                  > styling is too limited for accessible overlay rendering.
+                </p>
+              </div>
+              <div class="bg-parchment-100 border border-ink-200 p-5">
+                <h4 class="font-semibold text-ink-900 mb-2">
+                  Same library, both sides
+                </h4>
+                <p class="text-ink-600 text-sm font-serif">
+                  Works in Astro frontmatter (Node/build time) and in Svelte
+                  components (browser/runtime). One dependency for SEO
+                  extraction and interactive playback — no environment-specific
+                  forks.
+                </p>
+              </div>
+              <div class="bg-parchment-100 border border-ink-200 p-5">
+                <h4 class="font-semibold text-ink-900 mb-2">
+                  Multi-format, ~5kB
+                </h4>
+                <p class="text-ink-600 text-sm font-serif">
+                  Parses VTT, SRT, and SSA/ASS. TypeScript-native with proper <code
+                    class="font-mono text-xs">VTTCue</code
+                  > types. Tree-shakes to just the parser you use. Zero dependencies.
+                </p>
+              </div>
+            </div>
+          </div>
 
-					<!-- What search engines see -->
-					<div class="border-l-4 border-terracotta-400 pl-8">
-						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">What Search Engines See</h3>
-						<p class="text-ink-600 mb-4 font-serif">
-							Without structured data, crawlers see a <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">&lt;video&gt;</code> tag and a VTT URL — opaque binary content.
-							With the <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">transcript</code> property, every spoken word becomes indexable text:
-						</p>
-						<div class="bg-ink-900 border-2 border-ink-800 p-6 overflow-x-auto shadow-lg">
-							<pre class="text-sm font-mono text-parchment-100"><code>{`<script type="application/ld+json">
+          <!-- What search engines see -->
+          <div class="border-l-4 border-terracotta-400 pl-8">
+            <h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">
+              What Search Engines See
+            </h3>
+            <p class="text-ink-600 mb-4 font-serif">
+              Without structured data, crawlers see a <code
+                class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
+                >&lt;video&gt;</code
+              > tag and a VTT URL — opaque binary content. With the <code
+                class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
+                >transcript</code
+              > property, every spoken word becomes indexable text:
+            </p>
+            <div
+              class="bg-ink-900 border-2 border-ink-800 p-6 overflow-x-auto shadow-lg"
+            >
+              <pre
+                class="text-sm font-mono text-parchment-100"><code>{`<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "VideoObject",
@@ -313,50 +523,81 @@ const jsonLd = {
   "transcript": "Do you know the lunchroom rules? ..."
 }
 </script>`}</code></pre>
-						</div>
-						<p class="text-ink-500 text-sm mt-3 font-serif">
-							The <code class="font-mono text-xs">transcript</code> property is defined on
-							<a href="https://schema.org/AudioObject" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Schema.org/AudioObject</a>
-							and
-							<a href="https://schema.org/VideoObject" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Schema.org/VideoObject</a>
-							(inherited from MediaObject). Works for both audio and video content.
-						</p>
-					</div>
-				</div>
-			</div>
-		</section>
+            </div>
+            <p class="text-ink-500 text-sm mt-3 font-serif">
+              The <code class="font-mono text-xs">transcript</code> property is defined
+              on
+              <a
+                href="https://schema.org/AudioObject"
+                target="_blank"
+                rel="noopener"
+                class="text-terracotta-500 hover:text-terracotta-600 underline"
+                >Schema.org/AudioObject</a
+              >
+              and
+              <a
+                href="https://schema.org/VideoObject"
+                target="_blank"
+                rel="noopener"
+                class="text-terracotta-500 hover:text-terracotta-600 underline"
+                >Schema.org/VideoObject</a
+              >
+              (inherited from MediaObject). Works for both audio and video content.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- Getting Started Section -->
-		<section id="getting-started" class="py-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
-			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">004</div>
-				<h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">Getting Started</h2>
-				<p class="text-lg text-ink-600 mb-12 font-serif leading-relaxed">
-					Install the library and start building synchronized media experiences in minutes. No configuration required.
-				</p>
+    <!-- Getting Started Section -->
+    <section
+      id="getting-started"
+      class="py-24 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200"
+    >
+      <div class="max-w-4xl mx-auto">
+        <div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">
+          004
+        </div>
+        <h2 class="text-4xl md:text-5xl font-serif font-bold text-ink-900 mb-6">
+          Getting Started
+        </h2>
+        <p class="text-lg text-ink-600 mb-12 font-serif leading-relaxed">
+          Install the library and start building synchronized media experiences
+          in minutes. No configuration required.
+        </p>
 
-				<div class="space-y-10">
-					<!-- Installation -->
-					<div class="border-l-4 border-terracotta-400 pl-8">
-						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Installation</h3>
-						<p class="text-ink-600 mb-4 italic">
-							Note: This package is not yet published to npm. Install from GitHub:
-						</p>
-						<div class="bg-ink-900 border-2 border-ink-800 p-6 overflow-x-auto shadow-lg mb-4">
-							<code class="text-sm font-mono text-parchment-100">
-								pnpm add github:umd-mith/iiif-timed-transcript
-							</code>
-						</div>
-						<p class="text-ink-600 text-sm">
-							Peer dependencies: <code class="font-mono text-terracotta-600">svelte@^5</code>
-						</p>
-					</div>
+        <div class="space-y-10">
+          <!-- Installation -->
+          <div class="border-l-4 border-terracotta-400 pl-8">
+            <h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">
+              Installation
+            </h3>
+            <p class="text-ink-600 mb-4 italic">
+              Note: This package is not yet published to npm. Install from
+              GitHub:
+            </p>
+            <div
+              class="bg-ink-900 border-2 border-ink-800 p-6 overflow-x-auto shadow-lg mb-4"
+            >
+              <code class="text-sm font-mono text-parchment-100">
+                pnpm add github:umd-mith/iiif-timed-transcript
+              </code>
+            </div>
+            <p class="text-ink-600 text-sm">
+              Peer dependencies: <code class="font-mono text-terracotta-600"
+                >svelte@^5</code
+              >
+            </p>
+          </div>
 
-					<!-- Basic Usage -->
-					<div class="border-l-4 border-terracotta-400 pl-8">
-						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Basic Usage</h3>
-						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
-							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<script>
+          <!-- Basic Usage -->
+          <div class="border-l-4 border-terracotta-400 pl-8">
+            <h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">
+              Basic Usage
+            </h3>
+            <div class="bg-parchment-200 border-2 border-ink-200 p-6">
+              <pre
+                class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<script>
   import { IIIFPlayer, type Annotation } from '@umd-mith/iiif-timed-transcript';
 
   const manifestUrl = 'https://example.org/manifest.json';
@@ -386,17 +627,21 @@ const jsonLd = {
     <IIIFPlayer.TranscriptSegments />
   </IIIFPlayer.Transcript>
 </IIIFPlayer.Root>`}</code></pre>
-						</div>
-					</div>
+            </div>
+          </div>
 
-					<!-- Using with Astro -->
-					<div class="border-l-4 border-terracotta-400 pl-8">
-						<h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">Using with Astro</h3>
-						<p class="text-ink-600 mb-4">
-							The compound components work seamlessly in Astro islands with proper hydration directives:
-						</p>
-						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
-							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-astro">{`<IIIFPlayer.Root client:load {manifestUrl} canvasIndex={0}>
+          <!-- Using with Astro -->
+          <div class="border-l-4 border-terracotta-400 pl-8">
+            <h3 class="text-2xl font-serif font-bold text-ink-900 mb-4">
+              Using with Astro
+            </h3>
+            <p class="text-ink-600 mb-4">
+              The compound components work seamlessly in Astro islands with
+              proper hydration directives:
+            </p>
+            <div class="bg-parchment-200 border-2 border-ink-200 p-6">
+              <pre
+                class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-astro">{`<IIIFPlayer.Root client:load {manifestUrl} canvasIndex={0}>
   <IIIFPlayer.Viewer />
 
   <IIIFPlayer.Controls>
@@ -413,110 +658,211 @@ const jsonLd = {
     <IIIFPlayer.TranscriptSegments />
   </IIIFPlayer.Transcript>
 </IIIFPlayer.Root>`}</code></pre>
-						</div>
-						<div class="mt-4 bg-amber-50 border-l-4 border-amber-400 p-4">
-							<p class="text-sm text-amber-900">
-								<strong class="font-semibold">Hydration tip:</strong> Use <code class="font-mono text-terracotta-600">client:load</code> on the wrapper component (here, Root) for immediate media initialization. Child components inside the hydration boundary do not need their own <code class="font-mono text-terracotta-600">client:</code> directives — Astro hydrates the entire island.
-							</p>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
+            </div>
+            <div class="mt-4 bg-amber-50 border-l-4 border-amber-400 p-4">
+              <p class="text-sm text-amber-900">
+                <strong class="font-semibold">Hydration tip:</strong> Use <code
+                  class="font-mono text-terracotta-600">client:load</code
+                > on the wrapper component (here, Root) for immediate media initialization.
+                Child components inside the hydration boundary do not need their own
+                <code class="font-mono text-terracotta-600">client:</code> directives
+                — Astro hydrates the entire island.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- Components Section -->
-		<section id="components" class="py-20 px-4 sm:px-6 lg:px-8 bg-parchment-50">
-			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">005</div>
-				<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-6">Component API</h2>
-				<p class="text-lg text-ink-600 mb-12 font-serif leading-relaxed">
-					Composable building blocks for creating custom IIIF media player interfaces. All components are unstyled primitives with data-* attributes for styling.
-				</p>
+    <!-- Components Section -->
+    <section id="components" class="py-20 px-4 sm:px-6 lg:px-8 bg-parchment-50">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-sm font-mono text-terracotta-400 mb-4 tracking-wider">
+          005
+        </div>
+        <h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-6">
+          Component API
+        </h2>
+        <p class="text-lg text-ink-600 mb-12 font-serif leading-relaxed">
+          Composable building blocks for creating custom IIIF media player
+          interfaces. All components are unstyled primitives with data-*
+          attributes for styling.
+        </p>
 
-				<div class="space-y-12">
-					<!-- IIIFPlayer.Root -->
-					<div class="border-l-4 border-terracotta-500 pl-6">
-						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Root</h3>
-						<p class="text-ink-600 mb-4">
-							Top-level context provider that manages player state and coordinates all child components. Provides PlayerContext to children.
-						</p>
-						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
-							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">manifestUrl</span>: string - IIIF Presentation 3.0 manifest URL</li>
-								<li><span class="text-terracotta-600">canvasIndex</span>?: number - Canvas to display (default: 0)</li>
-								<li><span class="text-terracotta-600">initialTime</span>?: number - Start playback at specific time</li>
-								<li><span class="text-terracotta-600">autoplay</span>?: boolean - Auto-play when ready (default: false)</li>
-								<li><span class="text-terracotta-600">class</span>?: string - CSS class for the root wrapper</li>
-							</ul>
-						</div>
-					</div>
+        <div class="space-y-12">
+          <!-- IIIFPlayer.Root -->
+          <div class="border-l-4 border-terracotta-500 pl-6">
+            <h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">
+              IIIFPlayer.Root
+            </h3>
+            <p class="text-ink-600 mb-4">
+              Top-level context provider that manages player state and
+              coordinates all child components. Provides PlayerContext to
+              children.
+            </p>
+            <div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
+              <h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
+              <ul class="space-y-2 text-sm font-mono">
+                <li>
+                  <span class="text-terracotta-600">manifestUrl</span>: string -
+                  IIIF Presentation 3.0 manifest URL
+                </li>
+                <li>
+                  <span class="text-terracotta-600">canvasIndex</span>?: number
+                  - Canvas to display (default: 0)
+                </li>
+                <li>
+                  <span class="text-terracotta-600">initialTime</span>?: number
+                  - Start playback at specific time
+                </li>
+                <li>
+                  <span class="text-terracotta-600">autoplay</span>?: boolean -
+                  Auto-play when ready (default: false)
+                </li>
+                <li>
+                  <span class="text-terracotta-600">class</span>?: string - CSS
+                  class for the root wrapper
+                </li>
+              </ul>
+            </div>
+          </div>
 
-					<!-- IIIFPlayer.Viewer -->
-					<div class="border-l-4 border-terracotta-500 pl-6">
-						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Viewer</h3>
-						<p class="text-ink-600 mb-4">
-							Renders the IIIF media resource (video/audio) from the current canvas. Receives PlayerContext from Root.
-						</p>
-						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
-							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">controls</span>?: boolean - Show native browser controls (default: false)</li>
-								<li><span class="text-terracotta-600">crossOrigin</span>?: 'anonymous' | 'use-credentials' - CORS setting for media</li>
-								<li><span class="text-terracotta-600">class</span>?: string - CSS class for the media element</li>
-							</ul>
-						</div>
-					</div>
+          <!-- IIIFPlayer.Viewer -->
+          <div class="border-l-4 border-terracotta-500 pl-6">
+            <h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">
+              IIIFPlayer.Viewer
+            </h3>
+            <p class="text-ink-600 mb-4">
+              Renders the IIIF media resource (video/audio) from the current
+              canvas. Receives PlayerContext from Root.
+            </p>
+            <div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
+              <h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
+              <ul class="space-y-2 text-sm font-mono">
+                <li>
+                  <span class="text-terracotta-600">controls</span>?: boolean -
+                  Show native browser controls (default: false)
+                </li>
+                <li>
+                  <span class="text-terracotta-600">crossOrigin</span>?:
+                  'anonymous' | 'use-credentials' - CORS setting for media
+                </li>
+                <li>
+                  <span class="text-terracotta-600">class</span>?: string - CSS
+                  class for the media element
+                </li>
+              </ul>
+            </div>
+          </div>
 
-					<!-- IIIFPlayer.Controls -->
-					<div class="border-l-4 border-terracotta-500 pl-6">
-						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Controls</h3>
-						<p class="text-ink-600 mb-4">
-							Container for player control components. Use as layout wrapper for PlayButton, Progress, Skip, etc.
-						</p>
-						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-ink-900 mb-2">Child Components:</h4>
-							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">PlayButton</span> - Toggle play/pause</li>
-								<li><span class="text-terracotta-600">Progress</span> - Seekable progress bar</li>
-								<li><span class="text-terracotta-600">Skip</span> - Skip forward/back (seconds prop)</li>
-								<li><span class="text-terracotta-600">Speed</span> - Playback speed selector</li>
-								<li><span class="text-terracotta-600">Time</span> - Display current time and duration</li>
-							</ul>
-						</div>
-					</div>
+          <!-- IIIFPlayer.Controls -->
+          <div class="border-l-4 border-terracotta-500 pl-6">
+            <h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">
+              IIIFPlayer.Controls
+            </h3>
+            <p class="text-ink-600 mb-4">
+              Container for player control components. Use as layout wrapper for
+              PlayButton, Progress, Skip, etc.
+            </p>
+            <div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
+              <h4 class="font-semibold text-ink-900 mb-2">Child Components:</h4>
+              <ul class="space-y-2 text-sm font-mono">
+                <li>
+                  <span class="text-terracotta-600">PlayButton</span> - Toggle play/pause
+                </li>
+                <li>
+                  <span class="text-terracotta-600">Progress</span> - Seekable progress
+                  bar
+                </li>
+                <li>
+                  <span class="text-terracotta-600">Skip</span> - Skip forward/back
+                  (seconds prop)
+                </li>
+                <li>
+                  <span class="text-terracotta-600">Speed</span> - Playback speed
+                  selector
+                </li>
+                <li>
+                  <span class="text-terracotta-600">Time</span> - Display current
+                  time and duration
+                </li>
+              </ul>
+            </div>
+          </div>
 
-					<!-- IIIFPlayer.Transcript -->
-					<div class="border-l-4 border-terracotta-500 pl-6">
-						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">IIIFPlayer.Transcript</h3>
-						<p class="text-ink-600 mb-4">
-							Bidirectional synchronized transcript panel. Click segment to seek, video auto-scrolls active segment. Compose with compound children for full control over layout.
-						</p>
-						<div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
-							<h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
-							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">annotations</span>: Annotation[] - Transcript segments with timing</li>
-								<li><span class="text-terracotta-600">ariaLabel</span>?: string - Region aria-label (default: 'Media transcript')</li>
-								<li><span class="text-terracotta-600">onActiveAnnotationChange</span>?: (annotation | null) => void - Active segment callback</li>
-								<li><span class="text-terracotta-600">onSegmentClick</span>?: (annotation, event) => void - Click handler with preventDefault</li>
-								<li><span class="text-terracotta-600">class</span>?: string - CSS class for the transcript region</li>
-							</ul>
-							<h4 class="font-semibold text-ink-900 mt-4 mb-2">Compound Children:</h4>
-							<ul class="space-y-2 text-sm font-mono">
-								<li><span class="text-terracotta-600">TranscriptSearch</span> - Search UI with match navigation</li>
-								<li><span class="text-terracotta-600">TranscriptSegments</span> - Segment list with active/highlight states</li>
-							</ul>
-						</div>
-					</div>
+          <!-- IIIFPlayer.Transcript -->
+          <div class="border-l-4 border-terracotta-500 pl-6">
+            <h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">
+              IIIFPlayer.Transcript
+            </h3>
+            <p class="text-ink-600 mb-4">
+              Bidirectional synchronized transcript panel. Click segment to
+              seek, video auto-scrolls active segment. Compose with compound
+              children for full control over layout.
+            </p>
+            <div class="bg-parchment-100 rounded-lg p-4 border border-ink-200">
+              <h4 class="font-semibold text-ink-900 mb-2">Props:</h4>
+              <ul class="space-y-2 text-sm font-mono">
+                <li>
+                  <span class="text-terracotta-600">annotations</span>:
+                  Annotation[] - Transcript segments with timing
+                </li>
+                <li>
+                  <span class="text-terracotta-600">ariaLabel</span>?: string -
+                  Region aria-label (default: 'Media transcript')
+                </li>
+                <li>
+                  <span class="text-terracotta-600"
+                    >onActiveAnnotationChange</span
+                  >?: (annotation | null) => void - Active segment callback
+                </li>
+                <li>
+                  <span class="text-terracotta-600">onSegmentClick</span>?:
+                  (annotation, event) => void - Click handler with
+                  preventDefault
+                </li>
+                <li>
+                  <span class="text-terracotta-600">class</span>?: string - CSS
+                  class for the transcript region
+                </li>
+              </ul>
+              <h4 class="font-semibold text-ink-900 mt-4 mb-2">
+                Compound Children:
+              </h4>
+              <ul class="space-y-2 text-sm font-mono">
+                <li>
+                  <span class="text-terracotta-600">TranscriptSearch</span> - Search
+                  UI with match navigation
+                </li>
+                <li>
+                  <span class="text-terracotta-600">TranscriptSegments</span> - Segment
+                  list with active/highlight states
+                </li>
+              </ul>
+            </div>
+          </div>
 
-					<!-- Custom Segment Snippets -->
-					<div class="border-l-4 border-terracotta-500 pl-6">
-						<h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">Custom Segment Rendering</h3>
-						<p class="text-ink-600 mb-4">
-							Use the <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">segment</code> snippet on <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">TranscriptSegments</code> for full control over how each segment renders. The <code class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded">segmentAttrs</code> spread provides all a11y attributes, data attributes, tabindex, and click handling automatically.
-						</p>
-						<div class="bg-parchment-200 border-2 border-ink-200 p-6">
-							<pre class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<IIIFPlayer.Transcript {annotations}>
+          <!-- Custom Segment Snippets -->
+          <div class="border-l-4 border-terracotta-500 pl-6">
+            <h3 class="text-2xl font-serif font-semibold text-ink-900 mb-3">
+              Custom Segment Rendering
+            </h3>
+            <p class="text-ink-600 mb-4">
+              Use the <code
+                class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
+                >segment</code
+              > snippet on <code
+                class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
+                >TranscriptSegments</code
+              > for full control over how each segment renders. The <code
+                class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
+                >segmentAttrs</code
+              > spread provides all a11y attributes, data attributes, tabindex, and
+              click handling automatically.
+            </p>
+            <div class="bg-parchment-200 border-2 border-ink-200 p-6">
+              <pre
+                class="text-sm font-mono overflow-x-auto text-ink-800"><code class="language-svelte">{`<IIIFPlayer.Transcript {annotations}>
   <IIIFPlayer.TranscriptSearch />
   <IIIFPlayer.TranscriptSegments>
     {#snippet segment({ annotation, isActive, segmentAttrs })}
@@ -529,28 +875,45 @@ const jsonLd = {
     {/snippet}
   </IIIFPlayer.TranscriptSegments>
 </IIIFPlayer.Transcript>`}</code></pre>
-						</div>
-						<p class="text-ink-500 text-sm mt-3 font-serif">
-							The <code class="font-mono text-xs">segmentAttrs</code> object includes <code class="font-mono text-xs">data-annotation-id</code>, <code class="font-mono text-xs">data-state</code>, <code class="font-mono text-xs">aria-current</code>, <code class="font-mono text-xs">role</code>, <code class="font-mono text-xs">tabindex</code>, and <code class="font-mono text-xs">onclick</code> — so you never need to wire those up manually. See the <a href="/iiif-timed-transcript/avannotate-demo" class="text-terracotta-500 hover:text-terracotta-600 underline">AVAnnotate demo</a> for a full example with speaker tags and filtering.
-						</p>
-					</div>
-				</div>
-			</div>
-		</section>
+            </div>
+            <p class="text-ink-500 text-sm mt-3 font-serif">
+              The <code class="font-mono text-xs">segmentAttrs</code> object includes
+              <code class="font-mono text-xs">data-annotation-id</code>, <code
+                class="font-mono text-xs">data-state</code
+              >, <code class="font-mono text-xs">aria-current</code>, <code
+                class="font-mono text-xs">role</code
+              >, <code class="font-mono text-xs">tabindex</code>, and <code
+                class="font-mono text-xs">onclick</code
+              > — so you never need to wire those up manually. See the <a
+                href="/iiif-timed-transcript/avannotate-demo"
+                class="text-terracotta-500 hover:text-terracotta-600 underline"
+                >AVAnnotate demo</a
+              > for a full example with speaker tags and filtering.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- Styling Guide Section -->
-		<section id="styling" class="py-20 px-4 sm:px-6 lg:px-8">
-			<div class="max-w-4xl mx-auto">
-				<h2 class="text-3xl md:text-4xl font-bold text-ink-900 mb-4">Styling Guide</h2>
-				<p class="text-lg text-ink-600 mb-8">
-					All components ship unstyled with data-* attributes. Here's a minimal example to get started.
-				</p>
+    <!-- Styling Guide Section -->
+    <section id="styling" class="py-20 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-bold text-ink-900 mb-4">
+          Styling Guide
+        </h2>
+        <p class="text-lg text-ink-600 mb-8">
+          All components ship unstyled with data-* attributes. Here's a minimal
+          example to get started.
+        </p>
 
-				<div class="space-y-8">
-					<div>
-						<h3 class="text-2xl font-semibold text-ink-900 mb-4">Transcript Segment Highlighting</h3>
-						<div class="bg-parchment-50 rounded-lg p-6 border border-ink-200">
-							<pre class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Target transcript segments via data attributes */
+        <div class="space-y-8">
+          <div>
+            <h3 class="text-2xl font-semibold text-ink-900 mb-4">
+              Transcript Segment Highlighting
+            </h3>
+            <div class="bg-parchment-50 rounded-lg p-6 border border-ink-200">
+              <pre
+                class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Target transcript segments via data attributes */
 [data-annotation-id] {
   padding: 0.75rem;
   margin-bottom: 0.5rem;
@@ -590,13 +953,16 @@ const jsonLd = {
   color: #1f2937;
   line-height: 1.5;
 }`}</code></pre>
-						</div>
-					</div>
+            </div>
+          </div>
 
-					<div>
-						<h3 class="text-2xl font-semibold text-ink-900 mb-4">Audio Player Controls</h3>
-						<div class="bg-parchment-50 rounded-lg p-6 border border-ink-200">
-							<pre class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Style control bar via data attributes */
+          <div>
+            <h3 class="text-2xl font-semibold text-ink-900 mb-4">
+              Audio Player Controls
+            </h3>
+            <div class="bg-parchment-50 rounded-lg p-6 border border-ink-200">
+              <pre
+                class="text-sm font-mono overflow-x-auto"><code class="language-css">{`/* Style control bar via data attributes */
 [data-audio-controls] {
   display: flex;
   flex-direction: column;
@@ -636,22 +1002,34 @@ select[data-audio-control="speed"] {
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }`}</code></pre>
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- Footer -->
-		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
-			<div class="max-w-7xl mx-auto text-center">
-				<p class="mb-4">
-					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
-				</p>
-				<p class="text-sm">
-					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
-				</p>
-			</div>
-		</footer>
-	</body>
+    <!-- Footer -->
+    <footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
+      <div class="max-w-7xl mx-auto text-center">
+        <p class="mb-4">
+          Built by <a
+            href="https://mith.umd.edu"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-400 hover:text-terracotta-300"
+            >Maryland Institute for Technology in the Humanities</a
+          >
+        </p>
+        <p class="text-sm">
+          Licensed under BSD-3-Clause-Clear • <a
+            href="https://github.com/umd-mith/iiif-timed-transcript"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-400 hover:text-terracotta-300"
+            >View on GitHub</a
+          >
+        </p>
+      </div>
+    </footer>
+  </body>
 </html>

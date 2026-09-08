@@ -1,29 +1,26 @@
-name: Publish to GitHub Packages
+name: Publish to npm
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      id-token: write # npm OIDC trusted publishing (no stored token)
     steps:
       - uses: actions/checkout@v6
-      # pnpm version is pinned via the "packageManager" field in package.json;
-      # omitting `version` here makes action-setup read that single source of truth.
+      # pnpm version comes from the "packageManager" field in package.json.
       - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          # Node 24 bundles npm >= 11.5.1, required for OIDC trusted publishing.
+          node-version: "24"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: |
-          echo "@umd-mith:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=$NODE_AUTH_TOKEN" >> .npmrc
-          pnpm publish --no-git-checks --ignore-scripts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # `prepublishOnly` (pnpm run build) runs during `npm publish`, refreshing dist
+      # before packing; provenance attaches to that fresh build.
+      - run: npm publish --provenance --access public

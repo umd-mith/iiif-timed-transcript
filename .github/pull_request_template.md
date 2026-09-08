@@ -2,9 +2,9 @@
 
 ## Test plan
 
-## Changeset
+## Changelog
 
-- [ ] Added a changeset (`pnpm changeset`)
+- [ ] Added an entry under `## [Unreleased]` in `CHANGELOG.md`
 - [ ] N/A — no public API change
 
 ## AI Assistance

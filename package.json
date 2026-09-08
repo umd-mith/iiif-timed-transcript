@@ -13,7 +13,8 @@
   "author": "Trevor Munoz <tmunoz@umd.edu>",
   "license": "BSD-3-Clause-Clear",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "repository": {
     "type": "git",
@@ -63,6 +64,7 @@
     "build:package": "svelte-kit sync && svelte-package",
     "build:element": "vite build --config vite.config.element.ts --mode element-iife && vite build --config vite.config.element.ts --mode element-esm && node scripts/postbuild-element.mjs",
     "build": "pnpm run build:package && pnpm run build:element && publint",
+    "smoke:docs": "node scripts/smoke-docs.mjs",
     "dev": "svelte-package --watch",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"options_missing_custom_element:ignore\"",
     "test": "vitest run",
@@ -70,13 +72,11 @@
     "test:csp": "node scripts/csp-harness/run.mjs",
     "lint": "eslint src/ && prettier --check .",
     "format": "prettier --write .",
-    "changeset": "changeset",
-    "release": "pnpm run build && changeset publish",
-    "prepublishOnly": "pnpm run build && pnpm run test",
+    "release": "./scripts/release.sh",
+    "prepublishOnly": "pnpm run build",
     "prepare": "husky && pnpm run build"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.8",
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
     "@eslint/js": "^10.0.1",
@@ -95,6 +95,7 @@
     "husky": "^9.1.7",
     "playwright": "^1.58.2",
     "prettier": "^3.8.1",
+    "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-svelte": "^3.5.0",
     "publint": "^0.3.17",
     "svelte": "^5.53.3",
