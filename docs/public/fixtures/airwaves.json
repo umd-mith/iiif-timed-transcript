@@ -1,0 +1,69 @@
+{
+  "@context": "http://iiif.io/api/presentation/3/context.json",
+  "id": "https://umd-mith.github.io/iiif-timed-transcript/fixtures/airwaves.json",
+  "type": "Manifest",
+  "label": {
+    "en": ["American language: Americans as makers of words"]
+  },
+  "summary": {
+    "en": [
+      "Mitford M. Mathews, editor of the Dictionary of Americanisms, on how Americans coined new words. The opening program of the NAEB series \"American language\" (University of Chicago, 1954). Audio and transcript from Unlocking the Airwaves; item cpb-aacip-500-1c1tjk8d."
+    ]
+  },
+  "requiredStatement": {
+    "label": { "en": ["Source"] },
+    "value": {
+      "en": [
+        "Audio and auto-generated transcript from Unlocking the Airwaves (unlockingtheairwaves.org), a project of the Maryland Institute for Technology in the Humanities drawing on the American Archive of Public Broadcasting. Transcript produced by Pop Up Archive; uncorrected. This IIIF manifest was authored for the iiif-timed-transcript demo — Unlocking the Airwaves does not itself publish IIIF."
+      ]
+    }
+  },
+  "items": [
+    {
+      "id": "https://umd-mith.github.io/iiif-timed-transcript/fixtures/airwaves.json/canvas/1",
+      "type": "Canvas",
+      "duration": 830.467,
+      "items": [
+        {
+          "id": "https://umd-mith.github.io/iiif-timed-transcript/fixtures/airwaves.json/canvas/1/page/1",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://umd-mith.github.io/iiif-timed-transcript/fixtures/airwaves.json/canvas/1/annotation/audio",
+              "type": "Annotation",
+              "motivation": "painting",
+              "body": {
+                "id": "https://mith-uta.s3.amazonaws.com/data/audio/cpb-aacip-500-1c1tjk8d.mp3",
+                "type": "Sound",
+                "format": "audio/mpeg",
+                "duration": 830.467
+              },
+              "target": "https://umd-mith.github.io/iiif-timed-transcript/fixtures/airwaves.json/canvas/1"
+            }
+          ]
+        }
+      ],
+      "annotations": [
+        {
+          "id": "https://umd-mith.github.io/iiif-timed-transcript/fixtures/airwaves.json/canvas/1/annotations/1",
+          "type": "AnnotationPage",
+          "items": [
+            {
+              "id": "https://umd-mith.github.io/iiif-timed-transcript/fixtures/airwaves.json/canvas/1/annotation/transcript",
+              "type": "Annotation",
+              "motivation": "supplementing",
+              "body": {
+                "id": "https://mith-uta.s3.amazonaws.com/data/transcripts/cpb-aacip-500-1c1tjk8d/cpb-aacip-500-1c1tjk8d.vtt",
+                "type": "Text",
+                "format": "text/vtt",
+                "language": "en",
+                "label": { "en": ["English captions"] }
+              },
+              "target": "https://umd-mith.github.io/iiif-timed-transcript/fixtures/airwaves.json/canvas/1"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
