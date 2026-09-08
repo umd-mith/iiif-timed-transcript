@@ -1,6 +1,4 @@
 ---
-import AvalonIUDemoPlayer from '../components/AvalonIUDemo.svelte';
-
 const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest.json';
 ---
 
@@ -10,7 +8,7 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Avalon Interop Demo - IIIF Transcript Player</title>
-		<meta name="description" content="A production Avalon manifest from Indiana University's Media Collections Online, read step by step: Choice-wrapped HLS renditions, a supplementing WebVTT annotation, and annotations=&quot;auto&quot; turning it into an interactive transcript." />
+		<meta name="description" content="A production Avalon manifest from Indiana University's Media Collections Online, played by the <iiif-transcript-player> web component. A literate walkthrough: every code block on this page is the code the page itself runs." />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -38,22 +36,27 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 		<!-- Hero -->
 		<section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
 			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">DEMO</div>
+				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">DEMO · WEB COMPONENT</div>
 				<h1 class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight">
-					Reading an Avalon Manifest
+					An Avalon Item in One Element
 				</h1>
 				<p class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed">
-					<a href="https://avalonmediasystem.org/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Avalon Media System</a> is the audiovisual repository software many university libraries run. Every public Avalon item publishes a IIIF Presentation 3 manifest, and this library plays them without Avalon-specific code. This page walks through one for real — a production item from Indiana University's <a href="https://media.dlib.indiana.edu/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Media Collections Online</a> — and shows what the player does with each piece.
+					<a href="https://avalonmediasystem.org/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Avalon Media System</a> is the audiovisual repository software many university libraries run, and every public Avalon item publishes a IIIF Presentation 3 manifest. This page plays one — a production item from Indiana University's <a href="https://media.dlib.indiana.edu/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Media Collections Online</a> — using the <code class="font-mono text-base bg-parchment-200 px-1.5 py-0.5 rounded">&lt;iiif-transcript-player&gt;</code> web component: no Svelte in the page, no Avalon-specific code, no VTT parsing.
+				</p>
+				<p class="text-base text-ink-500 mb-4 max-w-3xl font-serif leading-relaxed">
+					The recording is a nice piece of circularity: Chris Colvard, Avalon's community technical lead, giving a 2017 talk titled <em>Beyond Images: Avalon and IIIF-AV</em> — a talk about the very interoperability that lets this element render it.
 				</p>
 				<p class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed">
-					The recording itself is a nice piece of circularity: Chris Colvard, Avalon's community technical lead, giving a 2017 talk titled <em>Beyond Images: Avalon and IIIF-AV</em> — a talk about the very interoperability that lets this player render it.
+					This is a literate page: first what Avalon publishes (two excerpts from the real manifest), then what this page writes (four blocks — markup, registration, CSS, event wiring). <strong>Every host-page block below is the code this page actually runs</strong>; the player at the bottom is that code working.
 				</p>
+
+				<h2 class="text-2xl font-serif font-bold text-ink-900 mb-4">What Avalon publishes</h2>
 
 				<!-- Step 1 -->
 				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
 					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">1 — The media is a <code class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded">Choice</code> of HLS renditions</h3>
 					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
-						On the canvas, the painting annotation's body is not a single video file. It is a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Choice</code> — Presentation 3's "here are alternatives, pick one" construct — holding Avalon's quality ladder as four HLS streams (<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">auto</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">high</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">medium</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">low</code>):
+						On the canvas, the painting annotation's body is not a single video file. It is a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Choice</code> — Presentation 3's "here are alternatives, pick one" construct — holding Avalon's quality ladder as four HLS streams:
 					</p>
 					<pre class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`"body": {
   "type": "Choice",
@@ -70,7 +73,7 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
   ]
 }`}</code></pre>
 					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						The player's manifest parsing resolves a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Choice</code> to its first <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Sound</code>/<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Video</code> member — here the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">auto</code> stream, which is itself adaptive. The <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">application/x-mpegURL</code> format marks it as HLS, so the player attaches <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">hls.js</code> (Safari plays HLS natively). Playback runs off IU's streaming server, end to end.
+						The element resolves a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Choice</code> to its first <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Sound</code>/<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Video</code> member — here the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">auto</code> stream, itself adaptive. The <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">application/x-mpegURL</code> format marks it as HLS, so the player attaches <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">hls.js</code> (Safari plays HLS natively). Playback runs off IU's streaming server, end to end.
 					</p>
 				</div>
 
@@ -78,7 +81,7 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
 					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">2 — The transcript is a <code class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> WebVTT annotation</h3>
 					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
-						Alongside the painting annotation, the canvas carries a second annotation page. Its one annotation has motivation <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> — Presentation 3's word for content that accompanies the media rather than being the media — and its body is the WebVTT caption file Avalon already maintains for this item:
+						Alongside the painting annotation, the canvas carries a second annotation whose motivation is <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> — Presentation 3's word for content that accompanies the media rather than being the media. Its body is the WebVTT caption file Avalon already maintains for this item:
 					</p>
 					<pre class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`{
   "type": "Annotation",
@@ -92,29 +95,80 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
   "target": "https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest/canvas/ft848t943"
 }`}</code></pre>
 					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						Nothing here was made for this player. Avalon generates this shape for every item that has captions; the annotation simply points at the same <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">text/vtt</code> file the repository serves its own player.
+						Nothing here was made for this player. Avalon generates this shape for every item that has captions; the annotation points at the same <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">text/vtt</code> file the repository serves its own player. When the element's <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">annotations</code> is <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">"auto"</code>, it fetches this file, reduces each cue to plain text, and builds the interactive transcript — for this talk, nearly nine hundred click-to-seek, searchable segments.
 					</p>
 				</div>
 
-				<!-- Step 3 -->
+				<h2 class="text-2xl font-serif font-bold text-ink-900 mb-4">What this page writes</h2>
+
+				<!-- Step 3: markup -->
 				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
-					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">3 — <code class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded">annotations="auto"</code> joins the two</h3>
-					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
-						The host passes one prop and writes no VTT-parsing code:
-					</p>
-					<pre class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`<IIIFPlayer.Root manifestUrl="https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest.json"
-                 annotations="auto">
-  ...
-</IIIFPlayer.Root>`}</code></pre>
+					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">3 — The markup: one element</h3>
+					<pre class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`<iiif-transcript-player
+  id="player"
+  manifest-url="https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest.json"
+  label="Beyond Images: Avalon and IIIF-AV (Indiana University)"
+  crossorigin="anonymous"
+></iiif-transcript-player>`}</code></pre>
 					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">"auto"</code> looks first for annotations embedded in the manifest itself (<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">TextualBody</code>, the <a href="/svelte-iiif-transcript-player/htmlannotations-demo" class="text-terracotta-500 hover:text-terracotta-600 underline">AVAnnotate shape</a>). This manifest has none, so it fetches the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> WebVTT, reduces each cue to plain text, and builds the interactive transcript from it — for this talk, nearly nine hundred segments, each one a click-to-seek target and searchable below. Because the transcript panel now shows the caption text, the player hides the native caption track once per canvas so the words aren't displayed twice; the same file still drives closed captions if a viewer turns them back on.
+						<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">manifest-url</code> is the only required attribute. <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">label</code> sets the accessible name a screen reader announces for the player region — worth setting whenever a page could hold more than one player. <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">crossorigin="anonymous"</code> lets the closed-caption <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">&lt;track&gt;</code> load from the repository's domain — browsers require CORS mode for cross-origin text tracks, and an embedding page is by definition on a different origin than the repository. The transcript switch, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">annotations = "auto"</code>, is set as a <em>property</em> in the script below rather than an attribute, because its other accepted value is a full array of transcript segments — data an attribute string can't carry.
+					</p>
+				</div>
+
+				<!-- Step 4: register + wire -->
+				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">4 — Register, then listen</h3>
+					<pre class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+register(); // defines <iiif-transcript-player>; until now it was an unknown element
+
+const el = document.getElementById("player");
+
+const EVENTS = [
+  "iiif-player-ready", "iiif-player-error", "iiif-player-canvas-change",
+  "iiif-player-play", "iiif-player-pause", "iiif-player-ended",
+  "iiif-player-seeked", "iiif-player-rate-change",
+];
+for (const name of EVENTS) {
+  el.addEventListener(name, (e) => logEvent(name, e.detail));
+}
+
+el.annotations = "auto"; // property, not attribute — see step 3`}</code></pre>
+					<p class="text-sm text-ink-600 font-serif leading-relaxed">
+						Order matters, and this order is safe: the element only wakes up when <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">register()</code> runs — before that the browser treats the tag as an unknown element and no network request happens. Listeners attached in the same script are therefore guaranteed to be in place before the manifest fetch can resolve, so <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">iiif-player-ready</code> is never missed. All events bubble and cross the shadow boundary; the five playback events (<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">play</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">pause</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">ended</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">seeked</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">rate-change</code>) exist for exactly the use this page puts them to: analytics without reaching inside the player. Watch them arrive in the log next to the live demo. On a page with no bundler — a CMS theme, a static site — the import line is replaced by one classic script tag for the bundled build, which registers the element as a side effect of loading; the rest is identical.
+					</p>
+				</div>
+
+				<!-- Step 5: styling -->
+				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">5 — Styling through the shadow boundary</h3>
+					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
+						The player renders in a shadow root, so page CSS cannot reach inside — deliberately. Three doors are provided, and this page uses all three: <strong>custom properties</strong> (theme tokens that inherit through the boundary), <strong><code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">::part()</code></strong> (named handles on the control bar, its buttons, the speed select, the seek slider, the transcript panel, and each segment), and <strong><code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">:state()</code></strong> (the element tells the page whether it is loading, playing, or in error, and the page styles the frame accordingly):
+					</p>
+					<pre class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`/* tokens: theme colors inherit through the shadow boundary */
+iiif-transcript-player {
+  --iiif-player-accent: #c2694f;            /* this site's terracotta */
+  --iiif-player-segment-active-bg: #fbeee8;
+}
+
+/* parts: named handles on internal pieces */
+iiif-transcript-player::part(controls) { background: #2d2a26; border-radius: 8px; }
+iiif-transcript-player::part(button)   { background: #c2694f; color: #fff; border-radius: 6px; }
+iiif-transcript-player::part(speed)    { background: #3d3934; color: #fff; border-radius: 6px; }
+iiif-transcript-player::part(progress) { accent-color: #c2694f; }
+
+/* states: the element reports its condition; the page reacts */
+iiif-transcript-player:state(loading) { outline: 4px solid #e0b089; }
+iiif-transcript-player:state(playing) { outline: 4px solid #7ba05b; }
+iiif-transcript-player:state(error)   { outline: 4px solid #b91c1c; }`}</code></pre>
+					<p class="text-sm text-ink-600 font-serif leading-relaxed">
+						While the manifest loads you'll see the sand-colored loading outline; press play and it turns green. The control bar below is this site's palette, not the player's defaults — restyled entirely from outside.
 					</p>
 				</div>
 
 				<div class="flex flex-wrap items-center gap-6 text-sm text-ink-500 border-t border-l-4 border-terracotta-300 pt-6 pl-6">
 					<div class="flex items-center gap-2">
 						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
-						<span class="font-medium">No Avalon-specific code</span>
+						<span class="font-medium">No Svelte in the page</span>
 					</div>
 					<div class="flex items-center gap-2">
 						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
@@ -123,6 +177,10 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 					<div class="flex items-center gap-2">
 						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
 						<span class="font-medium">Transcript from the repository's own VTT</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+						<span class="font-medium">Styled and observed from outside</span>
 					</div>
 				</div>
 			</div>
@@ -133,15 +191,27 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 			<div class="max-w-7xl mx-auto">
 				<div class="mb-8">
 					<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4">
-						Beyond Images: Avalon and IIIF-AV (2017)
+						The code above, running
 					</h2>
 					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
-						Streamed live from Indiana University — the video from IU's Wowza streaming server via HLS, the transcript from IU's caption file, both located through nothing but the manifest.
+						Streamed live from Indiana University — the video from IU's streaming server via HLS, the transcript from IU's caption file, both located through nothing but the manifest. The log on the right fills as the element's events reach the page.
 					</p>
 				</div>
 
-				<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
-					<AvalonIUDemoPlayer client:load {manifestUrl} />
+				<div class="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+					<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
+						<iiif-transcript-player
+							id="player"
+							manifest-url={manifestUrl}
+							label="Beyond Images: Avalon and IIIF-AV (Indiana University)"
+							crossorigin="anonymous"
+						></iiif-transcript-player>
+					</div>
+
+					<div class="bg-ink-900 text-parchment-100 border-2 border-ink-200 shadow-2xl p-4 lg:sticky lg:top-24">
+						<div class="text-xs font-mono tracking-wider text-terracotta-400 mb-2">EVENT LOG</div>
+						<ol id="event-log" class="text-xs font-mono space-y-1 max-h-[420px] overflow-y-auto" reversed></ol>
+					</div>
 				</div>
 
 				<div class="mt-6 text-sm text-ink-500">
@@ -153,7 +223,7 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 						· <a href="https://media.dlib.indiana.edu/media_objects/3r074z37q" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">item page on Media Collections Online</a>
 					</p>
 					<p class="mt-2">
-						This item is public and its manifest carries no IIIF Auth services. An access-restricted Avalon item would parse the same way but fail at the media request; the player reports that failure with error source <code class="font-mono text-xs bg-parchment-200 px-1.5 py-0.5 rounded">"auth"</code> so a host page can send the viewer to the repository's own login. This page depends on IU's servers — if the demo is down, the manifest link above will say so quickly.
+						This item is public and its manifest carries no IIIF Auth services. An access-restricted Avalon item would parse the same way but fail at the media request; the element reports that failure as <code class="font-mono text-xs bg-parchment-200 px-1.5 py-0.5 rounded">iiif-player-error</code> with source <code class="font-mono text-xs bg-parchment-200 px-1.5 py-0.5 rounded">"auth"</code> so a host page can send the viewer to the repository's own login. This page depends on IU's servers — if the demo is down, the manifest link above will say so quickly.
 					</p>
 				</div>
 			</div>
@@ -170,5 +240,91 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
 				</p>
 			</div>
 		</footer>
+
+		<!-- The demo CSS from step 5, verbatim -->
+		<style is:global>
+			/* tokens: theme colors inherit through the shadow boundary */
+			iiif-transcript-player {
+				--iiif-player-accent: #c2694f; /* this site's terracotta */
+				--iiif-player-segment-active-bg: #fbeee8;
+			}
+
+			/* parts: named handles on internal pieces */
+			iiif-transcript-player::part(controls) {
+				background: #2d2a26;
+				border-radius: 8px;
+			}
+			iiif-transcript-player::part(button) {
+				background: #c2694f;
+				color: #fff;
+				border-radius: 6px;
+			}
+			iiif-transcript-player::part(speed) {
+				background: #3d3934;
+				color: #fff;
+				border-radius: 6px;
+			}
+			iiif-transcript-player::part(progress) {
+				accent-color: #c2694f;
+			}
+
+			/* states: the element reports its condition; the page reacts */
+			iiif-transcript-player:state(loading) {
+				outline: 4px solid #e0b089;
+			}
+			iiif-transcript-player:state(playing) {
+				outline: 4px solid #7ba05b;
+			}
+			iiif-transcript-player:state(error) {
+				outline: 4px solid #b91c1c;
+			}
+		</style>
+
+		<!-- The wiring from step 4, verbatim (plus the log renderer) -->
+		<script>
+			import { register } from "@umd-mith/svelte-iiif-transcript-player/element";
+			register(); // defines <iiif-transcript-player>; until now it was an unknown element
+
+			const el = document.getElementById("player")!;
+			const log = document.getElementById("event-log")!;
+
+			function logEvent(name: string, detail: unknown) {
+				const li = document.createElement("li");
+				const summary =
+					detail && typeof detail === "object" && Object.keys(detail).length
+						? " " +
+							JSON.stringify(detail, (key, v) =>
+								key !== "" &&
+								typeof v === "object" &&
+								v !== null &&
+								!Array.isArray(v)
+									? (v.constructor?.name ?? "object")
+									: v,
+							).slice(0, 80)
+						: "";
+				li.textContent = `${new Date().toLocaleTimeString()} ${name}${summary}`;
+				log.prepend(li);
+				while (log.children.length > 40) log.lastChild?.remove();
+			}
+
+			const EVENTS = [
+				"iiif-player-ready",
+				"iiif-player-error",
+				"iiif-player-canvas-change",
+				"iiif-player-play",
+				"iiif-player-pause",
+				"iiif-player-ended",
+				"iiif-player-seeked",
+				"iiif-player-rate-change",
+			];
+			for (const name of EVENTS) {
+				el.addEventListener(name, (e) =>
+					logEvent(name, (e as CustomEvent).detail),
+				);
+			}
+
+			// property, not attribute — see step 3
+			(el as HTMLElement & { annotations: unknown }).annotations = "auto";
+		</script>
 	</body>
 </html>

@@ -13,6 +13,7 @@
   import {
     getFirstCanvas,
     getPrimaryResource,
+    hasAuthService,
     getPosterUrl,
     isAudioCanvas,
     isVideoCanvas,
@@ -292,6 +293,30 @@
     }
   });
 
+  // One reset for every transient field PlayerState carries — see the
+  // reset-or-survives table on PlayerState (context.ts). Called at the start
+  // of both performCanvasSwitch and loadCanvas so a canvas switch (which
+  // calls both) and a first load (which calls only loadCanvas) each end up
+  // with a fully-reset transient state; calling it twice in the switch path
+  // is redundant, not wrong — every field it touches is idempotent.
+  function resetTransientPlaybackState() {
+    player.state.isPlaying = false;
+    player.state.currentTime = 0;
+    player.state.duration = 0;
+    player.state.isReady = false;
+    player.state.error = null;
+    player.state.hasEnded = false;
+    player.state.isSeeking = false;
+
+    player.tracks = [];
+    player.chapters = [];
+    player.transcriptPopulated = false;
+    if (annotations === "auto") {
+      player.annotations = [];
+      player.transcriptStatus = "idle";
+    }
+  }
+
   function performCanvasSwitch(index: number) {
     if (!manifestData) return;
     // Integer check first: the range comparisons below are all false for NaN
@@ -312,11 +337,7 @@
     player.dashAdapter = null;
 
     // Reset player state for new canvas
-    player.state.isPlaying = false;
-    player.state.currentTime = 0;
-    player.state.duration = 0;
-    player.state.isReady = false;
-    player.state.error = null;
+    resetTransientPlaybackState();
 
     // Clear mediaUrl to trigger Viewer unmount
     player.mediaUrl = "";
@@ -451,19 +472,18 @@
     // once-per-load latch before the new panel ever populates — leaving a
     // canvas whose transcript then fails with neither captions nor
     // transcript. Transcript re-publishes it truthfully on the next flush.
-    player.tracks = [];
-    player.chapters = [];
-    player.transcriptPopulated = false;
+    //
+    // Also resets isPlaying/currentTime/duration/isReady/error/hasEnded/
+    // isSeeking — a no-op on the initial load (already at their $state
+    // defaults) and idempotent on a canvas-switch call (performCanvasSwitch
+    // already reset them just above, before calling loadCanvas).
+    resetTransientPlaybackState();
     // Every load is a canvas switch (including the first): reset the
     // machine's tracks-known state to false up front so a canvas that
     // throws below (non-AV, no primary resource) still lands on
     // "unavailable" rather than carrying the previous canvas's verdict.
     captionsActor.send({ type: "CANVAS_SWITCH" });
     captionsActor.send({ type: "TRACKS_CHANGED", hasTracks: false });
-    if (annotations === "auto") {
-      player.annotations = [];
-      player.transcriptStatus = "idle";
-    }
 
     try {
       const canvas =
@@ -485,6 +505,23 @@
       const primaryResource = getPrimaryResource(canvas);
       if (!primaryResource?.id) {
         throw new Error("No media resource found in canvas");
+      }
+
+      // Detected here, not left for the <video>/<audio> element to fail on:
+      // by the time playback would error, the wrapper has already reported
+      // a "media" fatal error and there is no way to tell an auth lock
+      // apart from a broken URL. Returning here (not throwing) means this
+      // canvas never reaches `player.mediaUrl = …`, so the generic media
+      // failure this would otherwise cause never fires — one error, not two.
+      if (hasAuthService(primaryResource)) {
+        currentCanvas = null;
+        const err = new Error(
+          "This resource requires authentication and cannot be played.",
+        );
+        player.state.error = err;
+        player.state.isReady = false;
+        reportError(err, { fatal: true, source: "auth" });
+        return;
       }
 
       player.mediaUrl = primaryResource.id;
@@ -664,6 +701,10 @@
 
     const handlePlay = () => {
       player.state.isPlaying = true;
+      // A replay after the media ended: clear the latch so a subsequent
+      // `ended` can fire (and the pause-suppression rule below can work)
+      // again for this second run-through.
+      player.state.hasEnded = false;
     };
     const handlePause = () => {
       player.state.isPlaying = false;
@@ -686,6 +727,15 @@
     const handleCanPlay = () => {
       player.state.isBuffering = false;
     };
+    const handleEnded = () => {
+      player.state.hasEnded = true;
+    };
+    const handleSeeking = () => {
+      player.state.isSeeking = true;
+    };
+    const handleSeeked = () => {
+      player.state.isSeeking = false;
+    };
 
     el.addEventListener("play", handlePlay);
     el.addEventListener("pause", handlePause);
@@ -694,6 +744,9 @@
     el.addEventListener("ratechange", handleRateChange);
     el.addEventListener("waiting", handleWaiting);
     el.addEventListener("canplay", handleCanPlay);
+    el.addEventListener("ended", handleEnded);
+    el.addEventListener("seeking", handleSeeking);
+    el.addEventListener("seeked", handleSeeked);
 
     return () => {
       el.removeEventListener("play", handlePlay);
@@ -703,6 +756,9 @@
       el.removeEventListener("ratechange", handleRateChange);
       el.removeEventListener("waiting", handleWaiting);
       el.removeEventListener("canplay", handleCanPlay);
+      el.removeEventListener("ended", handleEnded);
+      el.removeEventListener("seeking", handleSeeking);
+      el.removeEventListener("seeked", handleSeeked);
     };
   });
 

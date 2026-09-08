@@ -7,6 +7,7 @@
 // which declare a window global and no module exports).
 import {
   readFileSync,
+  readdirSync,
   statSync,
   copyFileSync,
   existsSync,
@@ -16,6 +17,7 @@ import {
 } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import process from "node:process";
 import { execFileSync } from "node:child_process";
 
 // fileURLToPath, not `.pathname`: the latter keeps percent-encoding (a repo
@@ -30,6 +32,13 @@ const iifeTypesOut = resolve(
   root,
   "dist/element/iiif-transcript-player.iife.d.ts",
 );
+const cem = resolve(root, "src/element/custom-elements.json");
+const cemOut = resolve(root, "dist/element/custom-elements.json");
+const wrapperSource = resolve(
+  root,
+  "src/element/IIIFTranscriptPlayerElement.svelte",
+);
+const publicTypesSource = types; // already resolved above as public-types.d.ts
 
 const IIFE_BUDGET_BYTES = 1 * 1024 * 1024; // 1 MB minified (spec: "Size budget")
 
@@ -38,7 +47,7 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-for (const file of [esm, iife, types, iifeTypes]) {
+for (const file of [esm, iife, types, iifeTypes, cem]) {
   if (!existsSync(file)) fail(`missing ${file}`);
 }
 
@@ -120,6 +129,141 @@ if (!/dashjs/.test(iifeSource)) {
 
 copyFileSync(types, typesOut);
 copyFileSync(iifeTypes, iifeTypesOut);
+copyFileSync(cem, cemOut);
+
+// custom-elements.json is hand-authored (src/element/custom-elements.json)
+// and must not silently drift from the two files that actually declare the
+// element's public surface. This is a string/regex check, matching the
+// convention the rest of this script already uses for the IIFE (no AST
+// tooling in the build).
+const cemJson = JSON.parse(readFileSync(cem, "utf8"));
+const declaration = cemJson.modules[0].declarations[0];
+const cemAttributeNames = declaration.attributes.map((a) => a.name).sort();
+const cemEventNames = declaration.events.map((e) => e.name).sort();
+
+// Attributes that are technically wired with an `attribute:` entry in the
+// svelte:options props block but are documented and intended as
+// property-only (README's second attributes table) — excluded from the
+// CEM's public attribute list on purpose.
+const PROPERTY_ONLY_KEYS = new Set([
+  "annotations",
+  "preprocessmanifest",
+  "errorcallback",
+]);
+const wrapperSourceText = readFileSync(wrapperSource, "utf8");
+const realAttributeNames = [
+  ...wrapperSourceText.matchAll(/attribute:\s*"([^"]+)"/g),
+]
+  .map((m) => m[1])
+  .filter((name) => !PROPERTY_ONLY_KEYS.has(name))
+  .sort();
+
+if (JSON.stringify(cemAttributeNames) !== JSON.stringify(realAttributeNames)) {
+  fail(
+    `custom-elements.json attributes ${JSON.stringify(cemAttributeNames)} ` +
+      `do not match the wrapper's declared attributes ${JSON.stringify(realAttributeNames)}`,
+  );
+}
+
+const publicTypesText = readFileSync(publicTypesSource, "utf8");
+const eventMapMatch = publicTypesText.match(
+  /IIIFTranscriptPlayerElementEventMap extends HTMLElementEventMap \{([^}]*)\}/,
+);
+if (!eventMapMatch) {
+  fail(
+    "could not find IIIFTranscriptPlayerElementEventMap in public-types.d.ts",
+  );
+}
+const realEventNames = [
+  ...eventMapMatch[1].matchAll(/^\s*"?([a-zA-Z-]+)"?:\s*CustomEvent/gm),
+]
+  .map((m) => m[1])
+  .sort();
+
+if (JSON.stringify(cemEventNames) !== JSON.stringify(realEventNames)) {
+  fail(
+    `custom-elements.json events ${JSON.stringify(cemEventNames)} do not ` +
+      `match the declared event map ${JSON.stringify(realEventNames)}`,
+  );
+}
+
+// The styling surface (custom properties, parts, custom states) drifts just
+// as silently as attributes and events — the ::part additions in 57451bd
+// stayed honest only because the CEM edit was remembered by hand. Same
+// regex-based convention, reading each name list from the source that
+// actually declares it.
+const cemCssPropertyNames = (declaration.cssProperties ?? [])
+  .map((p) => p.name)
+  .sort();
+const realCssPropertyNames = [
+  ...new Set(
+    [...wrapperSourceText.matchAll(/var\((--iiif-player-[a-z-]+)/g)].map(
+      (m) => m[1],
+    ),
+  ),
+].sort();
+if (
+  JSON.stringify(cemCssPropertyNames) !== JSON.stringify(realCssPropertyNames)
+) {
+  fail(
+    `custom-elements.json cssProperties ${JSON.stringify(cemCssPropertyNames)} ` +
+      `do not match the tokens the wrapper CSS consumes ${JSON.stringify(realCssPropertyNames)}`,
+  );
+}
+
+// part= attributes live in the lib components the wrapper composes, so walk
+// every .svelte file under src/lib plus the wrapper itself. A part is either
+// a literal (part="controls") or an expression holding string literals
+// (part={isActive ? "segment segment-active" : "segment"}); multi-part
+// values are whitespace-separated token lists.
+const svelteFiles = [wrapperSource];
+const collectSvelte = (dir) => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const entryPath = resolve(dir, entry.name);
+    if (entry.isDirectory()) collectSvelte(entryPath);
+    else if (entry.name.endsWith(".svelte")) svelteFiles.push(entryPath);
+  }
+};
+collectSvelte(resolve(root, "src/lib"));
+const realPartNames = new Set();
+for (const file of svelteFiles) {
+  const text = readFileSync(file, "utf8");
+  for (const m of text.matchAll(/\spart=(?:"([^"]+)"|\{([^}]+)\})/g)) {
+    const literals =
+      m[1] != null
+        ? [m[1]]
+        : [...m[2].matchAll(/"([^"]+)"/g)].map((inner) => inner[1]);
+    for (const literal of literals) {
+      for (const name of literal.split(/\s+/)) realPartNames.add(name);
+    }
+  }
+}
+const cemPartNames = (declaration.cssParts ?? []).map((p) => p.name).sort();
+const sortedRealPartNames = [...realPartNames].sort();
+if (JSON.stringify(cemPartNames) !== JSON.stringify(sortedRealPartNames)) {
+  fail(
+    `custom-elements.json cssParts ${JSON.stringify(cemPartNames)} do not ` +
+      `match the part attributes in the components ${JSON.stringify(sortedRealPartNames)}`,
+  );
+}
+
+// Custom states are added/deleted on internals.states in the wrapper script.
+const cemStateNames = (declaration.cssStates ?? []).map((s) => s.name).sort();
+const realStateNames = [
+  ...new Set(
+    [
+      ...wrapperSourceText.matchAll(
+        /internals\.states\[[^\]]+\]\("([a-z-]+)"\)/g,
+      ),
+    ].map((m) => m[1]),
+  ),
+].sort();
+if (JSON.stringify(cemStateNames) !== JSON.stringify(realStateNames)) {
+  fail(
+    `custom-elements.json cssStates ${JSON.stringify(cemStateNames)} do not ` +
+      `match the wrapper's internals.states calls ${JSON.stringify(realStateNames)}`,
+  );
+}
 
 // public-types.d.ts is hand-maintained and, unlike src/**, is never compiled
 // by `pnpm typecheck` (tsconfig.json excludes dist and sets skipLibCheck).

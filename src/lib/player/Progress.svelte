@@ -26,6 +26,7 @@
 
 <input
   type="range"
+  part="progress"
   min={0}
   max={state.duration}
   value={state.currentTime}

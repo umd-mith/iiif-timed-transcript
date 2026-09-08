@@ -1640,7 +1640,7 @@ describe("Root component", () => {
         expect(capturedCtx!.transcriptStatus).toBe("loading");
       });
       expect(capturedCtx!.annotations).toEqual([]);
-      // playerrefavailable is not widened to wait for the VTT
+      // iiif-player-ready is not widened to wait for the VTT
       expect(onPlayerInit).toHaveBeenCalledTimes(1);
       // Native track still attached
       expect(capturedCtx!.tracks).toHaveLength(1);

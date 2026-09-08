@@ -66,6 +66,7 @@
   data-state={isActive ? "active" : "inactive"}
   data-highlighted={isHighlighted ? "true" : undefined}
   data-current-match={isCurrentMatch ? "true" : undefined}
+  part={isActive ? "segment segment-active" : "segment"}
   {onclick}
   onkeydown={(event) => {
     if (event.key === "Enter" || event.key === " ") {

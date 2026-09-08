@@ -71,18 +71,18 @@
       const say = (s) => (log.textContent += s + "\n");
       for (const id of ["cookbook", "voices"]) {
         const el = document.getElementById(id);
-        el.addEventListener("playerrefavailable", (e) =>
+        el.addEventListener("iiif-player-ready", (e) =>
           say(
-            `${id}: playerrefavailable canvasCount=${e.detail.playerRef.canvasCount}`,
+            `${id}: iiif-player-ready canvasCount=${e.detail.playerRef.canvasCount}`,
           ),
         );
-        el.addEventListener("playererror", (e) =>
+        el.addEventListener("iiif-player-error", (e) =>
           say(
-            `${id}: playererror fatal=${e.detail.fatal} source=${e.detail.source} ${e.detail.error.message}`,
+            `${id}: iiif-player-error fatal=${e.detail.fatal} source=${e.detail.source} ${e.detail.error.message}`,
           ),
         );
-        el.addEventListener("canvaschange", (e) =>
-          say(`${id}: canvaschange index=${e.detail.index}`),
+        el.addEventListener("iiif-player-canvas-change", (e) =>
+          say(`${id}: iiif-player-canvas-change index=${e.detail.index}`),
         );
       }
       // Properties after definition (the README rule for script-tag hosts)

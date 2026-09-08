@@ -32,10 +32,10 @@ type El = HTMLElement & {
   playerRef?: PlayerRef | null;
 };
 
-/** Collects the host-tier playererror details fired on `el`. */
+/** Collects the host-tier iiif-player-error details fired on `el`. */
 function recordHostErrors(el: HTMLElement): PlayerErrorDetail[] {
   const seen: PlayerErrorDetail[] = [];
-  el.addEventListener("playererror", (e) => {
+  el.addEventListener("iiif-player-error", (e) => {
     const detail = (e as CustomEvent<PlayerErrorDetail>).detail;
     if (detail.source === "host") seen.push(detail);
   });
@@ -66,7 +66,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     const hostErrors = recordHostErrors(el);
     document.body.appendChild(el);
 
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     await untilShadow(el, "audio");
     expect(el.playerRef!.canvasIndex).toBe(0);
     expect(hostErrors).toHaveLength(1);
@@ -103,7 +103,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     const hostErrors = recordHostErrors(el);
     document.body.appendChild(el);
 
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     el.setAttribute("canvas-index", "1");
     await vi.waitFor(() => {
       expect(el.playerRef!.canvasIndex).toBe(1);
@@ -134,7 +134,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     const hostErrors = recordHostErrors(el);
     document.body.appendChild(el);
 
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     await untilShadow(el, "audio");
     el.removeAttribute("canvas-index");
 
@@ -158,7 +158,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     const hostErrors = recordHostErrors(el);
     document.body.appendChild(el);
 
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     await vi.waitFor(() => {
       expect(hostErrors).toHaveLength(1);
     });
@@ -188,7 +188,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     const hostErrors = recordHostErrors(el);
     document.body.appendChild(el);
 
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     await vi.waitFor(() => {
       expect(hostErrors).toHaveLength(1);
     });
@@ -210,7 +210,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     el.setAttribute("initial-time", "1");
     const again = waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     document.body.appendChild(el);
     await again;
@@ -233,7 +233,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     const hostErrors = recordHostErrors(el);
     document.body.appendChild(el);
 
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     await vi.waitFor(() => {
       expect(hostErrors).toHaveLength(1);
     });
@@ -274,12 +274,12 @@ describe("<iiif-transcript-player> host-input validation", () => {
     document.body.appendChild(el);
     el.setAttribute("manifest-url", url);
 
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     await new Promise((r) => setTimeout(r, 50));
     expect(hostErrors).toHaveLength(0);
   });
 
-  test("clearing manifest-url clears playerRef, and setting it again fires playerrefavailable", async () => {
+  test("clearing manifest-url clears playerRef, and setting it again fires iiif-player-ready", async () => {
     const url = "https://example.com/el-manifest-url-cleared.json";
     const other = "https://example.com/el-manifest-url-cleared-2.json";
     mockFetchRoutes({
@@ -289,7 +289,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
     const el = document.createElement(DEFAULT_TAG) as El;
     el.setAttribute("manifest-url", url);
     document.body.appendChild(el);
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     expect(el.playerRef).toBeTruthy();
 
     // Removing the URL unmounts the player. A `playerRef` left pointing at
@@ -303,7 +303,7 @@ describe("<iiif-transcript-player> host-input validation", () => {
 
     const again = waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     el.setAttribute("manifest-url", other);
     await again;
@@ -323,7 +323,7 @@ describe("<iiif-transcript-player> reconnection", () => {
     manifestCache.clear();
   });
 
-  test("a re-appended element rebuilds, fires playerrefavailable again and honours canvas-index", async () => {
+  test("a re-appended element rebuilds, fires iiif-player-ready again and honours canvas-index", async () => {
     const url = "https://example.com/el-reconnect.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
@@ -332,7 +332,7 @@ describe("<iiif-transcript-player> reconnection", () => {
       "manifest-url": url,
       "canvas-index": "1",
     })) as El;
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     await vi.waitFor(() => {
       expect(el.playerRef!.canvasIndex).toBe(1);
     });
@@ -346,7 +346,7 @@ describe("<iiif-transcript-player> reconnection", () => {
 
     const again = waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     document.body.appendChild(el);
     await again;
@@ -368,7 +368,7 @@ describe("<iiif-transcript-player> reconnection", () => {
       "manifest-url": url,
       "initial-time": "1",
     })) as El;
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     // seekTo writes mediaElement.currentTime; player.state.currentTime only
     // catches up on the next timeupdate, so read the element itself.
     await vi.waitFor(() => {
@@ -380,7 +380,7 @@ describe("<iiif-transcript-player> reconnection", () => {
     await new Promise((r) => setTimeout(r, 0));
     const again = waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     document.body.appendChild(el);
     await again;
@@ -403,7 +403,7 @@ describe("<iiif-transcript-player> reconnection", () => {
       "initial-time": "1",
     })) as El;
     // The fetch 404s, so no player ever exists on this connection.
-    await waitForEvent<PlayerErrorDetail>(el, "playererror");
+    await waitForEvent<PlayerErrorDetail>(el, "iiif-player-error");
     expect(el.playerRef == null).toBe(true);
 
     el.remove();
@@ -418,7 +418,7 @@ describe("<iiif-transcript-player> reconnection", () => {
     mockFetchRoutes({ [url]: { json: { ...playable, id: url } } });
     const again = waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     document.body.appendChild(el);
     await again;

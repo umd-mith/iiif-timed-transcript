@@ -91,6 +91,8 @@ export function createMockPlayerContext(
       playbackRate: 1,
       isReady: true,
       error: null,
+      hasEnded: false,
+      isSeeking: false,
       ...stateOverrides,
     },
     mediaElement: null,

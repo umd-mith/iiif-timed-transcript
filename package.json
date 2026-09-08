@@ -23,6 +23,7 @@
     "url": "https://github.com/umd-mith/svelte-iiif-transcript-player/issues"
   },
   "homepage": "https://github.com/umd-mith/svelte-iiif-transcript-player#readme",
+  "customElements": "dist/element/custom-elements.json",
   "type": "module",
   "svelte": "./dist/index.js",
   "sideEffects": [
@@ -66,6 +67,7 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --compiler-warnings \"options_missing_custom_element:ignore\"",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:csp": "node scripts/csp-harness/run.mjs",
     "lint": "eslint src/ && prettier --check .",
     "format": "prettier --write .",
     "changeset": "changeset",

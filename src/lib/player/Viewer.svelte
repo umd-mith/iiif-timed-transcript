@@ -266,7 +266,6 @@
       {preload}
       crossorigin={crossOrigin || undefined}
       class={className}
-      style="width: 100%;"
       onerror={handleMediaError}
     >
       <!--
@@ -287,3 +286,14 @@
     </video>
   {/if}
 {/if}
+
+<style>
+  /* Moved off the video's `style=` attribute (hardening spec 2.1): a
+     strict `style-src` blocks inline `style=` the same as inline
+     `<style>` text, and constructable stylesheets don't cover attributes.
+     Svelte auto-scopes this bare element selector to the video rendered
+     above; no class is needed. */
+  video {
+    width: 100%;
+  }
+</style>

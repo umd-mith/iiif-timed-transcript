@@ -81,6 +81,10 @@ describe("Captions", () => {
     const button = target.querySelector("button");
     expect(button).not.toBeNull();
     expect(button?.textContent).toContain("CC");
+    // Shared control-bar part; the element wrapper's ::part(button) surface
+    // depends on every conditional control carrying it (element-parts.test.ts
+    // can't see this button — its fixture has no caption tracks).
+    expect(button?.getAttribute("part")).toBe("button");
   });
 
   test("aria-pressed is truthful after a native change", () => {
