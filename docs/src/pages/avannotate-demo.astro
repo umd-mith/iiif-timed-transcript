@@ -2,7 +2,7 @@
 import AVAnnotateDemo from "../components/AVAnnotateDemo.svelte";
 
 const manifestUrl =
-  "https://avannotate.github.io/voices/manifests/spaces-and-dreams-in-muriel-rukeyser-s-the-speed-of-darkness.json";
+  "https://avannotate.github.io/voices/manifests/silence-and-spaces-in-muriel-rukeyser-s-the-speed-of-darkness.json";
 ---
 
 <!doctype html>
@@ -72,13 +72,21 @@ const manifestUrl =
         >
           This demo shows the player handling a real-world
           <a
-            href="https://avannotate.github.io/voices/"
+            href="https://av-annotate.org/"
             target="_blank"
             rel="noopener"
             class="text-terracotta-500 hover:text-terracotta-600 underline"
             >AVAnnotate</a
           >
-          manifest where transcript annotations live in <code
+          manifest published in
+          <a
+            href="https://scholarlyediting.org/issues/43/voices/"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-500 hover:text-terracotta-600 underline"
+            >Voices: Micro-editions of Readings by McClure, Marlatt, Rukeyser</a
+          >, eds. Tanya Clement <em>et al.</em>, in <em>Scholarly Editing</em>,
+          vol. 43, 2026. Transcript annotations live in <code
             class="font-mono text-sm bg-parchment-200 px-1.5 py-0.5 rounded"
             >canvas.annotations</code
           > rather than <code
@@ -172,7 +180,7 @@ const { annotations, skipped } = buildTranscriptAnnotations(canvas);
               rel="noopener"
               class="text-terracotta-500 hover:text-terracotta-600 underline"
               >AVAnnotate Voices</a
-            >. 110 annotations with speaker identification and voice
+            >. 59 annotations with speaker identification and voice
             characterization tags.
           </p>
         </div>
