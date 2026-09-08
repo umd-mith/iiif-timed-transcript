@@ -1,5 +1,8 @@
 import type { CanvasInfo, PlayerErrorSource, PlayerRef } from "../lib/index.js";
-import type { ElementErrorSource as PublicElementErrorSource } from "./public-types.js";
+import type {
+  ElementErrorSource as PublicElementErrorSource,
+  IIIFTranscriptPlayerElementEventMap as PublicIIIFTranscriptPlayerElementEventMap,
+} from "./public-types.js";
 
 /** Root's sources plus "host" — raised only by the wrapper for a misused property. */
 export type ElementErrorSource = PlayerErrorSource | "host";
@@ -39,6 +42,13 @@ export interface CanvasChangeDetail {
   canvas: CanvasInfo;
 }
 
+/** Empty today; kept as an object (not `void`) so hosts can safely read `.detail` and future fields can be added non-breaking. */
+export type PlaybackEventDetail = Record<string, never>;
+
+export interface RateChangeDetail {
+  rate: number;
+}
+
 /** Same shape as Root's onError, with the wrapper-only "host" source added. */
 export type ErrorCallback = (
   error: Error,
@@ -51,7 +61,28 @@ export type ErrorCallback = (
  * pinned by the postbuild probe.
  */
 export interface IIIFTranscriptPlayerElementEventMap extends HTMLElementEventMap {
-  playerrefavailable: CustomEvent<PlayerRefAvailableDetail>;
-  playererror: CustomEvent<PlayerErrorDetail>;
-  canvaschange: CustomEvent<CanvasChangeDetail>;
+  "iiif-player-ready": CustomEvent<PlayerRefAvailableDetail>;
+  "iiif-player-error": CustomEvent<PlayerErrorDetail>;
+  "iiif-player-canvas-change": CustomEvent<CanvasChangeDetail>;
+  "iiif-player-play": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-pause": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-ended": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-seeked": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-rate-change": CustomEvent<RateChangeDetail>;
 }
+
+// Same problem, same fix, for the event map itself: public-types.d.ts
+// hand-mirrors IIIFTranscriptPlayerElementEventMap (below) as a literal
+// because it is copied verbatim to dist/element/index.d.ts. The postbuild
+// probe (scripts/postbuild-element.mjs) checks that the map's keys exist
+// on the built artifact, not that its shape matches this file — so a
+// rename or an added event here that isn't mirrored there would drift
+// silently without this assertion. If it fails, update
+// public-types.d.ts's IIIFTranscriptPlayerElementEventMap to match.
+type IIIFTranscriptPlayerElementEventMapStaysInSyncWithPublicTypes =
+  AssertBidirectionallyAssignable<
+    IIIFTranscriptPlayerElementEventMap,
+    PublicIIIFTranscriptPlayerElementEventMap
+  >;
+const iiifTranscriptPlayerElementEventMapStaysInSyncWithPublicTypes: IIIFTranscriptPlayerElementEventMapStaysInSyncWithPublicTypes = true;
+void iiifTranscriptPlayerElementEventMapStaysInSyncWithPublicTypes;

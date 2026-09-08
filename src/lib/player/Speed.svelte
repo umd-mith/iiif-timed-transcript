@@ -20,6 +20,7 @@
 </script>
 
 <select
+  part="speed"
   data-audio-control="speed"
   disabled={!state.isReady}
   value={state.playbackRate}

@@ -310,6 +310,26 @@ export function getPrimaryResource(
 }
 
 /**
+ * True if the resource names an IIIF Auth API 1 service in its `service`
+ * array. Covers both the IIIF 3 `type` key and the 2.x-style `@type` key
+ * (Avalon serializes AuthCookieService1 the second way — see
+ * validators.ts's ServiceReferenceSchema comment). Detection only: no
+ * auth flow is implemented (REDUCE decision, hardening spec §4.4).
+ */
+export function hasAuthService(resource: ContentResourceData): boolean {
+  const services = resource.service;
+  if (!services) return false;
+  return services.some((svc) => {
+    const type = svc.type ?? svc["@type"];
+    return (
+      typeof type === "string" &&
+      type.startsWith("Auth") &&
+      type.endsWith("Service1")
+    );
+  });
+}
+
+/**
  * Checks if a canvas represents an image
  * @param canvas - IIIF canvas
  * @returns True if primary resource is an image

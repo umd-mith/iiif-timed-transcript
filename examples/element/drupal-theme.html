@@ -68,11 +68,11 @@
         mode.textContent = dark ? "dark" : "light";
       });
       const el = document.querySelector("iiif-transcript-player");
-      el.addEventListener("playererror", (e) =>
-        console.warn("playererror", e.detail),
+      el.addEventListener("iiif-player-error", (e) =>
+        console.warn("iiif-player-error", e.detail),
       );
-      el.addEventListener("playerrefavailable", () =>
-        console.info("playerrefavailable"),
+      el.addEventListener("iiif-player-ready", () =>
+        console.info("iiif-player-ready"),
       );
     </script>
   </body>

@@ -5,7 +5,12 @@ import { elementSveltePlugin } from "./vite.config.element";
 
 const browser = () => ({
   enabled: true,
-  provider: playwright(),
+  // Chromium's autoplay policy otherwise blocks a scripted `.play()` call
+  // with no prior user gesture, which the playback-events element suite
+  // relies on to exercise a real HTMLMediaElement 'play' transition.
+  provider: playwright({
+    launchOptions: { args: ["--autoplay-policy=no-user-gesture-required"] },
+  }),
   instances: [{ browser: "chromium" as const }],
   headless: true,
 });

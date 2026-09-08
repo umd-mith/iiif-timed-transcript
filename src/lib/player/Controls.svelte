@@ -12,6 +12,7 @@
 
 <div
   data-audio-controls
+  part="controls"
   role="group"
   aria-label={t("player.controlsLabel")}
   class={className}

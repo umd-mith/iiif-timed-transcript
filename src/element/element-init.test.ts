@@ -77,7 +77,7 @@ describe("<iiif-transcript-player> initial-time, autoplay, preprocessManifest wi
     })) as El;
     const { detail } = await waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     const audio = await untilShadow<HTMLAudioElement>(el, "audio");
 
@@ -98,7 +98,7 @@ describe("<iiif-transcript-player> initial-time, autoplay, preprocessManifest wi
       "manifest-url": url,
       autoplay: "",
     })) as El;
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     const audio = await untilShadow<HTMLAudioElement>(el, "audio");
     const play = vi.fn().mockResolvedValue(undefined);
     audio.play = play;
@@ -134,7 +134,7 @@ describe("<iiif-transcript-player> initial-time, autoplay, preprocessManifest wi
 
     const { detail } = await waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     expect(detail.playerRef.canvases[0]!.label).toBe("Rewritten Label");
   });

@@ -43,6 +43,8 @@ export class PlayerStateManager implements PlayerContext {
     playbackRate: 1,
     isReady: false,
     error: null,
+    hasEnded: false,
+    isSeeking: false,
   });
 
   // Media properties

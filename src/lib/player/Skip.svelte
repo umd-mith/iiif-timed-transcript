@@ -26,6 +26,7 @@
 
 <button
   type="button"
+  part="button"
   data-audio-button="skip"
   disabled={!state.isReady}
   onclick={handleClick}

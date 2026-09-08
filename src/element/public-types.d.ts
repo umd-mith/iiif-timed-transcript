@@ -20,6 +20,7 @@ export type ElementErrorSource =
   | "media"
   | "playback"
   | "transcript"
+  | "auth"
   | "host";
 
 export interface PlayerErrorDetail {
@@ -33,6 +34,11 @@ export interface PlayerRefAvailableDetail {
 export interface CanvasChangeDetail {
   index: number;
   canvas: CanvasInfo;
+}
+/** Empty today; kept as an object (not `void`) so hosts can safely read `.detail` and future fields can be added non-breaking. */
+export type PlaybackEventDetail = Record<string, never>;
+export interface RateChangeDetail {
+  rate: number;
 }
 export type ErrorCallback = (
   error: Error,
@@ -61,17 +67,26 @@ export declare class IIIFTranscriptPlayerElement extends HTMLElement {
   initialTime: number | undefined;
   /** `autoplay` attribute. */
   autoplay: boolean;
+  /**
+   * `label` attribute. Host-settable accessible name for the element's
+   * top-level region (`role="region"`), for distinguishing multiple
+   * players on one page to assistive technology. Default is the
+   * localized generic name.
+   */
+  label: string;
+  /** `crossorigin` attribute. Forwarded to the underlying media element. */
+  crossorigin: string;
   /** Property only. Default `"auto"`. */
   annotations: Annotation[] | "auto";
   /** Property only. Runs on the parsed manifest JSON before validation. */
   preprocessManifest: ((raw: unknown) => unknown) | undefined;
-  /** Property only. Same payload as the `playererror` event. */
+  /** Property only. Same payload as the `iiif-player-error` event. */
   errorCallback: ErrorCallback | undefined;
   /**
-   * Read-only. Nullish until `playerrefavailable` — `undefined` before the
+   * Read-only. Nullish until `iiif-player-ready` — `undefined` before the
    * inner component exists (the accessor reads through it), `null` after.
    * It stays nullish if the fatal error is a manifest or first-canvas
-   * failure; a fatal *media* error can arrive after `playerrefavailable`, in
+   * failure; a fatal *media* error can arrive after `iiif-player-ready`, in
    * which case `playerRef` is already set and stays set.
    */
   readonly playerRef: PlayerRef | null | undefined;
@@ -91,9 +106,14 @@ export declare class IIIFTranscriptPlayerElement extends HTMLElement {
 }
 
 export interface IIIFTranscriptPlayerElementEventMap extends HTMLElementEventMap {
-  playerrefavailable: CustomEvent<PlayerRefAvailableDetail>;
-  playererror: CustomEvent<PlayerErrorDetail>;
-  canvaschange: CustomEvent<CanvasChangeDetail>;
+  "iiif-player-ready": CustomEvent<PlayerRefAvailableDetail>;
+  "iiif-player-error": CustomEvent<PlayerErrorDetail>;
+  "iiif-player-canvas-change": CustomEvent<CanvasChangeDetail>;
+  "iiif-player-play": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-pause": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-ended": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-seeked": CustomEvent<PlaybackEventDetail>;
+  "iiif-player-rate-change": CustomEvent<RateChangeDetail>;
 }
 
 /** Defines the element as `tagName` (default `"iiif-transcript-player"`). Warns and no-ops if already defined. */

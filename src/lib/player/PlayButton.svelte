@@ -38,6 +38,7 @@
 
 <button
   type="button"
+  part="button"
   data-audio-button="play-pause"
   disabled={!state.isReady}
   onclick={handleClick}

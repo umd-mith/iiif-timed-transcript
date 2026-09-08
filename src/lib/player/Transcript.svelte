@@ -335,6 +335,7 @@
 
 <div
   class="transcript-panel {className}"
+  part="transcript"
   role="region"
   aria-label={ariaLabel}
   aria-busy={isLoading}

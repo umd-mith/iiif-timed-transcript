@@ -27,6 +27,7 @@
 {#if visible}
   <button
     type="button"
+    part="button"
     data-audio-button="captions"
     aria-pressed={pressed}
     aria-label={t("captions.toggleLabel")}

@@ -36,7 +36,8 @@ export type TermKey =
   | "player.chaptersLabel"
   | "player.chaptersEmpty"
   // Reserved for the a11y spec's A1 (Captions toggle).
-  | "captions.toggleLabel";
+  | "captions.toggleLabel"
+  | "playerRegionLabel";
 
 /**
  * English is the built-in default: every key resolves even when no other
@@ -73,4 +74,5 @@ export const EN_TERMS: Record<TermKey, string> = {
   "player.chaptersLabel": "Chapters",
   "player.chaptersEmpty": "No chapters available.",
   "captions.toggleLabel": "Toggle captions",
+  playerRegionLabel: "IIIF transcript player",
 };

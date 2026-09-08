@@ -82,7 +82,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     expect(shadow(b).querySelector("nav.canvas-nav")).toBeNull();
   });
 
-  test("CanvasNav click fires canvaschange and reflects canvas-index; host write back round-trips", async () => {
+  test("CanvasNav click fires iiif-player-canvas-change and reflects canvas-index; host write back round-trips", async () => {
     const url = "https://example.com/el-canvas-roundtrip.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
@@ -91,13 +91,16 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
       "manifest-url": url,
       "canvas-index": "0",
     })) as El;
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     const second = await untilShadow<HTMLButtonElement>(
       el,
       'button[data-canvas-index="1"]',
     );
 
-    const change = waitForEvent<CanvasChangeDetail>(el, "canvaschange");
+    const change = waitForEvent<CanvasChangeDetail>(
+      el,
+      "iiif-player-canvas-change",
+    );
     second.click();
     const { detail } = await change;
     expect(detail.index).toBe(1);
@@ -109,7 +112,10 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     expect(el.playerRef!.canvasIndex).toBe(1);
 
     // Round trip: the host goes back to the index it originally set.
-    const back = waitForEvent<CanvasChangeDetail>(el, "canvaschange");
+    const back = waitForEvent<CanvasChangeDetail>(
+      el,
+      "iiif-player-canvas-change",
+    );
     el.canvasIndex = 0;
     const { detail: backDetail } = await back;
     expect(backDetail.index).toBe(0);
@@ -129,17 +135,20 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
       "canvas-index": "0",
     })) as El;
     const changes: number[] = [];
-    el.addEventListener("canvaschange", (e) =>
+    el.addEventListener("iiif-player-canvas-change", (e) =>
       changes.push((e as CustomEvent<CanvasChangeDetail>).detail.index),
     );
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     const second = await untilShadow<HTMLButtonElement>(
       el,
       'button[data-canvas-index="1"]',
     );
 
     // In-player navigation: CanvasNav, not the host.
-    const change = waitForEvent<CanvasChangeDetail>(el, "canvaschange");
+    const change = waitForEvent<CanvasChangeDetail>(
+      el,
+      "iiif-player-canvas-change",
+    );
     second.click();
     expect((await change).detail.index).toBe(1);
     await vi.waitFor(() => {
@@ -150,7 +159,10 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     // A host that only ever uses attributes (the documented rule) writes
     // back the index it set in markup. Nothing about the in-player switch
     // may make that write a no-op.
-    const back = waitForEvent<CanvasChangeDetail>(el, "canvaschange");
+    const back = waitForEvent<CanvasChangeDetail>(
+      el,
+      "iiif-player-canvas-change",
+    );
     el.setAttribute("canvas-index", "0");
     expect((await back).detail.index).toBe(0);
     await vi.waitFor(() => {
@@ -159,22 +171,25 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     });
 
     // The element's own attribute write must not echo back into another
-    // canvas switch: exactly one canvaschange per switch, and no third one
+    // canvas switch: exactly one iiif-player-canvas-change per switch, and no third one
     // after everything settles.
     expect(changes).toEqual([1, 0]);
     await new Promise((r) => setTimeout(r, 50));
     expect(changes).toEqual([1, 0]);
   });
 
-  test("setting the canvas-index attribute after mount switches the canvas and fires canvaschange", async () => {
+  test("setting the canvas-index attribute after mount switches the canvas and fires iiif-player-canvas-change", async () => {
     const url = "https://example.com/el-canvas-attr.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_MULTI_CANVAS_STUB, id: url } },
     });
     const el = (await mountElement({ "manifest-url": url })) as El;
-    await waitForEvent(el, "playerrefavailable");
+    await waitForEvent(el, "iiif-player-ready");
 
-    const change = waitForEvent<CanvasChangeDetail>(el, "canvaschange");
+    const change = waitForEvent<CanvasChangeDetail>(
+      el,
+      "iiif-player-canvas-change",
+    );
     el.setAttribute("canvas-index", "1");
     const { detail } = await change;
     expect(detail.index).toBe(1);
@@ -211,7 +226,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     expect(shadow(el).textContent).toContain("Welcome to the interview.");
   });
 
-  test("shows the loading affordance while the VTT is in flight, then populates; playerrefavailable does not wait", async () => {
+  test("shows the loading affordance while the VTT is in flight, then populates; iiif-player-ready does not wait", async () => {
     const url = "https://example.com/el-vtt.json";
     const vtt = deferred<{ text: string }>();
     mockFetchRoutes({
@@ -219,7 +234,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
       "https://example.com/captions-fr.vtt": { promise: vtt.promise },
     });
     const el = await mountElement({ "manifest-url": url });
-    await waitForEvent(el, "playerrefavailable");
+    await waitForEvent(el, "iiif-player-ready");
     await untilShadow(el, '.transcript-panel[aria-busy="true"]');
     expect(shadow(el).querySelector(".loading-message")).toBeTruthy();
     expect(shadow(el).querySelectorAll("[data-annotation-id]")).toHaveLength(0);
@@ -242,7 +257,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
       "https://example.com/captions-en.vtt": { text: VTT_FIXTURE_OK },
     });
     const el = (await mountElement({ "manifest-url": url })) as El;
-    await waitForEvent(el, "playerrefavailable");
+    await waitForEvent(el, "iiif-player-ready");
     await untilShadow(el, "audio");
     expect(shadow(el).querySelector(".transcript-panel")).toBeNull();
 
@@ -295,7 +310,7 @@ describe("<iiif-transcript-player> canvases, gating, transcript", () => {
     try {
       const el = (await mountElement({ "manifest-url": url })) as El;
       await untilShadow(el, "video");
-      // playerrefavailable fires in the same microtask batch as the video's
+      // iiif-player-ready fires in the same microtask batch as the video's
       // first render, so by the time `untilShadow` above resolves the event
       // has already come and gone — read the ref off the element instead of
       // listening for an event that cannot arrive.

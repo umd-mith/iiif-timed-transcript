@@ -6,6 +6,8 @@
       canvasIndex: { attribute: "canvas-index", type: "Number", reflect: true },
       initialTime: { attribute: "initial-time", type: "Number" },
       autoplay: { attribute: "autoplay", type: "Boolean" },
+      label: { attribute: "label", type: "String" },
+      crossorigin: { attribute: "crossorigin", type: "String" },
       annotations: { attribute: "annotations" },
       preprocessManifest: { attribute: "preprocessmanifest" },
       errorCallback: { attribute: "errorcallback" },
@@ -16,6 +18,7 @@
 
 <script module lang="ts">
   import { setLocale } from "../lib/index.js";
+  import { hoistShadowStyles, warnIfNoStylesFound } from "./cssHoist.js";
 
   // Hosts on which `initial-time` has already been applied. Svelte destroys
   // the inner component a microtask after `disconnectedCallback` and rebuilds
@@ -98,6 +101,22 @@
       // differently-localized players sharing a page.
       #localeObserver: MutationObserver | undefined;
 
+      // CSP-safe style hoist (hardening spec 2.1): hoists Svelte's injected
+      // style nodes into adoptedStyleSheets on connect, and again on every
+      // later mutation (a canvas switch mounts new lib components lazily).
+      #styleObserver: MutationObserver | undefined;
+
+      // Set once in the constructor (attachInternals() may be called at
+      // most once per element) so the inner Svelte component ($host()) can
+      // reflect player state onto it as custom states — see the
+      // `internals.states` effect in the component script below.
+      __internals?: ElementInternals;
+
+      constructor(...params: never[]) {
+        super(...params);
+        this.__internals = this.attachInternals();
+      }
+
       #resolveLocale(): void {
         const match = this.closest("[lang]");
         const value = match?.getAttribute("lang");
@@ -124,6 +143,12 @@
           }
         }
         await super.connectedCallback();
+        hoistShadowStyles(this.shadowRoot!);
+        this.#styleObserver = new MutationObserver(() => {
+          hoistShadowStyles(this.shadowRoot!);
+        });
+        this.#styleObserver.observe(this.shadowRoot!, { childList: true });
+        setTimeout(() => warnIfNoStylesFound(this.shadowRoot!), 0);
         for (const key of Object.keys(captured)) {
           self[key] = captured[key];
         }
@@ -132,6 +157,8 @@
       disconnectedCallback() {
         this.#localeObserver?.disconnect();
         this.#localeObserver = undefined;
+        this.#styleObserver?.disconnect();
+        this.#styleObserver = undefined;
         super.disconnectedCallback();
       }
 
@@ -148,7 +175,7 @@
 
 <script lang="ts">
   import { untrack } from "svelte";
-  import { IIIFPlayer } from "../lib/index.js";
+  import { IIIFPlayer, t } from "../lib/index.js";
   import type {
     Annotation,
     CanvasInfo,
@@ -159,8 +186,10 @@
   import type {
     CanvasChangeDetail,
     ErrorCallback,
+    PlaybackEventDetail,
     PlayerErrorDetail,
     PlayerRefAvailableDetail,
+    RateChangeDetail,
   } from "./events.js";
 
   let {
@@ -168,6 +197,8 @@
     canvasIndex = 0,
     initialTime,
     autoplay = false,
+    label,
+    crossorigin,
     annotations = "auto",
     preprocessManifest,
     errorCallback,
@@ -176,6 +207,15 @@
     canvasIndex?: number;
     initialTime?: number | undefined;
     autoplay?: boolean;
+    /** `label` attribute. Host-settable accessible name for the element's
+     * top-level region. Falls back to the localized generic name. */
+    label?: string;
+    /**
+     * `crossorigin` attribute. Forwarded to the underlying media element.
+     * Any value other than "anonymous"/"use-credentials" is passed through
+     * unvalidated, same as the native HTML attribute.
+     */
+    crossorigin?: string;
     annotations?: Annotation[] | "auto";
     preprocessManifest?: ((raw: unknown) => unknown) | undefined;
     errorCallback?: ErrorCallback | undefined;
@@ -204,6 +244,7 @@
     error: Error,
     info: { fatal: boolean; source: PlayerErrorDetail["source"] },
   ) {
+    if (info.fatal) hasFatalHostError = true;
     // Read untracked: report() runs inside host-validation $effects (below),
     // and a tracked read of errorCallback here would make those effects
     // depend on it — so a later `el.errorCallback = fn` (the documented
@@ -220,7 +261,7 @@
         );
       }
     }
-    emit<PlayerErrorDetail>("playererror", {
+    emit<PlayerErrorDetail>("iiif-player-error", {
       error,
       fatal: info.fatal,
       source: info.source,
@@ -232,7 +273,7 @@
   // string; a misuse is reported as a non-fatal "host" error and the safe
   // default goes to Root instead. These effects run in the wrapper's first
   // flush, before Root's manifest fetch can settle, so a host error always
-  // precedes playerrefavailable.
+  // precedes iiif-player-ready.
   const annotationsValid = $derived(
     annotations === "auto" || Array.isArray(annotations),
   );
@@ -388,11 +429,43 @@
     return () => clearTimeout(timer);
   });
 
+  // Fatal errors that happen before playerRefValue is ever set (a manifest
+  // or first-canvas failure — report()'s `fatal: true` path) need their own
+  // flag: PlayerRef.state doesn't exist yet to read `.error` off of.
+  let hasFatalHostError = $state(false);
+
+  const isPlayingState = $derived(playerRefValue?.state.isPlaying ?? false);
+  // "loading": the manifest/first canvas hasn't resolved yet. Deliberately
+  // narrower than isBuffering (a mid-playback stall) — a host wanting a
+  // spinner during startup only, not every rebuffer, wants this one.
+  const isLoadingState = $derived(
+    !playerRefValue || !playerRefValue.state.isReady,
+  );
+  const isErrorState = $derived(
+    hasFatalHostError || playerRefValue?.state.error != null,
+  );
+
+  $effect(() => {
+    const internals = ($host() as unknown as { __internals?: ElementInternals })
+      .__internals;
+    if (!internals) return;
+    internals.states[isPlayingState ? "add" : "delete"]("playing");
+    internals.states[isLoadingState ? "add" : "delete"]("loading");
+    internals.states[isErrorState ? "add" : "delete"]("error");
+  });
+
   const safeAnnotations = $derived<Annotation[] | "auto">(
     annotationsValid ? annotations : "auto",
   );
   const safePreprocess = $derived(
     preprocessValid ? preprocessManifest : undefined,
+  );
+
+  // A blank/whitespace-only label attribute (e.g. `label=""`) is treated
+  // like "not set" rather than an empty accessible name — an empty
+  // aria-label is worse than the localized default, not more specific.
+  const effectiveLabel = $derived(
+    label && label.trim() !== "" ? label : t("playerRegionLabel"),
   );
 
   // `initial-time` is coerced with `+value` too, so `initial-time="abc"`
@@ -446,9 +519,20 @@
     ...(hlsDefault ? { hlsConstructor: hlsDefault } : {}),
   });
 
+  // exactOptionalPropertyTypes: Viewer's crossOrigin prop is
+  // `"anonymous" | "use-credentials"` (no explicit `| undefined`), so it can
+  // only be passed when it is actually one of those two values.
+  const optionalViewerProps = $derived<{
+    crossOrigin?: "anonymous" | "use-credentials";
+  }>(
+    crossorigin === "anonymous" || crossorigin === "use-credentials"
+      ? { crossOrigin: crossorigin }
+      : {},
+  );
+
   function handlePlayerInit(player: PlayerRef) {
     playerRefValue = player;
-    emit<PlayerRefAvailableDetail>("playerrefavailable", { playerRef: player });
+    emit<PlayerRefAvailableDetail>("iiif-player-ready", { playerRef: player });
   }
 
   function handleError(error: Error, info: PlayerErrorInfo) {
@@ -474,11 +558,63 @@
     // the index Root just switched to, and performCanvasSwitch returns
     // early on `index === player.canvasIndex`.
     $host().setAttribute("canvas-index", String(index));
-    emit<CanvasChangeDetail>("canvaschange", { index, canvas });
+    emit<CanvasChangeDetail>("iiif-player-canvas-change", { index, canvas });
   }
+
+  // Playback events are derived from actual player.state transitions
+  // (Shoelace's "state-driven only" rule), never from a programmatic prop
+  // write — a canvas switch resets several PlayerState fields via
+  // resetTransientPlaybackState() but never actually starts playback, so
+  // it must never look like a `play` transition here.
+  let prevPlaybackState: {
+    isPlaying: boolean;
+    hasEnded: boolean;
+    isSeeking: boolean;
+    playbackRate: number;
+  } | null = null;
+
+  $effect(() => {
+    const state = playerRefValue?.state;
+    if (!state) return;
+    const current = {
+      isPlaying: state.isPlaying,
+      hasEnded: state.hasEnded,
+      isSeeking: state.isSeeking,
+      playbackRate: state.playbackRate,
+    };
+    const prev = prevPlaybackState;
+    prevPlaybackState = current;
+    // The first observation establishes the baseline; nothing transitioned
+    // yet, so there is nothing to report.
+    if (!prev) return;
+
+    const justEnded = current.hasEnded && !prev.hasEnded;
+    if (justEnded) {
+      emit<PlaybackEventDetail>("iiif-player-ended", {});
+    }
+    if (current.isPlaying !== prev.isPlaying) {
+      if (current.isPlaying) {
+        emit<PlaybackEventDetail>("iiif-player-play", {});
+      } else if (!justEnded) {
+        // Ordering pin (3.2 in the hardening spec): HTML fires `pause`
+        // then `ended` in one queued task, so this flush sees isPlaying
+        // and hasEnded flip together. Suppress `iiif-player-pause` in
+        // that case — `iiif-player-ended` already reported it, by design.
+        emit<PlaybackEventDetail>("iiif-player-pause", {});
+      }
+    }
+    if (prev.isSeeking && !current.isSeeking) {
+      emit<PlaybackEventDetail>("iiif-player-seeked", {});
+    }
+    if (current.playbackRate !== prev.playbackRate) {
+      emit<RateChangeDetail>("iiif-player-rate-change", {
+        rate: current.playbackRate,
+      });
+    }
+  });
 </script>
 
-<div class="iiif-tp">
+<div class="iiif-tp" role="region" aria-label={effectiveLabel}>
   {#if manifestUrl}
     <IIIFPlayer.Root
       {manifestUrl}
@@ -491,7 +627,7 @@
       onCanvasChange={handleCanvasChange}
     >
       {#snippet children({ player })}
-        <IIIFPlayer.Viewer />
+        <IIIFPlayer.Viewer {...optionalViewerProps} />
         <IIIFPlayer.Controls>
           <IIIFPlayer.PlayButton />
           <IIIFPlayer.Progress />

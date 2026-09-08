@@ -1,5 +1,5 @@
 // NOTE: this suite asserts against the CURRENT event name
-// "playerrefavailable" (pre-3.1 rename). Hardening spec 3.1 renames it to
+// "iiif-player-ready" (pre-3.1 rename). Hardening spec 3.1 renames it to
 // "iiif-player-ready" — when that lands, flip every occurrence below.
 import {
   describe,
@@ -43,7 +43,7 @@ describe("<iiif-transcript-player> reconnection", () => {
     manifestCache.clear();
   });
 
-  test("remove + re-append rebuilds the player: a fresh playerRef, a second playerrefavailable, and initial-time is not re-applied", async () => {
+  test("remove + re-append rebuilds the player: a fresh playerRef, a second iiif-player-ready, and initial-time is not re-applied", async () => {
     const url = "https://example.com/el-reattach.json";
     const playable = withStubMedia(MANIFEST_MULTI_CANVAS, {
       audio: silentWavDataUrl(3),
@@ -55,7 +55,7 @@ describe("<iiif-transcript-player> reconnection", () => {
     el.setAttribute("initial-time", "1");
     document.body.appendChild(el);
 
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     const audio1 = await untilShadow<HTMLAudioElement>(el, "audio");
     await vi.waitFor(() => {
       expect(el.playerRef!.state.isReady).toBe(true);
@@ -72,7 +72,7 @@ describe("<iiif-transcript-player> reconnection", () => {
     await new Promise((r) => setTimeout(r, 0));
     const secondEvent = waitForEvent<PlayerRefAvailableDetail>(
       el,
-      "playerrefavailable",
+      "iiif-player-ready",
     );
     document.body.appendChild(el);
     const { detail: secondDetail } = await secondEvent;
@@ -100,7 +100,7 @@ describe("<iiif-transcript-player> reconnection", () => {
     const el = document.createElement(DEFAULT_TAG) as El;
     el.setAttribute("manifest-url", url);
     document.body.appendChild(el);
-    await waitForEvent<PlayerRefAvailableDetail>(el, "playerrefavailable");
+    await waitForEvent<PlayerRefAvailableDetail>(el, "iiif-player-ready");
     const playerRefBefore = el.playerRef;
 
     expect(typeof el.connectedMoveCallback).toBe("function");

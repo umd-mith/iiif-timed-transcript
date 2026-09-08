@@ -23,6 +23,22 @@ export interface CanvasInfo {
   mediaType: "audio" | "video";
 }
 
+/**
+ * Reset-or-survives behavior for each transient field, applied by
+ * `resetTransientPlaybackState()` (Root.svelte) on every canvas switch:
+ *
+ * | field        | on canvas switch | on `play` (replay after ended) |
+ * |--------------|-------------------|----------------------------------|
+ * | isPlaying    | reset to `false`  | —                                |
+ * | isBuffering  | survives          | —                                |
+ * | currentTime  | reset to `0`      | —                                |
+ * | duration     | reset to `0`      | —                                |
+ * | playbackRate | survives          | —                                |
+ * | isReady      | reset to `false`  | —                                |
+ * | error        | reset to `null`   | —                                |
+ * | hasEnded     | reset to `false`  | cleared to `false`               |
+ * | isSeeking    | reset to `false`  | —                                |
+ */
 export interface PlayerState {
   isPlaying: boolean;
   isBuffering: boolean;
@@ -31,6 +47,10 @@ export interface PlayerState {
   playbackRate: number;
   isReady: boolean;
   error: Error | null;
+  /** True once the media has fired its native `ended` event. Cleared on the next `play` (replay). Reset on canvas switch. */
+  hasEnded: boolean;
+  /** True between the native `seeking` and `seeked` events. Reset on canvas switch. */
+  isSeeking: boolean;
 }
 
 export interface PlayerActions {
@@ -60,7 +80,8 @@ export type PlayerErrorSource =
   | "canvas"
   | "media"
   | "playback"
-  | "transcript";
+  | "transcript"
+  | "auth";
 
 export interface PlayerErrorInfo {
   /** `true`: the player will not become usable (manifest/canvas/media). `false`: recoverable (transcript, playback). */

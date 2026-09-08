@@ -27,7 +27,11 @@ type Seen = { type: string; detail: unknown };
 
 function recordEvents(el: HTMLElement): Seen[] {
   const seen: Seen[] = [];
-  for (const type of ["playerrefavailable", "playererror", "canvaschange"]) {
+  for (const type of [
+    "iiif-player-ready",
+    "iiif-player-error",
+    "iiif-player-canvas-change",
+  ]) {
     el.addEventListener(type, (e) =>
       seen.push({ type, detail: (e as CustomEvent).detail }),
     );
@@ -53,7 +57,7 @@ describe("<iiif-transcript-player> error contract", () => {
     manifestCache.clear();
   });
 
-  test("a failing manifest fires playererror (fatal, manifest) and errorCallback; playerRef stays nullish; no playerrefavailable", async () => {
+  test("a failing manifest fires iiif-player-error (fatal, manifest) and errorCallback; playerRef stays nullish; no iiif-player-ready", async () => {
     const url = "https://example.com/el-404.json";
     mockFetchRoutes({ [url]: { status: 404 } });
     const errorCallback = vi.fn();
@@ -67,9 +71,9 @@ describe("<iiif-transcript-player> error contract", () => {
     document.body.appendChild(el);
 
     await vi.waitFor(() => {
-      expect(seen.some((s) => s.type === "playererror")).toBe(true);
+      expect(seen.some((s) => s.type === "iiif-player-error")).toBe(true);
     });
-    const detail = seen.find((s) => s.type === "playererror")!
+    const detail = seen.find((s) => s.type === "iiif-player-error")!
       .detail as PlayerErrorDetail;
     expect(detail.fatal).toBe(true);
     expect(detail.source).toBe("manifest");
@@ -81,13 +85,13 @@ describe("<iiif-transcript-player> error contract", () => {
       source: "manifest",
     });
     await new Promise((r) => setTimeout(r, 30));
-    expect(seen.filter((s) => s.type === "playerrefavailable")).toHaveLength(0);
+    expect(seen.filter((s) => s.type === "iiif-player-ready")).toHaveLength(0);
     expect(el.playerRef == null).toBe(true);
     // Root's own error UI renders inside the shadow root
     await untilShadow(el, '[role="alert"]');
   });
 
-  test("a string assigned to the annotations attribute is a non-fatal host error, fired before playerrefavailable, and not passed to Root", async () => {
+  test("a string assigned to the annotations attribute is a non-fatal host error, fired before iiif-player-ready, and not passed to Root", async () => {
     const url = "https://example.com/el-host-misuse.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_STUB_MEDIA, id: url } },
@@ -99,14 +103,14 @@ describe("<iiif-transcript-player> error contract", () => {
     document.body.appendChild(el);
 
     await vi.waitFor(() => {
-      expect(seen.some((s) => s.type === "playerrefavailable")).toBe(true);
+      expect(seen.some((s) => s.type === "iiif-player-ready")).toBe(true);
     });
     const types = seen.map((s) => s.type);
-    expect(types.indexOf("playererror")).toBeGreaterThanOrEqual(0);
-    expect(types.indexOf("playererror")).toBeLessThan(
-      types.indexOf("playerrefavailable"),
+    expect(types.indexOf("iiif-player-error")).toBeGreaterThanOrEqual(0);
+    expect(types.indexOf("iiif-player-error")).toBeLessThan(
+      types.indexOf("iiif-player-ready"),
     );
-    const detail = seen.find((s) => s.type === "playererror")!
+    const detail = seen.find((s) => s.type === "iiif-player-error")!
       .detail as PlayerErrorDetail;
     expect(detail).toMatchObject({ fatal: false, source: "host" });
     // The safe default ("auto") reached Root: no transcript, no crash.
@@ -130,11 +134,11 @@ describe("<iiif-transcript-player> error contract", () => {
     document.body.appendChild(el);
 
     await vi.waitFor(() => {
-      expect(seen.some((s) => s.type === "playerrefavailable")).toBe(true);
+      expect(seen.some((s) => s.type === "iiif-player-ready")).toBe(true);
     });
     const hostErrors = seen.filter(
       (s) =>
-        s.type === "playererror" &&
+        s.type === "iiif-player-error" &&
         (s.detail as PlayerErrorDetail).source === "host",
     );
     expect(hostErrors).toHaveLength(2);
@@ -168,7 +172,7 @@ describe("<iiif-transcript-player> error contract", () => {
       expect(
         seen.filter(
           (s) =>
-            s.type === "playererror" &&
+            s.type === "iiif-player-error" &&
             (s.detail as PlayerErrorDetail).source === "host",
         ),
       ).toHaveLength(1);
@@ -182,7 +186,7 @@ describe("<iiif-transcript-player> error contract", () => {
 
     const hostErrors = seen.filter(
       (s) =>
-        s.type === "playererror" &&
+        s.type === "iiif-player-error" &&
         (s.detail as PlayerErrorDetail).source === "host",
     );
     expect(hostErrors).toHaveLength(1);
@@ -197,7 +201,7 @@ describe("<iiif-transcript-player> error contract", () => {
     ).toHaveLength(0);
   });
 
-  test("a 404 VTT is a non-fatal transcript playererror strictly after playerrefavailable; the player and its native caption track survive", async () => {
+  test("a 404 VTT is a non-fatal transcript iiif-player-error strictly after iiif-player-ready; the player and its native caption track survive", async () => {
     const url = "https://example.com/el-vtt-404.json";
     mockFetchRoutes({
       [url]: { json: { ...MANIFEST_VTT_UNPLAYABLE_MEDIA, id: url } },
@@ -211,7 +215,7 @@ describe("<iiif-transcript-player> error contract", () => {
     document.body.appendChild(el);
 
     // This canvas's media is a `data:` stub (see withStubMedia): the <video>
-    // can never play it, so a media-tier playererror may also arrive. That is
+    // can never play it, so a media-tier iiif-player-error may also arrive. That is
     // not what this test is about, so every assertion below is scoped to the
     // transcript tier rather than swallowing the media `error` event.
     //
@@ -225,7 +229,7 @@ describe("<iiif-transcript-player> error contract", () => {
       expect(
         seen.some(
           (s) =>
-            s.type === "playererror" &&
+            s.type === "iiif-player-error" &&
             (s.detail as PlayerErrorDetail).source === "transcript",
         ),
       ).toBe(true);
@@ -233,11 +237,11 @@ describe("<iiif-transcript-player> error contract", () => {
     const types = seen.map((s) => s.type);
     const transcriptAt = seen.findIndex(
       (s) =>
-        s.type === "playererror" &&
+        s.type === "iiif-player-error" &&
         (s.detail as PlayerErrorDetail).source === "transcript",
     );
-    expect(types.indexOf("playerrefavailable")).toBeGreaterThanOrEqual(0);
-    expect(types.indexOf("playerrefavailable")).toBeLessThan(transcriptAt);
+    expect(types.indexOf("iiif-player-ready")).toBeGreaterThanOrEqual(0);
+    expect(types.indexOf("iiif-player-ready")).toBeLessThan(transcriptAt);
     expect(seen[transcriptAt]!.detail).toMatchObject({
       fatal: false,
       source: "transcript",
@@ -248,7 +252,7 @@ describe("<iiif-transcript-player> error contract", () => {
     expect(el.shadowRoot!.querySelectorAll("track")).toHaveLength(1);
   });
 
-  test("a fatal media error arrives after playerrefavailable and leaves playerRef set", async () => {
+  test("a fatal media error arrives after iiif-player-ready and leaves playerRef set", async () => {
     // The readiness contract is scoped: `playerRef` stays nullish only for a
     // fatal manifest / first-canvas failure. Media failures are detected by
     // the <video>/<audio> element, which exists only after onPlayerInit has
@@ -269,21 +273,21 @@ describe("<iiif-transcript-player> error contract", () => {
       expect(
         seen.some(
           (s) =>
-            s.type === "playererror" &&
+            s.type === "iiif-player-error" &&
             (s.detail as PlayerErrorDetail).source === "media",
         ),
       ).toBe(true);
     });
     const mediaAt = seen.findIndex(
       (s) =>
-        s.type === "playererror" &&
+        s.type === "iiif-player-error" &&
         (s.detail as PlayerErrorDetail).source === "media",
     );
     expect(seen[mediaAt]!.detail).toMatchObject({
       fatal: true,
       source: "media",
     });
-    const refAt = seen.findIndex((s) => s.type === "playerrefavailable");
+    const refAt = seen.findIndex((s) => s.type === "iiif-player-ready");
     expect(refAt).toBeGreaterThanOrEqual(0);
     expect(refAt).toBeLessThan(mediaAt);
     expect(el.playerRef).toBeTruthy();
