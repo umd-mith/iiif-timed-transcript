@@ -11,6 +11,6 @@ about: Something isn't working
 
 **Versions**
 
-- `@umd-mith/svelte-iiif-transcript-player`:
+- `@umd-mith/iiif-timed-transcript`:
 - Svelte:
 - Browser:

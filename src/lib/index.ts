@@ -13,7 +13,7 @@
  * @example
  * ```svelte
  * <script>
- *   import { IIIFPlayer } from '@umd-mith/svelte-iiif-transcript-player';
+ *   import { IIIFPlayer } from '@umd-mith/iiif-timed-transcript';
  * </script>
  *
  * <IIIFPlayer.Root manifestUrl="..." canvasIndex={0}>

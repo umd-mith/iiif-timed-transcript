@@ -4,10 +4,7 @@
    * Demonstrates: IIIFPlayer.Root + child components in Astro islands.
    */
   import { onMount } from "svelte";
-  import {
-    IIIFPlayer,
-    type Annotation,
-  } from "@umd-mith/svelte-iiif-transcript-player";
+  import { IIIFPlayer, type Annotation } from "@umd-mith/iiif-timed-transcript";
 
   // Props
   let {

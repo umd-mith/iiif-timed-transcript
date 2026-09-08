@@ -9,7 +9,7 @@
    *
    * Manifest: IIIF Cookbook recipe 0026 — Lully's Armide opera (video).
    */
-  import { IIIFPlayer } from "@umd-mith/svelte-iiif-transcript-player";
+  import { IIIFPlayer } from "@umd-mith/iiif-timed-transcript";
 
   // Props
   let {

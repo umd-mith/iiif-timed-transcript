@@ -7,10 +7,7 @@
    * Manifest: unpublished manifest generated from WebVTT from History UnErased:
    * An Interview with Deb Fowler and Kathleen Barker, Scholarly Editing, vol 41, 2024, CC BY-NC-SA.
    */
-  import {
-    IIIFPlayer,
-    type Annotation,
-  } from "@umd-mith/svelte-iiif-transcript-player";
+  import { IIIFPlayer, type Annotation } from "@umd-mith/iiif-timed-transcript";
 
   // Props
   let {

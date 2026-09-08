@@ -1,4 +1,4 @@
-# @umd-mith/svelte-iiif-transcript-player
+# @umd-mith/iiif-timed-transcript
 
 ## 0.15.0
 
@@ -18,7 +18,7 @@
 
   This fixes `ERR_UNSUPPORTED_DIR_IMPORT` and `ERR_MODULE_NOT_FOUND` errors seen when the package is resolved by Node's native resolver — for example during Astro SSR prerendering, or when another Vite plugin (such as `@tailwindcss/vite` v4, which transitively registers a Node ESM loader hook via `@tailwindcss/node`) forwards resolution to Node's defaults.
 
-  No API changes. Consumers using `ssr.noExternal: ['@umd-mith/svelte-iiif-transcript-player']` in their Vite/Astro config remain the recommended pattern for SSR contexts.
+  No API changes. Consumers using `ssr.noExternal: ['@umd-mith/iiif-timed-transcript']` in their Vite/Astro config remain the recommended pattern for SSR contexts.
 
 ## 0.14.0
 

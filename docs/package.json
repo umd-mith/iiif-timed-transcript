@@ -1,5 +1,5 @@
 {
-  "name": "svelte-iiif-transcript-player-docs",
+  "name": "iiif-timed-transcript-docs",
   "type": "module",
   "version": "0.0.7",
   "scripts": {
@@ -13,7 +13,7 @@
     "@astrojs/check": "^0.9.4",
     "@astrojs/svelte": "^7.2.5",
     "@astrojs/tailwind": "^6.0.2",
-    "@umd-mith/svelte-iiif-transcript-player": "workspace:*",
+    "@umd-mith/iiif-timed-transcript": "workspace:*",
     "astro": "^5.17.1",
     "hls.js": "^1.6.15",
     "media-captions": "^0.0.18",

@@ -3,8 +3,8 @@
 ## Setup
 
 ```bash
-git clone git@github.com:umd-mith/svelte-iiif-transcript-player.git
-cd svelte-iiif-transcript-player
+git clone git@github.com:umd-mith/iiif-timed-transcript.git
+cd iiif-timed-transcript
 pnpm install
 pnpm exec playwright install chromium
 ```

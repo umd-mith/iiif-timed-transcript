@@ -8,10 +8,7 @@
    * getPlayerContext(). Instead, onPlayerInit bridges the gap.
    *
    */
-  import {
-    IIIFPlayer,
-    type PlayerRef,
-  } from "@umd-mith/svelte-iiif-transcript-player";
+  import { IIIFPlayer, type PlayerRef } from "@umd-mith/iiif-timed-transcript";
 
   let {
     manifestUrl,

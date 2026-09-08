@@ -271,7 +271,7 @@ if (JSON.stringify(cemStateNames) !== JSON.stringify(realStateNames)) {
 // describes (a self-import that does not resolve, a syntax error) fails the
 // build instead of shipping silently. moduleResolution "bundler" + module
 // "esnext" is required (over tsc's classic default) for the self-import of
-// "@umd-mith/svelte-iiif-transcript-player" inside public-types.d.ts to
+// "@umd-mith/iiif-timed-transcript" inside public-types.d.ts to
 // resolve via the package's own "exports" map.
 //
 // Compiling index.d.ts *on its own* only checks that it is internally
