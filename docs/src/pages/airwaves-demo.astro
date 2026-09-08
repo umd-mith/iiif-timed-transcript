@@ -1,6 +1,6 @@
 ---
-import { ManifestSchema } from '@umd-mith/iiif-timed-transcript';
-import manifestJson from '../../public/fixtures/airwaves.json';
+import { ManifestSchema } from "@umd-mith/iiif-timed-transcript";
+import manifestJson from "../../public/fixtures/airwaves.json";
 
 // The element only fetches a manifest URL, and Unlocking the Airwaves serves
 // none — so this page authors one and publishes it as a static file. The same
@@ -13,115 +13,258 @@ const manifestUrl = `${import.meta.env.BASE_URL}/fixtures/airwaves.json`;
 // IIIF Presentation 3 manifest.
 const parsed = ManifestSchema.safeParse(manifestJson);
 if (!parsed.success) {
-	throw new Error(
-		`airwaves.json is not a valid IIIF manifest:\n${parsed.error}`,
-	);
+  throw new Error(
+    `airwaves.json is not a valid IIIF manifest:\n${parsed.error}`,
+  );
 }
 
 const manifestSource = JSON.stringify(manifestJson, null, 2);
 
 const episodeUrl =
-	'https://www.unlockingtheairwaves.org/episode/cpb-aacip-500-1c1tjk8d/';
+  "https://www.unlockingtheairwaves.org/episode/cpb-aacip-500-1c1tjk8d/";
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Unlocking the Airwaves Demo - IIIF Transcript Player</title>
-		<meta name="description" content="A 1954 NAEB radio program from Unlocking the Airwaves — audio and a WebVTT transcript on S3, no IIIF anywhere — played by the <iiif-transcript-player> web component after wrapping it in a minimal hand-authored manifest." />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-	</head>
-	<body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
-		<!-- Navigation -->
-		<nav class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200">
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div class="flex items-center justify-between h-16">
-					<div class="flex items-center">
-						<a href="." class="text-xl font-serif font-bold text-ink-900 tracking-tight">
-							IIIF Transcript Player
-						</a>
-					</div>
-					<div class="hidden md:flex items-center space-x-8">
-						<a href="." class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Home</a>
-						<a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
-							GitHub
-						</a>
-					</div>
-				</div>
-			</div>
-		</nav>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unlocking the Airwaves Demo - IIIF Transcript Player</title>
+    <meta
+      name="description"
+      content="A 1954 NAEB radio program from Unlocking the Airwaves — audio and a WebVTT transcript on S3, no IIIF anywhere — played by the <iiif-transcript-player> web component after wrapping it in a minimal hand-authored manifest."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
+    <!-- Navigation -->
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <a
+              href="."
+              class="text-xl font-serif font-bold text-ink-900 tracking-tight"
+            >
+              IIIF Transcript Player
+            </a>
+          </div>
+          <div class="hidden md:flex items-center space-x-8">
+            <a
+              href="."
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+              >Home</a
+            >
+            <a
+              href="https://github.com/umd-mith/iiif-timed-transcript"
+              target="_blank"
+              rel="noopener"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
 
-		<!-- Hero -->
-		<section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
-			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">DEMO · WEB COMPONENT</div>
-				<h1 class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight">
-					An Audio Item That Was Never IIIF
-				</h1>
-				<p class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed">
-					<a href="https://www.unlockingtheairwaves.org/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Unlocking the Airwaves</a> reunites the scattered recordings of the National Association of Educational Broadcasters. It is a plain site: each program is an <code class="font-mono text-base bg-parchment-200 px-1.5 py-0.5 rounded">&lt;audio&gt;</code> tag and a caption <code class="font-mono text-base bg-parchment-200 px-1.5 py-0.5 rounded">&lt;track&gt;</code>, two files on S3. There is no IIIF manifest, no API, nothing this player was built to consume.
-				</p>
-				<p class="text-base text-ink-500 mb-4 max-w-3xl font-serif leading-relaxed">
-					This page plays one of its programs anyway — <em>American language: Americans as makers of words</em>, a 1954 talk by Mitford M. Mathews, editor of the <em>Dictionary of Americanisms</em>, on how Americans coin new words. Between the two S3 files and the player, this page adds one thing: a small IIIF manifest.
-				</p>
-				<p class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed">
-					This is the inverse of the <a href={`${import.meta.env.BASE_URL}/avalon-demo`} class="text-terracotta-500 hover:text-terracotta-600 underline">Avalon demo</a>. There, a repository publishes a complete manifest and the element uses it unchanged. Here, no IIIF exists at the source and this page authors the manifest. That is the more common case: most audiovisual pages on the web have media and captions but no manifest. <strong>Every host-page block below is the code this page actually runs.</strong>
-				</p>
+    <!-- Hero -->
+    <section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">
+          DEMO · WEB COMPONENT
+        </div>
+        <h1
+          class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight"
+        >
+          An Audio Item That Was Never IIIF
+        </h1>
+        <p
+          class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed"
+        >
+          <a
+            href="https://www.unlockingtheairwaves.org/"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-500 hover:text-terracotta-600 underline"
+            >Unlocking the Airwaves</a
+          > reunites the scattered recordings of the National Association of Educational
+          Broadcasters. It is a plain site: each program is an <code
+            class="font-mono text-base bg-parchment-200 px-1.5 py-0.5 rounded"
+            >&lt;audio&gt;</code
+          > tag and a caption <code
+            class="font-mono text-base bg-parchment-200 px-1.5 py-0.5 rounded"
+            >&lt;track&gt;</code
+          >, two files on S3. There is no IIIF manifest, no API, nothing this
+          player was built to consume.
+        </p>
+        <p
+          class="text-base text-ink-500 mb-4 max-w-3xl font-serif leading-relaxed"
+        >
+          This page plays one of its programs anyway — <em
+            >American language: Americans as makers of words</em
+          >, a 1954 talk by Mitford M. Mathews, editor of the <em
+            >Dictionary of Americanisms</em
+          >, on how Americans coin new words. Between the two S3 files and the
+          player, this page adds one thing: a small IIIF manifest.
+        </p>
+        <p
+          class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed"
+        >
+          This is the inverse of the <a
+            href={`${import.meta.env.BASE_URL}/avalon-demo`}
+            class="text-terracotta-500 hover:text-terracotta-600 underline"
+            >Avalon demo</a
+          >. There, a repository publishes a complete manifest and the element
+          uses it unchanged. Here, no IIIF exists at the source and this page
+          authors the manifest. That is the more common case: most audiovisual
+          pages on the web have media and captions but no manifest. <strong
+            >Every host-page block below is the code this page actually runs.</strong
+          >
+        </p>
 
-				<h2 class="text-2xl font-serif font-bold text-ink-900 mb-4">What the source publishes</h2>
+        <h2 class="text-2xl font-serif font-bold text-ink-900 mb-4">
+          What the source publishes
+        </h2>
 
-				<!-- Step 1 -->
-				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
-					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">1 — Two files on S3, wired to a bare <code class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded">&lt;audio&gt;</code></h3>
-					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
-						View source on the <a href={episodeUrl} target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">episode page</a> and this is the whole media layer — an MP3 and a WebVTT caption file, both served from an Amazon S3 bucket with <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Access-Control-Allow-Origin: *</code> and byte-range support:
-					</p>
-					<pre class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`<audio controls crossorigin="anonymous"
+        <!-- Step 1 -->
+        <div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+          <h3 class="text-lg font-serif font-bold text-ink-900 mb-3">
+            1 — Two files on S3, wired to a bare <code
+              class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded"
+              >&lt;audio&gt;</code
+            >
+          </h3>
+          <p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
+            View source on the <a
+              href={episodeUrl}
+              target="_blank"
+              rel="noopener"
+              class="text-terracotta-500 hover:text-terracotta-600 underline"
+              >episode page</a
+            > and this is the whole media layer — an MP3 and a WebVTT caption file,
+            both served from an Amazon S3 bucket with <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >Access-Control-Allow-Origin: *</code
+            > and byte-range support:
+          </p>
+          <pre
+            class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`<audio controls crossorigin="anonymous"
        src="https://mith-uta.s3.amazonaws.com/data/audio/cpb-aacip-500-1c1tjk8d.mp3">
   <track default kind="captions" srclang="en"
          src="https://mith-uta.s3.amazonaws.com/data/transcripts/…/cpb-aacip-500-1c1tjk8d.vtt">
 </audio>`}</code></pre>
-					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						That is enough to play and to caption, but not to navigate: the transcript is only inside the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">&lt;track&gt;</code> — not shown as text, not searchable, with no way to click a line and seek. A IIIF manifest makes the same cues addressable, so the player can list, search, and seek to them.
-					</p>
-				</div>
+          <p class="text-sm text-ink-600 font-serif leading-relaxed">
+            That is enough to play and to caption, but not to navigate: the
+            transcript is only inside the <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >&lt;track&gt;</code
+            > — not shown as text, not searchable, with no way to click a line and
+            seek. A IIIF manifest makes the same cues addressable, so the player can
+            list, search, and seek to them.
+          </p>
+        </div>
 
-				<h2 class="text-2xl font-serif font-bold text-ink-900 mb-4 mt-12">What this page authors</h2>
+        <h2 class="text-2xl font-serif font-bold text-ink-900 mb-4 mt-12">
+          What this page authors
+        </h2>
 
-				<!-- Step 2 -->
-				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
-					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">2 — A minimal IIIF manifest around those two URLs</h3>
-					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
-						One canvas, its <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">duration</code> the length of the audio. The MP3 is a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">painting</code> annotation — a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Sound</code> body. The VTT is a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> annotation with body type <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Text</code> and format <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">text/vtt</code> (IIIF Cookbook <a href="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">recipe 0219</a>). Nothing is copied out of the VTT — the manifest only points at it; the player fetches and parses it. This is the file served at <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded break-all">{manifestUrl}</code>, shown verbatim:
-					</p>
-					<pre class="text-xs font-mono overflow-x-auto text-ink-800 mb-4 max-h-[520px]"><code>{manifestSource}</code></pre>
-					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						The <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">id</code>s are the URL where this manifest is actually served — this is an authored artifact, not something Unlocking the Airwaves publishes, and the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">requiredStatement</code> says so. At build time this page validates the JSON against the library's <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">ManifestSchema</code>; a malformed manifest fails the build rather than reaching a browser.
-					</p>
-				</div>
+        <!-- Step 2 -->
+        <div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+          <h3 class="text-lg font-serif font-bold text-ink-900 mb-3">
+            2 — A minimal IIIF manifest around those two URLs
+          </h3>
+          <p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
+            One canvas, its <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >duration</code
+            > the length of the audio. The MP3 is a <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >painting</code
+            > annotation — a <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >Sound</code
+            > body. The VTT is a <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >supplementing</code
+            > annotation with body type <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >Text</code
+            > and format <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >text/vtt</code
+            > (IIIF Cookbook <a
+              href="https://iiif.io/api/cookbook/recipe/0219-using-caption-file/"
+              target="_blank"
+              rel="noopener"
+              class="text-terracotta-500 hover:text-terracotta-600 underline"
+              >recipe 0219</a
+            >). Nothing is copied out of the VTT — the manifest only points at
+            it; the player fetches and parses it. This is the file served at <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded break-all"
+              >{manifestUrl}</code
+            >, shown verbatim:
+          </p>
+          <pre
+            class="text-xs font-mono overflow-x-auto text-ink-800 mb-4 max-h-[520px]"><code>{manifestSource}</code></pre>
+          <p class="text-sm text-ink-600 font-serif leading-relaxed">
+            The <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >id</code
+            >s are the URL where this manifest is actually served — this is an
+            authored artifact, not something Unlocking the Airwaves publishes,
+            and the <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >requiredStatement</code
+            > says so. At build time this page validates the JSON against the library's
+            <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >ManifestSchema</code
+            >; a malformed manifest fails the build rather than reaching a
+            browser.
+          </p>
+        </div>
 
-				<!-- Step 3 -->
-				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
-					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">3 — The markup: one element</h3>
-					<pre class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`<iiif-transcript-player
+        <!-- Step 3 -->
+        <div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+          <h3 class="text-lg font-serif font-bold text-ink-900 mb-3">
+            3 — The markup: one element
+          </h3>
+          <pre
+            class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`<iiif-transcript-player
   id="player"
   manifest-url="/iiif-timed-transcript/fixtures/airwaves.json"
   label="American language: Americans as makers of words (NAEB, 1954)"
   crossorigin="anonymous"
 ></iiif-transcript-player>`}</code></pre>
-					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						Audio-only, so the element renders no video frame — just the control bar and the transcript panel. <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">crossorigin="anonymous"</code> puts the media element in CORS mode so the transcript's caption track loads from the S3 bucket (a cross-origin text track needs it). The transcript switch, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">annotations = "auto"</code>, is set as a property in the script below.
-					</p>
-				</div>
+          <p class="text-sm text-ink-600 font-serif leading-relaxed">
+            Audio-only, so the element renders no video frame — just the control
+            bar and the transcript panel. <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >crossorigin="anonymous"</code
+            > puts the media element in CORS mode so the transcript's caption track
+            loads from the S3 bucket (a cross-origin text track needs it). The transcript
+            switch, <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >annotations = "auto"</code
+            >, is set as a property in the script below.
+          </p>
+        </div>
 
-				<!-- Step 4 -->
-				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
-					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">4 — Register the element and turn on the auto transcript</h3>
-					<pre class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`import { register } from "@umd-mith/iiif-timed-transcript/element";
+        <!-- Step 4 -->
+        <div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+          <h3 class="text-lg font-serif font-bold text-ink-900 mb-3">
+            4 — Register the element and turn on the auto transcript
+          </h3>
+          <pre
+            class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`import { register } from "@umd-mith/iiif-timed-transcript/element";
 register(); // defines <iiif-transcript-player>
 
 const el = document.getElementById("player");
@@ -129,155 +272,222 @@ const el = document.getElementById("player");
 // property, not attribute: build the transcript from the manifest's
 // supplementing VTT track — no VTT parsing in this page
 el.annotations = "auto";`}</code></pre>
-					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						With <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">annotations = "auto"</code> the element finds no embedded text annotations, falls back to the canvas's <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> VTT track, fetches it, reduces each cue to plain text, and builds the click-to-seek, searchable transcript. The event log beside the live player records each event the element emits.
-					</p>
-				</div>
-			</div>
-		</section>
+          <p class="text-sm text-ink-600 font-serif leading-relaxed">
+            With <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >annotations = "auto"</code
+            > the element finds no embedded text annotations, falls back to the canvas's
+            <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >supplementing</code
+            > VTT track, fetches it, reduces each cue to plain text, and builds the
+            click-to-seek, searchable transcript. The event log beside the live player
+            records each event the element emits.
+          </p>
+        </div>
+      </div>
+    </section>
 
-		<!-- Live Demo -->
-		<section class="py-16 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200">
-			<div class="max-w-7xl mx-auto">
-				<div class="mb-8">
-					<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4">
-						The code above, running
-					</h2>
-					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
-						The audio streams from S3; the transcript is built from the same bucket's VTT, located using only the manifest this page authored. Click any line to seek; type in the search box to filter.
-					</p>
-				</div>
+    <!-- Live Demo -->
+    <section
+      class="py-16 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200"
+    >
+      <div class="max-w-7xl mx-auto">
+        <div class="mb-8">
+          <h2
+            class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4"
+          >
+            The code above, running
+          </h2>
+          <p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
+            The audio streams from S3; the transcript is built from the same
+            bucket's VTT, located using only the manifest this page authored.
+            Click any line to seek; type in the search box to filter.
+          </p>
+        </div>
 
-				<div class="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
-					<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
-						<iiif-transcript-player
-							id="player"
-							manifest-url={manifestUrl}
-							label="American language: Americans as makers of words (NAEB, 1954)"
-							crossorigin="anonymous"
-						></iiif-transcript-player>
-					</div>
+        <div class="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+          <div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
+            <iiif-transcript-player
+              id="player"
+              manifest-url={manifestUrl}
+              label="American language: Americans as makers of words (NAEB, 1954)"
+              crossorigin="anonymous"></iiif-transcript-player>
+          </div>
 
-					<div class="bg-ink-900 text-parchment-100 border-2 border-ink-200 shadow-2xl p-4 lg:sticky lg:top-24">
-						<div class="text-xs font-mono tracking-wider text-terracotta-400 mb-2">EVENT LOG</div>
-						<ol id="event-log" class="text-xs font-mono space-y-1 max-h-[420px] overflow-y-auto" reversed></ol>
-					</div>
-				</div>
+          <div
+            class="bg-ink-900 text-parchment-100 border-2 border-ink-200 shadow-2xl p-4 lg:sticky lg:top-24"
+          >
+            <div
+              class="text-xs font-mono tracking-wider text-terracotta-400 mb-2"
+            >
+              EVENT LOG
+            </div>
+            <ol
+              id="event-log"
+              class="text-xs font-mono space-y-1 max-h-[420px] overflow-y-auto"
+              reversed
+            >
+            </ol>
+          </div>
+        </div>
 
-				<div class="mt-6 text-sm text-ink-500 space-y-2">
-					<p>
-						Authored manifest:
-						<a href={manifestUrl} target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline break-all">
-							{manifestUrl}
-						</a>
-						· <a href={episodeUrl} target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">episode on Unlocking the Airwaves</a>
-					</p>
-					<p>
-						<span class="font-medium text-ink-700">On the transcript:</span> it is machine-generated by Pop Up Archive and never hand-corrected, so expect errors — misheard names, dropped punctuation, the occasional wrong word. It is shown as the archive serves it. Even an inaccurate transcript is enough to search the recording and seek to a point in it, which is the point: the manifest does not improve the text, it makes whatever text exists addressable.
-					</p>
-				</div>
-			</div>
-		</section>
+        <div class="mt-6 text-sm text-ink-500 space-y-2">
+          <p>
+            Authored manifest:
+            <a
+              href={manifestUrl}
+              target="_blank"
+              rel="noopener"
+              class="text-terracotta-500 hover:text-terracotta-600 underline break-all"
+            >
+              {manifestUrl}
+            </a>
+            · <a
+              href={episodeUrl}
+              target="_blank"
+              rel="noopener"
+              class="text-terracotta-500 hover:text-terracotta-600 underline"
+              >episode on Unlocking the Airwaves</a
+            >
+          </p>
+          <p>
+            <span class="font-medium text-ink-700">On the transcript:</span> it is
+            machine-generated by Pop Up Archive and never hand-corrected, so expect
+            errors — misheard names, dropped punctuation, the occasional wrong word.
+            It is shown as the archive serves it. Even an inaccurate transcript is
+            enough to search the recording and seek to a point in it, which is the
+            point: the manifest does not improve the text, it makes whatever text
+            exists addressable.
+          </p>
+        </div>
+      </div>
+    </section>
 
-		<!-- Footer -->
-		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
-			<div class="max-w-7xl mx-auto text-center">
-				<p class="mb-2 text-sm">
-					Audio and transcript from <a href="https://www.unlockingtheairwaves.org/" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Unlocking the Airwaves</a>, drawing on the <a href="https://americanarchive.org/" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">American Archive of Public Broadcasting</a>. Transcript produced by Pop Up Archive. NAEB program, University of Chicago, 1954.
-				</p>
-				<p class="mb-4">
-					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
-				</p>
-				<p class="text-sm">
-					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/iiif-timed-transcript" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
-				</p>
-			</div>
-		</footer>
+    <!-- Footer -->
+    <footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
+      <div class="max-w-7xl mx-auto text-center">
+        <p class="mb-2 text-sm">
+          Audio and transcript from <a
+            href="https://www.unlockingtheairwaves.org/"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-400 hover:text-terracotta-300"
+            >Unlocking the Airwaves</a
+          >, drawing on the <a
+            href="https://americanarchive.org/"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-400 hover:text-terracotta-300"
+            >American Archive of Public Broadcasting</a
+          >. Transcript produced by Pop Up Archive. NAEB program, University of
+          Chicago, 1954.
+        </p>
+        <p class="mb-4">
+          Built by <a
+            href="https://mith.umd.edu"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-400 hover:text-terracotta-300"
+            >Maryland Institute for Technology in the Humanities</a
+          >
+        </p>
+        <p class="text-sm">
+          Licensed under BSD-3-Clause-Clear • <a
+            href="https://github.com/umd-mith/iiif-timed-transcript"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-400 hover:text-terracotta-300"
+            >View on GitHub</a
+          >
+        </p>
+      </div>
+    </footer>
 
-		<!-- Demo CSS: the site's palette applied across the shadow boundary -->
-		<style is:global>
-			/* tokens: theme colors inherit through the shadow boundary */
-			iiif-transcript-player {
-				--iiif-player-accent: #c2694f; /* this site's terracotta */
-				--iiif-player-segment-active-bg: #fbeee8;
-			}
+    <!-- Demo CSS: the site's palette applied across the shadow boundary -->
+    <style is:global>
+      /* tokens: theme colors inherit through the shadow boundary */
+      iiif-transcript-player {
+        --iiif-player-accent: #c2694f; /* this site's terracotta */
+        --iiif-player-segment-active-bg: #fbeee8;
+      }
 
-			/* parts: named handles on internal pieces */
-			iiif-transcript-player::part(controls) {
-				background: #2d2a26;
-				border-radius: 8px;
-			}
-			iiif-transcript-player::part(button) {
-				background: #c2694f;
-				color: #fff;
-				border-radius: 6px;
-			}
-			iiif-transcript-player::part(speed) {
-				background: #3d3934;
-				color: #fff;
-				border-radius: 6px;
-			}
-			iiif-transcript-player::part(progress) {
-				accent-color: #c2694f;
-			}
+      /* parts: named handles on internal pieces */
+      iiif-transcript-player::part(controls) {
+        background: #2d2a26;
+        border-radius: 8px;
+      }
+      iiif-transcript-player::part(button) {
+        background: #c2694f;
+        color: #fff;
+        border-radius: 6px;
+      }
+      iiif-transcript-player::part(speed) {
+        background: #3d3934;
+        color: #fff;
+        border-radius: 6px;
+      }
+      iiif-transcript-player::part(progress) {
+        accent-color: #c2694f;
+      }
 
-			/* states: the element reports its condition; the page reacts */
-			iiif-transcript-player:state(loading) {
-				outline: 4px solid #e0b089;
-			}
-			iiif-transcript-player:state(playing) {
-				outline: 4px solid #7ba05b;
-			}
-			iiif-transcript-player:state(error) {
-				outline: 4px solid #b91c1c;
-			}
-		</style>
+      /* states: the element reports its condition; the page reacts */
+      iiif-transcript-player:state(loading) {
+        outline: 4px solid #e0b089;
+      }
+      iiif-transcript-player:state(playing) {
+        outline: 4px solid #7ba05b;
+      }
+      iiif-transcript-player:state(error) {
+        outline: 4px solid #b91c1c;
+      }
+    </style>
 
-		<!-- The wiring from steps 3 & 4, verbatim (plus the log renderer) -->
-		<script>
-			import { register } from "@umd-mith/iiif-timed-transcript/element";
-			register(); // defines <iiif-transcript-player>
+    <!-- The wiring from steps 3 & 4, verbatim (plus the log renderer) -->
+    <script>
+      import { register } from "@umd-mith/iiif-timed-transcript/element";
+      register(); // defines <iiif-transcript-player>
 
-			const el = document.getElementById("player")!;
-			const log = document.getElementById("event-log")!;
+      const el = document.getElementById("player")!;
+      const log = document.getElementById("event-log")!;
 
-			function logEvent(name: string, detail: unknown) {
-				const li = document.createElement("li");
-				const summary =
-					detail && typeof detail === "object" && Object.keys(detail).length
-						? " " +
-							JSON.stringify(detail, (key, v) =>
-								key !== "" &&
-								typeof v === "object" &&
-								v !== null &&
-								!Array.isArray(v)
-									? (v.constructor?.name ?? "object")
-									: v,
-							).slice(0, 80)
-						: "";
-				li.textContent = `${new Date().toLocaleTimeString()} ${name}${summary}`;
-				log.prepend(li);
-				while (log.children.length > 40) log.lastChild?.remove();
-			}
+      function logEvent(name: string, detail: unknown) {
+        const li = document.createElement("li");
+        const summary =
+          detail && typeof detail === "object" && Object.keys(detail).length
+            ? " " +
+              JSON.stringify(detail, (key, v) =>
+                key !== "" &&
+                typeof v === "object" &&
+                v !== null &&
+                !Array.isArray(v)
+                  ? (v.constructor?.name ?? "object")
+                  : v,
+              ).slice(0, 80)
+            : "";
+        li.textContent = `${new Date().toLocaleTimeString()} ${name}${summary}`;
+        log.prepend(li);
+        while (log.children.length > 40) log.lastChild?.remove();
+      }
 
-			const EVENTS = [
-				"iiif-player-ready",
-				"iiif-player-error",
-				"iiif-player-canvas-change",
-				"iiif-player-play",
-				"iiif-player-pause",
-				"iiif-player-ended",
-				"iiif-player-seeked",
-				"iiif-player-rate-change",
-			];
-			for (const name of EVENTS) {
-				el.addEventListener(name, (e) =>
-					logEvent(name, (e as CustomEvent).detail),
-				);
-			}
+      const EVENTS = [
+        "iiif-player-ready",
+        "iiif-player-error",
+        "iiif-player-canvas-change",
+        "iiif-player-play",
+        "iiif-player-pause",
+        "iiif-player-ended",
+        "iiif-player-seeked",
+        "iiif-player-rate-change",
+      ];
+      for (const name of EVENTS) {
+        el.addEventListener(name, (e) =>
+          logEvent(name, (e as CustomEvent).detail),
+        );
+      }
 
-			// property, not attribute — see step 4
-			(el as HTMLElement & { annotations: unknown }).annotations = "auto";
-		</script>
-	</body>
+      // property, not attribute — see step 4
+      (el as HTMLElement & { annotations: unknown }).annotations = "auto";
+    </script>
+  </body>
 </html>
