@@ -1,61 +1,132 @@
 ---
-import AvalonIUDemoPlayer from '../components/AvalonIUDemo.svelte';
+import AvalonIUDemoPlayer from "../components/AvalonIUDemo.svelte";
 
-const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest.json';
+const manifestUrl =
+  "https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest.json";
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Avalon Interop Demo - IIIF Transcript Player</title>
-		<meta name="description" content="A production Avalon manifest from Indiana University's Media Collections Online, read step by step: Choice-wrapped HLS renditions, a supplementing WebVTT annotation, and annotations=&quot;auto&quot; turning it into an interactive transcript." />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-	</head>
-	<body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
-		<!-- Navigation -->
-		<nav class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200">
-			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div class="flex items-center justify-between h-16">
-					<div class="flex items-center">
-						<a href="." class="text-xl font-serif font-bold text-ink-900 tracking-tight">
-							IIIF Transcript Player
-						</a>
-					</div>
-					<div class="hidden md:flex items-center space-x-8">
-						<a href="." class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">Home</a>
-						<a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium">
-							GitHub
-						</a>
-					</div>
-				</div>
-			</div>
-		</nav>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Avalon Interop Demo - IIIF Transcript Player</title>
+    <meta
+      name="description"
+      content='A production Avalon manifest from Indiana University&apos;s Media Collections Online, read step by step: Choice-wrapped HLS renditions, a supplementing WebVTT annotation, and annotations="auto" turning it into an interactive transcript.'
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700;900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="font-sans bg-parchment-100 bg-linen text-ink-900 antialiased">
+    <!-- Navigation -->
+    <nav
+      class="fixed top-0 left-0 right-0 z-50 bg-parchment-50/95 backdrop-blur-sm border-b-2 border-ink-200"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <a
+              href="."
+              class="text-xl font-serif font-bold text-ink-900 tracking-tight"
+            >
+              IIIF Transcript Player
+            </a>
+          </div>
+          <div class="hidden md:flex items-center space-x-8">
+            <a
+              href="."
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+              >Home</a
+            >
+            <a
+              href="https://github.com/umd-mith/svelte-iiif-transcript-player"
+              target="_blank"
+              rel="noopener"
+              class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
+            >
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
 
-		<!-- Hero -->
-		<section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
-			<div class="max-w-4xl mx-auto">
-				<div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">DEMO</div>
-				<h1 class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight">
-					Reading an Avalon Manifest
-				</h1>
-				<p class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed">
-					<a href="https://avalonmediasystem.org/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Avalon Media System</a> is the audiovisual repository software many university libraries run. Every public Avalon item publishes a IIIF Presentation 3 manifest, and this library plays them without Avalon-specific code. This page walks through one for real — a production item from Indiana University's <a href="https://media.dlib.indiana.edu/" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">Media Collections Online</a> — and shows what the player does with each piece.
-				</p>
-				<p class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed">
-					The recording itself is a nice piece of circularity: Chris Colvard, Avalon's community technical lead, giving a 2017 talk titled <em>Beyond Images: Avalon and IIIF-AV</em> — a talk about the very interoperability that lets this player render it.
-				</p>
+    <!-- Hero -->
+    <section class="pt-32 pb-16 px-4 sm:px-6 lg:px-8 border-b-2 border-ink-200">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-sm font-mono text-terracotta-400 mb-6 tracking-wider">
+          DEMO
+        </div>
+        <h1
+          class="text-5xl md:text-6xl font-serif font-bold text-ink-900 mb-6 leading-tight"
+        >
+          Reading an Avalon Manifest
+        </h1>
+        <p
+          class="text-xl text-ink-600 mb-4 max-w-3xl font-serif leading-relaxed"
+        >
+          <a
+            href="https://avalonmediasystem.org/"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-500 hover:text-terracotta-600 underline"
+            >Avalon Media System</a
+          > is the audiovisual repository software many university libraries run.
+          Every public Avalon item publishes a IIIF Presentation 3 manifest, and this
+          library plays them without Avalon-specific code. This page walks through
+          one for real — a production item from Indiana University's <a
+            href="https://media.dlib.indiana.edu/"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-500 hover:text-terracotta-600 underline"
+            >Media Collections Online</a
+          > — and shows what the player does with each piece.
+        </p>
+        <p
+          class="text-base text-ink-500 mb-8 max-w-3xl font-serif leading-relaxed"
+        >
+          The recording itself is a nice piece of circularity: Chris Colvard,
+          Avalon's community technical lead, giving a 2017 talk titled <em
+            >Beyond Images: Avalon and IIIF-AV</em
+          > — a talk about the very interoperability that lets this player render
+          it.
+        </p>
 
-				<!-- Step 1 -->
-				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
-					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">1 — The media is a <code class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded">Choice</code> of HLS renditions</h3>
-					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
-						On the canvas, the painting annotation's body is not a single video file. It is a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Choice</code> — Presentation 3's "here are alternatives, pick one" construct — holding Avalon's quality ladder as four HLS streams (<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">auto</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">high</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">medium</code>, <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">low</code>):
-					</p>
-					<pre class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`"body": {
+        <!-- Step 1 -->
+        <div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+          <h3 class="text-lg font-serif font-bold text-ink-900 mb-3">
+            1 — The media is a <code
+              class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded"
+              >Choice</code
+            > of HLS renditions
+          </h3>
+          <p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
+            On the canvas, the painting annotation's body is not a single video
+            file. It is a <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >Choice</code
+            > — Presentation 3's "here are alternatives, pick one" construct — holding
+            Avalon's quality ladder as four HLS streams (<code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >auto</code
+            >, <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >high</code
+            >, <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >medium</code
+            >, <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >low</code
+            >):
+          </p>
+          <pre
+            class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`"body": {
   "type": "Choice",
   "choiceHint": "user",
   "items": [
@@ -69,18 +140,49 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
     { "...": "high.m3u8, medium.m3u8, low.m3u8 follow the same shape" }
   ]
 }`}</code></pre>
-					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						The player's manifest parsing resolves a <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Choice</code> to its first <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Sound</code>/<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">Video</code> member — here the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">auto</code> stream, which is itself adaptive. The <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">application/x-mpegURL</code> format marks it as HLS, so the player attaches <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">hls.js</code> (Safari plays HLS natively). Playback runs off IU's streaming server, end to end.
-					</p>
-				</div>
+          <p class="text-sm text-ink-600 font-serif leading-relaxed">
+            The player's manifest parsing resolves a <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >Choice</code
+            > to its first <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >Sound</code
+            >/<code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >Video</code
+            > member — here the <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >auto</code
+            > stream, which is itself adaptive. The <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >application/x-mpegURL</code
+            > format marks it as HLS, so the player attaches <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >hls.js</code
+            > (Safari plays HLS natively). Playback runs off IU's streaming server,
+            end to end.
+          </p>
+        </div>
 
-				<!-- Step 2 -->
-				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
-					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">2 — The transcript is a <code class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> WebVTT annotation</h3>
-					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
-						Alongside the painting annotation, the canvas carries a second annotation page. Its one annotation has motivation <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> — Presentation 3's word for content that accompanies the media rather than being the media — and its body is the WebVTT caption file Avalon already maintains for this item:
-					</p>
-					<pre class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`{
+        <!-- Step 2 -->
+        <div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+          <h3 class="text-lg font-serif font-bold text-ink-900 mb-3">
+            2 — The transcript is a <code
+              class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded"
+              >supplementing</code
+            > WebVTT annotation
+          </h3>
+          <p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
+            Alongside the painting annotation, the canvas carries a second
+            annotation page. Its one annotation has motivation <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >supplementing</code
+            > — Presentation 3's word for content that accompanies the media rather
+            than being the media — and its body is the WebVTT caption file Avalon
+            already maintains for this item:
+          </p>
+          <pre
+            class="text-xs font-mono overflow-x-auto text-ink-800 mb-4"><code>{`{
   "type": "Annotation",
   "motivation": "supplementing",
   "body": {
@@ -91,84 +193,154 @@ const manifestUrl = 'https://media.dlib.indiana.edu/media_objects/3r074z37q/mani
   },
   "target": "https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest/canvas/ft848t943"
 }`}</code></pre>
-					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						Nothing here was made for this player. Avalon generates this shape for every item that has captions; the annotation simply points at the same <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">text/vtt</code> file the repository serves its own player.
-					</p>
-				</div>
+          <p class="text-sm text-ink-600 font-serif leading-relaxed">
+            Nothing here was made for this player. Avalon generates this shape
+            for every item that has captions; the annotation simply points at
+            the same <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >text/vtt</code
+            > file the repository serves its own player.
+          </p>
+        </div>
 
-				<!-- Step 3 -->
-				<div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
-					<h3 class="text-lg font-serif font-bold text-ink-900 mb-3">3 — <code class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded">annotations="auto"</code> joins the two</h3>
-					<p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
-						The host passes one prop and writes no VTT-parsing code:
-					</p>
-					<pre class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`<IIIFPlayer.Root manifestUrl="https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest.json"
+        <!-- Step 3 -->
+        <div class="bg-parchment-200 border-2 border-ink-200 p-6 mb-8">
+          <h3 class="text-lg font-serif font-bold text-ink-900 mb-3">
+            3 — <code
+              class="font-mono text-base bg-parchment-100 px-1.5 py-0.5 rounded"
+              >annotations="auto"</code
+            > joins the two
+          </h3>
+          <p class="text-sm text-ink-600 mb-4 font-serif leading-relaxed">
+            The host passes one prop and writes no VTT-parsing code:
+          </p>
+          <pre
+            class="text-sm font-mono overflow-x-auto text-ink-800 mb-4"><code>{`<IIIFPlayer.Root manifestUrl="https://media.dlib.indiana.edu/media_objects/3r074z37q/manifest.json"
                  annotations="auto">
   ...
 </IIIFPlayer.Root>`}</code></pre>
-					<p class="text-sm text-ink-600 font-serif leading-relaxed">
-						<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">"auto"</code> looks first for annotations embedded in the manifest itself (<code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">TextualBody</code>, the <a href="/svelte-iiif-transcript-player/htmlannotations-demo" class="text-terracotta-500 hover:text-terracotta-600 underline">AVAnnotate shape</a>). This manifest has none, so it fetches the <code class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded">supplementing</code> WebVTT, reduces each cue to plain text, and builds the interactive transcript from it — for this talk, nearly nine hundred segments, each one a click-to-seek target and searchable below. Because the transcript panel now shows the caption text, the player hides the native caption track once per canvas so the words aren't displayed twice; the same file still drives closed captions if a viewer turns them back on.
-					</p>
-				</div>
+          <p class="text-sm text-ink-600 font-serif leading-relaxed">
+            <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >"auto"</code
+            > looks first for annotations embedded in the manifest itself (<code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >TextualBody</code
+            >, the <a
+              href="/svelte-iiif-transcript-player/htmlannotations-demo"
+              class="text-terracotta-500 hover:text-terracotta-600 underline"
+              >AVAnnotate shape</a
+            >). This manifest has none, so it fetches the <code
+              class="font-mono text-xs bg-parchment-100 px-1.5 py-0.5 rounded"
+              >supplementing</code
+            > WebVTT, reduces each cue to plain text, and builds the interactive transcript
+            from it — for this talk, nearly nine hundred segments, each one a click-to-seek
+            target and searchable below. Because the transcript panel now shows the
+            caption text, the player hides the native caption track once per canvas
+            so the words aren't displayed twice; the same file still drives closed
+            captions if a viewer turns them back on.
+          </p>
+        </div>
 
-				<div class="flex flex-wrap items-center gap-6 text-sm text-ink-500 border-t border-l-4 border-terracotta-300 pt-6 pl-6">
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
-						<span class="font-medium">No Avalon-specific code</span>
-					</div>
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
-						<span class="font-medium">Choice-wrapped HLS resolved</span>
-					</div>
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
-						<span class="font-medium">Transcript from the repository's own VTT</span>
-					</div>
-				</div>
-			</div>
-		</section>
+        <div
+          class="flex flex-wrap items-center gap-6 text-sm text-ink-500 border-t border-l-4 border-terracotta-300 pt-6 pl-6"
+        >
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+            <span class="font-medium">No Avalon-specific code</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+            <span class="font-medium">Choice-wrapped HLS resolved</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 bg-terracotta-400 rotate-45"></div>
+            <span class="font-medium"
+              >Transcript from the repository's own VTT</span
+            >
+          </div>
+        </div>
+      </div>
+    </section>
 
-		<!-- Live Demo -->
-		<section class="py-16 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200">
-			<div class="max-w-7xl mx-auto">
-				<div class="mb-8">
-					<h2 class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4">
-						Beyond Images: Avalon and IIIF-AV (2017)
-					</h2>
-					<p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
-						Streamed live from Indiana University — the video from IU's Wowza streaming server via HLS, the transcript from IU's caption file, both located through nothing but the manifest.
-					</p>
-				</div>
+    <!-- Live Demo -->
+    <section
+      class="py-16 px-4 sm:px-6 lg:px-8 bg-parchment-50 border-b-2 border-ink-200"
+    >
+      <div class="max-w-7xl mx-auto">
+        <div class="mb-8">
+          <h2
+            class="text-3xl md:text-4xl font-serif font-bold text-ink-900 mb-4"
+          >
+            Beyond Images: Avalon and IIIF-AV (2017)
+          </h2>
+          <p class="text-lg text-ink-600 max-w-3xl font-serif leading-relaxed">
+            Streamed live from Indiana University — the video from IU's Wowza
+            streaming server via HLS, the transcript from IU's caption file,
+            both located through nothing but the manifest.
+          </p>
+        </div>
 
-				<div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
-					<AvalonIUDemoPlayer client:load {manifestUrl} />
-				</div>
+        <div class="bg-white border-2 border-ink-200 shadow-2xl p-6 md:p-10">
+          <AvalonIUDemoPlayer client:load {manifestUrl} />
+        </div>
 
-				<div class="mt-6 text-sm text-ink-500">
-					<p>
-						Source manifest:
-						<a href={manifestUrl} target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline break-all">
-							{manifestUrl}
-						</a>
-						· <a href="https://media.dlib.indiana.edu/media_objects/3r074z37q" target="_blank" rel="noopener" class="text-terracotta-500 hover:text-terracotta-600 underline">item page on Media Collections Online</a>
-					</p>
-					<p class="mt-2">
-						This item is public and its manifest carries no IIIF Auth services. An access-restricted Avalon item would parse the same way but fail at the media request; the player reports that failure with error source <code class="font-mono text-xs bg-parchment-200 px-1.5 py-0.5 rounded">"auth"</code> so a host page can send the viewer to the repository's own login. This page depends on IU's servers — if the demo is down, the manifest link above will say so quickly.
-					</p>
-				</div>
-			</div>
-		</section>
+        <div class="mt-6 text-sm text-ink-500">
+          <p>
+            Source manifest:
+            <a
+              href={manifestUrl}
+              target="_blank"
+              rel="noopener"
+              class="text-terracotta-500 hover:text-terracotta-600 underline break-all"
+            >
+              {manifestUrl}
+            </a>
+            · <a
+              href="https://media.dlib.indiana.edu/media_objects/3r074z37q"
+              target="_blank"
+              rel="noopener"
+              class="text-terracotta-500 hover:text-terracotta-600 underline"
+              >item page on Media Collections Online</a
+            >
+          </p>
+          <p class="mt-2">
+            This item is public and its manifest carries no IIIF Auth services.
+            An access-restricted Avalon item would parse the same way but fail
+            at the media request; the player reports that failure with error
+            source <code
+              class="font-mono text-xs bg-parchment-200 px-1.5 py-0.5 rounded"
+              >"auth"</code
+            > so a host page can send the viewer to the repository's own login. This
+            page depends on IU's servers — if the demo is down, the manifest link
+            above will say so quickly.
+          </p>
+        </div>
+      </div>
+    </section>
 
-		<!-- Footer -->
-		<footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
-			<div class="max-w-7xl mx-auto text-center">
-				<p class="mb-4">
-					Built by <a href="https://mith.umd.edu" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">Maryland Institute for Technology in the Humanities</a>
-				</p>
-				<p class="text-sm">
-					Licensed under BSD-3-Clause-Clear • <a href="https://github.com/umd-mith/svelte-iiif-transcript-player" target="_blank" rel="noopener" class="text-terracotta-400 hover:text-terracotta-300">View on GitHub</a>
-				</p>
-			</div>
-		</footer>
-	</body>
+    <!-- Footer -->
+    <footer class="py-12 px-4 sm:px-6 lg:px-8 bg-ink-900 text-ink-400">
+      <div class="max-w-7xl mx-auto text-center">
+        <p class="mb-4">
+          Built by <a
+            href="https://mith.umd.edu"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-400 hover:text-terracotta-300"
+            >Maryland Institute for Technology in the Humanities</a
+          >
+        </p>
+        <p class="text-sm">
+          Licensed under BSD-3-Clause-Clear • <a
+            href="https://github.com/umd-mith/svelte-iiif-transcript-player"
+            target="_blank"
+            rel="noopener"
+            class="text-terracotta-400 hover:text-terracotta-300"
+            >View on GitHub</a
+          >
+        </p>
+      </div>
+    </footer>
+  </body>
 </html>
