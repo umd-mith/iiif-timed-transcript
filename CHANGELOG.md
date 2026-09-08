@@ -10,6 +10,8 @@ Entries below version `0.15.0` retain the `Minor Changes` / `Patch Changes` /
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-09-08
+
 ### Added
 
 - 504a892: `IIIFPlayer.Root` gains `annotations="auto"`: transcript annotations are built from the manifest — embedded `TextualBody` annotations (motivation `supplementing`, `commenting`, or `tagging`) first, else — only when those yield nothing — the canvas's external WebVTT `supplementing` track, fetched on demand with `media-captions` (now a runtime dependency). New `onError(error, { fatal, source })` prop; `transcriptStatus` on the player context, `PlayerRef`, and the children snippet. `IIIFPlayer.Transcript` gains an optional `loading` snippet that replaces the built-in "Loading transcript…" affordance. `getSupplementaryVTTTracks` now finds VTT tracks inside `Choice` bodies and de-duplicates by `src`; `ExternalResourceSchema` keeps `label`/`language` (tolerantly). New public exports: `selectTranscriptTrack`, `loadVTTTranscript`, `buildAnnotationsFromVTTCues`, `vttCueToPlainText`, and the types `VTTCueTokenizer`, `TranscriptStatus`, `PlayerErrorSource`, `PlayerErrorInfo`. (#58)

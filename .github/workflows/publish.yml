@@ -21,6 +21,21 @@ jobs:
           node-version: "24"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
+      # Skip when this version is already on npm — the one-time bootstrap release
+      # (0.16.0) is published manually to create the package before OIDC can be
+      # configured, so its tag would otherwise fail on a duplicate version. Also
+      # makes any tag re-run idempotent.
+      - id: published
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION is already published; skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       # `prepublishOnly` (pnpm run build) runs during `npm publish`, refreshing dist
       # before packing; provenance attaches to that fresh build.
-      - run: npm publish --provenance --access public
+      - if: steps.published.outputs.exists == 'false'
+        run: npm publish --provenance --access public
