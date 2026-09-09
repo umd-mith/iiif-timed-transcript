@@ -39,6 +39,7 @@ describe("<iiif-transcript-player> ::part() surface", () => {
       iiif-transcript-player::part(button) { background-color: rgb(10, 11, 12); }
       iiif-transcript-player::part(speed) { background-color: rgb(13, 14, 15); }
       iiif-transcript-player::part(progress) { background-color: rgb(16, 17, 18); }
+      iiif-transcript-player::part(error) { background-color: rgb(19, 20, 21); }
     `;
     document.head.appendChild(pageStyle);
   });
@@ -111,5 +112,18 @@ describe("<iiif-transcript-player> ::part() surface", () => {
     ) as HTMLElement;
     expect(progress.getAttribute("part")).toBe("progress");
     expect(getComputedStyle(progress).backgroundColor).toBe("rgb(16, 17, 18)");
+  });
+
+  test("::part(error) reaches the error banner when the manifest fails", async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("network down"),
+    );
+    const el = await mountElement({
+      "manifest-url": "https://example.com/parts-error.json",
+    });
+    const banner = await untilShadow<HTMLElement>(el, '[part="error"]');
+
+    expect(banner.getAttribute("role")).toBe("status");
+    expect(getComputedStyle(banner).backgroundColor).toBe("rgb(19, 20, 21)");
   });
 });

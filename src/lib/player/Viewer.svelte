@@ -172,7 +172,7 @@
       ? (MEDIA_ERROR_MESSAGES[err.code] ??
         `Media playback failed (code ${err.code}).`)
       : "Media playback failed.";
-    ctx.state.error = new Error(message);
+    ctx.setError(new Error(message), "media");
     ctx.state.isReady = false;
   }
 
@@ -190,8 +190,9 @@
           details?: string;
         };
         if (errorData.fatal) {
-          ctx.state.error = new Error(
-            `HLS error: ${errorData.type || "unknown"}`,
+          ctx.setError(
+            new Error(`HLS error: ${errorData.type || "unknown"}`),
+            "media",
           );
           ctx.state.isReady = false;
         } else {
@@ -229,7 +230,7 @@
         } else {
           message = "unknown";
         }
-        ctx.state.error = new Error(`DASH playback failed: ${message}`);
+        ctx.setError(new Error(`DASH playback failed: ${message}`), "media");
         ctx.state.isReady = false;
       },
     });

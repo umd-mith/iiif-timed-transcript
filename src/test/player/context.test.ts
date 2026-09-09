@@ -40,6 +40,7 @@ describe("getPlayerContext", () => {
         playbackRate: 1,
         isReady: false,
         error: null,
+        errorSource: null,
         hasEnded: false,
         isSeeking: false,
       },
@@ -62,6 +63,8 @@ describe("getPlayerContext", () => {
       captionsState: "unavailable",
       toggleCaptions: vi.fn(),
       reportNativeCaptionChange: vi.fn(),
+      setError: vi.fn(),
+      clearError: vi.fn(),
       actions: {
         play: vi.fn(),
         pause: vi.fn(),
@@ -110,6 +113,7 @@ describe("PlayerContext chapter types", () => {
       playbackRate: 1,
       isReady: true,
       error: null,
+      errorSource: null,
       hasEnded: false,
       isSeeking: false,
     };
@@ -140,6 +144,8 @@ describe("PlayerContext chapter types", () => {
       captionsState: "unavailable",
       toggleCaptions: () => {},
       reportNativeCaptionChange: () => {},
+      setError: () => {},
+      clearError: () => {},
       actions: {
         play: async () => {},
         pause: () => {},

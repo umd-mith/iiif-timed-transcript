@@ -88,7 +88,7 @@ describe("<iiif-transcript-player> error contract", () => {
     expect(seen.filter((s) => s.type === "iiif-player-ready")).toHaveLength(0);
     expect(el.playerRef == null).toBe(true);
     // Root's own error UI renders inside the shadow root
-    await untilShadow(el, '[role="alert"]');
+    await untilShadow(el, '[role="status"]');
   });
 
   test("a string assigned to the annotations attribute is a non-fatal host error, fired before iiif-player-ready, and not passed to Root", async () => {

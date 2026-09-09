@@ -117,6 +117,11 @@
             { "name": "--iiif-player-segment-fg" },
             { "name": "--iiif-player-border" },
             {
+              "name": "--iiif-player-error-fg",
+              "description": "Foreground/border color of the error banner (::part(error)). The default (#b91c1c) keeps at least 4.5:1 contrast against the default error background; an override should do the same."
+            },
+            { "name": "--iiif-player-error-bg" },
+            {
               "name": "--iiif-player-focus",
               "description": "Focus-ring color. The default (#1d4ed8) keeps at least 3:1 contrast against every surface it outlines over (WCAG 1.4.11); an override should do the same."
             },
@@ -132,7 +137,8 @@
             { "name": "segment-active" },
             { "name": "button" },
             { "name": "speed" },
-            { "name": "progress" }
+            { "name": "progress" },
+            { "name": "error" }
           ],
           "cssStates": [
             {

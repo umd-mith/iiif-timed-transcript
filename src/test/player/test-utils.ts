@@ -4,6 +4,7 @@ import type { Snippet } from "svelte";
 import type {
   PlayerActions,
   PlayerContext,
+  PlayerErrorSource,
   PlayerState,
   TranscriptStatus,
 } from "../../lib/player/context";
@@ -82,19 +83,21 @@ export function createMockPlayerContext(
     actions: actionsOverrides,
     ...rest
   } = overrides;
+  const state: PlayerState = {
+    isPlaying: false,
+    isBuffering: false,
+    currentTime: 0,
+    duration: 120,
+    playbackRate: 1,
+    isReady: true,
+    error: null,
+    errorSource: null,
+    hasEnded: false,
+    isSeeking: false,
+    ...stateOverrides,
+  };
   return {
-    state: {
-      isPlaying: false,
-      isBuffering: false,
-      currentTime: 0,
-      duration: 120,
-      playbackRate: 1,
-      isReady: true,
-      error: null,
-      hasEnded: false,
-      isSeeking: false,
-      ...stateOverrides,
-    },
+    state,
     mediaElement: null,
     mediaUrl: "https://example.com/media.mp3",
     mediaType: "audio",
@@ -114,6 +117,14 @@ export function createMockPlayerContext(
     captionsState: "unavailable",
     toggleCaptions: vi.fn(),
     reportNativeCaptionChange: vi.fn(),
+    setError: vi.fn((error: Error, source: PlayerErrorSource) => {
+      state.error = error;
+      state.errorSource = source;
+    }),
+    clearError: vi.fn(() => {
+      state.error = null;
+      state.errorSource = null;
+    }),
     actions: {
       play: vi.fn(),
       pause: vi.fn(),

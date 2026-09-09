@@ -10,6 +10,7 @@
 import type {
   PlayerContext,
   PlayerState,
+  PlayerErrorSource,
   PlayerActions,
   MediaStrategy,
   TrackDefinition,
@@ -43,9 +44,22 @@ export class PlayerStateManager implements PlayerContext {
     playbackRate: 1,
     isReady: false,
     error: null,
+    errorSource: null,
     hasEnded: false,
     isSeeking: false,
   });
+
+  /** Sets `state.error` and `state.errorSource` together — the single funnel for every error site. */
+  setError = (error: Error, source: PlayerErrorSource): void => {
+    this.state.error = error;
+    this.state.errorSource = source;
+  };
+
+  /** Clears `state.error` and `state.errorSource` together. */
+  clearError = (): void => {
+    this.state.error = null;
+    this.state.errorSource = null;
+  };
 
   // Media properties
   mediaElement = $state.raw<HTMLMediaElement | null>(null);
@@ -95,7 +109,7 @@ export class PlayerStateManager implements PlayerContext {
         if (error instanceof DOMException && error.name === "AbortError")
           return;
         const err = error instanceof Error ? error : new Error(String(error));
-        this.state.error = err;
+        this.setError(err, "playback");
         this.onPlaybackError?.(err);
       }
     },
@@ -125,7 +139,7 @@ export class PlayerStateManager implements PlayerContext {
       this.mediaElement.playbackRate = clampedRate;
     },
     retry: async () => {
-      this.state.error = null;
+      this.clearError();
       await this.onRetry?.();
     },
     seekToChapter: (chapter: Chapter) => {

@@ -22,6 +22,14 @@ export type TermKey =
   | "transcript.loadedAnnouncement"
   | "transcript.unavailableAnnouncement"
   | "player.errorLabel"
+  | "player.error.item.headline"
+  | "player.error.item.detail"
+  | "player.error.media.headline"
+  | "player.error.media.detail"
+  | "player.error.auth.headline"
+  | "player.error.auth.detail"
+  | "player.error.generic.headline"
+  | "player.error.generic.detail"
   | "player.controlsLabel"
   | "player.playButton.play"
   | "player.playButton.pause"
@@ -60,6 +68,15 @@ export const EN_TERMS: Record<TermKey, string> = {
   "transcript.loadedAnnouncement": "Transcript loaded, {count} segments",
   "transcript.unavailableAnnouncement": "Transcript unavailable",
   "player.errorLabel": "Error:",
+  "player.error.item.headline": "This item couldn't be loaded.",
+  "player.error.item.detail": "The source couldn't be reached.",
+  "player.error.media.headline": "This media couldn't be played.",
+  "player.error.media.detail": "The source couldn't be reached.",
+  "player.error.auth.headline": "Sign-in required.",
+  "player.error.auth.detail":
+    "This item is restricted at its source repository.",
+  "player.error.generic.headline": "Playback couldn't continue.",
+  "player.error.generic.detail": "",
   "player.controlsLabel": "Media controls",
   "player.playButton.play": "Play",
   "player.playButton.pause": "Pause",

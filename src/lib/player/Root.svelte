@@ -8,6 +8,7 @@
     type TranscriptStatus,
   } from "./context";
   import { PlayerStateManager } from "./PlayerState.svelte";
+  import { resolveErrorMessageKeys } from "./errorMessages.js";
   import { createActor } from "xstate";
   import { captionsMachine, captionsVerdict } from "./captionsMachine.js";
   import {
@@ -304,7 +305,7 @@
     player.state.currentTime = 0;
     player.state.duration = 0;
     player.state.isReady = false;
-    player.state.error = null;
+    player.clearError();
     player.state.hasEnded = false;
     player.state.isSeeking = false;
 
@@ -429,7 +430,7 @@
       if (usesCache) manifestCache.delete(manifestUrl);
       if (destroyed) return;
       const err = error instanceof Error ? error : new Error(String(error));
-      player.state.error = err;
+      player.setError(err, "manifest");
       player.state.isReady = false;
       reportError(err, { fatal: true, source: "manifest" });
       return;
@@ -518,7 +519,7 @@
         const err = new Error(
           "This resource requires authentication and cannot be played.",
         );
-        player.state.error = err;
+        player.setError(err, "auth");
         player.state.isReady = false;
         reportError(err, { fatal: true, source: "auth" });
         return;
@@ -574,7 +575,7 @@
       // "auto" put its tier-1 transcript on screen next to the error banner.
       currentCanvas = null;
       const err = error instanceof Error ? error : new Error(String(error));
-      player.state.error = err;
+      player.setError(err, "canvas");
       player.state.isReady = false;
       reportError(err, { fatal: true, source: "canvas" });
     }
@@ -627,7 +628,7 @@
   // they need is unavailable (not installed, or the dynamic import threw).
   function reportMediaLibraryError(err: Error) {
     console.warn(`[IIIFPlayer] ${err.message}`);
-    player.state.error = err;
+    player.setError(err, "media");
     player.state.isReady = false;
     reportError(err, { fatal: true, source: "media" });
   }
@@ -785,9 +786,12 @@
 
 <div class="iiif-player-root {className}">
   {#if player.state.error}
-    <div role="alert" class="error">
-      <strong>{t("player.errorLabel")}</strong>
-      {player.state.error.message}
+    {@const errorKeys = resolveErrorMessageKeys(player.state.errorSource)}
+    <div role="status" part="error" class="error">
+      <strong>{t(errorKeys.headline)}</strong>
+      {#if t(errorKeys.detail)}
+        <span>{t(errorKeys.detail)}</span>
+      {/if}
     </div>
   {/if}
 

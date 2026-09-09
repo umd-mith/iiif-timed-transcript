@@ -36,6 +36,20 @@ describe("PlayerStateManager", () => {
       expect(manager.state.playbackRate).toBe(1);
       expect(manager.state.isReady).toBe(false);
       expect(manager.state.error).toBeNull();
+      expect(manager.state.errorSource).toBeNull();
+    });
+
+    test("setError records error and source; clearError resets both", () => {
+      const manager = new PlayerStateManager();
+      const err = new Error("boom");
+
+      manager.setError(err, "manifest");
+      expect(manager.state.error).toBe(err);
+      expect(manager.state.errorSource).toBe("manifest");
+
+      manager.clearError();
+      expect(manager.state.error).toBeNull();
+      expect(manager.state.errorSource).toBeNull();
     });
 
     test("initializes media properties with defaults", () => {

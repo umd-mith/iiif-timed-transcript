@@ -685,6 +685,27 @@
     display: block;
   }
 
+  /* The error banner (Root's role="status" part="error" div). Default styling
+     lives here, in the element layer, so the compound API stays unstyled; a
+     host restyles it via ::part(error) or hides it with display:none. */
+  .iiif-tp :global([part="error"]) {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--iiif-player-error-fg, #b91c1c);
+    background: var(--iiif-player-error-bg, #fbeae8);
+    border: 1px solid var(--iiif-player-error-fg, #b91c1c);
+    border-radius: 4px;
+    font: inherit;
+  }
+
+  /* Detail line is block-level and slightly lighter weight, but keeps the
+     banner's full-contrast color — no opacity (opacity-reduced text can drop
+     below the WCAG 1.4.3 threshold). */
+  .iiif-tp :global([part="error"] span) {
+    display: block;
+    font-size: 0.9375em;
+  }
+
   .iiif-tp :global([data-audio-controls]) {
     display: flex;
     align-items: center;

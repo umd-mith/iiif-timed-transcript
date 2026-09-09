@@ -101,4 +101,11 @@ export const TOKEN_CONTRAST_PAIRS: ContrastPair[] = [
     kind: "text",
     minRatio: 4.5,
   },
+  {
+    name: "error banner text on error background (--iiif-player-error-fg / --iiif-player-error-bg)",
+    fg: "#b91c1c",
+    bg: "#fbeae8",
+    kind: "text",
+    minRatio: 4.5,
+  },
 ];

@@ -47,6 +47,8 @@ export interface PlayerState {
   playbackRate: number;
   isReady: boolean;
   error: Error | null;
+  /** Source of the current `error`, for message selection. Null when there is no error. */
+  errorSource: PlayerErrorSource | null;
   /** True once the media has fired its native `ended` event. Cleared on the next `play` (replay). Reset on canvas switch. */
   hasEnded: boolean;
   /** True between the native `seeking` and `seeked` events. Reset on canvas switch. */
@@ -131,6 +133,10 @@ export interface PlayerContext {
    * on PlayerRef.
    */
   reportNativeCaptionChange: (mode: "showing" | "hidden") => void;
+  /** Sets `state.error` and `state.errorSource` together. The single funnel for all error sites. */
+  setError: (error: Error, source: PlayerErrorSource) => void;
+  /** Clears `state.error` and `state.errorSource` together. */
+  clearError: () => void;
   actions: PlayerActions;
 }
 
