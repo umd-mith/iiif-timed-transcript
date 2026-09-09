@@ -50,7 +50,7 @@ const episodeUrl =
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center">
             <a
-              href="."
+              href={import.meta.env.BASE_URL}
               class="text-xl font-serif font-bold text-ink-900 tracking-tight"
             >
               IIIF Transcript Player
@@ -58,7 +58,7 @@ const episodeUrl =
           </div>
           <div class="hidden md:flex items-center space-x-8">
             <a
-              href="."
+              href={import.meta.env.BASE_URL}
               class="text-ink-600 hover:text-terracotta-500 transition-colors font-medium"
               >Home</a
             >
