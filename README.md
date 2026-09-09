@@ -339,6 +339,96 @@ All components ship **unstyled** with semantic HTML and `data-*` attributes for 
 }
 ```
 
+## Accessibility
+
+This section describes the accessibility behavior of the components and of
+the `<iiif-transcript-player>` custom element, and states plainly what is and
+is not verified. A per-criterion conformance report (VPAT 2.5 INT) and its
+manual-test evidence live under [`docs/a11y/`](docs/a11y/).
+
+### Keyboard model
+
+The transcript segment list uses a roving tabindex: exactly one segment is in
+the tab sequence at a time. Within the panel:
+
+- **Arrow Up / Arrow Down** move between segments, wrapping at the ends.
+- **Home / End** jump to the first and last segment.
+- **Enter / Space** seek the media to the focused segment's start time; focus
+  stays on the segment and the page does not scroll.
+- **Tab** enters the panel at the single roving stop and, pressed again,
+  leaves the player rather than walking segment by segment. **Shift+Tab**
+  mirrors the forward order. The shadow boundary is not a keyboard trap.
+
+Every other control is a native element — Play and Skip are `<button>`,
+Progress is `<input type="range">`, Speed is a `<select>` — so each carries
+its platform keyboard behavior. Arrow/Home/End movement lives in
+`src/lib/transcript/keyboardNav.ts` and is covered by unit tests and by the
+keyboard walkthrough in [`docs/a11y/keyboard-walkthrough.md`](docs/a11y/keyboard-walkthrough.md).
+
+### Announcement behavior
+
+Status messages use `aria-live` regions rather than moving focus:
+
+- Transcript load: `Transcript loaded, {count} segments`.
+- Transcript failed or absent: `Transcript unavailable`.
+- Search match counter: `{current} of {total}`, or `No matches`.
+
+The segment announcer is gated on user-initiated interaction: seeking to a
+segment announces it once, but playback auto-advancing through segments does
+not announce each one. A fatal error (for example a manifest that 404s)
+renders a `role="alert"` banner; a non-fatal transcript failure is conveyed
+only through the live-region announcement above.
+
+The announcement strings and most labels come from the term registry
+(`src/lib/i18n/terms.ts`) and are localizable. The one exception is the
+transcript region's default accessible name, `Media transcript`, which is a
+hard-coded prop default; a host can override it per instance but it is not
+localized with the rest of the chrome.
+
+### Segment-list semantics
+
+The segment list is a labelled `role="group"` of `role="button"` segments,
+not a `toolbar`. A toolbar implies a single composite widget of peer controls
+navigated with Left/Right arrows; the transcript is a vertical list of
+seekable segments where Up/Down plus Home/End is the natural model, and a
+labelled group carrying `aria-current` on the playing segment matches "which
+segment is playing" better than toolbar semantics would.
+
+### Theming is the host's responsibility
+
+The components ship unstyled; the host owns appearance through the
+`--iiif-player-*` custom properties and `::part()` (see [Styling](#styling)
+and [Theming](#theming)). The shipped default token values are chosen to
+clear WCAG AA contrast (1.4.3) and non-text contrast (1.4.11), and the tests
+in `src/element/contrast.test.ts` hold those defaults. **A host that overrides
+the color tokens or parts owns the contrast of the result** — the defaults'
+conformance does not carry over to arbitrary overrides.
+
+### Forced colors and right-to-left
+
+Under `forced-colors: active`, state that the default styling conveys with a
+background color is additionally carried by a non-color indicator, and the
+active canvas, active/highlighted segments, and focus rings map to the
+`Highlight` system color so they survive when the OS strips the token
+palette. State indicators use logical properties (`border-inline-start`), so
+under `dir="rtl"` — which inherits into the open shadow tree — they render on
+the correct logical edge. See
+[`docs/a11y/forced-colors-rtl.md`](docs/a11y/forced-colors-rtl.md).
+
+### Known limitations
+
+- **No audio description.** Caption tracks built from manifest annotations are
+  fixed to kind `"captions"`, and there is no alternate-audio affordance, so a
+  publisher cannot supply a `descriptions` track through this component (WCAG
+  1.2.5). A transcript is a media alternative, not audio description.
+- **Transcript depends on the manifest.** The transcript panel exists only
+  where the manifest supplies caption/transcript content for the canvas.
+- **Assistive-technology exposure is not yet independently verified.**
+  Source-level roles, names, and states are complete, but whether they survive
+  the open shadow boundary across NVDA/Firefox and VoiceOver/Safari (WCAG
+  4.1.2) is pending the manual runs scripted in
+  [`docs/a11y/screen-reader-scripts.md`](docs/a11y/screen-reader-scripts.md).
+
 ## Annotations
 
 ### The `Annotation` Type
