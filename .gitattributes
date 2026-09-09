@@ -1,0 +1,3 @@
+
+# The canonical ACR is a Word document; never line-merge it.
+*.docx binary -diff -merge

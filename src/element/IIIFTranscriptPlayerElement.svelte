@@ -688,6 +688,11 @@
   .iiif-tp :global([data-audio-controls]) {
     display: flex;
     align-items: center;
+    /* Without this the control bar is a single non-wrapping row that
+       overflows any host narrower than about 484px, including the 320px
+       width WCAG 1.4.10 Reflow is tested at. Canvas nav below already
+       wraps; the control bar had been left out. */
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.5rem;
     background: var(--iiif-player-control-bg, #f3f4f6);
@@ -760,6 +765,11 @@
   }
 
   .iiif-tp :global([data-annotation-id]) {
+    /* Segment.svelte's `all: unset` resets box-sizing to content-box, so
+       this padding and the 4px indicator below would otherwise be added
+       *outside* a width:100% box — 20px of overflow per segment at any
+       width, visible as horizontal scroll in a narrow column. */
+    box-sizing: border-box;
     padding: 0.375rem 0.5rem;
     border-radius: 4px;
     border-inline-start: 4px solid transparent;

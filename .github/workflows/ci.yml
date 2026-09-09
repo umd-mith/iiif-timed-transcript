@@ -24,6 +24,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      - run: pnpm run test:a11y-docs
       - run: pnpm build
       - run: pnpm --filter iiif-timed-transcript-docs run build
       - run: pnpm run smoke:docs
