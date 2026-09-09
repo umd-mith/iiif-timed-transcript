@@ -88,6 +88,20 @@ try {
     const page = await browser.newPage();
     const errors = [];
     page.on("pageerror", (err) => errors.push(String(err)));
+    // Track 5xx responses from *other* origins (the IIIF manifest, media, or
+    // caption servers a demo streams from). A demo that points at a live third
+    // party — e.g. the Avalon page loads a production Indiana University
+    // manifest — can't mount its player when that server is down, and that is
+    // an upstream outage, not a regression in this repo. We collect these so a
+    // "no player mounted" result caused solely by an upstream 5xx can SKIP
+    // instead of failing (and blocking) the build.
+    const upstreamServerErrors = [];
+    page.on("response", (res) => {
+      const url = res.url();
+      if (res.status() >= 500 && !url.startsWith(ORIGIN)) {
+        upstreamServerErrors.push(`${res.status()} ${url}`);
+      }
+    });
     const response = await page.goto(url, {
       waitUntil: "load",
       timeout: 20000,
@@ -107,9 +121,25 @@ try {
     const mediaCount = await page.locator("audio, video").count();
     const ok =
       status === 200 && errors.length === 0 && bodyLen > 0 && mediaCount > 0;
+    // The page itself is healthy (served, no JS error, shell rendered) and the
+    // *only* reason no player mounted is that an upstream media source returned
+    // a 5xx. That's a third-party outage, not a regression here — skip it so a
+    // dependency being down can't block our deploy, but log loudly so it stays
+    // visible.
+    const upstreamDown =
+      !ok &&
+      status === 200 &&
+      errors.length === 0 &&
+      bodyLen > 0 &&
+      mediaCount === 0 &&
+      upstreamServerErrors.length > 0;
     const knownBroken = KNOWN_BROKEN_ROUTES.get(route);
     if (ok) {
       console.log(`[smoke] PASS ${status} ${url}`);
+    } else if (upstreamDown) {
+      console.log(
+        `[smoke] SKIP ${status} ${url} — upstream media source unavailable: ${upstreamServerErrors[0]}`,
+      );
     } else if (knownBroken) {
       console.log(
         `[smoke] SKIP ${status} ${url} — known broken: ${knownBroken}`,
