@@ -710,7 +710,7 @@ Listen for **both** `iiif-player-ready` and `iiif-player-error`, and branch on `
 
 The element renders in a shadow root, so page CSS does not reach it. Theme it with custom properties set on the element or any ancestor:
 
-`--iiif-player-font-family`, `--iiif-player-bg`, `--iiif-player-fg`, `--iiif-player-accent`, `--iiif-player-accent-fg`, `--iiif-player-control-bg`, `--iiif-player-control-fg`, `--iiif-player-transcript-bg`, `--iiif-player-segment-active-bg`, `--iiif-player-segment-highlight-bg`, `--iiif-player-segment-fg`, `--iiif-player-border`.
+`--iiif-player-font-family`, `--iiif-player-bg`, `--iiif-player-fg`, `--iiif-player-accent`, `--iiif-player-accent-fg`, `--iiif-player-control-bg`, `--iiif-player-control-fg`, `--iiif-player-transcript-bg`, `--iiif-player-segment-active-bg`, `--iiif-player-segment-highlight-bg`, `--iiif-player-segment-fg`, `--iiif-player-border`, `--iiif-player-error-fg`, `--iiif-player-error-bg`.
 
 `--iiif-player-accent-fg` is the text/icon color drawn over `--iiif-player-accent` (the play/skip buttons, the active canvas-nav button); `--iiif-player-segment-fg` is the text color drawn over the segment-active/highlight backgrounds. `--iiif-player-control-fg` is the text color of the control bar (the Time readout, the Speed select), drawn over `--iiif-player-control-bg`. All three are bg/fg pairs: remap each foreground alongside its background when theming for dark mode. Remapping only the page-level `--iiif-player-bg`/`--iiif-player-fg` leaves the control bar on its light default background with the page's foreground inherited onto it (white on `#f3f4f6`, about 1.07:1), and active/highlighted transcript segments and accent-colored buttons illegible the same way.
 
@@ -721,7 +721,7 @@ iiif-transcript-player {
 }
 ```
 
-Reserve space (`min-height` or `aspect-ratio`) to avoid layout shift — the element is empty until the script runs; see "Recommended CSP" below for a `:defined`-scoped version of this rule. Deeper restyling beyond custom properties is available through `::part()`: `controls`, `transcript`, `segment` (plus `segment-active` on the active segment), `button` (shared by every control-bar button — play, skip, captions), `speed` (the playback-rate `<select>`), and `progress` (the seek slider). One rule per part restyles the whole bar coherently:
+Reserve space (`min-height` or `aspect-ratio`) to avoid layout shift — the element is empty until the script runs; see "Recommended CSP" below for a `:defined`-scoped version of this rule. Deeper restyling beyond custom properties is available through `::part()`: `controls`, `transcript`, `segment` (plus `segment-active` on the active segment), `button` (shared by every control-bar button — play, skip, captions), `speed` (the playback-rate `<select>`), `progress` (the seek slider), and `error` (the failure banner). One rule per part restyles the whole bar coherently:
 
 ```css
 iiif-transcript-player::part(controls) {
@@ -736,6 +736,8 @@ iiif-transcript-player::part(progress) {
   accent-color: #86efac;
 }
 ```
+
+On a fatal load failure the element shows a built-in banner (`::part(error)`, a `role="status"` region) with a short, source-appropriate message — a manifest or media source that can't be reached, or a sign-in requirement — instead of rendering blank. Restyle it through `::part(error)` and the `--iiif-player-error-fg` / `--iiif-player-error-bg` tokens, or hide it with `iiif-transcript-player::part(error) { display: none }` and drive your own UI from `iiif-player-error` / `errorCallback`.
 
 Internal selectors are not a stable API.
 

@@ -57,8 +57,10 @@ describe("Root without hls.js available", () => {
       });
       expect(capturedCtx!.state.error?.message).toMatch(/hls\.js/);
       expect(capturedCtx!.hlsAdapter).toBeNull();
-      expect(target.querySelector('[role="alert"]')?.textContent).toMatch(
-        /hls\.js/,
+      // The banner shows the friendly per-source (media) copy, not the raw
+      // technical message that still lives on state.error.
+      expect(target.querySelector('[role="status"]')?.textContent).toMatch(
+        /couldn't be played/,
       );
     } finally {
       warnSpy.mockRestore();

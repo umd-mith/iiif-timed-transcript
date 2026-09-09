@@ -1040,7 +1040,7 @@ describe("Root component", () => {
 
       // Wait for error state to appear
       await vi.waitFor(() => {
-        expect(target.querySelector("[role='alert']")).not.toBeNull();
+        expect(target.querySelector("[role='status']")).not.toBeNull();
       });
 
       expect(onPlayerInit).not.toHaveBeenCalled();
@@ -1075,7 +1075,7 @@ describe("Root component", () => {
 
       // Wait for error state
       await vi.waitFor(() => {
-        expect(target.querySelector("[role='alert']")).not.toBeNull();
+        expect(target.querySelector("[role='status']")).not.toBeNull();
       });
       expect(onPlayerInit).not.toHaveBeenCalled();
 
@@ -1201,7 +1201,7 @@ describe("Root component", () => {
       // Callback threw, but player should NOT be in an error state
       expect(capturedCtx!.state.error).toBeNull();
       // Manifest cache should NOT be corrupted (no alert shown)
-      expect(target.querySelector("[role='alert']")).toBeNull();
+      expect(target.querySelector("[role='status']")).toBeNull();
       // Player loaded successfully despite callback error
       expect(capturedCtx!.canvases).toHaveLength(1);
       expect(capturedCtx!.mediaType).toBe("audio");
