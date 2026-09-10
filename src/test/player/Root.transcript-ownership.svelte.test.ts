@@ -5,6 +5,27 @@ import { mockFetchRoutes, deferred, type FetchRoute } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
 import type { PlayerContext } from "../../lib/player/context";
 
+// Wrap the REAL loadVTTTranscript to capture the exact promise Root awaits per
+// URL, so step 7 can await A's whole chain (fetch → text → parse → Root's
+// generation re-check) as an explicit completion signal, not a wall-clock
+// guess. Module namespaces aren't spy-able in browser-mode ESM, so intercept at
+// import with vi.mock (same pattern the hls.js tests use).
+const { vttRegistry } = vi.hoisted(() => ({
+  vttRegistry: new Map<string, Promise<unknown>>(),
+}));
+vi.mock("../../lib/iiif/vttTranscript", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../../lib/iiif/vttTranscript")>();
+  return {
+    ...actual,
+    loadVTTTranscript: (url: string, language?: string) => {
+      const p = actual.loadVTTTranscript(url, language);
+      vttRegistry.set(url, p);
+      return p;
+    },
+  };
+});
+
 // Transcript-ownership harness (canvas switch).
 //
 // Question: can a LATE external-VTT response for a previous canvas overwrite
@@ -132,6 +153,7 @@ describe("transcript ownership across a canvas switch", () => {
     const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
     const requested = (url: string) =>
       fetchMock.mock.calls.some((c) => String(c[0]) === url);
+    vttRegistry.clear();
 
     let ctx: PlayerContext | null = null;
     mount(TestRootTranscriptSegments, {
@@ -173,22 +195,43 @@ describe("transcript ownership across a canvas switch", () => {
     expect(panelText(target)).toContain("BRAVO interview");
     expect(panelText(target)).not.toContain("ALPHA interview");
 
-    // 7. Resolve A late — the canvas we already left.
+    // 7. Resolve A late — the canvas we already left. Await A's OWN
+    // loadVTTTranscript promise (the exact operation Root awaits), so its
+    // fetch→text→parse and Root's generation re-check have all run before the
+    // assertions below — a stale overwrite would provably have landed by now.
+    // Not a wall-clock guess.
     aVtt.resolve({ text: A_VTT_BODY });
-    await new Promise((r) => setTimeout(r, 50));
+    await vi.waitFor(() => expect(vttRegistry.has(A_VTT)).toBe(true));
+    await vttRegistry.get(A_VTT);
+    await Promise.resolve(); // let Root's post-await continuation run
     flushSync();
 
     // 8. BRAVO still owns the panel; the stale A response was dropped.
     expect(panelText(target)).toContain("BRAVO interview");
     expect(panelText(target)).not.toContain("ALPHA interview");
 
-    // 9-10. The selectable segment on screen carries BRAVO's timing (0:23),
-    // not ALPHA's (0:07) — so selecting it seeks to B's time, by construction.
+    // 9-10. Actually SELECT the rendered segment (a broken click handler must
+    // not pass). Drive the media element to ready with a duration so seekTo
+    // doesn't early-return or clamp, then click and assert the seek target is
+    // BRAVO's 23s — not ALPHA's 7s.
     const segment = target.querySelector<HTMLElement>(
       '[role="button"][data-annotation-id]',
     );
     expect(segment).not.toBeNull();
     expect(segment!.textContent).toContain("0:23");
-    expect(segment!.textContent).not.toContain("0:07");
+
+    const media = ctx!.mediaElement as HTMLMediaElement;
+    Object.defineProperty(media, "duration", {
+      configurable: true,
+      value: 300,
+    });
+    media.dispatchEvent(new Event("durationchange"));
+    flushSync();
+    expect(ctx!.state.isReady).toBe(true);
+    expect(ctx!.state.duration).toBeGreaterThanOrEqual(23);
+
+    segment!.click();
+    flushSync();
+    expect(media.currentTime).toBeCloseTo(23, 3);
   });
 });
