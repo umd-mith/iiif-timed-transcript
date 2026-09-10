@@ -55,6 +55,14 @@ export class SyncController {
   // input rather than deliberate scrolling — see beginProgrammaticScroll().
   private programmaticScrollActive = false;
   private programmaticScrollCleanup: (() => void) | null = null;
+  private programmaticScrollFallbackTimer: ReturnType<
+    typeof setTimeout
+  > | null = null;
+  // Idle gap after the last echo scroll before the fallback closes a
+  // programmatic-scroll transaction (used when no `scrollend` arrives). Longer
+  // than a smooth scroll's inter-frame gap, so it only elapses once scrolling
+  // has actually stopped.
+  private static readonly PROGRAMMATIC_SCROLL_SETTLE_MS = 250;
 
   /**
    * Creates a new SyncController instance.
@@ -197,6 +205,9 @@ export class SyncController {
         // timeout — the transaction is closed explicitly by `scrollend`
         // (with a generous fallback timer), not by elapsed time.
         if (this.programmaticScrollActive) {
+          // Re-arm the quiet-period fallback: while echoes keep arriving the
+          // timer keeps getting pushed out, so it never elapses mid-animation.
+          this.armProgrammaticScrollFallback();
           return; // Skip scroll events during/after auto-scroll animation
         }
 
@@ -299,12 +310,14 @@ export class SyncController {
 
   /**
    * Opens a programmatic-scroll transaction: scroll echoes are suppressed
-   * until it closes. Closed by the container's `scrollend` event (fires
-   * once a smooth-scroll animation settles, however long that takes) or,
-   * as a fallback safety net, after 1s — covering both a target already in
-   * view (no scroll, hence no `scrollend`, ever fires) and engines without
-   * `scrollend` support. `scrollend` is the primary mechanism; the timer
-   * only guards against it never firing.
+   * until it closes. Primary close is the container's `scrollend` event
+   * (fires once a smooth-scroll animation settles, however long that takes).
+   * The fallback is a QUIET-PERIOD timer, re-armed on every echo scroll (see
+   * `handleScroll`), so it fires only once scrolling has been idle for
+   * `PROGRAMMATIC_SCROLL_SETTLE_MS` — never mid-animation, no matter how long
+   * the scroll runs. That covers engines without `scrollend` support and the
+   * case where the target is already in view (no scroll, hence no `scrollend`,
+   * ever fires).
    */
   private beginProgrammaticScroll(): void {
     this.endProgrammaticScroll();
@@ -316,12 +329,26 @@ export class SyncController {
 
     const onScrollEnd = () => this.endProgrammaticScroll();
     container.addEventListener("scrollend", onScrollEnd, { once: true });
-    const fallback = setTimeout(() => this.endProgrammaticScroll(), 1000);
-
-    this.programmaticScrollCleanup = () => {
+    this.programmaticScrollCleanup = () =>
       container.removeEventListener("scrollend", onScrollEnd);
-      clearTimeout(fallback);
-    };
+
+    this.armProgrammaticScrollFallback();
+  }
+
+  /**
+   * (Re)starts the quiet-period fallback timer. Called when the transaction
+   * opens and again on every suppressed echo scroll, so the timer only
+   * elapses after scrolling stops — it can never expire during an in-flight
+   * smooth scroll.
+   */
+  private armProgrammaticScrollFallback(): void {
+    if (this.programmaticScrollFallbackTimer !== null) {
+      clearTimeout(this.programmaticScrollFallbackTimer);
+    }
+    this.programmaticScrollFallbackTimer = setTimeout(
+      () => this.endProgrammaticScroll(),
+      SyncController.PROGRAMMATIC_SCROLL_SETTLE_MS,
+    );
   }
 
   /** Closes the current programmatic-scroll transaction, if any. */
@@ -329,6 +356,10 @@ export class SyncController {
     this.programmaticScrollActive = false;
     this.programmaticScrollCleanup?.();
     this.programmaticScrollCleanup = null;
+    if (this.programmaticScrollFallbackTimer !== null) {
+      clearTimeout(this.programmaticScrollFallbackTimer);
+      this.programmaticScrollFallbackTimer = null;
+    }
   }
 
   /**

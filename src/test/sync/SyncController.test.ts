@@ -189,7 +189,7 @@ describe("SyncController user-scroll reporting", () => {
     ctrl.destroy();
   });
 
-  it("keeps suppressing echoes past a fixed timeout for a long smooth scroll, and releases suppression on scrollend", () => {
+  it("suppresses echoes throughout a smooth scroll that outlasts the fallback window, releasing on scrollend", async () => {
     vi.useFakeTimers();
     const viewer = createMockViewer(() => 0);
     const container = createScrollableContainer();
@@ -199,17 +199,82 @@ describe("SyncController user-scroll reporting", () => {
 
     ctrl.notifyProgrammaticScroll();
 
-    // Outlast the old fixed 600ms suppression window.
-    vi.advanceTimersByTime(800);
-
-    container.scrollTop = 500;
-    container.dispatchEvent(new Event("scroll"));
+    // A long smooth scroll emits echo events continuously, well past 1s. Each
+    // echo re-arms the settle fallback, so no echo may be reclassified as a
+    // user scroll mid-animation, however long the scroll runs.
+    for (let elapsed = 0; elapsed < 2000; elapsed += 100) {
+      await vi.advanceTimersByTimeAsync(100);
+      container.scrollTop += 25;
+      container.dispatchEvent(new Event("scroll"));
+    }
     expect(onUserScroll).not.toHaveBeenCalled();
 
-    // scrollend ends the animation — the echo window closes.
+    // The animation settles: scrollend closes the transaction; a later genuine
+    // scroll is reported.
     container.dispatchEvent(new Event("scrollend"));
+    await vi.advanceTimersByTimeAsync(300);
+    container.scrollTop += 25;
+    container.dispatchEvent(new Event("scroll"));
+    expect(onUserScroll).toHaveBeenCalledTimes(1);
 
-    container.scrollTop = 600;
+    ctrl.destroy();
+  });
+
+  it("releases the transaction a settle period after scrolling stops, without a scrollend event", async () => {
+    vi.useFakeTimers();
+    const viewer = createMockViewer(() => 0);
+    const container = createScrollableContainer();
+    const onUserScroll = vi.fn();
+    const ctrl = new SyncController({ onUserScroll });
+    ctrl.initialize(viewer, container, annotations);
+
+    ctrl.notifyProgrammaticScroll();
+
+    // Echoes past 1s, then scrolling stops. No scrollend is dispatched (engines
+    // without scrollend support). The quiet-period fallback must close the
+    // transaction — but only after the echoes stop, never during them.
+    for (let elapsed = 0; elapsed < 1500; elapsed += 100) {
+      await vi.advanceTimersByTimeAsync(100);
+      container.scrollTop += 25;
+      container.dispatchEvent(new Event("scroll"));
+    }
+    expect(onUserScroll).not.toHaveBeenCalled();
+
+    // A quiet settle period with no further echoes closes the transaction.
+    await vi.advanceTimersByTimeAsync(300);
+    container.scrollTop += 25;
+    container.dispatchEvent(new Event("scroll"));
+    expect(onUserScroll).toHaveBeenCalledTimes(1);
+
+    ctrl.destroy();
+  });
+
+  it("collapses overlapping programmatic scrolls into one transaction with no premature close", async () => {
+    vi.useFakeTimers();
+    const viewer = createMockViewer(() => 0);
+    const container = createScrollableContainer();
+    const onUserScroll = vi.fn();
+    const ctrl = new SyncController({ onUserScroll });
+    ctrl.initialize(viewer, container, annotations);
+
+    // Rapid successive programmatic scrolls (e.g. repeated next-match presses).
+    ctrl.notifyProgrammaticScroll();
+    await vi.advanceTimersByTimeAsync(50);
+    ctrl.notifyProgrammaticScroll();
+
+    // Echoes from the ongoing animation stay suppressed under the newest
+    // transaction; the earlier transaction's listener was removed, so nothing
+    // closes the newer one prematurely.
+    for (let elapsed = 0; elapsed < 400; elapsed += 100) {
+      await vi.advanceTimersByTimeAsync(100);
+      container.scrollTop += 25;
+      container.dispatchEvent(new Event("scroll"));
+    }
+    expect(onUserScroll).not.toHaveBeenCalled();
+
+    container.dispatchEvent(new Event("scrollend"));
+    await vi.advanceTimersByTimeAsync(300);
+    container.scrollTop += 25;
     container.dispatchEvent(new Event("scroll"));
     expect(onUserScroll).toHaveBeenCalledTimes(1);
 
