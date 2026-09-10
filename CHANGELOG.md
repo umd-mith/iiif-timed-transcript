@@ -10,6 +10,10 @@ Entries below version `0.15.0` retain the `Minor Changes` / `Patch Changes` /
 
 ## [Unreleased]
 
+### Added
+
+- 0cdcdcc: Reading mode — browse and search the transcript without disrupting playback. `IIIFPlayer.Transcript` gains `searchSeekBehavior: "change" | "activate"` (default `"change"`), `scrollToSeek: boolean` (default `true`), and a bindable `readingMode: boolean` (default `false`). A single "Follow along" switch governs whether the panel tracks playback; turning it off enters a detached Browsing state — playback keeps updating the active-passage highlight but never moves the panel or seeks — with a "Jump to current" control to return. `Search` / `TranscriptSearch` gain `onmatchactivate`, `onmatchnavigate`, and a synchronous `onqueryinput`; an explicit "Go to match" activation replaces seek-on-every-selection in `activate` mode, and text-selection no longer triggers a seek. `<iiif-transcript-player>` exposes `search-seek-behavior`, `scroll-to-seek`, and `reading-mode` attributes/properties plus a `:state(browsing)` custom state. Additive and opt-in: with no new props, existing integrations keep today's search-driven and scroll-driven seeking. (#72)
+
 ## [0.17.1] - 2026-09-10
 
 ### Fixed
