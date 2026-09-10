@@ -16,6 +16,18 @@ export interface VideoControllerInput {
   viewer: IIIFMediaViewerRef;
   /** Target time to seek to (seconds) */
   targetTime: number;
+  /**
+   * Scroll-to-seek policy epoch captured when this seek was queued (when
+   * `scrollDriven` was entered). Compared against the live epoch —
+   * `getCurrentEpoch()` — immediately before `seekTo()`, so a seek queued
+   * while scrolling drops silently if the policy (`scrollToSeek` /
+   * reading mode) changed while this actor was still awaiting readiness. A
+   * transition guard on the *next* event would be too late: this promise
+   * calls `seekTo()` itself, before it resolves.
+   */
+  queuedEpoch: number;
+  /** Reads the parent machine's live epoch at call time — not a snapshot. */
+  getCurrentEpoch: () => number;
 }
 
 /**
@@ -43,10 +55,20 @@ async function waitForReady(viewer: IIIFMediaViewerRef): Promise<void> {
  */
 export const videoController = fromPromise(
   async ({ input }: { input: VideoControllerInput }) => {
-    const { viewer, targetTime } = input;
+    const { viewer, targetTime, queuedEpoch, getCurrentEpoch } = input;
 
     // Wait for viewer to be ready
     await waitForReady(viewer);
+
+    // The policy check runs immediately before the seek — a state
+    // transition guard elsewhere would be too late, since this promise is
+    // what calls seekTo(), before it resolves. Drop the seek silently if
+    // the scroll-to-seek policy changed while this actor was awaiting
+    // readiness (docs/specs/transcript-reading-mode.md, "Toggle policy off
+    // while a scroll-driven seek awaits readiness").
+    if (getCurrentEpoch() !== queuedEpoch) {
+      return;
+    }
 
     // Get duration and clamp targetTime to valid range [0, duration]
     const duration = viewer.getDuration();

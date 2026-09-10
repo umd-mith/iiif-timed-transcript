@@ -87,8 +87,12 @@ describe("Transcript", () => {
     expect(panel?.hasAttribute("lang")).toBe(false);
   });
 
-  describe("auto-scroll pause toggle (A4)", () => {
-    test("renders a toggle with aria-pressed reflecting the paused state", () => {
+  // The former auto-scroll pause button (A4) is superseded by the single
+  // "Follow along" switch — see docs/specs/transcript-reading-mode.md's
+  // folded-control paragraph and Transcript.readingMode.svelte.test.ts for
+  // the reading-mode behavior this switch now drives.
+  describe("Follow along switch", () => {
+    test("renders a switch with aria-checked/data-following reflecting Following, off = Browsing", () => {
       const ctx = createMockPlayerContext();
 
       const { container } = render(TestContextHarness, {
@@ -104,23 +108,26 @@ describe("Transcript", () => {
       flushSync();
 
       const toggle = container.querySelector(
-        ".auto-scroll-toggle",
+        ".follow-along-switch",
       ) as HTMLButtonElement;
       expect(toggle).not.toBeNull();
-      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+      expect(toggle.getAttribute("role")).toBe("switch");
+      expect(toggle.getAttribute("aria-checked")).toBe("true");
+      expect(toggle.getAttribute("data-following")).toBe("true");
 
       toggle.click();
       flushSync();
 
-      expect(toggle.getAttribute("aria-pressed")).toBe("true");
+      expect(toggle.getAttribute("aria-checked")).toBe("false");
+      expect(toggle.getAttribute("data-following")).toBe("false");
     });
 
-    test("scrollToAnnotation still scrolls after auto-scroll is paused", () => {
+    test("scrollToAnnotation still scrolls while Browsing", () => {
       const ctx = createMockPlayerContext();
       let capturedTranscriptCtx: TranscriptContext | null = null;
 
       // TestTranscriptWithSegments composes Transcript + TranscriptSegments so
-      // segments render inside the scroll container and the toggle button is
+      // segments render inside the scroll container and the switch is
       // reachable; onContextReady captures the transcript context.
       const { container } = render(TestContextHarness, {
         props: {
@@ -137,11 +144,11 @@ describe("Transcript", () => {
       flushSync();
 
       const toggle = container.querySelector(
-        ".auto-scroll-toggle",
+        ".follow-along-switch",
       ) as HTMLButtonElement;
       toggle.click();
       flushSync();
-      expect(toggle.getAttribute("aria-pressed")).toBe("true");
+      expect(toggle.getAttribute("aria-checked")).toBe("false");
 
       const segmentEl = container.querySelector(
         '[data-annotation-id="a2"]',

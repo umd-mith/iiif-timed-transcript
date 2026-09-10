@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import Segment from "../transcript/Segment.svelte";
   import { getNextIndex, focusSegmentAtIndex } from "../transcript/keyboardNav";
+  import { isTextSelectionActive } from "../transcript/utils";
   import { tryGetTranscriptContext } from "./transcript-context";
   import type { Annotation } from "../sync/types";
   import { t } from "../i18n/registry.svelte";
@@ -141,12 +142,24 @@
    * Scroll a specific annotation into view.
    * Returns true if the annotation was found, false otherwise.
    * Respects prefers-reduced-motion by default; pass options to override.
+   *
+   * Delegates to the transcript context's own `scrollToAnnotation` when
+   * available (the normal case — TranscriptSegments is used inside
+   * Transcript): that's the one that marks the scroll programmatic for
+   * SyncController, so a consumer calling this never feeds a spurious
+   * "deliberate user scroll" into scroll-to-seek (docs/specs/
+   * transcript-reading-mode.md, Lifecycle). Falls back to a local
+   * implementation when used standalone, outside Transcript.
    */
   export function scrollToAnnotation(
     annotationId: string,
     // eslint-disable-next-line no-undef
     options?: ScrollIntoViewOptions,
   ): boolean {
+    if (transcriptCtx) {
+      return transcriptCtx.actions.scrollToAnnotation(annotationId, options);
+    }
+
     if (!containerEl) return false;
     const el = containerEl.querySelector(
       `[data-annotation-id="${CSS.escape(annotationId)}"]`,
@@ -251,7 +264,14 @@
             "data-current-match": isCurrentMatch ? "true" : undefined,
             "aria-current": isActive ? "true" : undefined,
             tabindex: i === focusedIndex ? 0 : -1,
-            onclick: () => onclick?.(annotation),
+            onclick: () => {
+              // A drag-to-select ending in a click must not also activate
+              // (seek) — same guard Segment.svelte applies to its own
+              // onclick (Fix B). Keyboard activation below is never a
+              // drag, so onkeydown stays unguarded.
+              if (isTextSelectionActive()) return;
+              onclick?.(annotation);
+            },
             onkeydown: (event: KeyboardEvent) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();

@@ -47,6 +47,23 @@ export interface SyncContext {
    * are unaffected; only the automatic scroll-into-view is silenced.
    */
   autoScrollEnabled: boolean;
+  /**
+   * Effective scroll-to-seek policy (the `scrollToSeek` prop AND NOT
+   * reading mode), pushed in from the panel. When false, `TRANSCRIPT_SCROLL`
+   * is ignored entirely — the machine never enters `scrollDriven` and never
+   * invokes `videoController`.
+   */
+  scrollToSeekEnabled: boolean;
+  /**
+   * Bumped on every `SET_SCROLL_TO_SEEK_ENABLED`. A scroll-driven seek
+   * queued in `scrollDriven` captures this value at invoke time and
+   * compares it against the live value immediately before calling
+   * `viewer.seekTo()` — see `videoController`'s `queuedEpoch`. This is what
+   * lets disabling the policy cancel a seek that is already awaiting viewer
+   * readiness, where a transition guard on the next event would be too
+   * late.
+   */
+  scrollSeekEpoch: number;
 }
 
 /**
@@ -63,6 +80,7 @@ export type SyncEvent =
   | { type: "VIDEO_TIME_UPDATE"; currentTime: number }
   | { type: "TRANSCRIPT_SCROLL"; scrollProgress: number; mappedTime: number }
   | { type: "SET_AUTO_SCROLL_ENABLED"; enabled: boolean }
+  | { type: "SET_SCROLL_TO_SEEK_ENABLED"; enabled: boolean }
   | { type: "RESET" };
 
 /**
@@ -76,6 +94,15 @@ export interface SyncConfig {
   settleMs: number;
   /** Duration to lock sync priority after user interaction (milliseconds) */
   priorityLockDuration: number;
+  /**
+   * Reports a genuine, deliberate transcript scroll — the same event that
+   * would drive `TRANSCRIPT_SCROLL`, after the auto-scroll-echo suppression
+   * and debounce throttle, regardless of whether scroll-to-seek is
+   * currently enabled. The panel uses this to enter Browsing when
+   * `scrollToSeek` is configured off; SyncController itself has no opinion
+   * on reading mode.
+   */
+  onUserScroll?: () => void;
 }
 
 /**

@@ -2,8 +2,8 @@
  * Every UI-chrome string keys off one of these. The union covers what
  * exists today (control labels, transcript panel strings, the error
  * banner) plus keys reserved for the companion a11y spec's A-workstream
- * (Captions toggle, auto-scroll pause, the A5 status announcements) so
- * those strings are registry-routed from birth instead of swept in later.
+ * (Captions toggle, the A5 status announcements) so those strings are
+ * registry-routed from birth instead of swept in later.
  */
 export type TermKey =
   | "transcript.loading"
@@ -14,13 +14,20 @@ export type TermKey =
   | "transcript.searchNext"
   | "transcript.searchNoMatches"
   | "transcript.searchMatchCount"
+  | "transcript.searchActivate"
   | "transcript.segmentsLabel"
-  // Reserved for the a11y spec's A3 (auto-scroll pause control).
-  | "transcript.autoscrollPause"
-  | "transcript.autoscrollResume"
+  // The single folded track-audio control (docs/specs/
+  // transcript-reading-mode.md) — supersedes the former
+  // transcript.autoscrollPause/autoscrollResume pair.
+  | "transcript.followAlong"
+  | "transcript.jumpToCurrent"
   // Reserved for the a11y spec's A5 (transcript status announcements).
   | "transcript.loadedAnnouncement"
   | "transcript.unavailableAnnouncement"
+  // Reading-mode transitions (docs/specs/transcript-reading-mode.md,
+  // "Lifecycle and accessibility": announce mode changes politely).
+  | "transcript.followingAnnouncement"
+  | "transcript.browsingAnnouncement"
   | "player.errorLabel"
   | "player.controlsLabel"
   | "player.playButton.play"
@@ -54,11 +61,14 @@ export const EN_TERMS: Record<TermKey, string> = {
   "transcript.searchNext": "Next match",
   "transcript.searchNoMatches": "No matches",
   "transcript.searchMatchCount": "{current} of {total}",
+  "transcript.searchActivate": "Go to match",
   "transcript.segmentsLabel": "Transcript segments",
-  "transcript.autoscrollPause": "Pause auto-scroll",
-  "transcript.autoscrollResume": "Resume auto-scroll",
+  "transcript.followAlong": "Follow along",
+  "transcript.jumpToCurrent": "Jump to current",
   "transcript.loadedAnnouncement": "Transcript loaded, {count} segments",
   "transcript.unavailableAnnouncement": "Transcript unavailable",
+  "transcript.followingAnnouncement": "Following playback",
+  "transcript.browsingAnnouncement": "Browsing — playback continues",
   "player.errorLabel": "Error:",
   "player.controlsLabel": "Media controls",
   "player.playButton.play": "Play",

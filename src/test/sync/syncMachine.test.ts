@@ -590,4 +590,166 @@ describe("syncMachine", () => {
       actor.stop();
     });
   });
+
+  // docs/specs/transcript-reading-mode.md "Reading mode" and the
+  // "Toggle policy off while a scroll-driven seek awaits readiness"
+  // acceptance-gate row. videoController calls viewer.seekTo() from inside
+  // the actor, before its promise resolves — a transition guard on the
+  // *next* event is too late to stop a seek already in flight, so the
+  // policy check has to run immediately before that side effect.
+  describe("scrollToSeekEnabled gate (scroll-to-seek policy)", () => {
+    it("defaults scrollToSeekEnabled to true", () => {
+      const actor = createActor(syncMachine);
+      actor.start();
+      expect(actor.getSnapshot().context.scrollToSeekEnabled).toBe(true);
+      actor.stop();
+    });
+
+    it("SET_SCROLL_TO_SEEK_ENABLED updates context from any state", () => {
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer: createMockViewer(),
+        scrollContainer: createMockScrollContainer(),
+        annotations,
+      });
+
+      actor.send({ type: "SET_SCROLL_TO_SEEK_ENABLED", enabled: false });
+
+      expect(actor.getSnapshot().context.scrollToSeekEnabled).toBe(false);
+      actor.stop();
+    });
+
+    it("blocks entering scrollDriven when scroll-to-seek is disabled (no seek, no state change)", () => {
+      const viewer = createMockViewer();
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer,
+        scrollContainer: createMockScrollContainer(),
+        annotations,
+      });
+      actor.send({ type: "SET_SCROLL_TO_SEEK_ENABLED", enabled: false });
+
+      actor.send({
+        type: "TRANSCRIPT_SCROLL",
+        scrollProgress: 0.5,
+        mappedTime: 7.5,
+      });
+
+      expect(actor.getSnapshot().value).toBe("ready");
+      expect(viewer.seekTo).not.toHaveBeenCalled();
+      actor.stop();
+    });
+
+    it("blocks a further scroll from re-entering scrollDriven once disabled mid-flight", async () => {
+      const viewer = createMockViewer();
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer,
+        scrollContainer: createMockScrollContainer(),
+        annotations,
+      });
+
+      actor.send({
+        type: "TRANSCRIPT_SCROLL",
+        scrollProgress: 0.2,
+        mappedTime: 3,
+      });
+      expect(actor.getSnapshot().value).toBe("scrollDriven");
+
+      actor.send({ type: "SET_SCROLL_TO_SEEK_ENABLED", enabled: false });
+
+      // A later scroll while still (re-)disabled must not start a fresh
+      // scroll-driven seek.
+      actor.send({
+        type: "TRANSCRIPT_SCROLL",
+        scrollProgress: 0.5,
+        mappedTime: 7.5,
+      });
+
+      await vi.waitFor(() => {
+        expect(actor.getSnapshot().value).toBe("ready");
+      });
+      expect(viewer.seekTo).not.toHaveBeenCalled();
+      actor.stop();
+    });
+
+    it("cancels a scroll-driven seek disabled while it awaits viewer readiness, and does not replay it once re-enabled", async () => {
+      let isReady = false;
+      const viewer = createMockViewer({ isReady: vi.fn(() => isReady) });
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer,
+        scrollContainer: createMockScrollContainer(),
+        annotations,
+      });
+
+      actor.send({
+        type: "TRANSCRIPT_SCROLL",
+        scrollProgress: 0.5,
+        mappedTime: 7.5,
+      });
+      expect(actor.getSnapshot().value).toBe("scrollDriven");
+
+      // Disable while videoController is still polling isReady().
+      actor.send({ type: "SET_SCROLL_TO_SEEK_ENABLED", enabled: false });
+
+      // Let the viewer become ready — the actor's waitForReady() resolves
+      // and the epoch check must drop the seek rather than firing it late.
+      isReady = true;
+      await vi.waitFor(
+        () => {
+          expect(actor.getSnapshot().value).toBe("ready");
+        },
+        { timeout: 3000 },
+      );
+      expect(viewer.seekTo).not.toHaveBeenCalled();
+
+      // Re-enabling afterward must not replay the dropped seek — the actor
+      // that would have replayed it has already completed.
+      actor.send({ type: "SET_SCROLL_TO_SEEK_ENABLED", enabled: true });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(viewer.seekTo).not.toHaveBeenCalled();
+
+      actor.stop();
+    }, 10000);
+
+    it("still seeks once viewer readiness resolves when the policy stayed enabled throughout", async () => {
+      let isReady = false;
+      const viewer = createMockViewer({
+        isReady: vi.fn(() => isReady),
+        getDuration: vi.fn(() => 60),
+      });
+      const actor = createActor(syncMachine);
+      actor.start();
+      actor.send({
+        type: "INITIALIZE",
+        viewer,
+        scrollContainer: createMockScrollContainer(),
+        annotations,
+      });
+
+      actor.send({
+        type: "TRANSCRIPT_SCROLL",
+        scrollProgress: 0.5,
+        mappedTime: 7.5,
+      });
+
+      isReady = true;
+      await vi.waitFor(
+        () => {
+          expect(viewer.seekTo).toHaveBeenCalledWith(7.5);
+        },
+        { timeout: 3000 },
+      );
+      actor.stop();
+    }, 10000);
+  });
 });

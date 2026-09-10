@@ -2,7 +2,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import type { Annotation } from "../sync/types";
-  import { formatTimestamp } from "./utils";
+  import { formatTimestamp, isTextSelectionActive } from "./utils";
 
   interface Props {
     /** Transcript annotation with timing and text */
@@ -59,6 +59,16 @@
     text,
     tabindex,
   }: Props = $props();
+
+  // A drag-to-select ending in a click must not also activate (seek) —
+  // selecting/copying transcript text is not a request to jump to that
+  // passage (docs/specs/transcript-reading-mode.md, "Reading mode").
+  // Keyboard activation (Enter/Space, below) always calls onclick directly —
+  // a keypress is never a drag, so it must keep working even mid-selection.
+  function handleClick() {
+    if (isTextSelectionActive()) return;
+    onclick?.();
+  }
 </script>
 
 <div
@@ -68,7 +78,7 @@
   data-highlighted={isHighlighted ? "true" : undefined}
   data-current-match={isCurrentMatch ? "true" : undefined}
   part={isActive ? "segment segment-active" : "segment"}
-  {onclick}
+  onclick={handleClick}
   onkeydown={(event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();

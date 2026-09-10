@@ -48,8 +48,21 @@ export class SyncController {
   private annotations: Annotation[] = [];
   private isInitialized = false;
   private cleanupHandlers: Array<() => void> = [];
-  private lastProgrammaticScroll: number = 0; // Timestamp of last auto-scroll
   private lastScrollEvent: number = 0; // Timestamp of last processed scroll event (for throttling)
+  // Tracks an in-flight programmatic scroll (auto-scroll, return-to-following,
+  // browsing search results, or a consumer scrollToAnnotation call) so the
+  // container's own scroll listener can treat echoes of it as non-user
+  // input rather than deliberate scrolling — see beginProgrammaticScroll().
+  private programmaticScrollActive = false;
+  private programmaticScrollCleanup: (() => void) | null = null;
+  private programmaticScrollFallbackTimer: ReturnType<
+    typeof setTimeout
+  > | null = null;
+  // Idle gap after the last echo scroll before the fallback closes a
+  // programmatic-scroll transaction (used when no `scrollend` arrives). Longer
+  // than a smooth scroll's inter-frame gap, so it only elapses once scrolling
+  // has actually stopped.
+  private static readonly PROGRAMMATIC_SCROLL_SETTLE_MS = 250;
 
   /**
    * Creates a new SyncController instance.
@@ -120,7 +133,7 @@ export class SyncController {
       // Track when auto-scroll happens to block subsequent scroll events
       // mediaDriven means we're auto-scrolling the transcript
       if (state.matches("mediaDriven")) {
-        this.lastProgrammaticScroll = Date.now();
+        this.beginProgrammaticScroll();
       }
     });
 
@@ -186,11 +199,15 @@ export class SyncController {
       if (this.scrollContainer && this.actor) {
         const now = Date.now();
 
-        // Ignore scroll events for 600ms after auto-scroll
-        // scrollIntoView({ behavior: 'smooth' }) triggers scroll events during its animation.
-        // We must block these for the full animation duration (~500ms) to prevent jump-back.
-        const timeSinceAutoScroll = now - this.lastProgrammaticScroll;
-        if (timeSinceAutoScroll < 600) {
+        // Ignore scroll events while a programmatic scroll transaction is
+        // active. scrollIntoView({ behavior: 'smooth' }) triggers scroll
+        // events throughout its animation, which can outlast any fixed
+        // timeout — the transaction is closed explicitly by `scrollend`
+        // (with a generous fallback timer), not by elapsed time.
+        if (this.programmaticScrollActive) {
+          // Re-arm the quiet-period fallback: while echoes keep arriving the
+          // timer keeps getting pushed out, so it never elapses mid-animation.
+          this.armProgrammaticScrollFallback();
           return; // Skip scroll events during/after auto-scroll animation
         }
 
@@ -201,6 +218,11 @@ export class SyncController {
           return; // Skip rapid scroll events
         }
         this.lastScrollEvent = now;
+
+        // A genuine, deliberate scroll — reported regardless of whether
+        // scroll-to-seek is currently enabled; the panel decides what to do
+        // with it (enter reading mode when scrollToSeek is configured off).
+        this.config.onUserScroll?.();
 
         const { scrollTop, scrollHeight, clientHeight } = this.scrollContainer;
         const maxScroll = scrollHeight - clientHeight;
@@ -266,6 +288,81 @@ export class SyncController {
   }
 
   /**
+   * Push the effective scroll-to-seek policy (`scrollToSeek` prop AND NOT
+   * reading mode). No-ops before initialize().
+   */
+  setScrollToSeekEnabled(enabled: boolean): void {
+    this.actor?.send({ type: "SET_SCROLL_TO_SEEK_ENABLED", enabled });
+  }
+
+  /**
+   * Marks a scroll about to happen (or already animating) as programmatic,
+   * so the container's own scroll listener treats it as an auto-scroll echo
+   * rather than a deliberate user scroll. Callers: the panel's own
+   * `scrollToAnnotation` (covers returning to Following, browsing search
+   * results, and the consumer-facing `scrollToAnnotation` API — all
+   * programmatic transcript movement per
+   * docs/specs/transcript-reading-mode.md's Lifecycle section).
+   */
+  notifyProgrammaticScroll(): void {
+    this.beginProgrammaticScroll();
+  }
+
+  /**
+   * Opens a programmatic-scroll transaction: scroll echoes are suppressed
+   * until it closes. Primary close is the container's `scrollend` event
+   * (fires once a smooth-scroll animation settles, however long that takes).
+   * The fallback is a QUIET-PERIOD timer, re-armed on every echo scroll (see
+   * `handleScroll`), so it fires only once scrolling has been idle for
+   * `PROGRAMMATIC_SCROLL_SETTLE_MS` — never mid-animation, no matter how long
+   * the scroll runs. That covers engines without `scrollend` support and the
+   * case where the target is already in view (no scroll, hence no `scrollend`,
+   * ever fires).
+   */
+  private beginProgrammaticScroll(): void {
+    this.endProgrammaticScroll();
+
+    const container = this.scrollContainer;
+    if (!container) return; // nothing can scroll → nothing to suppress
+
+    this.programmaticScrollActive = true;
+
+    const onScrollEnd = () => this.endProgrammaticScroll();
+    container.addEventListener("scrollend", onScrollEnd, { once: true });
+    this.programmaticScrollCleanup = () =>
+      container.removeEventListener("scrollend", onScrollEnd);
+
+    this.armProgrammaticScrollFallback();
+  }
+
+  /**
+   * (Re)starts the quiet-period fallback timer. Called when the transaction
+   * opens and again on every suppressed echo scroll, so the timer only
+   * elapses after scrolling stops — it can never expire during an in-flight
+   * smooth scroll.
+   */
+  private armProgrammaticScrollFallback(): void {
+    if (this.programmaticScrollFallbackTimer !== null) {
+      clearTimeout(this.programmaticScrollFallbackTimer);
+    }
+    this.programmaticScrollFallbackTimer = setTimeout(
+      () => this.endProgrammaticScroll(),
+      SyncController.PROGRAMMATIC_SCROLL_SETTLE_MS,
+    );
+  }
+
+  /** Closes the current programmatic-scroll transaction, if any. */
+  private endProgrammaticScroll(): void {
+    this.programmaticScrollActive = false;
+    this.programmaticScrollCleanup?.();
+    this.programmaticScrollCleanup = null;
+    if (this.programmaticScrollFallbackTimer !== null) {
+      clearTimeout(this.programmaticScrollFallbackTimer);
+      this.programmaticScrollFallbackTimer = null;
+    }
+  }
+
+  /**
    * Check if the controller is ready (machine is in ready state).
    */
   get isReady(): boolean {
@@ -291,6 +388,7 @@ export class SyncController {
     // Clean up event listeners
     this.cleanupHandlers.forEach((cleanup) => cleanup());
     this.cleanupHandlers = [];
+    this.endProgrammaticScroll();
 
     if (this.actor) {
       this.actor.stop();
