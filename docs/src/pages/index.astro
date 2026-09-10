@@ -51,6 +51,60 @@ const jsonLd = {
     "https://fixtures.iiif.io/video/indiana/lunchroom_manners/high/lunchroom_manners-high.mp4",
   transcript: transcript,
 };
+
+const base = import.meta.env.BASE_URL;
+
+// Demo gallery, grouped. `desc` may contain a single `<code>`…`</code>` span,
+// rendered with set:html so the inline formatting survives.
+const demoGroups = [
+  {
+    label: "Component features",
+    tag: "FEATURE",
+    demos: [
+      {
+        title: "Chapters",
+        href: "chapters-demo",
+        desc: "IIIF Range navigation auto-parsed from <code>manifest.structures</code> — seek on click, active tracking.",
+      },
+      {
+        title: "Auto transcript",
+        href: "auto-transcript-demo",
+        desc: '<code>annotations="auto"</code> builds the transcript from the manifest’s own VTT track.',
+      },
+      {
+        title: "HTML annotations",
+        href: "htmlannotations-demo",
+        desc: "Transcript segments that carry inline HTML formatting.",
+      },
+      {
+        title: "Player init",
+        href: "playerinit-demo",
+        desc: "<code>onPlayerInit</code> gives a component outside Root read access to the live PlayerRef.",
+      },
+    ],
+  },
+  {
+    label: "Real-world manifests",
+    tag: "MANIFEST",
+    demos: [
+      {
+        title: "Avalon",
+        href: "avalon-demo",
+        desc: "Audio from IU Media Collections Online, played from its published IIIF manifest.",
+      },
+      {
+        title: "Unlocking the Airwaves",
+        href: "airwaves-demo",
+        desc: "A 1954 NAEB radio program with no IIIF at the source — wrapped in a hand-authored manifest.",
+      },
+      {
+        title: "AVAnnotate",
+        href: "avannotate-demo",
+        desc: "Supplementary <code>canvas.annotations</code> with multi-body speaker tags.",
+      },
+    ],
+  },
+];
 ---
 
 <!doctype html>
@@ -239,48 +293,65 @@ const jsonLd = {
           <IIIFTranscriptDemo client:load {manifestUrl} {vttUrl} />
         </div>
 
-        <div class="mt-8 p-6 bg-parchment-200 border-2 border-ink-200">
-          <p class="text-ink-600 font-serif">
-            See also: <a
-              href="/iiif-timed-transcript/auto-transcript-demo"
-              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
-              >annotations="auto" Demo</a
-            > — the same manifest, with the player building the transcript from the
-            manifest's VTT track instead of the host parsing it.
+        <div class="mt-16 mb-10 border-t-2 border-ink-200 pt-10">
+          <h3 class="text-2xl font-serif font-bold text-ink-900 mb-3">
+            More demos
+          </h3>
+          <p class="text-ink-600 font-serif leading-relaxed max-w-3xl">
+            Each demo isolates one capability against a real IIIF manifest: four
+            component features, and three real-world manifests.
           </p>
-          <p class="text-ink-600 font-serif">
-            See also: <a
-              href="/iiif-timed-transcript/avannotate-demo"
-              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
-              >AVAnnotate Demo</a
-            > — supplementary annotations from <code
-              class="font-mono text-sm bg-parchment-100 px-1 py-0.5 rounded"
-              >canvas.annotations</code
-            > with multi-body speaker tags.
-          </p>
-          <p class="text-ink-600 font-serif">
-            See also: <a
-              href="/iiif-timed-transcript/htmlannotations-demo"
-              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
-              >HTML Annotations Demo</a
-            > — with transcript annotations that include HTML formatting.
-          </p>
-          <p class="text-ink-600 font-serif">
-            See also: <a
-              href="/iiif-timed-transcript/avalon-demo"
-              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
-              >Avalon Demo</a
-            > — an audio item from IU Media Collections Online, played from its published
-            IIIF manifest.
-          </p>
-          <p class="text-ink-600 font-serif">
-            See also: <a
-              href="/iiif-timed-transcript/airwaves-demo"
-              class="text-terracotta-500 hover:text-terracotta-600 underline font-semibold"
-              >Unlocking the Airwaves Demo</a
-            > — a 1954 NAEB radio program with no IIIF at the source, played by wrapping
-            its S3 audio and VTT in a hand-authored manifest.
-          </p>
+        </div>
+
+        <div class="space-y-12">
+          {
+            demoGroups.map((group) => (
+              <div>
+                <div class="flex items-center gap-3 mb-6">
+                  <div class="w-2 h-2 bg-terracotta-400 rotate-45" />
+                  <div class="text-sm font-mono text-ink-600 tracking-wider uppercase">
+                    {group.label}
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {group.demos.map((demo) => (
+                    <a
+                      href={`${base}/${demo.href}`}
+                      class="group flex flex-col gap-3 bg-parchment-50 border-2 border-ink-200 p-7 transition-colors hover:border-terracotta-400"
+                    >
+                      <div class="text-xs font-mono text-terracotta-400 tracking-widest">
+                        {group.tag}
+                      </div>
+                      <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-2xl font-serif font-bold text-ink-900">
+                          {demo.title}
+                        </h3>
+                        <svg
+                          class="text-terracotta-400 transition-transform group-hover:translate-x-1 shrink-0"
+                          width="22"
+                          height="22"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          aria-hidden="true"
+                        >
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                          <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                      </div>
+                      <p
+                        class="demo-desc text-sm text-ink-600 leading-relaxed"
+                        set:html={demo.desc}
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))
+          }
         </div>
       </div>
     </section>
@@ -1027,5 +1098,18 @@ select[data-audio-control="speed"] {
         </p>
       </div>
     </footer>
+
+    <style>
+      /* `demo.desc` is injected via set:html, so Astro's scoped hashing does not
+         reach the <code> spans inside it — target them with :global. Values match
+         the parchment-200 / JetBrains Mono treatment used elsewhere on the page. */
+      .demo-desc :global(code) {
+        font-family: "JetBrains Mono", Menlo, Monaco, monospace;
+        font-size: 0.8125rem;
+        background: #f4f0ea;
+        padding: 1px 5px;
+        border-radius: 2px;
+      }
+    </style>
   </body>
 </html>
