@@ -98,6 +98,7 @@ Top-level context provider. Fetches the IIIF manifest, parses canvases, and coor
 | `onError`            | `(error: Error, info: { fatal: boolean; source: "manifest" \| "canvas" \| "media" \| "playback" \| "transcript" \| "auth" }) => void` | —        | Called for every reported error. `fatal: true` means the player will not become usable; `fatal: false` (a rejected `play()`, a transcript that failed to load) needs no action                                                                                  |
 | `preprocessManifest` | `(raw: unknown) => unknown`                                                                                                           | —        | Runs on the parsed manifest JSON before validation; its output is also what chapters are read from (`raw`). When set, the module-level manifest cache is bypassed                                                                                               |
 | `class`              | `string`                                                                                                                              | `""`     | CSS class for root container                                                                                                                                                                                                                                    |
+| `locale`             | `string`                                                                                                                              | —        | BCP 47 locale for UI copy. See [Interface Language (i18n)](#interface-language-i18n)                                                                                                                                                                            |
 
 <a id="annotations-auto-precedence"></a>
 
@@ -152,7 +153,7 @@ Pass-through container for control components. Use for layout.
 
 #### `IIIFPlayer.PlayButton`
 
-Toggle play/pause. Shows "Play", "Pause", or "Loading..." based on player state.
+Toggle play/pause. Shows "Play", "Pause", or "Loading…" based on player state.
 
 - **Data attribute:** `data-audio-button="play-pause"`
 - **Prop:** `class?: string`
@@ -188,9 +189,17 @@ Playback rate selector (`<select>`).
 
 #### `IIIFPlayer.Time`
 
-Displays current time and duration as `MM:SS / MM:SS` (or `H:MM:SS` for durations >= 1 hour).
+Displays current time and duration as `M:SS / M:SS` (minutes are not zero-padded below one hour; `H:MM:SS` for durations >= 1 hour).
 
 - **Data attribute:** `data-audio-control="time"`
+- **Prop:** `class?: string`
+
+#### `IIIFPlayer.Captions`
+
+Caption toggle button (`CC`). Renders only for video canvases that carry caption tracks — hidden for audio and for video with no `<track>`. Reflects and drives the caption state machine, staying truthful even when captions are toggled via the browser's native CC menu.
+
+- **Data attribute:** `data-audio-button="captions"`
+- **Accessibility:** `aria-pressed` reflects whether captions are showing; `aria-label` is translatable (`captions.toggleLabel`).
 - **Prop:** `class?: string`
 
 ### Transcript Components
@@ -223,13 +232,13 @@ There is no matching `error` snippet: when the fetch fails (`transcriptStatus ==
 
 Search input for filtering transcript segments. **Dual-mode:** reads from `TranscriptContext` inside `Transcript`, or accepts props directly when used standalone.
 
-| Prop            | Type                                             | Default                  | Description           |
-| --------------- | ------------------------------------------------ | ------------------------ | --------------------- |
-| `annotations`   | `Annotation[]`                                   | from context             | Annotations to search |
-| `placeholder`   | `string`                                         | `"Search transcript..."` | Input placeholder     |
-| `debounceMs`    | `number`                                         | `150`                    | Input debounce (ms)   |
-| `onmatchchange` | `(matches: Annotation[], index: number) => void` | from context             | Match change callback |
-| `class`         | `string`                                         | `""`                     | CSS class             |
+| Prop            | Type                                             | Default                | Description           |
+| --------------- | ------------------------------------------------ | ---------------------- | --------------------- |
+| `annotations`   | `Annotation[]`                                   | from context           | Annotations to search |
+| `placeholder`   | `string`                                         | `"Search transcript…"` | Input placeholder     |
+| `debounceMs`    | `number`                                         | `150`                  | Input debounce (ms)   |
+| `onmatchchange` | `(matches: Annotation[], index: number) => void` | from context           | Match change callback |
+| `class`         | `string`                                         | `""`                   | CSS class             |
 
 #### `IIIFPlayer.TranscriptSegments`
 
@@ -542,6 +551,8 @@ interface PlayerState {
   playbackRate: number;
   isReady: boolean;
   error: Error | null;
+  hasEnded: boolean; // true once the media fires `ended`; cleared on replay/canvas switch
+  isSeeking: boolean; // true between native `seeking` and `seeked`
 }
 
 interface PlayerActions {
@@ -584,7 +595,11 @@ interface PlayerContext {
   readonly canvasCount: number;
   readonly canvases: CanvasInfo[];
   readonly transcriptStatus: TranscriptStatus;
+  // Internal wiring — present on the exported type but not on PlayerRef:
   transcriptPopulated: boolean;
+  readonly captionsState: CaptionsVerdict;
+  toggleCaptions: () => void;
+  reportNativeCaptionChange: (mode: "showing" | "hidden") => void;
   actions: PlayerActions;
 }
 
@@ -640,7 +655,7 @@ The package also ships a custom element, `<iiif-transcript-player>`, for pages w
 
 ### Script tag (IIFE)
 
-Until the package is on public npm, vendor the built file (`dist/element/iiif-transcript-player.iife.js` from a build, or from the published tarball) into your static assets; once published it is servable from a CDN at a pinned version.
+Load the built IIFE (`dist/element/iiif-transcript-player.iife.js`) from a CDN at a pinned version, or vendor it into your own static assets.
 
 ```html
 <iiif-transcript-player
