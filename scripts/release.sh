@@ -117,6 +117,24 @@ info "Pushing to origin..."
 run git push origin "$BRANCH"
 run git push origin "v$NEW_VERSION"
 
+info "Creating GitHub release..."
+# Notes come from this version's CHANGELOG section (already written above), so
+# the GitHub Releases page stays in sync with the tags and npm instead of
+# falling behind. Non-fatal: the tag is already pushed and CI publishes from it,
+# so a gh hiccup here should not abort the release.
+NOTES_FILE="$(mktemp)"
+NEW_VERSION="$NEW_VERSION" node -e '
+    const fs = require("fs");
+    const v = process.env.NEW_VERSION;
+    const text = fs.readFileSync("CHANGELOG.md", "utf8");
+    const re = new RegExp("## \\[" + v.replace(/\./g, "\\.") + "\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\[|$)");
+    const m = text.match(re);
+    fs.writeFileSync(process.argv[1], (m ? m[1].trim() : "Release v" + v) + "\n");
+' "$NOTES_FILE"
+run gh release create "v$NEW_VERSION" --title "v$NEW_VERSION" --notes-file "$NOTES_FILE" --verify-tag --latest \
+    || warn "GitHub release creation failed — create it manually: gh release create v$NEW_VERSION --notes-file <changelog section> --verify-tag --latest"
+rm -f "$NOTES_FILE"
+
 echo ""
 if [[ "$DRY_RUN" == true ]]; then
     info "Dry run complete for v$NEW_VERSION"
