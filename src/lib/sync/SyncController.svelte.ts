@@ -108,7 +108,9 @@ export class SyncController {
     this.scrollContainer = scrollContainer;
     this.annotations = annotations;
 
-    // Create and start the actor with viewer, scrollContainer, and annotations input
+    // Create the actor. Inputs (viewer, scrollContainer, annotations) are not
+    // passed here — they are supplied via the INITIALIZE event below, after
+    // the actor is started.
     this.actor = createActor(syncMachine);
 
     // Subscribe to state changes

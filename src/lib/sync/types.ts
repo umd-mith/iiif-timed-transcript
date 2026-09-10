@@ -27,12 +27,8 @@ export interface SyncContext {
   targetTime: number;
   /** Current scroll position (0-1 normalized) */
   scrollPosition: number;
-  /** Target scroll position for pending operations (0-1 normalized) */
-  targetScroll: number;
   /** Current sync priority state */
   syncPriority: SyncPriority;
-  /** Cache mapping scroll positions to timestamps for performance */
-  scrollTimeCache: Map<number, number>;
   /** Index of currently active annotation */
   annotationIndex: number;
   /** Reference to IIIF media viewer for actor invocation */

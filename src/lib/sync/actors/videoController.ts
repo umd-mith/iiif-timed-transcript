@@ -1,8 +1,8 @@
 /**
  * videoController Actor
  *
- * XState actor that manages video seeking operations with retry logic,
- * viewer readiness checking, and boundary handling.
+ * XState actor that manages video seeking operations with viewer readiness
+ * checking and boundary handling.
  */
 
 import { fromPromise } from "xstate";

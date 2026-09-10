@@ -34,12 +34,10 @@ function createInitialContext(): SyncContext {
     currentTime: 0,
     targetTime: 0,
     scrollPosition: 0,
-    targetScroll: 0,
     syncPriority: {
       direction: null,
       timestamp: 0,
     },
-    scrollTimeCache: new Map(),
     annotationIndex: -1,
     viewer: null,
     scrollContainer: null,

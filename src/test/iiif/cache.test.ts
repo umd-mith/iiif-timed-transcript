@@ -194,6 +194,34 @@ describe("IIIFManifestCache", () => {
       const metrics = testCache.getCacheMetrics();
       expect(metrics.size).toBeLessThanOrEqual(100);
     });
+
+    it("evicts the oldest entries first under memory pressure", () => {
+      // Size one entry, then pick a threshold that only the final insert
+      // crosses, so a single bulk pressure eviction runs over all 9 prior
+      // entries at once — the scenario that distinguishes oldest-first from
+      // newest-first eviction.
+      const probe = new IIIFManifestCache({ enableMemoryMonitoring: false });
+      probe.set("key-0", mockManifest);
+      const perEntry = probe.getCacheMetrics().memoryUsage;
+
+      const testCache = new IIIFManifestCache({
+        maxSize: 100,
+        enableMemoryMonitoring: true,
+        memoryWarningThreshold: perEntry * 8.5,
+      });
+
+      // Insert oldest -> newest. Pressure trips only when adding key-9.
+      for (let i = 0; i < 10; i++) {
+        testCache.set(`key-${i}`, mockManifest);
+      }
+
+      // Oldest must be gone; a recent (but not the very last) key must survive.
+      // With newest-first eviction this assertion inverts. `has()` does not
+      // re-trigger the pressure check, so it observes state without disturbing it.
+      expect(testCache.has("key-0")).toBe(false);
+      expect(testCache.has("key-8")).toBe(true);
+      expect(testCache.has("key-9")).toBe(true);
+    });
   });
 
   describe("Logger Integration", () => {

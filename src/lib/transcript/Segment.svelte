@@ -29,7 +29,8 @@
     onclick?: () => void;
     /**
      * Optional snippet to customize how annotation text is rendered.
-     * Receives the annotation object. When omitted, renders plain text.
+     * Receives `{ annotation, language }` (language is the annotation's
+     * optional BCP 47 code, or undefined). When omitted, renders plain text.
      *
      * **Caution:** If using `{@html}`, ensure annotation text is sanitized
      * to prevent XSS. The default rendering escapes text automatically.

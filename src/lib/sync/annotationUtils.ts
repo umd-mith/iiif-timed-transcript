@@ -57,8 +57,8 @@ export function getActiveAnnotationWithIndex(
 }
 
 /**
- * Calculate the scroll position for a given time.
- * Assumes annotations are evenly distributed in the transcript.
+ * Calculate the scroll position for a given time as a linear fraction of
+ * duration (time / duration, clamped to 0-1). Does not consult annotations.
  *
  * @param time - Current playback time in seconds
  * @param duration - Total video duration in seconds

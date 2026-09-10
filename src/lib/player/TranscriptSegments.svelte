@@ -9,8 +9,8 @@
   /**
    * Props passed to a custom segment snippet.
    * Includes a `segmentAttrs` spread object that bundles a11y attributes,
-   * data attributes, tabindex, and onclick — so consumers get correct
-   * behavior by default without manual wiring.
+   * data attributes, tabindex, onclick, and onkeydown — so consumers get
+   * correct behavior by default without manual wiring.
    */
 
   /** Attributes bundled for custom segment root elements. Spread with `{...segmentAttrs}`. */

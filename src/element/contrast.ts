@@ -63,14 +63,6 @@ export interface ContrastPair {
  * `var(--iiif-player-*, <fallback>)` defaults as shipped; if a default
  * changes, update the hex here in the same commit — this table is the
  * regression guard, not a description of intent.
- *
- * Deliberately excluded for now: `--iiif-player-border` (currently
- * `#e5e7eb`, ~1.24:1 against white — the 1.4.11 defect the a11y spec's A3
- * fixes) and any focus-outline pair (A3 introduces `--iiif-player-focus`;
- * today's outline uses `currentColor`, which resolves to
- * `--iiif-player-accent-fg` and is white-on-white on the active canvas
- * button). A3 adds both once fixed — do not add them here ahead of that
- * fix or this test fails on the very defect it exists to catch.
  */
 export const TOKEN_CONTRAST_PAIRS: ContrastPair[] = [
   {
@@ -100,5 +92,19 @@ export const TOKEN_CONTRAST_PAIRS: ContrastPair[] = [
     bg: "#dbeafe",
     kind: "text",
     minRatio: 4.5,
+  },
+  {
+    name: "control/segment border on player background (--iiif-player-border / --iiif-player-bg)",
+    fg: "#767676",
+    bg: "#ffffff",
+    kind: "non-text",
+    minRatio: 3,
+  },
+  {
+    name: "focus outline on player background (--iiif-player-focus / --iiif-player-bg)",
+    fg: "#1d4ed8",
+    bg: "#ffffff",
+    kind: "non-text",
+    minRatio: 3,
   },
 ];

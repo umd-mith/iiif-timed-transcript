@@ -45,7 +45,7 @@ export interface CacheMetrics {
 const DEFAULT_CACHE_SIZE = 100;
 const DEFAULT_MAX_AGE = 1000 * 60 * 15; // 15 minutes
 const DEFAULT_MEMORY_WARNING_THRESHOLD = 50 * 1024 * 1024; // 50MB
-const EMERGENCY_EVICTION_THRESHOLD = 0.8; // Evict when 80% full
+const EMERGENCY_EVICTION_THRESHOLD = 0.8; // Under memory pressure, evict this fraction of entries (keep the newest 20%)
 const MAX_SAFE_MANIFEST_SIZE = 1024 * 1024; // 1MB per manifest
 
 /**
@@ -232,8 +232,12 @@ export class IIIFManifestCache extends QuickLRU<string, ManifestData> {
       targetSize,
     });
 
-    // Evict oldest items first
-    const keysToEvict = [...this.keys()].slice(0, itemsToEvict);
+    // Evict oldest items first. `keys()` iterates newest-first (the newer
+    // QuickLRU generation before the older one), so use entriesAscending(),
+    // which yields oldest-first, to drop least-recently-used entries.
+    const keysToEvict = [...this.entriesAscending()]
+      .slice(0, itemsToEvict)
+      .map(([key]) => key);
     for (const key of keysToEvict) {
       this.delete(key);
     }

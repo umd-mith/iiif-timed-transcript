@@ -1,7 +1,8 @@
 import type { Annotation } from "../sync/types.js";
 
 /**
- * Format time in seconds to MM:SS or H:MM:SS display
+ * Format time in seconds to M:SS or H:MM:SS display (minutes are not
+ * zero-padded below one hour, so 65s renders as "1:05")
  */
 export function formatTimestamp(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
