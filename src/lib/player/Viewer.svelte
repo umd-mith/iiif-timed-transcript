@@ -30,6 +30,20 @@
   // Merge tracks: explicit prop overrides auto-discovered context tracks
   const effectiveTracks = $derived(tracks.length > 0 ? tracks : ctx.tracks);
 
+  // Report the tracks we actually render up to Root, so the CC button and the
+  // captions machine see prop-supplied tracks too (not only manifest ones).
+  // Root stores these as ctx.captionTracks and leaves ctx.tracks (the
+  // transcript-selection source) alone.
+  $effect(() => {
+    // Depend on loadNonce so the report re-fires after EVERY canvas load —
+    // including retry, which reloads the same canvas (unchanged canvasIndex and
+    // mediaType) yet resets the captions machine. mediaType is also read so the
+    // report is correct once it resolves to "video" (Root derives hasTracks
+    // from it); effectiveTracks so a prop change re-reports.
+    const deps = [ctx.loadNonce, ctx.mediaType, effectiveTracks] as const;
+    untrack(() => ctx.reportCaptionTracks(deps[2]));
+  });
+
   // Explicit poster prop overrides the IIIF-derived poster from context.
   // `poster=""` suppresses the derived poster (empty string is not nullish).
   const resolvedPoster = $derived(poster ?? ctx.posterUrl);

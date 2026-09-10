@@ -131,6 +131,20 @@
     onToggleCaptions: () => captionsActor.send({ type: "USER_TOGGLE" }),
     onNativeCaptionChange: (mode) =>
       captionsActor.send({ type: "NATIVE_CHANGE", mode }),
+    // Viewer reports the caption tracks it actually rendered (its `tracks` prop
+    // when set, else the manifest tracks). Stored separately from
+    // `player.tracks` — that stays the manifest-only transcript-selection
+    // source — and used to drive the machine, so captions supplied via the
+    // Viewer prop light the CC button. A redundant TRACKS_CHANGED for the
+    // manifest case (also sent in loadCanvas) is a no-op in every machine state
+    // except unavailable→browserDefault.
+    onReportCaptionTracks: (tracks) => {
+      player.captionTracks = tracks;
+      captionsActor.send({
+        type: "TRACKS_CHANGED",
+        hasTracks: player.mediaType === "video" && tracks.length > 0,
+      });
+    },
   });
 
   // Provide context — the class instance satisfies PlayerContext
@@ -455,6 +469,10 @@
     if (!manifestData) return;
     loadGeneration += 1;
     transcriptGeneration += 1;
+    // Reactive load counter: unlike loadGeneration (an internal let), this is
+    // on context so Viewer re-reports its effective caption tracks after the
+    // machine reset below — including on retry, which reloads the same canvas.
+    player.loadNonce += 1;
 
     // Reset before anything below can throw. Without this, a canvas switch
     // that lands on a non-AV canvas (or otherwise throws before reaching the

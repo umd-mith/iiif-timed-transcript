@@ -31,6 +31,8 @@ export interface PlayerStateManagerOptions {
   onToggleCaptions?: () => void;
   /** NATIVE_CHANGE on the captions machine, from Viewer's textTracks 'change' listener. */
   onNativeCaptionChange?: (mode: "showing" | "hidden") => void;
+  /** Viewer's effective caption tracks, so prop-supplied tracks reach the machine + CC button. */
+  onReportCaptionTracks?: (tracks: TrackDefinition[]) => void;
 }
 
 export class PlayerStateManager implements PlayerContext {
@@ -58,6 +60,11 @@ export class PlayerStateManager implements PlayerContext {
   annotations = $state.raw<Annotation[]>([]);
   chapters = $state.raw<Chapter[]>([]);
   tracks = $state.raw<TrackDefinition[]>([]);
+  captionTracks = $state.raw<TrackDefinition[]>([]);
+  // Bumped by Root on every canvas load (switch AND retry). Viewer depends on
+  // it to re-report its effective caption tracks after each load's machine
+  // reset, since retry changes neither canvasIndex nor mediaType.
+  loadNonce = $state(0);
   transcriptStatus = $state<TranscriptStatus>("idle");
   transcriptPopulated = $state(false);
   captionsState = $state<CaptionsVerdict>("unavailable");
@@ -127,6 +134,13 @@ export class PlayerStateManager implements PlayerContext {
     retry: async () => {
       this.state.error = null;
       await this.onRetry?.();
+      // onRetry re-runs the manifest/canvas pipeline, but for a native element
+      // whose src is unchanged the browser will not re-fetch on its own (the
+      // src attribute never changed, so no reload is triggered). Force it, so a
+      // failed native load actually recovers. HLS/DASH re-attach through their
+      // own adapters and don't need this; a changed src reloads anyway, making
+      // the extra load() harmless.
+      if (this.mediaStrategy === "native") this.mediaElement?.load();
     },
     seekToChapter: (chapter: Chapter) => {
       this.actions.seekTo(chapter.startTime);
@@ -144,12 +158,19 @@ export class PlayerStateManager implements PlayerContext {
     this.onNativeCaptionChange?.(mode);
   };
 
+  reportCaptionTracks: (tracks: TrackDefinition[]) => void = (tracks) => {
+    this.onReportCaptionTracks?.(tracks);
+  };
+
   private onRetry: (() => Promise<void>) | undefined;
   private onSwitchCanvas: ((index: number) => void) | undefined;
   private onPlaybackError: ((error: Error) => void) | undefined;
   private onToggleCaptions: (() => void) | undefined;
   private onNativeCaptionChange:
     | ((mode: "showing" | "hidden") => void)
+    | undefined;
+  private onReportCaptionTracks:
+    | ((tracks: TrackDefinition[]) => void)
     | undefined;
 
   constructor(options?: PlayerStateManagerOptions) {
@@ -158,5 +179,6 @@ export class PlayerStateManager implements PlayerContext {
     this.onPlaybackError = options?.onPlaybackError;
     this.onToggleCaptions = options?.onToggleCaptions;
     this.onNativeCaptionChange = options?.onNativeCaptionChange;
+    this.onReportCaptionTracks = options?.onReportCaptionTracks;
   }
 }

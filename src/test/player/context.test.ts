@@ -54,6 +54,8 @@ describe("getPlayerContext", () => {
       chapters: [],
       activeChapterId: null,
       tracks: [],
+      captionTracks: [],
+      loadNonce: 0,
       canvasIndex: 0,
       canvasCount: 1,
       canvases: [],
@@ -62,6 +64,7 @@ describe("getPlayerContext", () => {
       captionsState: "unavailable",
       toggleCaptions: vi.fn(),
       reportNativeCaptionChange: vi.fn(),
+      reportCaptionTracks: vi.fn(),
       actions: {
         play: vi.fn(),
         pause: vi.fn(),
@@ -132,6 +135,8 @@ describe("PlayerContext chapter types", () => {
       chapters,
       activeChapterId: "ch1",
       tracks: [],
+      captionTracks: [],
+      loadNonce: 0,
       canvasIndex: 0,
       canvasCount: 1,
       canvases: [],
@@ -140,6 +145,7 @@ describe("PlayerContext chapter types", () => {
       captionsState: "unavailable",
       toggleCaptions: () => {},
       reportNativeCaptionChange: () => {},
+      reportCaptionTracks: () => {},
       actions: {
         play: async () => {},
         pause: () => {},
