@@ -10,6 +10,8 @@ Entries below version `0.15.0` retain the `Minor Changes` / `Patch Changes` /
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-10
+
 ### Fixed
 
 - 19071c7: `IIIFPlayer.Captions` now recognizes caption tracks supplied directly to `IIIFPlayer.Viewer` through its `tracks` prop, not only manifest-discovered ones. Previously a video captioned only via the prop rendered the `<track>` but no CC button — and with `Viewer`'s default `controls={false}` the viewer had no way to toggle captions. Viewer reports its effective caption tracks to the player, kept separate from the manifest tracks that drive transcript selection, and re-asserts them after every canvas load (including `actions.retry()`), so the toggle stays live. (#69)
