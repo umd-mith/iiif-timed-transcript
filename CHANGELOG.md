@@ -10,6 +10,11 @@ Entries below version `0.15.0` retain the `Minor Changes` / `Patch Changes` /
 
 ## [Unreleased]
 
+### Fixed
+
+- 19071c7: `IIIFPlayer.Captions` now recognizes caption tracks supplied directly to `IIIFPlayer.Viewer` through its `tracks` prop, not only manifest-discovered ones. Previously a video captioned only via the prop rendered the `<track>` but no CC button — and with `Viewer`'s default `controls={false}` the viewer had no way to toggle captions. Viewer reports its effective caption tracks to the player, kept separate from the manifest tracks that drive transcript selection, and re-asserts them after every canvas load (including `actions.retry()`), so the toggle stays live. (#69)
+- 19071c7: `actions.retry()` now restarts a failed native media load whose URL is unchanged. It previously cleared the error and re-ran manifest/canvas setup without re-requesting the media, so a native load failure never recovered; retry now calls `load()` on the native element (HLS/DASH re-attach through their own adapters). (#69)
+
 ## [0.16.0] - 2026-09-08
 
 ### Added
