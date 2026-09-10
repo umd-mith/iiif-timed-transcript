@@ -112,6 +112,13 @@ export interface PlayerContext {
    * the captions machine's TRACKS_CHANGED. Internal wiring — not on PlayerRef.
    */
   readonly captionTracks: TrackDefinition[];
+  /**
+   * Monotonic counter bumped on every canvas load — a switch AND a retry (which
+   * changes no other observable field). Viewer depends on it to re-report its
+   * effective caption tracks after each load resets the captions machine.
+   * Internal wiring — not on PlayerRef.
+   */
+  readonly loadNonce: number;
   readonly canvasIndex: number;
   readonly canvasCount: number;
   readonly canvases: CanvasInfo[];

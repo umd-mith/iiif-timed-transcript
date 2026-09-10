@@ -110,6 +110,7 @@ export function createMockPlayerContext(
     // callers that express "this canvas has caption tracks" via `tracks` still
     // light the CC button (Captions reads captionTracks).
     captionTracks: rest.captionTracks ?? rest.tracks ?? [],
+    loadNonce: 0,
     canvasIndex: 0,
     canvasCount: 1,
     canvases: [],

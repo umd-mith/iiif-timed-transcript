@@ -32,18 +32,15 @@
 
   // Report the tracks we actually render up to Root, so the CC button and the
   // captions machine see prop-supplied tracks too (not only manifest ones).
-  // Keyed on canvasIndex — not mediaUrl — so a canvas switch re-asserts the
-  // prop even when two canvases share a media URL (loadCanvas resets
-  // player.tracks on every switch). Also keyed on mediaType: it resolves
-  // asynchronously after the manifest loads, and Root derives TRACKS_CHANGED's
-  // hasTracks from it, so a report fired before video is known would wrongly
-  // read as audio. Root stores these as ctx.captionTracks and leaves ctx.tracks
-  // (the transcript-selection source) alone.
+  // Root stores these as ctx.captionTracks and leaves ctx.tracks (the
+  // transcript-selection source) alone.
   $effect(() => {
-    // Reading canvasIndex + mediaType registers them as dependencies: the
-    // report must re-fire on a canvas switch (even a repeat-URL one) and once
-    // the async mediaType resolves to "video" (Root derives hasTracks from it).
-    const deps = [ctx.canvasIndex, ctx.mediaType, effectiveTracks] as const;
+    // Depend on loadNonce so the report re-fires after EVERY canvas load —
+    // including retry, which reloads the same canvas (unchanged canvasIndex and
+    // mediaType) yet resets the captions machine. mediaType is also read so the
+    // report is correct once it resolves to "video" (Root derives hasTracks
+    // from it); effectiveTracks so a prop change re-reports.
+    const deps = [ctx.loadNonce, ctx.mediaType, effectiveTracks] as const;
     untrack(() => ctx.reportCaptionTracks(deps[2]));
   });
 

@@ -85,13 +85,20 @@ describe("actions.retry() restarts native media at an unchanged URL", () => {
 
     const video = ctx!.mediaElement as HTMLVideoElement;
 
-    // Count reloads from here on: load() re-runs the resource-selection
-    // algorithm, which fires a fresh `loadstart`. The initial mount's loadstart
-    // already fired before this listener attached, so any count is a re-load.
-    let reloads = 0;
+    // Every `loadstart` from here on. load() re-runs the resource-selection
+    // algorithm, which fires a fresh loadstart — the browser's own reaction to
+    // a real load, not a spy on our own call.
+    let loadStarts = 0;
     video.addEventListener("loadstart", () => {
-      reloads++;
+      loadStarts++;
     });
+
+    // Establish an explicit baseline load that this listener provably caught,
+    // rather than assuming the mount's loadstart already fired before attach —
+    // otherwise a stray initial event could be miscounted as the retry's.
+    video.load();
+    await vi.waitFor(() => expect(loadStarts).toBeGreaterThanOrEqual(1));
+    const baseline = loadStarts;
 
     // Simulate a native media failure (unsupported format, code 4).
     Object.defineProperty(video, "error", {
@@ -107,9 +114,9 @@ describe("actions.retry() restarts native media at an unchanged URL", () => {
     flushSync();
 
     // Clearing the error alone is a trivial pass (retry always does it); the
-    // load-bearing signal is that a NEW media load was actually initiated
-    // against the same URL — without it the element keeps its dead source.
+    // load-bearing signal is that retry initiated ANOTHER native load beyond
+    // the established baseline — without it the element keeps its dead source.
     expect(ctx!.state.error).toBeNull();
-    await vi.waitFor(() => expect(reloads).toBeGreaterThanOrEqual(1));
+    await vi.waitFor(() => expect(loadStarts).toBeGreaterThan(baseline));
   });
 });

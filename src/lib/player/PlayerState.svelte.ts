@@ -61,6 +61,10 @@ export class PlayerStateManager implements PlayerContext {
   chapters = $state.raw<Chapter[]>([]);
   tracks = $state.raw<TrackDefinition[]>([]);
   captionTracks = $state.raw<TrackDefinition[]>([]);
+  // Bumped by Root on every canvas load (switch AND retry). Viewer depends on
+  // it to re-report its effective caption tracks after each load's machine
+  // reset, since retry changes neither canvasIndex nor mediaType.
+  loadNonce = $state(0);
   transcriptStatus = $state<TranscriptStatus>("idle");
   transcriptPopulated = $state(false);
   captionsState = $state<CaptionsVerdict>("unavailable");

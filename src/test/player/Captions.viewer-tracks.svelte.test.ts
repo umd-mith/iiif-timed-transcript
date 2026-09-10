@@ -143,6 +143,52 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     expect(button.getAttribute("aria-pressed")).toBe("true");
   });
 
+  test("the CC toggle still drives the prop track after actions.retry()", async () => {
+    const url = "https://example.com/manifest-viewer-tracks-retry.json";
+    mockFetchManifest(videoManifestNoCaptions(url));
+
+    let ctx: PlayerContext | null = null;
+    mount(TestRootViewerCaptions, {
+      target,
+      props: {
+        manifestUrl: url,
+        tracks: propTracks,
+        onResult: (c: PlayerContext) => {
+          ctx = c;
+        },
+      },
+    });
+
+    await vi.waitFor(() => {
+      expect(ctx).not.toBeNull();
+      expect(ctx!.mediaType).toBe("video");
+    });
+    flushSync();
+
+    const button = target.querySelector<HTMLButtonElement>(
+      '[data-audio-button="captions"]',
+    )!;
+    const video = ctx!.mediaElement as HTMLVideoElement;
+    await vi.waitFor(() => expect(video.textTracks.length).toBe(1));
+
+    // retry re-runs the manifest/canvas pipeline, which resets the captions
+    // machine to unavailable. The prop tracks are unchanged, so the button must
+    // stay live and the toggle must keep working — the caption-track report has
+    // to be re-asserted after the reset, not only on a canvas/mediaType change.
+    await ctx!.actions.retry();
+    flushSync();
+
+    expect(button).not.toBeNull();
+    expect(
+      target.querySelector('[data-audio-button="captions"]'),
+    ).not.toBeNull();
+
+    button.click();
+    flushSync();
+    await vi.waitFor(() => expect(video.textTracks[0]!.mode).toBe("hidden"));
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+
   test("no CC button on an audio canvas even when a tracks prop is passed", async () => {
     const url = "https://example.com/manifest-viewer-tracks-audio.json";
     mockFetchManifest({

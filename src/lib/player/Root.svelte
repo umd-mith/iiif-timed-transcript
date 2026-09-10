@@ -469,6 +469,10 @@
     if (!manifestData) return;
     loadGeneration += 1;
     transcriptGeneration += 1;
+    // Reactive load counter: unlike loadGeneration (an internal let), this is
+    // on context so Viewer re-reports its effective caption tracks after the
+    // machine reset below — including on retry, which reloads the same canvas.
+    player.loadNonce += 1;
 
     // Reset before anything below can throw. Without this, a canvas switch
     // that lands on a non-AV canvas (or otherwise throws before reaching the
