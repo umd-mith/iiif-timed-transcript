@@ -10,6 +10,10 @@ Entries below version `0.15.0` retain the `Minor Changes` / `Patch Changes` /
 
 ## [Unreleased]
 
+### Fixed
+
+- e92c0fb: `videoController` now keeps every seek within `[0, duration]`. The near-end backoff (seek to `duration - 1`) ran after the lower clamp, so a media duration shorter than that one-second backoff produced a negative seek target (e.g. a 0.5-second clip sought to `-0.5`). (#71)
+
 ## [0.17.0] - 2026-09-10
 
 ### Fixed
