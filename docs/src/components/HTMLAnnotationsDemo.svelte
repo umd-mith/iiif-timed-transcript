@@ -46,7 +46,11 @@
       <div
         class="bg-gray-50 rounded-lg shadow-md border border-ink-200 max-h-[600px] flex flex-col overflow-clip"
       >
-        <IIIFPlayer.Transcript {annotations}>
+        <IIIFPlayer.Transcript
+          {annotations}
+          searchSeekBehavior="activate"
+          scrollToSeek={false}
+        >
           <IIIFPlayer.TranscriptSearch />
           <IIIFPlayer.TranscriptSegments>
             {#snippet text({ annotation })}
@@ -141,5 +145,17 @@
 
   :global(.html-annotations-demo [data-audio-control="time"]) {
     @apply text-sm text-gray-600 font-medium;
+  }
+
+  :global(.html-annotations-demo .follow-along-switch) {
+    @apply self-start inline-flex items-center gap-2 px-3 py-1 mb-2 rounded-full border border-ink-300 bg-white text-sm text-gray-700 transition-colors;
+  }
+
+  :global(.html-annotations-demo .follow-along-switch[aria-checked="true"]) {
+    @apply bg-terracotta-500 border-terracotta-500 text-white;
+  }
+
+  :global(.html-annotations-demo .jump-to-current) {
+    @apply self-start px-3 py-1 mb-2 rounded-full bg-terracotta-500 text-white text-sm transition-colors hover:bg-terracotta-600;
   }
 </style>

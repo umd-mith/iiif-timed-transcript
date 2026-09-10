@@ -76,6 +76,31 @@ export declare class IIIFTranscriptPlayerElement extends HTMLElement {
   label: string;
   /** `crossorigin` attribute. Forwarded to the underlying media element. */
   crossorigin: string;
+  /**
+   * `search-seek-behavior` attribute. `"change"` (default) preserves
+   * legacy search-driven seeking; `"activate"` implements explicit search
+   * activation — see the library's `Transcript` `searchSeekBehavior` prop.
+   * Any other value is a non-fatal `host` error and falls back to
+   * `"change"`.
+   */
+  searchSeekBehavior: "change" | "activate";
+  /**
+   * `scroll-to-seek` attribute, default `true`. Value-based, not
+   * presence-based: `"false"` (case-insensitive) is `false`; `"true"`, the
+   * empty string, and a bare attribute are `true`; an absent attribute is
+   * the default. Any other string value is a non-fatal `host` error and
+   * falls back to `true`. Properties accept a real boolean directly.
+   */
+  scrollToSeek: boolean;
+  /**
+   * `reading-mode` attribute, default `false`. Same value-based parsing as
+   * `scrollToSeek`. Reactive and reflected: the element's own "Follow
+   * along" switch and "Jump to current" button — and any host write to
+   * this property — write the `reading-mode` attribute back through a
+   * guarded, loop-safe update. Exposes `:state(browsing)` for host theming
+   * while `true`.
+   */
+  readingMode: boolean;
   /** Property only. Default `"auto"`. */
   annotations: Annotation[] | "auto";
   /** Property only. Runs on the parsed manifest JSON before validation. */

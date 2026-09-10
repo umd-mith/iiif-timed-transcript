@@ -11,6 +11,19 @@
       annotations: { attribute: "annotations" },
       preprocessManifest: { attribute: "preprocessmanifest" },
       errorCallback: { attribute: "errorcallback" },
+      // No `type` on these three, deliberately (docs/specs/
+      // transcript-reading-mode.md, "Proposed API and compatibility"): the
+      // element owns value-based parsing and reflection for
+      // `scroll-to-seek`/`reading-mode` itself (see `canonicalizeBooleanAttr`
+      // and the `readingMode`/`scrollToSeek` accessor overrides in `extend`
+      // below) rather than Svelte's presence-based `type: "Boolean"` (which
+      // cannot tell `reading-mode="false"` from `reading-mode="true"`) or
+      // Svelte-generated `reflect: true` (which would fight the manual
+      // guarded write). `searchSeekBehavior` needs neither — it is a plain
+      // string enum, validated in the instance script below.
+      searchSeekBehavior: { attribute: "search-seek-behavior", type: "String" },
+      scrollToSeek: { attribute: "scroll-to-seek" },
+      readingMode: { attribute: "reading-mode" },
     },
     extend,
   }}
@@ -44,9 +57,43 @@
     $$p_d: Record<string, unknown>;
     connectedCallback(): Promise<void>;
     disconnectedCallback(): void;
+    // The base (un-extended) class's own generated accessors for the two
+    // manually-owned boolean props — typed loosely (`unknown`) because the
+    // base accessor's runtime value can be a boolean (a property write, see
+    // the override below), a raw attribute string, or null/undefined
+    // (attribute absent). `readingMode`/`scrollToSeek` below narrow it.
+    readingMode: unknown;
+    scrollToSeek: unknown;
   }
   interface SvelteCustomElementConstructor {
     new (...params: never[]): SvelteCustomElementInstance;
+  }
+
+  /**
+   * Canonicalizes a `reading-mode`/`scroll-to-seek`-style boolean
+   * attribute or property value against its own default (docs/specs/
+   * transcript-reading-mode.md, "The custom element must own value-based
+   * parsing and reflection…"). `null`/`undefined` (an absent attribute, or
+   * a property that was never set) is the default; a real boolean (a
+   * property write — see the accessor overrides below) is used directly; a
+   * string is matched case-insensitively — `"false"` is `false`; `"true"`
+   * and the empty string (a bare attribute, `<el reading-mode>`) are
+   * `true`. Any other string is invalid: `valid: false`, falls back to the
+   * default, and the instance script reports it as a non-fatal host error
+   * (the "existing validation/error conventions" the spec defers to).
+   */
+  function canonicalizeBooleanAttr(
+    raw: unknown,
+    defaultValue: boolean,
+  ): { value: boolean; valid: boolean } {
+    if (raw == null) return { value: defaultValue, valid: true };
+    if (typeof raw === "boolean") return { value: raw, valid: true };
+    if (typeof raw === "string") {
+      const lower = raw.toLowerCase();
+      if (lower === "false") return { value: false, valid: true };
+      if (lower === "true" || raw === "") return { value: true, valid: true };
+    }
+    return { value: defaultValue, valid: false };
   }
 
   /**
@@ -115,6 +162,33 @@
       constructor(...params: never[]) {
         super(...params);
         this.__internals = this.attachInternals();
+      }
+
+      // `readingMode`/`scrollToSeek` accessor overrides: the base class's
+      // own generated accessor (defined on `Base.prototype` above, before
+      // `extend` runs) reads/writes whatever raw value is currently in the
+      // Svelte component's prop — a boolean from a property write, but a
+      // raw attribute string (or null) from an attribute write, since
+      // neither prop declares a `type` (see `customElement.props` above).
+      // Reading that raw value back out as `el.readingMode` would leak a
+      // string like `"false"` — truthy in JS, the opposite of what it
+      // means — so both accessors canonicalize through the SAME function
+      // the instance script uses for the attribute side, on the way in
+      // (`set`) and the way out (`get`): `get` always returns a genuine
+      // boolean regardless of how the current value got there; `set`
+      // always stores one, so a property write can never itself produce an
+      // invalid raw value for the instance script to canonicalize again.
+      get readingMode(): boolean {
+        return canonicalizeBooleanAttr(super.readingMode, false).value;
+      }
+      set readingMode(value: unknown) {
+        super.readingMode = canonicalizeBooleanAttr(value, false).value;
+      }
+      get scrollToSeek(): boolean {
+        return canonicalizeBooleanAttr(super.scrollToSeek, true).value;
+      }
+      set scrollToSeek(value: unknown) {
+        super.scrollToSeek = canonicalizeBooleanAttr(value, true).value;
       }
 
       #resolveLocale(): void {
@@ -202,6 +276,9 @@
     annotations = "auto",
     preprocessManifest,
     errorCallback,
+    searchSeekBehavior,
+    scrollToSeek,
+    readingMode,
   }: {
     manifestUrl?: string;
     canvasIndex?: number;
@@ -219,6 +296,16 @@
     annotations?: Annotation[] | "auto";
     preprocessManifest?: ((raw: unknown) => unknown) | undefined;
     errorCallback?: ErrorCallback | undefined;
+    /** `search-seek-behavior` attribute. `"change"` | `"activate"`. */
+    searchSeekBehavior?: string;
+    /**
+     * `scroll-to-seek` attribute. Raw: a real boolean from a property write
+     * (already canonicalized by the accessor override in `extend`), or a
+     * raw attribute string/`null` — see `canonicalizeBooleanAttr`.
+     */
+    scrollToSeek?: boolean | string | null;
+    /** `reading-mode` attribute. Same raw shape as `scrollToSeek`. */
+    readingMode?: boolean | string | null;
   } = $props();
 
   // Exposed as a read-only getter on the element (Svelte turns instance
@@ -429,6 +516,132 @@
     return () => clearTimeout(timer);
   });
 
+  // `search-seek-behavior` — a plain string enum, so unlike the two boolean
+  // props below it needs no manual owner, just validation. An unset
+  // attribute/property (`null`/`undefined`) is not misuse — it silently
+  // means the default, `"change"`.
+  const searchSeekBehaviorValid = $derived(
+    searchSeekBehavior == null ||
+      searchSeekBehavior === "change" ||
+      searchSeekBehavior === "activate",
+  );
+  const safeSearchSeekBehavior = $derived<"change" | "activate">(
+    searchSeekBehaviorValid && searchSeekBehavior != null
+      ? (searchSeekBehavior as "change" | "activate")
+      : "change",
+  );
+  const reportedBadSearchSeekBehaviors: unknown[] = [];
+  $effect(() => {
+    if (searchSeekBehaviorValid) return;
+    const value = searchSeekBehavior;
+    untrack(() => {
+      if (reportedBadSearchSeekBehaviors.includes(value)) return;
+      reportedBadSearchSeekBehaviors.push(value);
+      report(
+        new Error(
+          '`search-seek-behavior` must be "change" or "activate"; ignoring it',
+        ),
+        { fatal: false, source: "host" },
+      );
+    });
+  });
+
+  // `scroll-to-seek` — canonicalized by `canonicalizeBooleanAttr` (module
+  // script) against its own default, `true`. Forwarded to `Transcript` as a
+  // plain one-way prop: unlike `reading-mode` below it is never mutated by
+  // the panel itself, so there is nothing to reflect back.
+  const scrollToSeekCanon = $derived(
+    canonicalizeBooleanAttr(scrollToSeek, true),
+  );
+  const safeScrollToSeek = $derived(scrollToSeekCanon.value);
+  const reportedBadScrollToSeek: unknown[] = [];
+  $effect(() => {
+    if (scrollToSeekCanon.valid) return;
+    const value = scrollToSeek;
+    untrack(() => {
+      if (reportedBadScrollToSeek.includes(value)) return;
+      reportedBadScrollToSeek.push(value);
+      report(
+        new Error('`scroll-to-seek` must be "true" or "false"; ignoring it'),
+        { fatal: false, source: "host" },
+      );
+    });
+  });
+
+  // `reading-mode` — canonicalized against its own default, `false`, same
+  // as `scrollToSeek` above. Unlike `scrollToSeek`, this one is bindable on
+  // `Transcript`: the panel's own "Follow along" switch and "Jump to
+  // current" button mutate it from inside. `readingModeState` is the
+  // two-way bridge — bound to `Transcript` in the template below — and the
+  // two effects after it keep it in sync with the host-facing prop in both
+  // directions:
+  //  - host (attribute or property) -> panel: an external `reading-mode`
+  //    change flows down into `readingModeState` so the panel picks it up.
+  //  - panel -> host: a user-driven (or host-driven, echoed back — see the
+  //    guard) change to `readingModeState` reflects onto the `reading-mode`
+  //    attribute, through a GUARDED, deferred write so
+  //    `attributeChangedCallback` cannot re-enter and loop (docs/specs/
+  //    transcript-reading-mode.md: "a GUARDED write that compares against
+  //    the current canonical value and returns early when unchanged").
+  //    Reflection never touches playback — it only calls setAttribute/
+  //    removeAttribute.
+  const readingModeCanon = $derived(
+    canonicalizeBooleanAttr(readingMode, false),
+  );
+  const reportedBadReadingMode: unknown[] = [];
+  $effect(() => {
+    if (readingModeCanon.valid) return;
+    const value = readingMode;
+    untrack(() => {
+      if (reportedBadReadingMode.includes(value)) return;
+      reportedBadReadingMode.push(value);
+      report(
+        new Error('`reading-mode` must be "true" or "false"; ignoring it'),
+        { fatal: false, source: "host" },
+      );
+    });
+  });
+
+  let readingModeState = $state(untrack(() => readingModeCanon.value));
+
+  // Host -> panel. Untracked read/write of `readingModeState` so this
+  // effect reacts only to the host-facing `readingModeCanon` (an
+  // attribute/property change), never to the panel's own writes into
+  // `readingModeState` — that direction is the reflect effect below.
+  $effect(() => {
+    const canon = readingModeCanon.value;
+    untrack(() => {
+      if (readingModeState !== canon) readingModeState = canon;
+    });
+  });
+
+  // Panel -> host, guarded and deferred. Deferring to a microtask (as the
+  // `canvas-index` repair above does) and re-reading `readingModeState` at
+  // execute time, rather than trusting the value captured when the effect
+  // ran, makes rapid toggles self-correcting instead of racing: only the
+  // freshest state is ever written, and the guard compares against the
+  // attribute actually on the DOM right then.
+  $effect(() => {
+    const state = readingModeState;
+    void state; // establish the dependency; read fresh inside the microtask
+    untrack(() => {
+      const host = $host();
+      queueMicrotask(() => {
+        const liveState = readingModeState;
+        const liveCanon = canonicalizeBooleanAttr(
+          host.getAttribute("reading-mode"),
+          false,
+        ).value;
+        if (liveCanon === liveState) return;
+        if (liveState) {
+          host.setAttribute("reading-mode", "");
+        } else {
+          host.removeAttribute("reading-mode");
+        }
+      });
+    });
+  });
+
   // Fatal errors that happen before playerRefValue is ever set (a manifest
   // or first-canvas failure — report()'s `fatal: true` path) need their own
   // flag: PlayerRef.state doesn't exist yet to read `.error` off of.
@@ -452,6 +665,7 @@
     internals.states[isPlayingState ? "add" : "delete"]("playing");
     internals.states[isLoadingState ? "add" : "delete"]("loading");
     internals.states[isErrorState ? "add" : "delete"]("error");
+    internals.states[readingModeState ? "add" : "delete"]("browsing");
   });
 
   const safeAnnotations = $derived<Annotation[] | "auto">(
@@ -641,7 +855,11 @@
           <IIIFPlayer.CanvasNav />
         {/if}
         {#if player.annotations.length > 0 || player.transcriptStatus === "loading" || player.transcriptStatus === "error"}
-          <IIIFPlayer.Transcript>
+          <IIIFPlayer.Transcript
+            searchSeekBehavior={safeSearchSeekBehavior}
+            scrollToSeek={safeScrollToSeek}
+            bind:readingMode={readingModeState}
+          >
             <IIIFPlayer.TranscriptSearch />
             <IIIFPlayer.TranscriptSegments />
           </IIIFPlayer.Transcript>
@@ -783,6 +1001,48 @@
     outline-color: var(--iiif-player-focus, #1d4ed8);
   }
 
+  /* Reading mode: the "Follow along" switch (Transcript's single folded
+     track-audio control) and "Jump to current" (shown only while Browsing).
+     Transcript.svelte ships both bare — semantics and state only, `role`/
+     `aria-checked`/`data-following` on the switch — this is the element's
+     own styled skin, same as every other control-bar hook above. */
+  .iiif-tp :global(.follow-along-switch) {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--iiif-player-border, #767676);
+    border-radius: 999px;
+    background: var(--iiif-player-control-bg, #f3f4f6);
+    color: var(--iiif-player-control-fg, inherit);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .iiif-tp :global(.follow-along-switch[aria-checked="true"]) {
+    background: var(--iiif-player-accent, #1d4ed8);
+    color: var(--iiif-player-accent-fg, #ffffff);
+    border-color: var(--iiif-player-accent, #1d4ed8);
+  }
+
+  .iiif-tp :global(.jump-to-current) {
+    align-self: flex-start;
+    margin-block-start: 0.25rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--iiif-player-accent, #1d4ed8);
+    border-radius: 4px;
+    background: var(--iiif-player-accent, #1d4ed8);
+    color: var(--iiif-player-accent-fg, #ffffff);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .iiif-tp :global(.follow-along-switch:focus),
+  .iiif-tp :global(.jump-to-current:focus) {
+    outline-color: var(--iiif-player-focus, #1d4ed8);
+  }
+
   @media (forced-colors: active) {
     .iiif-tp :global([data-annotation-id][data-state="active"]),
     .iiif-tp :global([data-annotation-id][data-highlighted="true"]),
@@ -796,6 +1056,20 @@
 
     .iiif-tp :global(nav.canvas-nav button:focus),
     .iiif-tp :global([data-annotation-id]:focus) {
+      outline-color: Highlight;
+    }
+
+    .iiif-tp :global(.follow-along-switch),
+    .iiif-tp :global(.jump-to-current) {
+      border-color: ButtonText;
+    }
+
+    .iiif-tp :global(.follow-along-switch[aria-checked="true"]) {
+      border-color: Highlight;
+    }
+
+    .iiif-tp :global(.follow-along-switch:focus),
+    .iiif-tp :global(.jump-to-current:focus) {
       outline-color: Highlight;
     }
   }

@@ -43,6 +43,26 @@
               "name": "crossorigin",
               "type": { "text": "string" },
               "fieldName": "crossorigin"
+            },
+            {
+              "name": "search-seek-behavior",
+              "type": { "text": "\"change\" | \"activate\"" },
+              "default": "\"change\"",
+              "fieldName": "searchSeekBehavior"
+            },
+            {
+              "name": "scroll-to-seek",
+              "type": { "text": "boolean" },
+              "default": "true",
+              "fieldName": "scrollToSeek",
+              "description": "Value-based, not presence-based: \"false\" (case-insensitive) is false; \"true\", the empty string, and a bare attribute are true; an absent attribute is the default, true."
+            },
+            {
+              "name": "reading-mode",
+              "type": { "text": "boolean" },
+              "default": "false",
+              "fieldName": "readingMode",
+              "description": "Same value-based parsing as scroll-to-seek, default false. Reactive and reflected: the element's own \"Follow along\"/\"Jump to current\" controls, and any bindable-style write to the readingMode property, write this attribute back (guarded against feedback loops)."
             }
           ],
           "members": [
@@ -146,6 +166,10 @@
             {
               "name": "error",
               "description": "Set while the player is in a fatal error state."
+            },
+            {
+              "name": "browsing",
+              "description": "Set while the transcript panel is Browsing (reading-mode is true) — style the host with :state(browsing)."
             }
           ]
         }
