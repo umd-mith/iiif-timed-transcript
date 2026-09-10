@@ -1,6 +1,6 @@
 {
   "name": "@umd-mith/iiif-timed-transcript",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "packageManager": "pnpm@11.3.0",
   "description": "Svelte 5 component library for synchronized IIIF media playback with transcript navigation",
   "keywords": [
