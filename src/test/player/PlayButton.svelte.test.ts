@@ -1,79 +1,54 @@
-import { describe, test, expect, vi, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import PlayButton from "../../lib/player/PlayButton.svelte";
-import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import TestContextHarness from "./TestContextHarness.svelte";
+import { createMockPlayerContext } from "./test-utils";
 
+// render() from vitest-browser-svelte auto-unmounts every mounted component
+// in a beforeEach cleanup, so these tests need no manual target/afterEach
+// teardown. TestContextHarness sets the player context and renders the
+// component under test with the given props.
 describe("PlayButton", () => {
-  let target: HTMLElement;
-
-  afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test('shows "Play" when paused', () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({ state: { isPlaying: false } });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, PlayButton),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: PlayButton },
     });
     flushSync();
 
-    const button = target.querySelector("button");
+    const button = container.querySelector("button");
     expect(button?.textContent).toContain("Play");
   });
 
   test('shows "Pause" when playing', () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({
       state: { isPlaying: true, isReady: true },
     });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, PlayButton),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: PlayButton },
     });
     flushSync();
 
-    const button = target.querySelector("button");
+    const button = container.querySelector("button");
     expect(button?.textContent).toContain("Pause");
   });
 
   test("calls play action when clicked while paused", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const playFn = vi.fn();
     const ctx = createMockPlayerContext({
       state: { isPlaying: false, isReady: true },
       actions: { play: playFn },
     });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, PlayButton),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: PlayButton },
     });
     flushSync();
 
-    const button = target.querySelector("button")!;
+    const button = container.querySelector("button")!;
     button.click();
     flushSync();
 
@@ -81,25 +56,18 @@ describe("PlayButton", () => {
   });
 
   test("calls pause action when clicked while playing", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const pauseFn = vi.fn();
     const ctx = createMockPlayerContext({
       state: { isPlaying: true, isReady: true },
       actions: { pause: pauseFn },
     });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, PlayButton),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: PlayButton },
     });
     flushSync();
 
-    const button = target.querySelector("button")!;
+    const button = container.querySelector("button")!;
     button.click();
     flushSync();
 
@@ -107,105 +75,76 @@ describe("PlayButton", () => {
   });
 
   test("shows buffering state when isBuffering is true", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({
       state: { isBuffering: true, isReady: true, isPlaying: false },
     });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, PlayButton),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: PlayButton },
     });
     flushSync();
 
-    const button = target.querySelector("button");
+    const button = container.querySelector("button");
     expect(button?.textContent).toContain("Loading");
   });
 
   test("shows custom string for play prop", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({ state: { isPlaying: false } });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, PlayButton, { play: "Start!" }),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: PlayButton, props: { play: "Start!" } },
     });
     flushSync();
 
-    const button = target.querySelector("button");
+    const button = container.querySelector("button");
     expect(button?.textContent).toContain("Start!");
   });
 
   test("shows custom string for pause prop", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({
       state: { isPlaying: true, isReady: true },
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: ctx,
-        children: createChildSnippet(target, PlayButton, { pause: "Stop!" }),
+        component: PlayButton,
+        props: { pause: "Stop!" },
       },
     });
     flushSync();
 
-    const button = target.querySelector("button");
+    const button = container.querySelector("button");
     expect(button?.textContent).toContain("Stop!");
   });
 
   test("shows custom string for loading prop", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({
       state: { isBuffering: true, isReady: true, isPlaying: false },
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: ctx,
-        children: createChildSnippet(target, PlayButton, {
-          loading: "Buffering...",
-        }),
+        component: PlayButton,
+        props: { loading: "Buffering..." },
       },
     });
     flushSync();
 
-    const button = target.querySelector("button");
+    const button = container.querySelector("button");
     expect(button?.textContent).toContain("Buffering...");
   });
 
   test("is disabled when media not ready", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({ state: { isReady: false } });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, PlayButton),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: PlayButton },
     });
     flushSync();
 
-    const button = target.querySelector("button");
+    const button = container.querySelector("button");
     expect(button?.disabled).toBe(true);
   });
 });

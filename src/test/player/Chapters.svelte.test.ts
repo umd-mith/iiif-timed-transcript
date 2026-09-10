@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect } from "vitest";
 import { flushSync } from "svelte";
-import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import { render } from "vitest-browser-svelte";
+import TestContextHarness from "./TestContextHarness.svelte";
+import { createMockPlayerContext } from "./test-utils";
 
 const testChapters = [
   { id: "ch1", label: "Introduction", startTime: 0, endTime: 30 },
@@ -10,34 +10,17 @@ const testChapters = [
 ];
 
 describe("Chapters", () => {
-  let target: HTMLElement;
-
-  beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-  });
-
-  afterEach(() => {
-    if (document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test("renders chapter buttons from context", async () => {
     const { default: Chapters } =
       await import("../../lib/player/Chapters.svelte");
     const ctx = createMockPlayerContext({ chapters: testChapters });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Chapters),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Chapters },
     });
     flushSync();
 
-    const buttons = target.querySelectorAll("[data-chapter-id]");
+    const buttons = container.querySelectorAll("[data-chapter-id]");
     expect(buttons).toHaveLength(2);
     expect(buttons[0]!.getAttribute("data-chapter-id")).toBe("ch1");
     expect(buttons[1]!.getAttribute("data-chapter-id")).toBe("ch2");
@@ -48,16 +31,12 @@ describe("Chapters", () => {
       await import("../../lib/player/Chapters.svelte");
     const ctx = createMockPlayerContext({ chapters: testChapters });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Chapters),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Chapters },
     });
     flushSync();
 
-    const firstButton = target.querySelector('[data-chapter-id="ch1"]')!;
+    const firstButton = container.querySelector('[data-chapter-id="ch1"]')!;
     expect(firstButton.querySelector(".chapter-label")?.textContent).toBe(
       "Introduction",
     );
@@ -68,7 +47,7 @@ describe("Chapters", () => {
       "0:30",
     );
 
-    const secondButton = target.querySelector('[data-chapter-id="ch2"]')!;
+    const secondButton = container.querySelector('[data-chapter-id="ch2"]')!;
     expect(secondButton.querySelector(".chapter-label")?.textContent).toBe(
       "Main Discussion",
     );
@@ -88,17 +67,13 @@ describe("Chapters", () => {
       activeChapterId: "ch1",
     });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Chapters),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Chapters },
     });
     flushSync();
 
-    const ch1 = target.querySelector('[data-chapter-id="ch1"]');
-    const ch2 = target.querySelector('[data-chapter-id="ch2"]');
+    const ch1 = container.querySelector('[data-chapter-id="ch1"]');
+    const ch2 = container.querySelector('[data-chapter-id="ch2"]');
     expect(ch1?.getAttribute("data-state")).toBe("active");
     expect(ch1?.getAttribute("aria-current")).toBe("true");
     expect(ch2?.getAttribute("data-state")).toBe("inactive");
@@ -110,16 +85,12 @@ describe("Chapters", () => {
       await import("../../lib/player/Chapters.svelte");
     const ctx = createMockPlayerContext({ chapters: testChapters });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Chapters),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Chapters },
     });
     flushSync();
 
-    const firstButton = target.querySelector(
+    const firstButton = container.querySelector(
       '[data-chapter-id="ch1"]',
     ) as HTMLElement;
     firstButton.click();
@@ -132,16 +103,12 @@ describe("Chapters", () => {
       await import("../../lib/player/Chapters.svelte");
     const ctx = createMockPlayerContext({ chapters: [] });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Chapters),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Chapters },
     });
     flushSync();
 
-    const emptyMessage = target.querySelector(".empty-message");
+    const emptyMessage = container.querySelector(".empty-message");
     expect(emptyMessage).not.toBeNull();
     expect(emptyMessage?.textContent).toContain("No chapters");
   });

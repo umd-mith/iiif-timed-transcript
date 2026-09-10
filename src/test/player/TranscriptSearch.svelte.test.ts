@@ -1,50 +1,35 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import TranscriptSearch from "../../lib/player/TranscriptSearch.svelte";
-import TestTranscriptContextProvider from "./TestTranscriptContextProvider.svelte";
+import TestTranscriptContextHarness from "./TestTranscriptContextHarness.svelte";
 import { createMockTranscriptContext } from "./transcript-test-utils";
-import { createChildSnippet } from "./test-utils";
 import type { Annotation } from "../../lib/sync/types";
 
+// render() from vitest-browser-svelte auto-unmounts between tests.
 describe("TranscriptSearch", () => {
-  let target: HTMLElement;
-
   const mockAnnotations: Annotation[] = [
     { id: "a1", startTime: 0, endTime: 5, text: "Hello world" },
     { id: "a2", startTime: 5, endTime: 10, text: "Goodbye world" },
   ];
 
-  beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-  });
-
-  afterEach(() => {
-    if (document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test("renders search input with props (standalone)", () => {
-    mount(TranscriptSearch, {
-      target,
+    const { container } = render(TranscriptSearch, {
       props: { annotations: mockAnnotations },
     });
     flushSync();
 
-    const input = target.querySelector('input[type="search"]');
+    const input = container.querySelector('input[type="search"]');
     expect(input).not.toBeNull();
   });
 
   test("accepts placeholder prop", () => {
-    mount(TranscriptSearch, {
-      target,
+    const { container } = render(TranscriptSearch, {
       props: { placeholder: "Custom placeholder" },
     });
     flushSync();
 
-    const input = target.querySelector('input[type="search"]');
+    const input = container.querySelector('input[type="search"]');
     expect(input?.getAttribute("placeholder")).toBe("Custom placeholder");
   });
 
@@ -55,17 +40,13 @@ describe("TranscriptSearch", () => {
       actions: { handleMatchChange },
     });
 
-    mount(TestTranscriptContextProvider, {
-      target,
-      props: {
-        context: transcriptCtx,
-        children: createChildSnippet(target, TranscriptSearch),
-      },
+    const { container } = render(TestTranscriptContextHarness, {
+      props: { context: transcriptCtx, component: TranscriptSearch },
     });
     flushSync();
 
     // Type into search — if annotations came from context, "Hello" matches a1
-    const input = target.querySelector(
+    const input = container.querySelector(
       'input[type="search"]',
     ) as HTMLInputElement;
     input.value = "Hello";

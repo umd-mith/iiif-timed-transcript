@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, flushSync } from "svelte";
+import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import TestRootTranscriptSegments from "./TestRootTranscriptSegments.svelte";
 import { mockFetchRoutes, deferred, type FetchRoute } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
@@ -126,18 +127,11 @@ function panelText(target: HTMLElement): string {
 }
 
 describe("transcript ownership across a canvas switch", () => {
-  let target: HTMLElement;
-
   beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
     globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
     manifestCache.clear();
     vi.restoreAllMocks();
   });
@@ -156,8 +150,7 @@ describe("transcript ownership across a canvas switch", () => {
     vttRegistry.clear();
 
     let ctx: PlayerContext | null = null;
-    mount(TestRootTranscriptSegments, {
-      target,
+    const { container } = render(TestRootTranscriptSegments, {
       props: {
         manifestUrl: MANIFEST_URL,
         annotations: "auto",
@@ -192,8 +185,8 @@ describe("transcript ownership across a canvas switch", () => {
     flushSync();
 
     // 6. BRAVO shows; ALPHA never did.
-    expect(panelText(target)).toContain("BRAVO interview");
-    expect(panelText(target)).not.toContain("ALPHA interview");
+    expect(panelText(container)).toContain("BRAVO interview");
+    expect(panelText(container)).not.toContain("ALPHA interview");
 
     // 7. Resolve A late — the canvas we already left. Await A's OWN
     // loadVTTTranscript promise (the exact operation Root awaits), so its
@@ -207,14 +200,14 @@ describe("transcript ownership across a canvas switch", () => {
     flushSync();
 
     // 8. BRAVO still owns the panel; the stale A response was dropped.
-    expect(panelText(target)).toContain("BRAVO interview");
-    expect(panelText(target)).not.toContain("ALPHA interview");
+    expect(panelText(container)).toContain("BRAVO interview");
+    expect(panelText(container)).not.toContain("ALPHA interview");
 
     // 9-10. Actually SELECT the rendered segment (a broken click handler must
     // not pass). Drive the media element to ready with a duration so seekTo
     // doesn't early-return or clamp, then click and assert the seek target is
     // BRAVO's 23s — not ALPHA's 7s.
-    const segment = target.querySelector<HTMLElement>(
+    const segment = container.querySelector<HTMLElement>(
       '[role="button"][data-annotation-id]',
     );
     expect(segment).not.toBeNull();

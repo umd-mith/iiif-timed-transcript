@@ -1,56 +1,34 @@
-import { describe, test, expect, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect } from "vitest";
 import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import Time from "../../lib/player/Time.svelte";
-import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import TestContextHarness from "./TestContextHarness.svelte";
+import { createMockPlayerContext } from "./test-utils";
 
 describe("Time", () => {
-  let target: HTMLElement;
-
-  afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test("renders time display", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext();
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Time),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Time },
     });
     flushSync();
 
-    const timeDiv = target.querySelector('[data-audio-control="time"]');
+    const timeDiv = container.querySelector('[data-audio-control="time"]');
     expect(timeDiv).not.toBeNull();
   });
 
   test("formats current time and duration", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({
       state: { currentTime: 65, duration: 120 },
     });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Time),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Time },
     });
     flushSync();
 
-    const timeDiv = target.querySelector('[data-audio-control="time"]');
+    const timeDiv = container.querySelector('[data-audio-control="time"]');
     // Should show "1:05 / 2:00"
     expect(timeDiv?.textContent).toContain("1:05");
     expect(timeDiv?.textContent).toContain("2:00");

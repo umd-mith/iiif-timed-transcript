@@ -1,207 +1,168 @@
-import { describe, test, expect, vi, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import Viewer from "../../lib/player/Viewer.svelte";
-import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import TestContextHarness from "./TestContextHarness.svelte";
+import { createMockPlayerContext } from "./test-utils";
 import { createReactiveMockPlayerContext } from "./reactive-context.svelte";
 import type { TrackDefinition } from "../../lib/player/context";
 
 describe("Viewer", () => {
-  let target: HTMLElement;
-
-  afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test("renders audio element when mediaType is audio", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/audio.mp3",
       mediaType: "audio",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer),
+        component: Viewer,
       },
     });
     flushSync();
 
-    const audioElement = target.querySelector("audio");
+    const audioElement = container.querySelector("audio");
     expect(audioElement).not.toBeNull();
     expect(audioElement?.src).toBe("https://example.com/audio.mp3");
   });
 
   test("renders video element when mediaType is video", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/video.mp4",
       mediaType: "video",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer),
+        component: Viewer,
       },
     });
     flushSync();
 
-    const videoElement = target.querySelector("video");
+    const videoElement = container.querySelector("video");
     expect(videoElement).not.toBeNull();
     expect(videoElement?.src).toBe("https://example.com/video.mp4");
   });
 
   test("applies custom class name", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/audio.mp3",
       mediaType: "audio",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer, {
+        component: Viewer,
+        props: {
           class: "custom-viewer",
-        }),
+        },
       },
     });
     flushSync();
 
-    const audioElement = target.querySelector("audio");
+    const audioElement = container.querySelector("audio");
     expect(audioElement?.className).toContain("custom-viewer");
   });
 
   test("sets crossOrigin attribute", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/audio.mp3",
       mediaType: "audio",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer, {
+        component: Viewer,
+        props: {
           crossOrigin: "use-credentials",
-        }),
+        },
       },
     });
     flushSync();
 
-    const audioElement = target.querySelector("audio") as HTMLAudioElement;
+    const audioElement = container.querySelector("audio") as HTMLAudioElement;
     expect(audioElement?.crossOrigin).toBe("use-credentials");
   });
 
   test("disables native controls by default", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/audio.mp3",
       mediaType: "audio",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer),
+        component: Viewer,
       },
     });
     flushSync();
 
-    const audioElement = target.querySelector("audio") as HTMLAudioElement;
+    const audioElement = container.querySelector("audio") as HTMLAudioElement;
     expect(audioElement?.controls).toBe(false);
   });
 
   test("can enable native controls", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/audio.mp3",
       mediaType: "audio",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer, { controls: true }),
+        component: Viewer,
+        props: { controls: true },
       },
     });
     flushSync();
 
-    const audioElement = target.querySelector("audio") as HTMLAudioElement;
+    const audioElement = container.querySelector("audio") as HTMLAudioElement;
     expect(audioElement?.controls).toBe(true);
   });
 
   test('sets preload to "auto" by default', () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/audio.mp3",
       mediaType: "audio",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer),
+        component: Viewer,
       },
     });
     flushSync();
 
-    const audioElement = target.querySelector("audio") as HTMLAudioElement;
+    const audioElement = container.querySelector("audio") as HTMLAudioElement;
     expect(audioElement?.preload).toBe("auto");
   });
 
   test("allows overriding preload attribute", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/audio.mp3",
       mediaType: "audio",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer, { preload: "metadata" }),
+        component: Viewer,
+        props: { preload: "metadata" },
       },
     });
     flushSync();
 
-    const audioElement = target.querySelector("audio") as HTMLAudioElement;
+    const audioElement = container.querySelector("audio") as HTMLAudioElement;
     expect(audioElement?.preload).toBe("metadata");
   });
 
   test("does not set src attribute when mediaStrategy is hls-js", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockAdapter = {
       attach: vi.fn(),
       detach: vi.fn(),
@@ -215,49 +176,41 @@ describe("Viewer", () => {
       hlsAdapter: mockAdapter,
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer),
+        component: Viewer,
       },
     });
     flushSync();
 
-    const videoElement = target.querySelector("video") as HTMLVideoElement;
+    const videoElement = container.querySelector("video") as HTMLVideoElement;
     expect(videoElement).not.toBeNull();
     // When hls-js strategy, the src should NOT be set directly — adapter manages the source
     expect(videoElement?.getAttribute("src")).toBeNull();
   });
 
   test("sets src attribute when mediaStrategy is native", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/video.mp4",
       mediaType: "video",
       mediaStrategy: "native",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer),
+        component: Viewer,
       },
     });
     flushSync();
 
-    const videoElement = target.querySelector("video") as HTMLVideoElement;
+    const videoElement = container.querySelector("video") as HTMLVideoElement;
     expect(videoElement?.src).toBe("https://example.com/video.mp4");
   });
 
   describe("HLS adapter wiring", () => {
     test("attaches adapter when mediaStrategy is hls-js", async () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockAdapter = {
         attach: vi.fn(),
         detach: vi.fn(),
@@ -271,11 +224,10 @@ describe("Viewer", () => {
         hlsAdapter: mockAdapter,
       });
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
@@ -290,26 +242,22 @@ describe("Viewer", () => {
     });
 
     test("does not attach adapter when mediaStrategy is native", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
         mediaStrategy: "native",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
       // No adapter to attach — nothing to assert beyond no errors
-      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      const videoElement = container.querySelector("video") as HTMLVideoElement;
       expect(videoElement?.src).toBe("https://example.com/video.mp4");
     });
 
@@ -319,9 +267,6 @@ describe("Viewer", () => {
 
   describe("DASH adapter wiring", () => {
     test("attaches adapter when mediaStrategy is dash-js", async () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockAdapter = {
         attach: vi.fn(),
         detach: vi.fn(),
@@ -335,11 +280,10 @@ describe("Viewer", () => {
         dashAdapter: mockAdapter,
       });
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
@@ -354,9 +298,6 @@ describe("Viewer", () => {
     });
 
     test("does not set src attribute when mediaStrategy is dash-js", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockAdapter = {
         attach: vi.fn(),
         detach: vi.fn(),
@@ -370,35 +311,31 @@ describe("Viewer", () => {
         dashAdapter: mockAdapter,
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      const videoElement = container.querySelector("video") as HTMLVideoElement;
       expect(videoElement?.getAttribute("src")).toBeNull();
     });
   });
 
   describe("caption tracks", () => {
     test("renders track elements inside video when tracks prop is provided", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer, {
+          component: Viewer,
+          props: {
             tracks: [
               {
                 src: "/captions-en.vtt",
@@ -413,12 +350,12 @@ describe("Viewer", () => {
                 label: "Spanish",
               },
             ],
-          }),
+          },
         },
       });
       flushSync();
 
-      const tracks = target.querySelectorAll("video track");
+      const tracks = container.querySelectorAll("video track");
       expect(tracks).toHaveLength(2);
 
       const firstTrack = tracks[0] as HTMLTrackElement;
@@ -433,19 +370,16 @@ describe("Viewer", () => {
     });
 
     test("marks first captions track as default", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer, {
+          component: Viewer,
+          props: {
             tracks: [
               {
                 src: "/captions.vtt",
@@ -454,29 +388,26 @@ describe("Viewer", () => {
                 label: "English",
               },
             ],
-          }),
+          },
         },
       });
       flushSync();
 
-      const track = target.querySelector("video track") as HTMLTrackElement;
+      const track = container.querySelector("video track") as HTMLTrackElement;
       expect(track.default).toBe(true);
     });
 
     test("does not render tracks inside audio elements", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer, {
+          component: Viewer,
+          props: {
             tracks: [
               {
                 src: "/captions.vtt",
@@ -485,21 +416,18 @@ describe("Viewer", () => {
                 label: "English",
               },
             ],
-          }),
+          },
         },
       });
       flushSync();
 
-      const tracks = target.querySelectorAll("track");
+      const tracks = container.querySelectorAll("track");
       expect(tracks).toHaveLength(0);
     });
   });
 
   describe("auto-discovered caption tracks", () => {
     test("renders tracks from context when no tracks prop provided", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
@@ -513,16 +441,15 @@ describe("Viewer", () => {
         ],
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const tracks = target.querySelectorAll("video track");
+      const tracks = container.querySelectorAll("video track");
       expect(tracks).toHaveLength(1);
       const track = tracks[0] as HTMLTrackElement;
       expect(track.src).toContain("captions-en.vtt");
@@ -531,9 +458,6 @@ describe("Viewer", () => {
     });
 
     test("explicit tracks prop overrides context tracks", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
@@ -547,11 +471,11 @@ describe("Viewer", () => {
         ],
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer, {
+          component: Viewer,
+          props: {
             tracks: [
               {
                 src: "/custom.vtt",
@@ -560,12 +484,12 @@ describe("Viewer", () => {
                 label: "French",
               },
             ],
-          }),
+          },
         },
       });
       flushSync();
 
-      const tracks = target.querySelectorAll("video track");
+      const tracks = container.querySelectorAll("video track");
       expect(tracks).toHaveLength(1);
       const track = tracks[0] as HTMLTrackElement;
       expect(track.src).toContain("/custom.vtt");
@@ -574,9 +498,6 @@ describe("Viewer", () => {
     });
 
     test("renders no tracks for audio even with context tracks", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
@@ -590,40 +511,35 @@ describe("Viewer", () => {
         ],
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const tracks = target.querySelectorAll("track");
+      const tracks = container.querySelectorAll("track");
       expect(tracks).toHaveLength(0);
     });
   });
 
   describe("native media error handling", () => {
     test("sets ctx.state.error on audio error event", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const audio = target.querySelector("audio") as HTMLAudioElement;
+      const audio = container.querySelector("audio") as HTMLAudioElement;
 
       // Simulate a network error (code 2)
       Object.defineProperty(audio, "error", {
@@ -637,24 +553,20 @@ describe("Viewer", () => {
     });
 
     test("sets ctx.state.error on video error event", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const video = target.querySelector("video") as HTMLVideoElement;
+      const video = container.querySelector("video") as HTMLVideoElement;
 
       // Simulate unsupported format (code 4)
       Object.defineProperty(video, "error", {
@@ -668,24 +580,20 @@ describe("Viewer", () => {
     });
 
     test("treats decode error (code 3) as fatal when no metadata loaded", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const audio = target.querySelector("audio") as HTMLAudioElement;
+      const audio = container.querySelector("audio") as HTMLAudioElement;
 
       // duration defaults to NaN when no metadata loaded
       Object.defineProperty(audio, "error", {
@@ -701,24 +609,20 @@ describe("Viewer", () => {
     });
 
     test("ignores transient decode error (code 3) when metadata already loaded", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const audio = target.querySelector("audio") as HTMLAudioElement;
+      const audio = container.querySelector("audio") as HTMLAudioElement;
 
       // Simulate metadata already loaded (duration is set)
       Object.defineProperty(audio, "duration", {
@@ -737,24 +641,20 @@ describe("Viewer", () => {
     });
 
     test("ignores MEDIA_ERR_ABORTED (code 1) — triggered by canvas switching", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const audio = target.querySelector("audio") as HTMLAudioElement;
+      const audio = container.querySelector("audio") as HTMLAudioElement;
 
       Object.defineProperty(audio, "error", {
         value: { code: 1, message: "" },
@@ -767,24 +667,20 @@ describe("Viewer", () => {
     });
 
     test("falls back to generic message for unknown error codes", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const audio = target.querySelector("audio") as HTMLAudioElement;
+      const audio = container.querySelector("audio") as HTMLAudioElement;
 
       Object.defineProperty(audio, "error", {
         value: { code: 99, message: "" },
@@ -799,25 +695,21 @@ describe("Viewer", () => {
     });
 
     test("sets isReady to false on media error", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
         state: { isReady: true },
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const audio = target.querySelector("audio") as HTMLAudioElement;
+      const audio = container.querySelector("audio") as HTMLAudioElement;
 
       Object.defineProperty(audio, "error", {
         value: { code: 2, message: "" },
@@ -831,145 +723,125 @@ describe("Viewer", () => {
   });
 
   test("sets preload on video elements too", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext = createMockPlayerContext({
       mediaUrl: "https://example.com/video.mp4",
       mediaType: "video",
     });
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: createChildSnippet(target, Viewer),
+        component: Viewer,
       },
     });
     flushSync();
 
-    const videoElement = target.querySelector("video") as HTMLVideoElement;
+    const videoElement = container.querySelector("video") as HTMLVideoElement;
     expect(videoElement?.preload).toBe("auto");
   });
 
   describe("poster", () => {
     test("sets the video poster attribute from the poster prop", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer, {
+          component: Viewer,
+          props: {
             poster: "https://example.com/poster.png",
-          }),
+          },
         },
       });
       flushSync();
 
-      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      const videoElement = container.querySelector("video") as HTMLVideoElement;
       expect(videoElement?.poster).toBe("https://example.com/poster.png");
     });
 
     test("uses context posterUrl when no poster prop is given", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
         posterUrl: "https://example.com/derived.png",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
 
-      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      const videoElement = container.querySelector("video") as HTMLVideoElement;
       expect(videoElement?.poster).toBe("https://example.com/derived.png");
     });
 
     test("poster prop overrides context posterUrl", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
         posterUrl: "https://example.com/derived.png",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer, {
+          component: Viewer,
+          props: {
             poster: "https://example.com/explicit.png",
-          }),
+          },
         },
       });
       flushSync();
 
-      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      const videoElement = container.querySelector("video") as HTMLVideoElement;
       expect(videoElement?.poster).toBe("https://example.com/explicit.png");
     });
 
     test("does not set a poster attribute on audio elements", () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/audio.mp3",
         mediaType: "audio",
         posterUrl: "https://example.com/derived.png",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer, {
+          component: Viewer,
+          props: {
             poster: "https://example.com/explicit.png",
-          }),
+          },
         },
       });
       flushSync();
 
-      const audioElement = target.querySelector("audio");
+      const audioElement = container.querySelector("audio");
       expect(audioElement?.getAttribute("poster")).toBeNull();
     });
 
     test('poster="" suppresses the IIIF-derived poster', () => {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-
       const mockContext = createMockPlayerContext({
         mediaUrl: "https://example.com/video.mp4",
         mediaType: "video",
         posterUrl: "https://example.com/derived.png",
       });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: mockContext,
-          children: createChildSnippet(target, Viewer, { poster: "" }),
+          component: Viewer,
+          props: { poster: "" },
         },
       });
       flushSync();
 
-      const videoElement = target.querySelector("video") as HTMLVideoElement;
+      const videoElement = container.querySelector("video") as HTMLVideoElement;
       expect(videoElement?.getAttribute("poster")).toBeNull();
     });
   });
@@ -993,17 +865,14 @@ describe("Viewer", () => {
     function mountVideo(
       ctx: ReturnType<typeof createReactiveMockPlayerContext>,
     ): HTMLVideoElement {
-      target = document.createElement("div");
-      document.body.appendChild(target);
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: ctx,
-          children: createChildSnippet(target, Viewer),
+          component: Viewer,
         },
       });
       flushSync();
-      return target.querySelector("video") as HTMLVideoElement;
+      return container.querySelector("video") as HTMLVideoElement;
     }
 
     test("browserDefault leaves the browser's own default-track selection alone", async () => {

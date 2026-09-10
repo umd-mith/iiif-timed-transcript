@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, flushSync } from "svelte";
+import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import TestRootViewerCaptions from "./TestRootViewerCaptions.svelte";
 import { mockFetchManifest } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
@@ -53,18 +54,11 @@ const propTracks: TrackDefinition[] = [
 ];
 
 describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
-  let target: HTMLElement;
-
   beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
     globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
     manifestCache.clear();
     vi.restoreAllMocks();
   });
@@ -74,8 +68,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     mockFetchManifest(videoManifestNoCaptions(url));
 
     let ctx: PlayerContext | null = null;
-    mount(TestRootViewerCaptions, {
-      target,
+    const { container } = render(TestRootViewerCaptions, {
       props: {
         manifestUrl: url,
         tracks: propTracks,
@@ -95,7 +88,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     // empty — but the CC button must still appear from the prop tracks.
     expect(ctx!.tracks.length).toBe(0);
     expect(
-      target.querySelector('[data-audio-button="captions"]'),
+      container.querySelector('[data-audio-button="captions"]'),
     ).not.toBeNull();
   });
 
@@ -104,8 +97,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     mockFetchManifest(videoManifestNoCaptions(url));
 
     let ctx: PlayerContext | null = null;
-    mount(TestRootViewerCaptions, {
-      target,
+    const { container } = render(TestRootViewerCaptions, {
       props: {
         manifestUrl: url,
         tracks: propTracks,
@@ -121,7 +113,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     });
     flushSync();
 
-    const button = target.querySelector<HTMLButtonElement>(
+    const button = container.querySelector<HTMLButtonElement>(
       '[data-audio-button="captions"]',
     )!;
     const video = ctx!.mediaElement as HTMLVideoElement;
@@ -148,8 +140,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     mockFetchManifest(videoManifestNoCaptions(url));
 
     let ctx: PlayerContext | null = null;
-    mount(TestRootViewerCaptions, {
-      target,
+    const { container } = render(TestRootViewerCaptions, {
       props: {
         manifestUrl: url,
         tracks: propTracks,
@@ -165,7 +156,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     });
     flushSync();
 
-    const button = target.querySelector<HTMLButtonElement>(
+    const button = container.querySelector<HTMLButtonElement>(
       '[data-audio-button="captions"]',
     )!;
     const video = ctx!.mediaElement as HTMLVideoElement;
@@ -180,7 +171,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
 
     expect(button).not.toBeNull();
     expect(
-      target.querySelector('[data-audio-button="captions"]'),
+      container.querySelector('[data-audio-button="captions"]'),
     ).not.toBeNull();
 
     button.click();
@@ -225,8 +216,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     });
 
     let ctx: PlayerContext | null = null;
-    mount(TestRootViewerCaptions, {
-      target,
+    const { container } = render(TestRootViewerCaptions, {
       props: {
         manifestUrl: url,
         tracks: propTracks,
@@ -242,7 +232,9 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     });
     flushSync();
 
-    expect(target.querySelector('[data-audio-button="captions"]')).toBeNull();
+    expect(
+      container.querySelector('[data-audio-button="captions"]'),
+    ).toBeNull();
   });
 
   test("CC button stays live after switching to a canvas that shares the media URL", async () => {
@@ -283,8 +275,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     });
 
     let ctx: PlayerContext | null = null;
-    mount(TestRootViewerCaptions, {
-      target,
+    const { container } = render(TestRootViewerCaptions, {
       props: {
         manifestUrl: url,
         tracks: propTracks,
@@ -300,7 +291,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     });
     flushSync();
     expect(
-      target.querySelector('[data-audio-button="captions"]'),
+      container.querySelector('[data-audio-button="captions"]'),
     ).not.toBeNull();
 
     ctx!.actions.switchCanvas(1);
@@ -308,7 +299,7 @@ describe("Captions recognizes tracks supplied via Viewer's tracks prop", () => {
     flushSync();
 
     expect(
-      target.querySelector('[data-audio-button="captions"]'),
+      container.querySelector('[data-audio-button="captions"]'),
     ).not.toBeNull();
   });
 });

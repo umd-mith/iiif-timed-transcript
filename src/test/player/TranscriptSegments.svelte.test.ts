@@ -1,53 +1,40 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import TranscriptSegments from "../../lib/player/TranscriptSegments.svelte";
-import TestTranscriptContextProvider from "./TestTranscriptContextProvider.svelte";
+import TestTranscriptContextHarness from "./TestTranscriptContextHarness.svelte";
 import TestSegmentSnippetWrapper from "./TestSegmentSnippetWrapper.svelte";
 import { createMockTranscriptContext } from "./transcript-test-utils";
-import { createChildSnippet } from "./test-utils";
 import type { Annotation } from "../../lib/sync/types";
 
+// render() from vitest-browser-svelte auto-unmounts between tests. Its returned
+// container is aliased to `host` here since several tests keep a local
+// `container` for the `.segments-container` element.
 describe("TranscriptSegments", () => {
-  let target: HTMLElement;
-
   const mockAnnotations: Annotation[] = [
     { id: "a1", startTime: 0, endTime: 5, text: "First segment" },
     { id: "a2", startTime: 5, endTime: 10, text: "Second segment" },
     { id: "a3", startTime: 10, endTime: 15, text: "Third segment" },
   ];
 
-  beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-  });
-
-  afterEach(() => {
-    if (document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   // Existing behavior: works with props
   test("renders segments container with props", () => {
-    mount(TranscriptSegments, {
-      target,
+    const { container: host } = render(TranscriptSegments, {
       props: { annotations: mockAnnotations },
     });
     flushSync();
 
-    const container = target.querySelector(".segments-container");
+    const container = host.querySelector(".segments-container");
     expect(container).not.toBeNull();
   });
 
   test("container uses a labelled group role, not a toolbar (read-first a11y)", () => {
-    mount(TranscriptSegments, {
-      target,
+    const { container: host } = render(TranscriptSegments, {
       props: { annotations: mockAnnotations },
     });
     flushSync();
 
-    const container = target.querySelector(".segments-container");
+    const container = host.querySelector(".segments-container");
     // Read-first: a transcript is readable text grouped under a label, not a
     // row of action controls. Roving-tabindex navigation is a progressive
     // enhancement, so the composite-only aria-orientation is intentionally absent.
@@ -57,21 +44,22 @@ describe("TranscriptSegments", () => {
   });
 
   test("renders all segments with props", () => {
-    mount(TranscriptSegments, {
-      target,
+    const { container: host } = render(TranscriptSegments, {
       props: { annotations: mockAnnotations },
     });
     flushSync();
 
-    const segments = target.querySelectorAll("[data-annotation-id]");
+    const segments = host.querySelectorAll("[data-annotation-id]");
     expect(segments).toHaveLength(3);
   });
 
   test("shows empty state when no annotations", () => {
-    mount(TranscriptSegments, { target, props: { annotations: [] } });
+    const { container: host } = render(TranscriptSegments, {
+      props: { annotations: [] },
+    });
     flushSync();
 
-    const emptyMessage = target.querySelector(".empty-message");
+    const emptyMessage = host.querySelector(".empty-message");
     expect(emptyMessage).not.toBeNull();
   });
 
@@ -81,16 +69,12 @@ describe("TranscriptSegments", () => {
       state: { annotations: mockAnnotations },
     });
 
-    mount(TestTranscriptContextProvider, {
-      target,
-      props: {
-        context: transcriptCtx,
-        children: createChildSnippet(target, TranscriptSegments),
-      },
+    const { container: host } = render(TestTranscriptContextHarness, {
+      props: { context: transcriptCtx, component: TranscriptSegments },
     });
     flushSync();
 
-    const segments = target.querySelectorAll("[data-annotation-id]");
+    const segments = host.querySelectorAll("[data-annotation-id]");
     expect(segments).toHaveLength(3);
   });
 
@@ -102,16 +86,12 @@ describe("TranscriptSegments", () => {
       },
     });
 
-    mount(TestTranscriptContextProvider, {
-      target,
-      props: {
-        context: transcriptCtx,
-        children: createChildSnippet(target, TranscriptSegments),
-      },
+    const { container: host } = render(TestTranscriptContextHarness, {
+      props: { context: transcriptCtx, component: TranscriptSegments },
     });
     flushSync();
 
-    const activeSegment = target.querySelector(
+    const activeSegment = host.querySelector(
       '[data-annotation-id="a2"][data-state="active"]',
     );
     expect(activeSegment).not.toBeNull();
@@ -124,16 +104,12 @@ describe("TranscriptSegments", () => {
       actions: { handleAnnotationClick },
     });
 
-    mount(TestTranscriptContextProvider, {
-      target,
-      props: {
-        context: transcriptCtx,
-        children: createChildSnippet(target, TranscriptSegments),
-      },
+    const { container: host } = render(TestTranscriptContextHarness, {
+      props: { context: transcriptCtx, component: TranscriptSegments },
     });
     flushSync();
 
-    const firstSegment = target.querySelector(
+    const firstSegment = host.querySelector(
       '[data-annotation-id="a1"]',
     ) as HTMLElement;
     firstSegment.click();
@@ -150,35 +126,30 @@ describe("TranscriptSegments", () => {
       },
     });
 
-    mount(TestTranscriptContextProvider, {
-      target,
-      props: {
-        context: transcriptCtx,
-        children: createChildSnippet(target, TranscriptSegments),
-      },
+    const { container: host } = render(TestTranscriptContextHarness, {
+      props: { context: transcriptCtx, component: TranscriptSegments },
     });
     flushSync();
 
     // a1 should be highlighted (search match but not current)
-    const a1 = target.querySelector('[data-annotation-id="a1"]');
+    const a1 = host.querySelector('[data-annotation-id="a1"]');
     expect(a1?.getAttribute("data-highlighted")).toBe("true");
 
     // a3 should be current match
-    const a3 = target.querySelector('[data-annotation-id="a3"]');
+    const a3 = host.querySelector('[data-annotation-id="a3"]');
     expect(a3?.getAttribute("data-current-match")).toBe("true");
   });
 
   // segment snippet (LDA-2117)
   describe("segment snippet", () => {
     test("renders custom segment with segmentAttrs spread", () => {
-      mount(TestSegmentSnippetWrapper, {
-        target,
+      const { container: host } = render(TestSegmentSnippetWrapper, {
         props: { annotations: mockAnnotations },
       });
       flushSync();
 
       // Custom segment class should be rendered (not default Segment.svelte)
-      const customSegments = target.querySelectorAll(".custom-segment");
+      const customSegments = host.querySelectorAll(".custom-segment");
       expect(customSegments).toHaveLength(3);
 
       // segmentAttrs should be spread onto the custom element
@@ -191,13 +162,12 @@ describe("TranscriptSegments", () => {
 
     test("segmentAttrs onclick fires annotation click", () => {
       const onclick = vi.fn();
-      mount(TestSegmentSnippetWrapper, {
-        target,
+      const { container: host } = render(TestSegmentSnippetWrapper, {
         props: { annotations: mockAnnotations, onclick },
       });
       flushSync();
 
-      const second = target.querySelector(
+      const second = host.querySelector(
         '[data-annotation-id="a2"]',
       ) as HTMLElement;
       second.click();
@@ -206,8 +176,7 @@ describe("TranscriptSegments", () => {
     });
 
     test("segment snippet receives isActive=true for active annotation", () => {
-      mount(TestSegmentSnippetWrapper, {
-        target,
+      const { container: host } = render(TestSegmentSnippetWrapper, {
         props: {
           annotations: mockAnnotations,
           activeAnnotationId: "a2",
@@ -216,26 +185,25 @@ describe("TranscriptSegments", () => {
       flushSync();
 
       // Active badge should be rendered by our test snippet
-      const activeBadge = target.querySelector(".active-badge");
+      const activeBadge = host.querySelector(".active-badge");
       expect(activeBadge).not.toBeNull();
 
       // data-state should be "active" on the correct segment
-      const activeSegment = target.querySelector('[data-annotation-id="a2"]');
+      const activeSegment = host.querySelector('[data-annotation-id="a2"]');
       expect(activeSegment?.getAttribute("data-state")).toBe("active");
     });
 
     test("segment snippet takes priority over text snippet", () => {
-      mount(TestSegmentSnippetWrapper, {
-        target,
+      const { container: host } = render(TestSegmentSnippetWrapper, {
         props: { annotations: mockAnnotations },
       });
       flushSync();
 
       // Should render custom-segment divs, not default buttons
-      const buttons = target.querySelectorAll("button[data-annotation-id]");
+      const buttons = host.querySelectorAll("button[data-annotation-id]");
       expect(buttons).toHaveLength(0);
 
-      const customSegments = target.querySelectorAll(".custom-segment");
+      const customSegments = host.querySelectorAll(".custom-segment");
       expect(customSegments).toHaveLength(3);
     });
   });
@@ -244,13 +212,12 @@ describe("TranscriptSegments", () => {
   describe("onkeydown extensibility", () => {
     test("fires onkeydown with annotation context", () => {
       const onkeydown = vi.fn();
-      mount(TranscriptSegments, {
-        target,
+      const { container: host } = render(TranscriptSegments, {
         props: { annotations: mockAnnotations, onkeydown },
       });
       flushSync();
 
-      const container = target.querySelector(
+      const container = host.querySelector(
         ".segments-container",
       ) as HTMLElement;
       container.dispatchEvent(
@@ -269,18 +236,17 @@ describe("TranscriptSegments", () => {
       const onkeydown = vi.fn((event: KeyboardEvent) => {
         event.preventDefault();
       });
-      mount(TranscriptSegments, {
-        target,
+      const { container: host } = render(TranscriptSegments, {
         props: { annotations: mockAnnotations, onkeydown },
       });
       flushSync();
 
-      const container = target.querySelector(
+      const container = host.querySelector(
         ".segments-container",
       ) as HTMLElement;
 
       // Focus first segment
-      const firstSegment = target.querySelector(
+      const firstSegment = host.querySelector(
         "[data-annotation-id]",
       ) as HTMLElement;
       firstSegment.focus();
@@ -296,7 +262,7 @@ describe("TranscriptSegments", () => {
       flushSync();
 
       // focusedIndex should still be 0 (first segment still has tabindex=0)
-      const segments = target.querySelectorAll("[data-annotation-id]");
+      const segments = host.querySelectorAll("[data-annotation-id]");
       expect(segments[0]!.getAttribute("tabindex")).toBe("0");
     });
   });
@@ -304,8 +270,7 @@ describe("TranscriptSegments", () => {
   // highlightedAnnotationId prop (LDA-2117 deep link support)
   describe("highlightedAnnotationId", () => {
     test("sets data-highlighted on matching segment", () => {
-      mount(TranscriptSegments, {
-        target,
+      const { container: host } = render(TranscriptSegments, {
         props: {
           annotations: mockAnnotations,
           highlightedAnnotationId: "a2",
@@ -313,11 +278,11 @@ describe("TranscriptSegments", () => {
       });
       flushSync();
 
-      const a2 = target.querySelector('[data-annotation-id="a2"]');
+      const a2 = host.querySelector('[data-annotation-id="a2"]');
       expect(a2?.getAttribute("data-highlighted")).toBe("true");
 
       // Others should not be highlighted
-      const a1 = target.querySelector('[data-annotation-id="a1"]');
+      const a1 = host.querySelector('[data-annotation-id="a1"]');
       expect(a1?.getAttribute("data-highlighted")).toBeNull();
     });
 
@@ -330,21 +295,19 @@ describe("TranscriptSegments", () => {
         },
       });
 
-      mount(TestTranscriptContextProvider, {
-        target,
+      const { container: host } = render(TestTranscriptContextHarness, {
         props: {
           context: transcriptCtx,
-          children: createChildSnippet(target, TranscriptSegments, {
-            highlightedAnnotationId: "a3",
-          }),
+          component: TranscriptSegments,
+          props: { highlightedAnnotationId: "a3" },
         },
       });
       flushSync();
 
       // Both a1 (search) and a3 (deep link) should be highlighted
-      const a1 = target.querySelector('[data-annotation-id="a1"]');
+      const a1 = host.querySelector('[data-annotation-id="a1"]');
       expect(a1?.getAttribute("data-highlighted")).toBe("true");
-      const a3 = target.querySelector('[data-annotation-id="a3"]');
+      const a3 = host.querySelector('[data-annotation-id="a3"]');
       expect(a3?.getAttribute("data-highlighted")).toBe("true");
     });
   });
@@ -352,14 +315,14 @@ describe("TranscriptSegments", () => {
   // scrollToAnnotation imperative API (LDA-2119)
   describe("scrollToAnnotation", () => {
     test("returns true and scrolls when annotation exists", () => {
-      const instance = mount(TranscriptSegments, {
-        target,
-        props: { annotations: mockAnnotations },
-      });
+      const { component: instance, container: host } = render(
+        TranscriptSegments,
+        { props: { annotations: mockAnnotations } },
+      );
       flushSync();
 
       // Mock scrollIntoView on the target element
-      const a2Element = target.querySelector(
+      const a2Element = host.querySelector(
         '[data-annotation-id="a2"]',
       ) as HTMLElement;
       a2Element.scrollIntoView = vi.fn();
@@ -373,8 +336,7 @@ describe("TranscriptSegments", () => {
     });
 
     test("returns false when annotation does not exist", () => {
-      const instance = mount(TranscriptSegments, {
-        target,
+      const { component: instance } = render(TranscriptSegments, {
         props: { annotations: mockAnnotations },
       });
       flushSync();
@@ -385,13 +347,13 @@ describe("TranscriptSegments", () => {
     });
 
     test("accepts optional ScrollIntoViewOptions", () => {
-      const instance = mount(TranscriptSegments, {
-        target,
-        props: { annotations: mockAnnotations },
-      });
+      const { component: instance, container: host } = render(
+        TranscriptSegments,
+        { props: { annotations: mockAnnotations } },
+      );
       flushSync();
 
-      const a1Element = target.querySelector(
+      const a1Element = host.querySelector(
         '[data-annotation-id="a1"]',
       ) as HTMLElement;
       a1Element.scrollIntoView = vi.fn();
@@ -411,14 +373,13 @@ describe("TranscriptSegments", () => {
   describe("input-element guard", () => {
     test("does not fire onkeydown when event target is an input", () => {
       const onkeydown = vi.fn();
-      mount(TranscriptSegments, {
-        target,
+      const { container: host } = render(TranscriptSegments, {
         props: { annotations: mockAnnotations, onkeydown },
       });
       flushSync();
 
       // Create an input inside the container (simulates inline editing)
-      const container = target.querySelector(
+      const container = host.querySelector(
         ".segments-container",
       ) as HTMLElement;
       const input = document.createElement("input");
@@ -439,13 +400,12 @@ describe("TranscriptSegments", () => {
 
     test("does not fire onkeydown when event target is a textarea", () => {
       const onkeydown = vi.fn();
-      mount(TranscriptSegments, {
-        target,
+      const { container: host } = render(TranscriptSegments, {
         props: { annotations: mockAnnotations, onkeydown },
       });
       flushSync();
 
-      const container = target.querySelector(
+      const container = host.querySelector(
         ".segments-container",
       ) as HTMLElement;
       const textarea = document.createElement("textarea");
@@ -464,13 +424,12 @@ describe("TranscriptSegments", () => {
     });
 
     test("does not intercept built-in nav from contenteditable", () => {
-      mount(TranscriptSegments, {
-        target,
+      const { container: host } = render(TranscriptSegments, {
         props: { annotations: mockAnnotations },
       });
       flushSync();
 
-      const container = target.querySelector(
+      const container = host.querySelector(
         ".segments-container",
       ) as HTMLElement;
       const editable = document.createElement("div");
@@ -489,7 +448,7 @@ describe("TranscriptSegments", () => {
       flushSync();
 
       // focusedIndex should still be 0
-      const segments = target.querySelectorAll("[data-annotation-id]");
+      const segments = host.querySelectorAll("[data-annotation-id]");
       expect(segments[0]!.getAttribute("tabindex")).toBe("0");
     });
   });

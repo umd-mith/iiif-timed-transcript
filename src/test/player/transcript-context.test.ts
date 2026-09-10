@@ -1,42 +1,25 @@
-import { describe, test, expect, vi, afterEach } from "vitest";
-import { mount } from "svelte";
-import { flushSync } from "svelte";
-import type { Snippet } from "svelte";
+import { describe, test, expect, vi } from "vitest";
+import { render } from "vitest-browser-svelte";
 import type {
   TranscriptContext,
   TranscriptState,
 } from "../../lib/player/transcript-context";
 
-// We need test helpers to mount components that call setContext/getContext
-import TestTranscriptContextProvider from "./TestTranscriptContextProvider.svelte";
+// render() from vitest-browser-svelte auto-unmounts mounted components in a
+// beforeEach cleanup, so these tests need no manual target/afterEach teardown.
+import TestTranscriptContextHarness from "./TestTranscriptContextHarness.svelte";
 import TestTranscriptContextConsumer from "./TestTranscriptContextConsumer.svelte";
 
 describe("transcript-context", () => {
-  let target: HTMLElement;
-
-  afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test("getTranscriptContext throws when no context available", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     expect(() => {
-      mount(TestTranscriptContextConsumer, {
-        target,
+      render(TestTranscriptContextConsumer, {
         props: { onResult: () => {} },
       });
-      flushSync();
     }).toThrow();
   });
 
   test("getTranscriptContext returns context when provided", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext: TranscriptContext = {
       state: {
         annotations: [{ id: "a1", startTime: 0, endTime: 5, text: "Hello" }],
@@ -56,24 +39,17 @@ describe("transcript-context", () => {
 
     let capturedResult: TranscriptContext | null = null;
 
-    mount(TestTranscriptContextProvider, {
-      target,
+    render(TestTranscriptContextHarness, {
       props: {
         context: mockContext,
-        children: ((_anchor: Node) => {
-          mount(TestTranscriptContextConsumer, {
-            target,
-            anchor: _anchor,
-            props: {
-              onResult: (ctx: TranscriptContext) => {
-                capturedResult = ctx;
-              },
-            },
-          });
-        }) as unknown as Snippet,
+        component: TestTranscriptContextConsumer,
+        props: {
+          onResult: (ctx: TranscriptContext) => {
+            capturedResult = ctx;
+          },
+        },
       },
     });
-    flushSync();
 
     expect(capturedResult).toBe(mockContext);
   });

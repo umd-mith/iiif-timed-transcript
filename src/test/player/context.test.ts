@@ -1,36 +1,21 @@
-import { describe, test, expect, vi, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
-import type { Snippet } from "svelte";
+import { render } from "vitest-browser-svelte";
 import type { PlayerContext, PlayerState } from "../../lib/player/context";
 import type { Chapter } from "@umd-mith/iiif-media-parsers";
-import TestContextProvider from "./TestContextProvider.svelte";
+import TestContextHarness from "./TestContextHarness.svelte";
 import TestContextConsumer from "./TestContextConsumer.svelte";
 
 describe("getPlayerContext", () => {
-  let target: HTMLElement;
-
-  afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test("throws error when no context available", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     // Consumer without provider should throw
     expect(() => {
-      mount(TestContextConsumer, { target, props: { onResult: () => {} } });
+      render(TestContextConsumer, { props: { onResult: () => {} } });
       flushSync();
     }).toThrow();
   });
 
   test("returns context when available", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const mockContext: PlayerContext = {
       state: {
         isPlaying: false,
@@ -78,28 +63,22 @@ describe("getPlayerContext", () => {
 
     let capturedResult: PlayerContext | null = null;
 
-    // Mount provider with consumer as child
-    mount(TestContextProvider, {
-      target,
+    // Provider (harness) sets context; consumer reads it back.
+    const { container } = render(TestContextHarness, {
       props: {
         context: mockContext,
-        children: ((_anchor: Node) => {
-          mount(TestContextConsumer, {
-            target,
-            anchor: _anchor,
-            props: {
-              onResult: (ctx: PlayerContext) => {
-                capturedResult = ctx;
-              },
-            },
-          });
-        }) as unknown as Snippet,
+        component: TestContextConsumer,
+        props: {
+          onResult: (ctx: PlayerContext) => {
+            capturedResult = ctx;
+          },
+        },
       },
     });
     flushSync();
 
     expect(capturedResult).toBe(mockContext);
-    expect(target.querySelector('[data-testid="consumer"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="consumer"]')).toBeTruthy();
   });
 });
 

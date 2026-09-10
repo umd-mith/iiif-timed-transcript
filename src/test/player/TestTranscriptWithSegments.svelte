@@ -11,14 +11,18 @@
   import type { Annotation } from "../../lib/sync/types";
 
   interface Props {
-    annotations: Annotation[];
+    // Optional: when omitted, Transcript falls back to PlayerContext
+    // annotations (exercised by the context-fallback capture tests).
+    annotations?: Annotation[];
     onContextReady?: (ctx: TranscriptContext) => void;
   }
 
   let { annotations, onContextReady }: Props = $props();
 </script>
 
-<Transcript {annotations}>
+<!-- Omit the annotations prop entirely when undefined so Transcript falls back
+     to PlayerContext annotations (and to satisfy exactOptionalPropertyTypes). -->
+<Transcript {...annotations ? { annotations } : {}}>
   {#if onContextReady}
     <TestTranscriptContextConsumer onResult={onContextReady} />
   {/if}

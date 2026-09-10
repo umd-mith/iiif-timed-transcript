@@ -1,71 +1,13 @@
 import { vi } from "vitest";
-import { mount, type Component } from "svelte";
-import type { Snippet } from "svelte";
 import type {
   PlayerActions,
   PlayerContext,
   PlayerState,
-  TranscriptStatus,
 } from "../../lib/player/context";
-import type { Annotation } from "../../lib/sync/types";
-import type { Chapter } from "@umd-mith/iiif-media-parsers";
-import TestContextConsumer from "./TestContextConsumer.svelte";
 
-/**
- * Creates a typed Snippet for Root's children prop that mounts a
- * TestContextConsumer to capture the PlayerContext.
- */
-export function createContextCapture(
-  target: HTMLElement,
-  onResult: (ctx: PlayerContext) => void,
-): Snippet<
-  [
-    {
-      player: {
-        state: PlayerState;
-        actions: PlayerActions;
-        annotations: Annotation[];
-        chapters: Chapter[];
-        activeChapterId: string | null;
-        transcriptStatus: TranscriptStatus;
-      };
-    },
-  ]
-> {
-  return ((_anchor: Node) => {
-    mount(TestContextConsumer, {
-      target,
-      anchor: _anchor,
-      props: { onResult },
-    });
-  }) as unknown as Snippet<
-    [
-      {
-        player: {
-          state: PlayerState;
-          actions: PlayerActions;
-          annotations: Annotation[];
-          chapters: Chapter[];
-          activeChapterId: string | null;
-        };
-      },
-    ]
-  >;
-}
-
-/**
- * Creates a plain Snippet that mounts a component at the anchor point.
- * Centralizes the Snippet cast needed for Svelte's mount() in tests.
- */
-export function createChildSnippet(
-  target: HTMLElement,
-  ChildComponent: Component<any>,
-  props: Record<string, unknown> = {},
-): Snippet {
-  return ((_anchor: Node) => {
-    mount(ChildComponent, { target, anchor: _anchor, props });
-  }) as unknown as Snippet;
-}
+// Tests mount through vitest-browser-svelte's render() (see TestContextHarness
+// / TestRootContextCapture), which auto-unmounts. The former createChildSnippet
+// / createContextCapture svelte.mount() helpers were removed with that switch.
 
 type MockPlayerOverrides = Partial<
   Omit<PlayerContext, "state" | "actions"> & {
