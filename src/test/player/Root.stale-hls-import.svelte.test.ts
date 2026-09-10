@@ -1,8 +1,8 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, flushSync } from "svelte";
-import Root from "../../lib/player/Root.svelte";
+import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
+import TestRootContextCapture from "./TestRootContextCapture.svelte";
 import type { PlayerContext } from "../../lib/player/context";
-import { createContextCapture } from "./test-utils";
 import { mockFetchManifest, buildStaleHlsManifest } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
 
@@ -23,16 +23,11 @@ const { hlsImport } = vi.hoisted(() => {
 vi.mock("hls.js", () => hlsImport.promise);
 
 describe("Root stale HLS import (loadGeneration guard)", () => {
-  let target: HTMLElement;
-
   beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
     globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   afterEach(() => {
-    document.body.removeChild(target);
     manifestCache.clear();
   });
 
@@ -51,14 +46,13 @@ describe("Root stale HLS import (loadGeneration guard)", () => {
       mockFetchManifest(manifest);
 
       let capturedCtx: PlayerContext | null = null;
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           canvasIndex: 0,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 

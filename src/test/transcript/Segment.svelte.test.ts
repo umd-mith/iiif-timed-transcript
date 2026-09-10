@@ -1,10 +1,12 @@
 // src/lib/transcript/Segment.svelte.test.ts
-import { mount } from "svelte";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import Segment from "../../lib/transcript/Segment.svelte";
 import TestSegmentTextSnippetWrapper from "./TestSegmentTextSnippetWrapper.svelte";
 
+// render() from vitest-browser-svelte auto-unmounts each component between
+// tests, so no manual target/afterEach teardown is needed.
 describe("Transcript.Segment", () => {
   const mockAnnotation = {
     id: "ann-1",
@@ -13,68 +15,59 @@ describe("Transcript.Segment", () => {
     text: "Hello world",
   };
 
-  let target: HTMLElement;
-
-  afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   it("renders annotation text", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(Segment, { target, props: { annotation: mockAnnotation } });
+    const { container } = render(Segment, {
+      props: { annotation: mockAnnotation },
+    });
     flushSync();
 
-    expect(target.textContent).toContain("Hello world");
+    expect(container.textContent).toContain("Hello world");
   });
 
   it("renders timestamp", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(Segment, { target, props: { annotation: mockAnnotation } });
+    const { container } = render(Segment, {
+      props: { annotation: mockAnnotation },
+    });
     flushSync();
 
-    expect(target.textContent).toContain("0:10");
+    expect(container.textContent).toContain("0:10");
   });
 
   it("includes data-annotation-id attribute", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(Segment, { target, props: { annotation: mockAnnotation } });
+    const { container } = render(Segment, {
+      props: { annotation: mockAnnotation },
+    });
     flushSync();
 
-    const button = target.querySelector('[data-annotation-id="ann-1"]');
+    const button = container.querySelector('[data-annotation-id="ann-1"]');
     expect(button).not.toBeNull();
   });
 
   it("calls onclick when clicked", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const onclick = vi.fn();
-    mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
+    const { container } = render(Segment, {
+      props: { annotation: mockAnnotation, onclick },
+    });
     flushSync();
 
-    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
+    const segment = container.querySelector(
+      "[data-annotation-id]",
+    ) as HTMLElement;
     segment.click();
 
     expect(onclick).toHaveBeenCalledTimes(1);
   });
 
   it("calls onclick on Enter key", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const onclick = vi.fn();
-    mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
+    const { container } = render(Segment, {
+      props: { annotation: mockAnnotation, onclick },
+    });
     flushSync();
 
-    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
+    const segment = container.querySelector(
+      "[data-annotation-id]",
+    ) as HTMLElement;
     segment.dispatchEvent(
       new KeyboardEvent("keydown", {
         key: "Enter",
@@ -87,14 +80,15 @@ describe("Transcript.Segment", () => {
   });
 
   it("calls onclick on Space key", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const onclick = vi.fn();
-    mount(Segment, { target, props: { annotation: mockAnnotation, onclick } });
+    const { container } = render(Segment, {
+      props: { annotation: mockAnnotation, onclick },
+    });
     flushSync();
 
-    const segment = target.querySelector("[data-annotation-id]") as HTMLElement;
+    const segment = container.querySelector(
+      "[data-annotation-id]",
+    ) as HTMLElement;
     segment.dispatchEvent(
       new KeyboardEvent("keydown", {
         key: " ",
@@ -107,11 +101,7 @@ describe("Transcript.Segment", () => {
   });
 
   it("applies active state via data attribute", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(Segment, {
-      target,
+    const { container } = render(Segment, {
       props: {
         annotation: mockAnnotation,
         isActive: true,
@@ -119,16 +109,12 @@ describe("Transcript.Segment", () => {
     });
     flushSync();
 
-    const button = target.querySelector('[data-state="active"]');
+    const button = container.querySelector('[data-state="active"]');
     expect(button).not.toBeNull();
   });
 
   it("applies inactive state when not active", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(Segment, {
-      target,
+    const { container } = render(Segment, {
       props: {
         annotation: mockAnnotation,
         isActive: false,
@@ -136,57 +122,47 @@ describe("Transcript.Segment", () => {
     });
     flushSync();
 
-    const button = target.querySelector('[data-state="inactive"]');
+    const button = container.querySelector('[data-state="inactive"]');
     expect(button).not.toBeNull();
   });
 
   it("exposes role=button on the interactive segment (a11y)", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(Segment, { target, props: { annotation: mockAnnotation } });
+    const { container } = render(Segment, {
+      props: { annotation: mockAnnotation },
+    });
     flushSync();
 
-    const segment = target.querySelector("[data-annotation-id]");
+    const segment = container.querySelector("[data-annotation-id]");
     expect(segment?.getAttribute("role")).toBe("button");
   });
 
   it("applies lang on the default text path when annotation.language is set", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(Segment, {
-      target,
+    const { container } = render(Segment, {
       props: { annotation: { ...mockAnnotation, language: "es" } },
     });
     flushSync();
 
-    const text = target.querySelector(".text");
+    const text = container.querySelector(".text");
     expect(text?.getAttribute("lang")).toBe("es");
   });
 
   it("omits lang when annotation.language is absent", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(Segment, { target, props: { annotation: mockAnnotation } });
+    const { container } = render(Segment, {
+      props: { annotation: mockAnnotation },
+    });
     flushSync();
 
-    const text = target.querySelector(".text");
+    const text = container.querySelector(".text");
     expect(text?.hasAttribute("lang")).toBe(false);
   });
 
   it("passes language to a custom text snippet", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
-    mount(TestSegmentTextSnippetWrapper, {
-      target,
+    const { container } = render(TestSegmentTextSnippetWrapper, {
       props: { annotation: { ...mockAnnotation, language: "fr" } },
     });
     flushSync();
 
-    const custom = target.querySelector(".custom-text");
+    const custom = container.querySelector(".custom-text");
     expect(custom?.getAttribute("data-language")).toBe("fr");
   });
 });

@@ -1,12 +1,13 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { mount, flushSync, unmount } from "svelte";
 import Root from "../../lib/player/Root.svelte";
+import { render } from "vitest-browser-svelte";
+import TestRootContextCapture from "./TestRootContextCapture.svelte";
 import TestRootWrapper from "./TestRootWrapper.svelte";
 import TestRootAnnotationsWrapper from "./TestRootAnnotationsWrapper.svelte";
 import TestRootViewerTranscript from "./TestRootViewerTranscript.svelte";
 import type { PlayerContext } from "../../lib/player/context";
 import type { HlsConstructor } from "../../lib/media/hlsUtils";
-import { createContextCapture } from "./test-utils";
 import {
   MANIFEST_WITH_CHAPTERS,
   MANIFEST_WITHOUT_CHAPTERS,
@@ -27,18 +28,11 @@ import {
 import { manifestCache } from "../../lib/player/manifestCache";
 
 describe("Root component", () => {
-  let target: HTMLElement;
-
   beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
     globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   afterEach(() => {
-    if (document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
     manifestCache.clear();
   });
 
@@ -82,13 +76,12 @@ describe("Root component", () => {
       json: async () => mockManifest,
     } as Response);
 
-    mount(Root, {
-      target,
+    const { container } = render(Root, {
       props: { manifestUrl: "https://example.com/render-test.json" },
     });
     flushSync();
 
-    expect(target.querySelector(".iiif-player-root")).toBeTruthy();
+    expect(container.querySelector(".iiif-player-root")).toBeTruthy();
   });
 
   test("does not re-fetch manifest for same URL when mounted twice", async () => {
@@ -99,8 +92,7 @@ describe("Root component", () => {
     } as Response);
 
     // Mount first instance
-    mount(Root, {
-      target,
+    render(Root, {
       props: { manifestUrl: url },
     });
     flushSync();
@@ -111,11 +103,8 @@ describe("Root component", () => {
     });
 
     // Mount second instance with same URL
-    const target2 = document.createElement("div");
-    document.body.appendChild(target2);
 
-    mount(Root, {
-      target: target2,
+    render(Root, {
       props: { manifestUrl: url },
     });
     flushSync();
@@ -125,8 +114,6 @@ describe("Root component", () => {
 
     // Should still only have fetched once
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-
-    document.body.removeChild(target2);
   });
 
   test("fetches different URLs separately", async () => {
@@ -135,8 +122,7 @@ describe("Root component", () => {
       json: async () => mockManifest,
     } as Response);
 
-    mount(Root, {
-      target,
+    render(Root, {
       props: { manifestUrl: "https://example.com/separate-a.json" },
     });
     flushSync();
@@ -145,11 +131,7 @@ describe("Root component", () => {
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     });
 
-    const target2 = document.createElement("div");
-    document.body.appendChild(target2);
-
-    mount(Root, {
-      target: target2,
+    render(Root, {
       props: { manifestUrl: "https://example.com/separate-b.json" },
     });
     flushSync();
@@ -157,8 +139,6 @@ describe("Root component", () => {
     await vi.waitFor(() => {
       expect(globalThis.fetch).toHaveBeenCalledTimes(2);
     });
-
-    document.body.removeChild(target2);
   });
 
   describe("chapters parsing", () => {
@@ -167,13 +147,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/chapters-with-structures.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -202,13 +181,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/chapters-without-structures.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -225,13 +203,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/active-chapter-id-null.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -253,14 +230,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/annotations-test.json",
           annotations: testAnnotations,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -275,13 +251,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/annotations-default.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -318,14 +293,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/hls-manifest.json",
           hlsConstructor: MockHls,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -350,13 +324,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/non-hls-manifest.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -386,14 +359,13 @@ describe("Root component", () => {
       ) as unknown as HlsConstructor;
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/choice-hls.json",
           hlsConstructor: MockHls,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -414,13 +386,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/vtt-manifest.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -442,13 +413,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/no-vtt-manifest.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -484,14 +454,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/initial-time-test.json",
           initialTime: 30,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -511,14 +480,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/initial-time-no-reapply.json",
           initialTime: 30,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -548,14 +516,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/autoplay-test.json",
           autoplay: true,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -574,14 +541,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/autoplay-canvas-switch.json",
           autoplay: true,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -610,15 +576,14 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/both-props-test.json",
           initialTime: 15,
           autoplay: true,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -641,13 +606,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/multi-canvas.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -676,14 +640,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/multi-canvas-chapters.json",
           canvasIndex: 0,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -709,14 +672,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/multi-canvas-idx1.json",
           canvasIndex: 1,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -740,13 +702,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/multi-canvas-switch.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -776,14 +737,13 @@ describe("Root component", () => {
       let capturedCtx: PlayerContext | null = null;
       const onCanvasChange = vi.fn();
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/multi-canvas-callback.json",
           onCanvasChange,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -811,13 +771,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/multi-canvas-bounds.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -838,13 +797,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/multi-canvas-non-integer.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -878,8 +836,7 @@ describe("Root component", () => {
       let capturedCtx: PlayerContext | null = null;
 
       // Mount wrapper with canvasIndex=0
-      const wrapper = mount(TestRootWrapper, {
-        target,
+      const { component: wrapper } = render(TestRootWrapper, {
         props: {
           manifestUrl: "https://example.com/multi-canvas-prop-change.json",
           canvasIndex: 0,
@@ -912,13 +869,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/single-canvas-nav.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -952,14 +908,13 @@ describe("Root component", () => {
         // synchronously, so force the async path by leaving it undefined and
         // relying on the real hls.js import — then switch canvas immediately.
         let capturedCtx: PlayerContext | null = null;
-        mount(Root, {
-          target,
+        render(TestRootContextCapture, {
           props: {
             manifestUrl: url,
             canvasIndex: 0,
-            children: createContextCapture(target, (ctx) => {
+            onResult: (ctx: PlayerContext) => {
               capturedCtx = ctx;
-            }),
+            },
           },
         });
         await vi.waitFor(() => {
@@ -994,12 +949,11 @@ describe("Root component", () => {
 
       const onPlayerInit = vi.fn();
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/init-callback-basic.json",
           onPlayerInit,
-          children: createContextCapture(target, () => {}),
+          onResult: () => {},
         },
       });
 
@@ -1029,18 +983,17 @@ describe("Root component", () => {
 
       const onPlayerInit = vi.fn();
 
-      mount(Root, {
-        target,
+      const { container } = render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/init-callback-fail.json",
           onPlayerInit,
-          children: createContextCapture(target, () => {}),
+          onResult: () => {},
         },
       });
 
       // Wait for error state to appear
       await vi.waitFor(() => {
-        expect(target.querySelector("[role='alert']")).not.toBeNull();
+        expect(container.querySelector("[role='alert']")).not.toBeNull();
       });
 
       expect(onPlayerInit).not.toHaveBeenCalled();
@@ -1062,20 +1015,19 @@ describe("Root component", () => {
           json: async () => MANIFEST_WITH_CHAPTERS,
         });
 
-      mount(Root, {
-        target,
+      const { container } = render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/init-callback-retry.json",
           onPlayerInit,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
       // Wait for error state
       await vi.waitFor(() => {
-        expect(target.querySelector("[role='alert']")).not.toBeNull();
+        expect(container.querySelector("[role='alert']")).not.toBeNull();
       });
       expect(onPlayerInit).not.toHaveBeenCalled();
 
@@ -1103,14 +1055,13 @@ describe("Root component", () => {
       const onCanvasChange = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/retry-keeps-canvas.json",
           onCanvasChange,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1146,14 +1097,13 @@ describe("Root component", () => {
       const onPlayerInit = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/init-callback-canvas-switch.json",
           onPlayerInit,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1183,14 +1133,13 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      const { container } = render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/init-callback-throws.json",
           onPlayerInit,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1201,7 +1150,7 @@ describe("Root component", () => {
       // Callback threw, but player should NOT be in an error state
       expect(capturedCtx!.state.error).toBeNull();
       // Manifest cache should NOT be corrupted (no alert shown)
-      expect(target.querySelector("[role='alert']")).toBeNull();
+      expect(container.querySelector("[role='alert']")).toBeNull();
       // Player loaded successfully despite callback error
       expect(capturedCtx!.canvases).toHaveLength(1);
       expect(capturedCtx!.mediaType).toBe("audio");
@@ -1287,13 +1236,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/poster-placeholder.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1308,13 +1256,12 @@ describe("Root component", () => {
 
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/poster-none.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1333,14 +1280,13 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { status: 404 } });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1389,7 +1335,7 @@ describe("Root component", () => {
       };
       mockFetchRoutes({ [url]: { json: imageManifest } });
 
-      mount(Root, { target, props: { manifestUrl: url, onError } });
+      render(Root, { props: { manifestUrl: url, onError } });
 
       await vi.waitFor(() => {
         expect(onError).toHaveBeenCalledTimes(1);
@@ -1406,14 +1352,13 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { json: mockManifest } });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
       await vi.waitFor(() => {
@@ -1452,14 +1397,13 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { json: mockManifest } });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
       await vi.waitFor(() => {
@@ -1490,6 +1434,8 @@ describe("Root component", () => {
       const pending = deferred<{ json: unknown }>();
       mockFetchRoutes({ [url]: { promise: pending.promise } });
 
+      const target = document.createElement("div");
+      document.body.appendChild(target);
       const app = mount(Root, {
         target,
         props: { manifestUrl: url, onError, onPlayerInit },
@@ -1512,8 +1458,7 @@ describe("Root component", () => {
       const url = "https://example.com/onerror-throws.json";
       mockFetchRoutes({ [url]: { status: 500 } });
 
-      mount(Root, {
-        target,
+      render(Root, {
         props: {
           manifestUrl: url,
           onError: () => {
@@ -1538,14 +1483,13 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { json: MANIFEST_WITH_EMBEDDED_TRANSCRIPT } });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1570,14 +1514,13 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { json: mockManifest } });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1594,14 +1537,13 @@ describe("Root component", () => {
       const given = [{ id: "p1", startTime: 0, endTime: 1, text: "From prop" }];
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: given,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1623,16 +1565,15 @@ describe("Root component", () => {
       const onError = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
           onPlayerInit,
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1680,16 +1621,15 @@ describe("Root component", () => {
       const onError = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
           onPlayerInit,
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1716,15 +1656,14 @@ describe("Root component", () => {
       const onError = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1748,15 +1687,14 @@ describe("Root component", () => {
       const onError = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1778,15 +1716,14 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           canvasIndex: 1,
           annotations: "auto",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
       await vi.waitFor(() => {
@@ -1821,16 +1758,15 @@ describe("Root component", () => {
       const onCanvasChange = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           canvasIndex: 1,
           annotations: "auto",
           onCanvasChange,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1862,15 +1798,14 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           canvasIndex: 99,
           annotations: "auto",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -1924,27 +1859,23 @@ describe("Root component", () => {
       });
       let ctxA: PlayerContext | null = null;
       let ctxB: PlayerContext | null = null;
-      const target2 = document.createElement("div");
-      document.body.appendChild(target2);
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: urlA,
           annotations: "auto",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             ctxA = ctx;
-          }),
+          },
         },
       });
-      mount(Root, {
-        target: target2,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: urlB,
           annotations: "auto",
-          children: createContextCapture(target2, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             ctxB = ctx;
-          }),
+          },
         },
       });
 
@@ -1954,7 +1885,6 @@ describe("Root component", () => {
       });
       expect(ctxA!.annotations).toHaveLength(2);
       expect(ctxB!.annotations).toHaveLength(1);
-      document.body.removeChild(target2);
     });
 
     test("clears annotations and status when a canvas switch lands on a non-AV canvas", async () => {
@@ -1998,15 +1928,14 @@ describe("Root component", () => {
       const onError = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -2069,14 +1998,13 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -2137,14 +2065,13 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { json: manifest } });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
           annotations: "auto",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -2167,8 +2094,7 @@ describe("Root component", () => {
       const given = [{ id: "p1", startTime: 0, endTime: 1, text: "From prop" }];
       let capturedCtx: PlayerContext | null = null;
 
-      const wrapper = mount(TestRootAnnotationsWrapper, {
-        target,
+      const { component: wrapper } = render(TestRootAnnotationsWrapper, {
         props: {
           manifestUrl: url,
           canvasIndex: 0,
@@ -2200,8 +2126,7 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { json: MANIFEST_WITH_EMBEDDED_TRANSCRIPT } });
       let capturedCtx: PlayerContext | null = null;
 
-      const wrapper = mount(TestRootAnnotationsWrapper, {
-        target,
+      const { component: wrapper } = render(TestRootAnnotationsWrapper, {
         props: {
           manifestUrl: url,
           canvasIndex: 0,
@@ -2236,8 +2161,7 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      const wrapper = mount(TestRootAnnotationsWrapper, {
-        target,
+      const { component: wrapper } = render(TestRootAnnotationsWrapper, {
         props: {
           manifestUrl: url,
           canvasIndex: 0,
@@ -2355,8 +2279,7 @@ describe("Root component", () => {
       const onError = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      const wrapper = mount(TestRootAnnotationsWrapper, {
-        target,
+      const { component: wrapper } = render(TestRootAnnotationsWrapper, {
         props: {
           manifestUrl: url,
           canvasIndex: 0,
@@ -2449,6 +2372,12 @@ describe("Root component", () => {
       ];
       let capturedCtx: PlayerContext | null = null;
 
+      // NOTE: kept on mount()/unmount() rather than render(). This test is
+      // timing-sensitive around a superseded canvas-0 load vs the switchCanvas(1)
+      // load; render()'s microtask scheduling loses that race and state.error
+      // never settles. Explicit unmount() keeps cleanup guaranteed (no leak).
+      const target = document.createElement("div");
+      document.body.appendChild(target);
       const wrapper = mount(TestRootAnnotationsWrapper, {
         target,
         props: {
@@ -2479,6 +2408,9 @@ describe("Root component", () => {
 
       expect(capturedCtx!.annotations).toEqual([]);
       expect(capturedCtx!.transcriptStatus).toBe("idle");
+
+      unmount(wrapper);
+      document.body.removeChild(target);
     });
 
     test("ignores blank embedded annotations so the VTT tier still wins", async () => {
@@ -2523,8 +2455,7 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(TestRootAnnotationsWrapper, {
-        target,
+      render(TestRootAnnotationsWrapper, {
         props: {
           manifestUrl: url,
           annotations: "auto",
@@ -2563,8 +2494,7 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(TestRootViewerTranscript, {
-        target,
+      const { container } = render(TestRootViewerTranscript, {
         props: {
           manifestUrl: url,
           annotations: "auto",
@@ -2579,7 +2509,7 @@ describe("Root component", () => {
         expect(capturedCtx!.annotations.length).toBe(2);
       });
 
-      const video = target.querySelector("video") as HTMLVideoElement;
+      const video = container.querySelector("video") as HTMLVideoElement;
       expect(video).not.toBeNull();
       await vi.waitFor(() => {
         expect(video.textTracks).toHaveLength(1);
@@ -2595,8 +2525,7 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(TestRootViewerTranscript, {
-        target,
+      const { container } = render(TestRootViewerTranscript, {
         props: {
           manifestUrl: url,
           annotations: "auto",
@@ -2612,7 +2541,7 @@ describe("Root component", () => {
         expect(capturedCtx!.annotations.length).toBe(2);
       });
 
-      const video = target.querySelector("video") as HTMLVideoElement;
+      const video = container.querySelector("video") as HTMLVideoElement;
       expect(video).not.toBeNull();
       await vi.waitFor(() => {
         expect(video.textTracks).toHaveLength(1);
@@ -2691,8 +2620,7 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(TestRootViewerTranscript, {
-        target,
+      const { container } = render(TestRootViewerTranscript, {
         props: {
           manifestUrl: url,
           annotations: "auto",
@@ -2708,7 +2636,7 @@ describe("Root component", () => {
         expect(capturedCtx!.transcriptStatus).toBe("ready");
         expect(capturedCtx!.annotations.length).toBe(2);
       });
-      const videoA = target.querySelector("video") as HTMLVideoElement;
+      const videoA = container.querySelector("video") as HTMLVideoElement;
       await vi.waitFor(() => {
         expect(videoA.textTracks[0]!.mode).toBe("hidden");
       });
@@ -2722,13 +2650,13 @@ describe("Root component", () => {
       await new Promise((r) => setTimeout(r, 50));
       flushSync();
 
-      const videoB = target.querySelector("video") as HTMLVideoElement;
+      const videoB = container.querySelector("video") as HTMLVideoElement;
       expect(capturedCtx!.tracks.map((t) => t.src)).toEqual([vttB]);
       await vi.waitFor(() => {
         expect(videoB.textTracks).toHaveLength(1);
       });
       expect(capturedCtx!.annotations).toEqual([]);
-      expect(target.textContent).toContain("No transcript available.");
+      expect(container.textContent).toContain("No transcript available.");
       expect(videoB.textTracks[0]!.mode).not.toBe("hidden");
     });
   });
@@ -2752,8 +2680,7 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(TestRootViewerTranscript, {
-        target,
+      const { container } = render(TestRootViewerTranscript, {
         props: {
           manifestUrl: url,
           annotations: given,
@@ -2768,7 +2695,7 @@ describe("Root component", () => {
         expect(capturedCtx!.annotations).toEqual(given);
       });
 
-      const video = target.querySelector("video") as HTMLVideoElement;
+      const video = container.querySelector("video") as HTMLVideoElement;
       expect(video).not.toBeNull();
       await vi.waitFor(() => {
         expect(video.textTracks).toHaveLength(1);
@@ -2784,7 +2711,13 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(TestRootViewerTranscript, {
+      // NOTE: kept on mount()/unmount() rather than render() — same
+      // canvas-switch timing sensitivity as the "flipping to auto" test above;
+      // render()'s scheduling drops the canvas-1 track discovery. Explicit
+      // unmount() keeps cleanup guaranteed (no leak).
+      const target = document.createElement("div");
+      document.body.appendChild(target);
+      const app = mount(TestRootViewerTranscript, {
         target,
         props: {
           manifestUrl: url,
@@ -2812,6 +2745,9 @@ describe("Root component", () => {
         expect(video.textTracks).toHaveLength(1);
         expect(video.textTracks[0]!.mode).toBe("hidden");
       });
+
+      unmount(app);
+      document.body.removeChild(target);
     });
 
     test('clears transcriptPopulated when the prop flips array -> "auto" and the VTT fails', async () => {
@@ -2827,17 +2763,19 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      const wrapper = mount(TestRootViewerTranscript, {
-        target,
-        props: {
-          manifestUrl: url,
-          annotations: given,
-          onError: () => {},
-          onResult: (ctx: PlayerContext) => {
-            capturedCtx = ctx;
+      const { container, component: wrapper } = render(
+        TestRootViewerTranscript,
+        {
+          props: {
+            manifestUrl: url,
+            annotations: given,
+            onError: () => {},
+            onResult: (ctx: PlayerContext) => {
+              capturedCtx = ctx;
+            },
           },
         },
-      });
+      );
 
       // Array mode: the panel populates and the native track goes hidden.
       await vi.waitFor(() => {
@@ -2845,7 +2783,7 @@ describe("Root component", () => {
         expect(capturedCtx!.annotations).toEqual(given);
         expect(capturedCtx!.transcriptPopulated).toBe(true);
       });
-      const video = target.querySelector("video") as HTMLVideoElement;
+      const video = container.querySelector("video") as HTMLVideoElement;
       await vi.waitFor(() => {
         expect(video.textTracks[0]!.mode).toBe("hidden");
       });
@@ -2860,7 +2798,7 @@ describe("Root component", () => {
       flushSync();
 
       expect(capturedCtx!.annotations).toEqual([]);
-      expect(target.textContent).toContain("No transcript available.");
+      expect(container.textContent).toContain("No transcript available.");
       expect(capturedCtx!.transcriptPopulated).toBe(false);
       // The one-time write already happened for this (canvasIndex, mediaUrl)
       // load and is never undone — a flip does not re-arm Viewer's latch.
@@ -2875,17 +2813,16 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { json: { ...withoutType, id: url } } });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
-          preprocessManifest: (raw) => ({
+          preprocessManifest: (raw: unknown) => ({
             ...(raw as Record<string, unknown>),
             type: "Manifest",
           }),
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -2901,7 +2838,7 @@ describe("Root component", () => {
       mockFetchRoutes({ [url]: { json: { ...withoutType, id: url } } });
       const onError = vi.fn();
 
-      mount(Root, { target, props: { manifestUrl: url, onError } });
+      render(Root, { props: { manifestUrl: url, onError } });
 
       await vi.waitFor(() => {
         expect(onError).toHaveBeenCalledTimes(1);
@@ -2919,17 +2856,16 @@ describe("Root component", () => {
       });
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: url,
-          preprocessManifest: (raw) => ({
+          preprocessManifest: (raw: unknown) => ({
             ...(raw as Record<string, unknown>),
             structures: MANIFEST_WITH_CHAPTERS.structures,
           }),
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -2946,8 +2882,7 @@ describe("Root component", () => {
       });
       const onError = vi.fn();
 
-      mount(Root, {
-        target,
+      render(Root, {
         props: {
           manifestUrl: url,
           preprocessManifest: () => {
@@ -2974,7 +2909,7 @@ describe("Root component", () => {
       });
 
       // 1. A plain instance populates the cache.
-      mount(Root, { target, props: { manifestUrl: url } });
+      render(Root, { props: { manifestUrl: url } });
       await vi.waitFor(() => {
         expect(manifestCache.has(url)).toBe(true);
       });
@@ -2982,11 +2917,8 @@ describe("Root component", () => {
 
       // 2. A preprocessing instance whose hook throws: fetches again (no cache
       //    read), does not evict the plain entry (no cache delete).
-      const target2 = document.createElement("div");
-      document.body.appendChild(target2);
       const onError = vi.fn();
-      mount(Root, {
-        target: target2,
+      render(Root, {
         props: {
           manifestUrl: url,
           preprocessManifest: () => {
@@ -3002,14 +2934,9 @@ describe("Root component", () => {
       expect(manifestCache.has(url)).toBe(true);
 
       // 3. A second plain instance is served from the surviving cache entry.
-      const target3 = document.createElement("div");
-      document.body.appendChild(target3);
-      mount(Root, { target: target3, props: { manifestUrl: url } });
+      render(Root, { props: { manifestUrl: url } });
       await new Promise((r) => setTimeout(r, 30));
       expect(globalThis.fetch).toHaveBeenCalledTimes(2);
-
-      document.body.removeChild(target2);
-      document.body.removeChild(target3);
     });
   });
 
@@ -3018,13 +2945,12 @@ describe("Root component", () => {
       mockFetchManifest(MANIFEST_WITH_VTT_CAPTIONS);
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/captions-mid-load-toggle.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
       flushSync();
@@ -3048,13 +2974,12 @@ describe("Root component", () => {
       mockFetchManifest(MANIFEST_WITH_VTT_CAPTIONS);
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/captions-native-change.json",
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
       flushSync();

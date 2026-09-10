@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, flushSync } from "svelte";
+import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import TestRootViewerTranscript from "./TestRootViewerTranscript.svelte";
 import { mockFetchManifest } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
@@ -43,18 +44,11 @@ function nativeVideoManifest(url: string) {
 }
 
 describe("actions.retry() restarts native media at an unchanged URL", () => {
-  let target: HTMLElement;
-
   beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
     globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
     manifestCache.clear();
     vi.restoreAllMocks();
   });
@@ -64,8 +58,7 @@ describe("actions.retry() restarts native media at an unchanged URL", () => {
     mockFetchManifest(nativeVideoManifest(url));
 
     let ctx: PlayerContext | null = null;
-    mount(TestRootViewerTranscript, {
-      target,
+    render(TestRootViewerTranscript, {
       props: {
         manifestUrl: url,
         annotations: [],

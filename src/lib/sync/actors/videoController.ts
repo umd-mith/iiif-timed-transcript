@@ -58,6 +58,11 @@ export const videoController = fromPromise(
       clampedTime = duration - 1;
     }
 
+    // Re-enforce the lower bound: for durations shorter than the 1s backoff,
+    // the adjustment above can go negative (e.g. duration 0.5 -> -0.5). The
+    // seek must stay within [0, duration].
+    clampedTime = Math.max(0, clampedTime);
+
     // Perform seek with adjusted time
     viewer.seekTo(clampedTime);
   },

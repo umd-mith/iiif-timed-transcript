@@ -1,79 +1,52 @@
-import { describe, test, expect, vi, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import Speed from "../../lib/player/Speed.svelte";
-import TestContextProvider from "./TestContextProvider.svelte";
-import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import TestContextHarness from "./TestContextHarness.svelte";
+import { createMockPlayerContext } from "./test-utils";
 
 describe("Speed", () => {
-  let target: HTMLElement;
-
-  afterEach(() => {
-    if (target && document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test("renders speed select", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext();
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Speed),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Speed },
     });
     flushSync();
 
-    const select = target.querySelector("select");
+    const select = container.querySelector("select");
     expect(select).not.toBeNull();
   });
 
   test("shows all rate options", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext();
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: ctx,
-        children: createChildSnippet(target, Speed, {
-          rates: [0.5, 1, 1.5, 2],
-        }),
+        component: Speed,
+        props: { rates: [0.5, 1, 1.5, 2] },
       },
     });
     flushSync();
 
-    const options = target.querySelectorAll("option");
+    const options = container.querySelectorAll("option");
     expect(options).toHaveLength(4);
   });
 
   test("calls setPlaybackRate when changed", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const setPlaybackRateFn = vi.fn();
     const ctx = createMockPlayerContext({
       state: { playbackRate: 1, isReady: true },
       actions: { setPlaybackRate: setPlaybackRateFn },
     });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Speed),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Speed },
     });
     flushSync();
 
-    const select = target.querySelector("select") as HTMLSelectElement;
+    const select = container.querySelector("select") as HTMLSelectElement;
     select.value = "1.5";
     select.dispatchEvent(new Event("change", { bubbles: true }));
     flushSync();
@@ -82,21 +55,14 @@ describe("Speed", () => {
   });
 
   test("is disabled when media not ready", () => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-
     const ctx = createMockPlayerContext({ state: { isReady: false } });
 
-    mount(TestContextProvider, {
-      target,
-      props: {
-        context: ctx,
-        children: createChildSnippet(target, Speed),
-      },
+    const { container } = render(TestContextHarness, {
+      props: { context: ctx, component: Speed },
     });
     flushSync();
 
-    const select = target.querySelector("select");
+    const select = container.querySelector("select");
     expect(select?.disabled).toBe(true);
   });
 });

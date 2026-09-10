@@ -1,8 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount } from "svelte";
-import Root from "../../lib/player/Root.svelte";
+import { render } from "vitest-browser-svelte";
+import TestRootContextCapture from "./TestRootContextCapture.svelte";
 import type { PlayerContext } from "../../lib/player/context";
-import { createContextCapture } from "./test-utils";
 import { MANIFEST_WITH_HLS, mockFetchManifest } from "./test-fixtures";
 import { manifestCache } from "../../lib/player/manifestCache";
 
@@ -11,16 +10,11 @@ import { manifestCache } from "../../lib/player/manifestCache";
 vi.mock("hls.js", () => ({ default: undefined }));
 
 describe("Root without hls.js available", () => {
-  let target: HTMLElement;
-
   beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
     globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   afterEach(() => {
-    document.body.removeChild(target);
     manifestCache.clear();
   });
 
@@ -37,14 +31,13 @@ describe("Root without hls.js available", () => {
       const onError = vi.fn();
       let capturedCtx: PlayerContext | null = null;
 
-      mount(Root, {
-        target,
+      const { container } = render(TestRootContextCapture, {
         props: {
           manifestUrl: "https://example.com/missing-hls.json",
           onError,
-          children: createContextCapture(target, (ctx) => {
+          onResult: (ctx: PlayerContext) => {
             capturedCtx = ctx;
-          }),
+          },
         },
       });
 
@@ -57,7 +50,7 @@ describe("Root without hls.js available", () => {
       });
       expect(capturedCtx!.state.error?.message).toMatch(/hls\.js/);
       expect(capturedCtx!.hlsAdapter).toBeNull();
-      expect(target.querySelector('[role="alert"]')?.textContent).toMatch(
+      expect(container.querySelector('[role="alert"]')?.textContent).toMatch(
         /hls\.js/,
       );
     } finally {

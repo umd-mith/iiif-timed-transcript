@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount, flushSync } from "svelte";
+import { flushSync } from "svelte";
+import { render } from "vitest-browser-svelte";
 import TestRootAnnotationsWrapper from "./TestRootAnnotationsWrapper.svelte";
 import type { PlayerContext } from "../../lib/player/context";
 import { mockFetchManifest, buildStaleHlsManifest } from "./test-fixtures";
@@ -23,16 +24,11 @@ const { hlsImport } = vi.hoisted(() => {
 vi.mock("hls.js", () => hlsImport.promise);
 
 describe("Root transcript generation vs. in-flight adapter import", () => {
-  let target: HTMLElement;
-
   beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
     globalThis.fetch = vi.fn() as unknown as typeof fetch;
   });
 
   afterEach(() => {
-    document.body.removeChild(target);
     manifestCache.clear();
   });
 
@@ -49,8 +45,7 @@ describe("Root transcript generation vs. in-flight adapter import", () => {
       mockFetchManifest(buildStaleHlsManifest(url));
 
       let capturedCtx: PlayerContext | null = null;
-      const wrapper = mount(TestRootAnnotationsWrapper, {
-        target,
+      const { component: wrapper } = render(TestRootAnnotationsWrapper, {
         props: {
           manifestUrl: url,
           canvasIndex: 0,
@@ -91,7 +86,11 @@ describe("Root transcript generation vs. in-flight adapter import", () => {
         },
       );
       hlsImport.resolve({ default: MockHls });
-      await new Promise((r) => setTimeout(r, 100));
+      // Wait deterministically for the adapter to attach rather than guessing a
+      // wall-clock delay: under full-suite load a fixed timeout is flaky, and
+      // the bug this guards (adapter dropped by a shared generation counter)
+      // manifests as hlsAdapter staying null, which this waitFor still catches.
+      await vi.waitFor(() => expect(capturedCtx!.hlsAdapter).not.toBeNull());
       flushSync();
 
       expect(capturedCtx!.mediaStrategy).toBe("hls-js");

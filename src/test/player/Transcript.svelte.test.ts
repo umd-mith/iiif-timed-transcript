@@ -1,72 +1,61 @@
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { mount } from "svelte";
+import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
 import type { Snippet } from "svelte";
+import { render } from "vitest-browser-svelte";
 import Transcript from "../../lib/player/Transcript.svelte";
-import TestContextProvider from "./TestContextProvider.svelte";
-import TestTranscriptContextConsumer from "./TestTranscriptContextConsumer.svelte";
+import TestContextHarness from "./TestContextHarness.svelte";
 import TestTranscriptWithSegments from "./TestTranscriptWithSegments.svelte";
 import TestTranscriptLoadingSnippet from "./TestTranscriptLoadingSnippet.svelte";
-import { createMockPlayerContext, createChildSnippet } from "./test-utils";
+import TestTwoTranscripts from "./TestTwoTranscripts.svelte";
+import { createMockPlayerContext } from "./test-utils";
 import { createReactiveMockPlayerContext } from "./reactive-context.svelte";
 import type { Annotation } from "../../lib/sync/types";
 import type { TranscriptContext } from "../../lib/player/transcript-context";
 import { registerTranslation, setLocale } from "../../lib/i18n/registry.svelte";
 
+// render() from vitest-browser-svelte auto-unmounts each component between
+// tests (no manual target/afterEach teardown). TestContextHarness sets the
+// player context and renders the component under test; capture tests use
+// TestTranscriptWithSegments' onContextReady to report the transcript context.
 describe("Transcript", () => {
-  let target: HTMLElement;
-
   const mockAnnotations: Annotation[] = [
     { id: "a1", startTime: 0, endTime: 5, text: "First annotation" },
     { id: "a2", startTime: 5, endTime: 10, text: "Second annotation" },
     { id: "a3", startTime: 10, endTime: 15, text: "Third annotation" },
   ];
 
-  beforeEach(() => {
-    target = document.createElement("div");
-    document.body.appendChild(target);
-  });
-
-  afterEach(() => {
-    if (document.body.contains(target)) {
-      document.body.removeChild(target);
-    }
-  });
-
   test("renders panel but no segments without compound children", () => {
     const ctx = createMockPlayerContext();
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: ctx,
-        children: createChildSnippet(target, Transcript, {
-          annotations: mockAnnotations,
-        }),
+        component: Transcript,
+        props: { annotations: mockAnnotations },
       },
     });
     flushSync();
 
-    const panel = target.querySelector(".transcript-panel");
+    const panel = container.querySelector(".transcript-panel");
     expect(panel).not.toBeNull();
     // Without compound children, no segments are rendered (compound mode is the only mode)
-    const segments = target.querySelectorAll("[data-annotation-id]");
+    const segments = container.querySelectorAll("[data-annotation-id]");
     expect(segments).toHaveLength(0);
   });
 
   test("shows empty state when no annotations", () => {
     const ctx = createMockPlayerContext();
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: ctx,
-        children: createChildSnippet(target, Transcript, { annotations: [] }),
+        component: Transcript,
+        props: { annotations: [] },
       },
     });
     flushSync();
 
-    const emptyMessage = target.querySelector(".empty-message");
+    const emptyMessage = container.querySelector(".empty-message");
     expect(emptyMessage).not.toBeNull();
     expect(emptyMessage?.textContent).toContain("No transcript available");
   });
@@ -74,11 +63,11 @@ describe("Transcript", () => {
   test("region has no lang attribute even when a segment carries a content language", () => {
     const ctx = createMockPlayerContext();
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: ctx,
-        children: createChildSnippet(target, Transcript, {
+        component: Transcript,
+        props: {
           annotations: [
             {
               id: "a1",
@@ -88,12 +77,12 @@ describe("Transcript", () => {
               language: "es",
             },
           ],
-        }),
+        },
       },
     });
     flushSync();
 
-    const panel = target.querySelector('[role="region"]');
+    const panel = container.querySelector('[role="region"]');
     expect(panel).not.toBeNull();
     expect(panel?.hasAttribute("lang")).toBe(false);
   });
@@ -102,19 +91,19 @@ describe("Transcript", () => {
     test("renders a toggle with aria-pressed reflecting the paused state", () => {
       const ctx = createMockPlayerContext();
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: ctx,
-          children: createChildSnippet(target, Transcript, {
+          component: Transcript,
+          props: {
             annotations: mockAnnotations,
             children: (() => {}) as unknown as Snippet,
-          }),
+          },
         },
       });
       flushSync();
 
-      const toggle = target.querySelector(
+      const toggle = container.querySelector(
         ".auto-scroll-toggle",
       ) as HTMLButtonElement;
       expect(toggle).not.toBeNull();
@@ -130,33 +119,31 @@ describe("Transcript", () => {
       const ctx = createMockPlayerContext();
       let capturedTranscriptCtx: TranscriptContext | null = null;
 
-      // Use the wrapper that properly composes Transcript + TranscriptSegments
-      // (same pattern as the existing "scrollToAnnotation scrolls matching
-      // element into view" test above), so segments render inside the scroll
-      // container and the toggle button (rendered by Transcript's own
-      // children branch) is reachable.
-      mount(TestContextProvider, {
-        target,
+      // TestTranscriptWithSegments composes Transcript + TranscriptSegments so
+      // segments render inside the scroll container and the toggle button is
+      // reachable; onContextReady captures the transcript context.
+      const { container } = render(TestContextHarness, {
         props: {
           context: ctx,
-          children: createChildSnippet(target, TestTranscriptWithSegments, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: mockAnnotations,
             onContextReady: (c: TranscriptContext) => {
               capturedTranscriptCtx = c;
             },
-          }),
+          },
         },
       });
       flushSync();
 
-      const toggle = target.querySelector(
+      const toggle = container.querySelector(
         ".auto-scroll-toggle",
       ) as HTMLButtonElement;
       toggle.click();
       flushSync();
       expect(toggle.getAttribute("aria-pressed")).toBe("true");
 
-      const segmentEl = target.querySelector(
+      const segmentEl = container.querySelector(
         '[data-annotation-id="a2"]',
       ) as HTMLElement;
       const scrollIntoView = vi.fn();
@@ -176,16 +163,12 @@ describe("Transcript", () => {
         transcriptStatus: "loading",
       });
 
-      mount(TestContextProvider, {
-        target,
-        props: {
-          context: ctx,
-          children: createChildSnippet(target, Transcript, {}),
-        },
+      const { container } = render(TestContextHarness, {
+        props: { context: ctx, component: Transcript },
       });
       flushSync();
 
-      const liveRegion = target.querySelector(".sr-only");
+      const liveRegion = container.querySelector(".sr-only");
       expect(liveRegion).not.toBeNull();
       expect(liveRegion?.textContent).toBe("");
     });
@@ -195,12 +178,8 @@ describe("Transcript", () => {
         transcriptStatus: "loading",
       });
 
-      mount(TestContextProvider, {
-        target,
-        props: {
-          context: ctx,
-          children: createChildSnippet(target, Transcript, {}),
-        },
+      const { container } = render(TestContextHarness, {
+        props: { context: ctx, component: Transcript },
       });
       flushSync();
 
@@ -208,7 +187,7 @@ describe("Transcript", () => {
       ctx.transcriptStatus = "ready";
       flushSync();
 
-      const liveRegion = target.querySelector(".sr-only");
+      const liveRegion = container.querySelector(".sr-only");
       expect(liveRegion?.textContent).toContain(
         "Transcript loaded, 3 segments",
       );
@@ -219,31 +198,23 @@ describe("Transcript", () => {
         transcriptStatus: "loading",
       });
 
-      mount(TestContextProvider, {
-        target,
-        props: {
-          context: ctx,
-          children: createChildSnippet(target, Transcript, {}),
-        },
+      const { container } = render(TestContextHarness, {
+        props: { context: ctx, component: Transcript },
       });
       flushSync();
 
       ctx.transcriptStatus = "error";
       flushSync();
 
-      const liveRegion = target.querySelector(".sr-only");
+      const liveRegion = container.querySelector(".sr-only");
       expect(liveRegion?.textContent).toContain("Transcript unavailable");
     });
 
     test("does not announce a status that was never loading (e.g. tier-1 idle -> ready)", () => {
       const ctx = createReactiveMockPlayerContext({ transcriptStatus: "idle" });
 
-      mount(TestContextProvider, {
-        target,
-        props: {
-          context: ctx,
-          children: createChildSnippet(target, Transcript, {}),
-        },
+      const { container } = render(TestContextHarness, {
+        props: { context: ctx, component: Transcript },
       });
       flushSync();
 
@@ -251,7 +222,7 @@ describe("Transcript", () => {
       ctx.transcriptStatus = "ready";
       flushSync();
 
-      const liveRegion = target.querySelector(".sr-only");
+      const liveRegion = container.querySelector(".sr-only");
       expect(liveRegion?.textContent).toBe("");
     });
   });
@@ -259,16 +230,16 @@ describe("Transcript", () => {
   test("empty-state message is reactive to locale — proves t() is live, not baked in at mount", () => {
     const ctx = createMockPlayerContext();
 
-    mount(TestContextProvider, {
-      target,
+    const { container } = render(TestContextHarness, {
       props: {
         context: ctx,
-        children: createChildSnippet(target, Transcript, { annotations: [] }),
+        component: Transcript,
+        props: { annotations: [] },
       },
     });
     flushSync();
 
-    const emptyMessage = target.querySelector(".empty-message");
+    const emptyMessage = container.querySelector(".empty-message");
     expect(emptyMessage?.textContent).toBe("No transcript available.");
 
     registerTranslation("fr", {
@@ -294,23 +265,16 @@ describe("Transcript", () => {
       });
       let capturedTranscriptCtx: TranscriptContext | null = null;
 
-      mount(TestContextProvider, {
-        target,
+      // No annotations prop — Transcript must fall back to context annotations.
+      render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, Transcript, {
-            // No annotations prop — should fall back to context
-            children: (() => {
-              mount(TestTranscriptContextConsumer, {
-                target,
-                props: {
-                  onResult: (ctx: TranscriptContext) => {
-                    capturedTranscriptCtx = ctx;
-                  },
-                },
-              });
-            }) as unknown as Snippet,
-          }),
+          component: TestTranscriptWithSegments,
+          props: {
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedTranscriptCtx = ctx;
+            },
+          },
         },
       });
       flushSync();
@@ -334,23 +298,16 @@ describe("Transcript", () => {
       });
       let capturedTranscriptCtx: TranscriptContext | null = null;
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, Transcript, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: directAnnotations,
-            children: (() => {
-              mount(TestTranscriptContextConsumer, {
-                target,
-                props: {
-                  onResult: (ctx: TranscriptContext) => {
-                    capturedTranscriptCtx = ctx;
-                  },
-                },
-              });
-            }) as unknown as Snippet,
-          }),
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedTranscriptCtx = ctx;
+            },
+          },
         },
       });
       flushSync();
@@ -367,23 +324,16 @@ describe("Transcript", () => {
       const playerCtx = createMockPlayerContext();
       let capturedTranscriptCtx: TranscriptContext | null = null;
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, Transcript, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: mockAnnotations,
-            children: (() => {
-              mount(TestTranscriptContextConsumer, {
-                target,
-                props: {
-                  onResult: (ctx: TranscriptContext) => {
-                    capturedTranscriptCtx = ctx;
-                  },
-                },
-              });
-            }) as unknown as Snippet,
-          }),
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedTranscriptCtx = ctx;
+            },
+          },
         },
       });
       flushSync();
@@ -402,23 +352,16 @@ describe("Transcript", () => {
       const playerCtx = createMockPlayerContext();
       let capturedCtx: TranscriptContext | null = null;
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, Transcript, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: mockAnnotations,
-            children: (() => {
-              mount(TestTranscriptContextConsumer, {
-                target,
-                props: {
-                  onResult: (ctx: TranscriptContext) => {
-                    capturedCtx = ctx;
-                  },
-                },
-              });
-            }) as unknown as Snippet,
-          }),
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedCtx = ctx;
+            },
+          },
         },
       });
       flushSync();
@@ -434,23 +377,16 @@ describe("Transcript", () => {
       const playerCtx = createMockPlayerContext();
       let capturedCtx: TranscriptContext | null = null;
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, Transcript, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: mockAnnotations,
-            children: (() => {
-              mount(TestTranscriptContextConsumer, {
-                target,
-                props: {
-                  onResult: (ctx: TranscriptContext) => {
-                    capturedCtx = ctx;
-                  },
-                },
-              });
-            }) as unknown as Snippet,
-          }),
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedCtx = ctx;
+            },
+          },
         },
       });
       flushSync();
@@ -465,23 +401,16 @@ describe("Transcript", () => {
       const playerCtx = createMockPlayerContext();
       let capturedCtx: TranscriptContext | null = null;
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, Transcript, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: mockAnnotations,
-            children: (() => {
-              mount(TestTranscriptContextConsumer, {
-                target,
-                props: {
-                  onResult: (ctx: TranscriptContext) => {
-                    capturedCtx = ctx;
-                  },
-                },
-              });
-            }) as unknown as Snippet,
-          }),
+            onContextReady: (ctx: TranscriptContext) => {
+              capturedCtx = ctx;
+            },
+          },
         },
       });
       flushSync();
@@ -493,24 +422,22 @@ describe("Transcript", () => {
       const playerCtx = createMockPlayerContext();
       let capturedCtx: TranscriptContext | null = null;
 
-      // Use wrapper that properly composes Transcript + TranscriptSegments
-      // so segments render inside the scroll container
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, TestTranscriptWithSegments, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: mockAnnotations,
             onContextReady: (ctx: TranscriptContext) => {
               capturedCtx = ctx;
             },
-          }),
+          },
         },
       });
       flushSync();
 
       // Mock scrollIntoView on the target element
-      const a2Element = target.querySelector(
+      const a2Element = container.querySelector(
         '[data-annotation-id="a2"]',
       ) as HTMLElement;
       a2Element.scrollIntoView = vi.fn();
@@ -527,16 +454,16 @@ describe("Transcript", () => {
       const playerCtx = createMockPlayerContext();
       let capturedCtx: TranscriptContext | null = null;
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, TestTranscriptWithSegments, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: mockAnnotations,
             onContextReady: (ctx: TranscriptContext) => {
               capturedCtx = ctx;
             },
-          }),
+          },
         },
       });
       flushSync();
@@ -550,21 +477,21 @@ describe("Transcript", () => {
       const playerCtx = createMockPlayerContext();
       let capturedCtx: TranscriptContext | null = null;
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: playerCtx,
-          children: createChildSnippet(target, TestTranscriptWithSegments, {
+          component: TestTranscriptWithSegments,
+          props: {
             annotations: mockAnnotations,
             onContextReady: (ctx: TranscriptContext) => {
               capturedCtx = ctx;
             },
-          }),
+          },
         },
       });
       flushSync();
 
-      const a1Element = target.querySelector(
+      const a1Element = container.querySelector(
         '[data-annotation-id="a1"]',
       ) as HTMLElement;
       a1Element.scrollIntoView = vi.fn();
@@ -584,13 +511,11 @@ describe("Transcript", () => {
     test("sets transcriptPopulated on the player context from its effective annotations", () => {
       const ctx = createMockPlayerContext();
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: ctx,
-          children: createChildSnippet(target, Transcript, {
-            annotations: mockAnnotations,
-          }),
+          component: Transcript,
+          props: { annotations: mockAnnotations },
         },
       });
       flushSync();
@@ -601,11 +526,11 @@ describe("Transcript", () => {
     test("leaves transcriptPopulated false when there is nothing to show", () => {
       const ctx = createMockPlayerContext();
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: ctx,
-          children: createChildSnippet(target, Transcript, { annotations: [] }),
+          component: Transcript,
+          props: { annotations: [] },
         },
       });
       flushSync();
@@ -619,13 +544,11 @@ describe("Transcript", () => {
       // false for the life of the component unless the effect tracks it.
       const ctx = createReactiveMockPlayerContext();
 
-      mount(TestContextProvider, {
-        target,
+      render(TestContextHarness, {
         props: {
           context: ctx,
-          children: createChildSnippet(target, Transcript, {
-            annotations: mockAnnotations,
-          }),
+          component: Transcript,
+          props: { annotations: mockAnnotations },
         },
       });
       flushSync();
@@ -643,42 +566,33 @@ describe("Transcript", () => {
       // (effect_update_depth_exceeded). "true wins" per canvas load.
       const ctx = createReactiveMockPlayerContext();
 
-      const twoPanels = ((anchor: Node) => {
-        mount(Transcript, {
-          target,
-          anchor,
-          props: { annotations: mockAnnotations },
-        });
-        mount(Transcript, { target, anchor, props: {} });
-      }) as unknown as Snippet;
-
-      mount(TestContextProvider, {
-        target,
-        props: { context: ctx, children: twoPanels },
-      });
-
-      expect(() => flushSync()).not.toThrow();
+      expect(() =>
+        render(TestTwoTranscripts, {
+          props: { context: ctx, annotations: mockAnnotations },
+        }),
+      ).not.toThrow();
+      flushSync();
       expect(ctx.transcriptPopulated).toBe(true);
     });
 
     test("shows a loading affordance instead of the empty state while loading", () => {
       const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: ctx,
-          children: createChildSnippet(target, Transcript, { annotations: [] }),
+          component: Transcript,
+          props: { annotations: [] },
         },
       });
       flushSync();
 
-      const panel = target.querySelector(".transcript-panel");
+      const panel = container.querySelector(".transcript-panel");
       expect(panel?.getAttribute("aria-busy")).toBe("true");
-      expect(target.querySelector(".loading-message")?.textContent).toContain(
-        "Loading transcript",
-      );
-      expect(target.querySelector(".empty-message")).toBeNull();
+      expect(
+        container.querySelector(".loading-message")?.textContent,
+      ).toContain("Loading transcript");
+      expect(container.querySelector(".empty-message")).toBeNull();
     });
 
     test("own annotations render rather than the context's loading state (composition)", () => {
@@ -689,56 +603,48 @@ describe("Transcript", () => {
       // to, so the panel never falls back to the context's status.
       const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
 
-      mount(TestContextProvider, {
-        target,
+      const { container } = render(TestContextHarness, {
         props: {
           context: ctx,
-          children: createChildSnippet(target, TestTranscriptWithSegments, {
-            annotations: mockAnnotations,
-          }),
+          component: TestTranscriptWithSegments,
+          props: { annotations: mockAnnotations },
         },
       });
       flushSync();
 
-      const panel = target.querySelector(".transcript-panel");
+      const panel = container.querySelector(".transcript-panel");
       expect(panel?.getAttribute("aria-busy")).not.toBe("true");
-      expect(target.querySelector(".loading-message")).toBeNull();
-      expect(target.querySelectorAll("[data-annotation-id]")).toHaveLength(3);
+      expect(container.querySelector(".loading-message")).toBeNull();
+      expect(container.querySelectorAll("[data-annotation-id]")).toHaveLength(
+        3,
+      );
     });
 
     test("renders the loading snippet instead of the default message", () => {
       const ctx = createMockPlayerContext({ transcriptStatus: "loading" });
 
-      mount(TestContextProvider, {
-        target,
-        props: {
-          context: ctx,
-          children: createChildSnippet(target, TestTranscriptLoadingSnippet),
-        },
+      const { container } = render(TestContextHarness, {
+        props: { context: ctx, component: TestTranscriptLoadingSnippet },
       });
       flushSync();
 
-      expect(target.querySelector(".custom-loading")?.textContent).toContain(
+      expect(container.querySelector(".custom-loading")?.textContent).toContain(
         "Fetching the transcript",
       );
-      expect(target.querySelector(".loading-message")).toBeNull();
-      expect(target.querySelector(".custom-empty")).toBeNull();
+      expect(container.querySelector(".loading-message")).toBeNull();
+      expect(container.querySelector(".custom-empty")).toBeNull();
     });
 
     test("falls back to the empty snippet once loading finishes", () => {
       const ctx = createMockPlayerContext({ transcriptStatus: "ready" });
 
-      mount(TestContextProvider, {
-        target,
-        props: {
-          context: ctx,
-          children: createChildSnippet(target, TestTranscriptLoadingSnippet),
-        },
+      const { container } = render(TestContextHarness, {
+        props: { context: ctx, component: TestTranscriptLoadingSnippet },
       });
       flushSync();
 
-      expect(target.querySelector(".custom-loading")).toBeNull();
-      expect(target.querySelector(".custom-empty")?.textContent).toContain(
+      expect(container.querySelector(".custom-loading")).toBeNull();
+      expect(container.querySelector(".custom-empty")?.textContent).toContain(
         "Nothing here",
       );
     });

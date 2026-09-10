@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { createActor } from "xstate";
+import { createActor, waitFor } from "xstate";
 import { syncMachine } from "../../lib/sync/syncMachine";
 import type { IIIFMediaViewerRef, Annotation } from "../../lib/sync/types";
 
@@ -212,7 +212,7 @@ describe("syncMachine", () => {
       actor.stop();
     });
 
-    it("does not transition when annotation index has not changed", () => {
+    it("does not re-enter mediaDriven when a later time stays in the same annotation", async () => {
       const actor = createActor(syncMachine);
       actor.start();
       actor.send({
@@ -222,16 +222,19 @@ describe("syncMachine", () => {
         annotations,
       });
 
-      // First update: enters mediaDriven (annotation index changes from -1 to 0)
+      // First update at t=2 enters annotation 0 (a1: 0–5) → mediaDriven.
       actor.send({ type: "VIDEO_TIME_UPDATE", currentTime: 2 });
-      // Wait for actor to return to ready (scrollController completes)
-      // The actor invokes scrollController which is a promise actor.
-      // We can't easily wait for it in a unit test, so test the guard logic
-      // by checking context directly.
+      // scrollController is a promise actor; await the return to ready.
+      await waitFor(actor, (s) => s.value === "ready");
+      expect(actor.getSnapshot().context.annotationIndex).toBe(0);
 
-      const ctx = actor.getSnapshot().context;
-      expect(ctx.annotationIndex).toBe(0);
-      expect(ctx.currentTime).toBe(2);
+      // Second update at t=3 is still inside annotation 0 — index unchanged,
+      // so annotationChanged must block the transition and the machine stays
+      // in ready rather than re-triggering a scroll.
+      actor.send({ type: "VIDEO_TIME_UPDATE", currentTime: 3 });
+
+      expect(actor.getSnapshot().value).toBe("ready");
+      expect(actor.getSnapshot().context.annotationIndex).toBe(0);
       actor.stop();
     });
   });
@@ -258,7 +261,7 @@ describe("syncMachine", () => {
       actor.stop();
     });
 
-    it("blocks scroll when media priority lock is active", () => {
+    it("blocks a scroll that arrives while the media priority lock is still held", async () => {
       const actor = createActor(syncMachine);
       actor.start();
       actor.send({
@@ -266,20 +269,31 @@ describe("syncMachine", () => {
         viewer: createMockViewer(),
         scrollContainer: createMockScrollContainer(),
         annotations,
+        // Long lock so it is unambiguously still held when the scroll arrives.
+        priorityLockDuration: 10000,
       });
 
-      // First: trigger mediaDriven to acquire media priority
+      // Acquire the media priority lock, then wait for scrollController to
+      // complete so the machine is back in ready and able to receive a scroll.
       actor.send({ type: "VIDEO_TIME_UPDATE", currentTime: 2 });
-      // Machine is now in mediaDriven with media priority lock
+      await waitFor(actor, (s) => s.value === "ready");
+      expect(actor.getSnapshot().context.syncPriority.direction).toBe("media");
 
-      // Try scroll — media lock is active, should be blocked
-      // (But we're in mediaDriven state which doesn't handle TRANSCRIPT_SCROLL,
-      //  so this is implicitly blocked by state topology)
-      expect(actor.getSnapshot().value).toBe("mediaDriven");
+      // A competing scroll arrives while the media lock is still active.
+      // canSyncToVideo must reject it: the machine stays in ready and does
+      // NOT switch to scrollDriven.
+      actor.send({
+        type: "TRANSCRIPT_SCROLL",
+        scrollProgress: 0.5,
+        mappedTime: 7.5,
+      });
+
+      expect(actor.getSnapshot().value).toBe("ready");
+      expect(actor.getSnapshot().context.syncPriority.direction).toBe("media");
       actor.stop();
     });
 
-    it("allows scroll when priority lock has expired", () => {
+    it("allows scroll once the media priority lock has expired", async () => {
       const actor = createActor(syncMachine);
       actor.start();
       actor.send({
@@ -290,12 +304,20 @@ describe("syncMachine", () => {
         priorityLockDuration: 0, // Expire immediately
       });
 
-      // Acquire media priority first
+      // Acquire media priority, then return to ready.
       actor.send({ type: "VIDEO_TIME_UPDATE", currentTime: 2 });
+      await waitFor(actor, (s) => s.value === "ready");
 
-      // The machine transitions to mediaDriven — once the scrollController
-      // completes, it returns to ready. The lock duration of 0 means
-      // the next scroll event will pass the guard.
+      // With a 0ms lock duration the lock is already expired, so the next
+      // scroll passes canSyncToVideo and drives the machine to scrollDriven.
+      actor.send({
+        type: "TRANSCRIPT_SCROLL",
+        scrollProgress: 0.5,
+        mappedTime: 7.5,
+      });
+
+      expect(actor.getSnapshot().value).toBe("scrollDriven");
+      expect(actor.getSnapshot().context.syncPriority.direction).toBe("scroll");
       actor.stop();
     });
   });
