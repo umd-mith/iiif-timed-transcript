@@ -70,6 +70,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:csp": "node scripts/csp-harness/run.mjs",
+    "test:a11y-docs": "node scripts/check-a11y-artifacts.mjs",
     "lint": "eslint src/ && prettier --check .",
     "format": "prettier --write .",
     "release": "./scripts/release.sh",

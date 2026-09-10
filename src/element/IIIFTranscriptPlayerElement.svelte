@@ -906,6 +906,11 @@
   .iiif-tp :global([data-audio-controls]) {
     display: flex;
     align-items: center;
+    /* Without this the control bar is a single non-wrapping row that
+       overflows any host narrower than about 484px, including the 320px
+       width WCAG 1.4.10 Reflow is tested at. Canvas nav below already
+       wraps; the control bar had been left out. */
+    flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.5rem;
     background: var(--iiif-player-control-bg, #f3f4f6);
@@ -951,6 +956,13 @@
   .iiif-tp :global(nav.canvas-nav button) {
     padding: 0.25rem 0.5rem;
     border: 1px solid var(--iiif-player-border, #767676);
+    /* Reserved on every button so the active one gains an indicator rather
+       than a width — same reserve-then-color pattern as the segments below.
+       Without it, which canvas you are on is conveyed by the accent
+       background alone, which is 1.4.1 Use of Color: `aria-current` is
+       programmatic rather than visual, and the forced-colors rule at the
+       bottom of this stylesheet only fires under a contrast theme. */
+    border-inline-start: 4px solid transparent;
     border-radius: 4px;
     width: auto;
   }
@@ -958,6 +970,10 @@
   .iiif-tp :global(nav.canvas-nav button[data-state="active"]) {
     background: var(--iiif-player-accent, #1d4ed8);
     color: var(--iiif-player-accent-fg, #ffffff);
+    /* Keyed to accent-fg, not the segment indicator token: this bar sits on
+       the accent background, where --iiif-player-segment-indicator's default
+       would be the same blue as the button it marks. */
+    border-inline-start-color: var(--iiif-player-accent-fg, #ffffff);
   }
 
   .iiif-tp :global(.transcript-panel) {
@@ -978,6 +994,11 @@
   }
 
   .iiif-tp :global([data-annotation-id]) {
+    /* Segment.svelte's `all: unset` resets box-sizing to content-box, so
+       this padding and the 4px indicator below would otherwise be added
+       *outside* a width:100% box — 20px of overflow per segment at any
+       width, visible as horizontal scroll in a narrow column. */
+    box-sizing: border-box;
     padding: 0.375rem 0.5rem;
     border-radius: 4px;
     border-inline-start: 4px solid transparent;
