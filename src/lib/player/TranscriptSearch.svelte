@@ -59,11 +59,21 @@
   );
   // Default scrolls the newly-selected match into view via the context —
   // distinct from onmatchchange/onmatchactivate, and never fired from typing
-  // (spec: typing must not scroll).
+  // (spec: typing must not scroll). Scoped to activate mode or Browsing:
+  // in the legacy default (searchSeekBehavior="change", reading mode off),
+  // prev/next historically only changed the match and sought through
+  // onmatchchange — no explicit programmatic scroll.
   const onmatchnavigate = $derived(
     onmatchnavigateProp ??
-      ((annotation: Annotation) =>
-        transcriptCtx?.actions.scrollToAnnotation(annotation.id)),
+      ((annotation: Annotation) => {
+        const state = transcriptCtx?.state;
+        if (
+          state?.searchSeekBehavior === "activate" ||
+          state?.readingMode === true
+        ) {
+          transcriptCtx?.actions.scrollToAnnotation(annotation.id);
+        }
+      }),
   );
   // The context's handleQueryInput is optional (a seam the reading-mode step
   // fills in) — read at call time rather than snapshotting a possibly-absent

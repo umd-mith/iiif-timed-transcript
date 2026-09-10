@@ -206,6 +206,86 @@ describe("TranscriptSegments", () => {
       const customSegments = host.querySelectorAll(".custom-segment");
       expect(customSegments).toHaveLength(3);
     });
+
+    // Fix B: custom segment snippets bypassed the text-selection guard that
+    // Segment.svelte already applies to its own onclick (docs/specs/
+    // transcript-reading-mode.md: "Selecting/copying transcript text must
+    // not trigger segment activation on pointer release").
+    describe("text-selection suppresses click activation for a custom snippet", () => {
+      test("does not call onclick when a non-collapsed text selection exists at click time (drag-to-select)", () => {
+        const onclick = vi.fn();
+        const { container: host } = render(TestSegmentSnippetWrapper, {
+          props: { annotations: mockAnnotations, onclick },
+        });
+        flushSync();
+
+        const segment = host.querySelector(
+          '.custom-segment[data-annotation-id="a1"]',
+        ) as HTMLElement;
+        const textEl = segment.querySelector(".custom-text") as HTMLElement;
+
+        const range = document.createRange();
+        range.selectNodeContents(textEl);
+        const selection = window.getSelection()!;
+        selection.removeAllRanges();
+        selection.addRange(range);
+        expect(selection.isCollapsed).toBe(false);
+
+        segment.click();
+
+        expect(onclick).not.toHaveBeenCalled();
+
+        selection.removeAllRanges();
+      });
+
+      test("still calls onclick on a plain click with a collapsed selection", () => {
+        const onclick = vi.fn();
+        const { container: host } = render(TestSegmentSnippetWrapper, {
+          props: { annotations: mockAnnotations, onclick },
+        });
+        flushSync();
+
+        window.getSelection()?.removeAllRanges();
+
+        const segment = host.querySelector(
+          '.custom-segment[data-annotation-id="a1"]',
+        ) as HTMLElement;
+        segment.click();
+
+        expect(onclick).toHaveBeenCalledWith(mockAnnotations[0]);
+      });
+
+      test("still activates on Enter even while a non-collapsed selection exists (keyboard activation is never a drag)", () => {
+        const onclick = vi.fn();
+        const { container: host } = render(TestSegmentSnippetWrapper, {
+          props: { annotations: mockAnnotations, onclick },
+        });
+        flushSync();
+
+        const segment = host.querySelector(
+          '.custom-segment[data-annotation-id="a1"]',
+        ) as HTMLElement;
+        const textEl = segment.querySelector(".custom-text") as HTMLElement;
+
+        const range = document.createRange();
+        range.selectNodeContents(textEl);
+        const selection = window.getSelection()!;
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        segment.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "Enter",
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+
+        expect(onclick).toHaveBeenCalledWith(mockAnnotations[0]);
+
+        selection.removeAllRanges();
+      });
+    });
   });
 
   // onkeydown extensibility (LDA-2118)

@@ -2,6 +2,7 @@
   import type { Snippet } from "svelte";
   import Segment from "../transcript/Segment.svelte";
   import { getNextIndex, focusSegmentAtIndex } from "../transcript/keyboardNav";
+  import { isTextSelectionActive } from "../transcript/utils";
   import { tryGetTranscriptContext } from "./transcript-context";
   import type { Annotation } from "../sync/types";
   import { t } from "../i18n/registry.svelte";
@@ -263,7 +264,14 @@
             "data-current-match": isCurrentMatch ? "true" : undefined,
             "aria-current": isActive ? "true" : undefined,
             tabindex: i === focusedIndex ? 0 : -1,
-            onclick: () => onclick?.(annotation),
+            onclick: () => {
+              // A drag-to-select ending in a click must not also activate
+              // (seek) — same guard Segment.svelte applies to its own
+              // onclick (Fix B). Keyboard activation below is never a
+              // drag, so onkeydown stays unguarded.
+              if (isTextSelectionActive()) return;
+              onclick?.(annotation);
+            },
             onkeydown: (event: KeyboardEvent) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();

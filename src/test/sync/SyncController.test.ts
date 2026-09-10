@@ -188,4 +188,31 @@ describe("SyncController user-scroll reporting", () => {
     expect(onUserScroll).not.toHaveBeenCalled();
     ctrl.destroy();
   });
+
+  it("keeps suppressing echoes past a fixed timeout for a long smooth scroll, and releases suppression on scrollend", () => {
+    vi.useFakeTimers();
+    const viewer = createMockViewer(() => 0);
+    const container = createScrollableContainer();
+    const onUserScroll = vi.fn();
+    const ctrl = new SyncController({ onUserScroll });
+    ctrl.initialize(viewer, container, annotations);
+
+    ctrl.notifyProgrammaticScroll();
+
+    // Outlast the old fixed 600ms suppression window.
+    vi.advanceTimersByTime(800);
+
+    container.scrollTop = 500;
+    container.dispatchEvent(new Event("scroll"));
+    expect(onUserScroll).not.toHaveBeenCalled();
+
+    // scrollend ends the animation — the echo window closes.
+    container.dispatchEvent(new Event("scrollend"));
+
+    container.scrollTop = 600;
+    container.dispatchEvent(new Event("scroll"));
+    expect(onUserScroll).toHaveBeenCalledTimes(1);
+
+    ctrl.destroy();
+  });
 });

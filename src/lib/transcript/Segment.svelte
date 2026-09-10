@@ -2,7 +2,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import type { Annotation } from "../sync/types";
-  import { formatTimestamp } from "./utils";
+  import { formatTimestamp, isTextSelectionActive } from "./utils";
 
   interface Props {
     /** Transcript annotation with timing and text */
@@ -66,8 +66,7 @@
   // Keyboard activation (Enter/Space, below) always calls onclick directly —
   // a keypress is never a drag, so it must keep working even mid-selection.
   function handleClick() {
-    const sel = typeof window !== "undefined" ? window.getSelection() : null;
-    if (sel && !sel.isCollapsed && sel.toString().trim() !== "") return;
+    if (isTextSelectionActive()) return;
     onclick?.();
   }
 </script>

@@ -218,10 +218,10 @@ describe("TranscriptSearch", () => {
   });
 
   describe("onmatchnavigate (scroll-on-navigate — Finding 4)", () => {
-    test("default onmatchnavigate scrolls to the newly selected match via the context", async () => {
+    test("default onmatchnavigate scrolls to the newly selected match via the context (activate mode)", async () => {
       const scrollToAnnotation = vi.fn().mockReturnValue(true);
       const transcriptCtx = createMockTranscriptContext({
-        state: { annotations: mockAnnotations },
+        state: { annotations: mockAnnotations, searchSeekBehavior: "activate" },
         actions: { scrollToAnnotation },
       });
 
@@ -286,6 +286,83 @@ describe("TranscriptSearch", () => {
 
       expect(onmatchnavigate).toHaveBeenCalledWith(mockAnnotations[1], 1);
       expect(scrollToAnnotation).not.toHaveBeenCalled();
+    });
+
+    // Fix C: the legacy default (searchSeekBehavior="change", reading mode
+    // off) historically only changed the match on prev/next — no explicit
+    // programmatic scroll. Gate the default so it scrolls only in activate
+    // mode or while Browsing (docs/specs/transcript-reading-mode.md scopes
+    // "results scroll" to activate).
+    test("in change mode with reading mode off, navigating does not call scrollToAnnotation (legacy default)", async () => {
+      const scrollToAnnotation = vi.fn().mockReturnValue(true);
+      const transcriptCtx = createMockTranscriptContext({
+        state: {
+          annotations: mockAnnotations,
+          searchSeekBehavior: "change",
+          readingMode: false,
+        },
+        actions: { scrollToAnnotation },
+      });
+
+      const { container } = render(TestTranscriptContextHarness, {
+        props: { context: transcriptCtx, component: TranscriptSearch },
+      });
+      flushSync();
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      input.value = "world"; // matches a1, a2
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 200));
+      flushSync();
+      scrollToAnnotation.mockClear();
+
+      const nextBtn = container.querySelector(
+        'button[aria-label="Next match"]',
+      ) as HTMLButtonElement;
+      nextBtn.click();
+      flushSync();
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(scrollToAnnotation).not.toHaveBeenCalled();
+    });
+
+    test("in change mode while Browsing (readingMode=true), navigating still calls scrollToAnnotation", async () => {
+      const scrollToAnnotation = vi.fn().mockReturnValue(true);
+      const transcriptCtx = createMockTranscriptContext({
+        state: {
+          annotations: mockAnnotations,
+          searchSeekBehavior: "change",
+          readingMode: true,
+        },
+        actions: { scrollToAnnotation },
+      });
+
+      const { container } = render(TestTranscriptContextHarness, {
+        props: { context: transcriptCtx, component: TranscriptSearch },
+      });
+      flushSync();
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      input.value = "world"; // matches a1, a2
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 200));
+      flushSync();
+      scrollToAnnotation.mockClear();
+
+      const nextBtn = container.querySelector(
+        'button[aria-label="Next match"]',
+      ) as HTMLButtonElement;
+      nextBtn.click();
+      flushSync();
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(scrollToAnnotation).toHaveBeenCalledWith("a2");
     });
 
     test("typing does not call scrollToAnnotation", async () => {
