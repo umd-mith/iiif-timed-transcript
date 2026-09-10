@@ -202,6 +202,11 @@ export class SyncController {
         }
         this.lastScrollEvent = now;
 
+        // A genuine, deliberate scroll — reported regardless of whether
+        // scroll-to-seek is currently enabled; the panel decides what to do
+        // with it (enter reading mode when scrollToSeek is configured off).
+        this.config.onUserScroll?.();
+
         const { scrollTop, scrollHeight, clientHeight } = this.scrollContainer;
         const maxScroll = scrollHeight - clientHeight;
         const scrollProgress = maxScroll > 0 ? scrollTop / maxScroll : 0;
@@ -263,6 +268,27 @@ export class SyncController {
    */
   setAutoScrollEnabled(enabled: boolean): void {
     this.actor?.send({ type: "SET_AUTO_SCROLL_ENABLED", enabled });
+  }
+
+  /**
+   * Push the effective scroll-to-seek policy (`scrollToSeek` prop AND NOT
+   * reading mode). No-ops before initialize().
+   */
+  setScrollToSeekEnabled(enabled: boolean): void {
+    this.actor?.send({ type: "SET_SCROLL_TO_SEEK_ENABLED", enabled });
+  }
+
+  /**
+   * Marks a scroll about to happen (or already animating) as programmatic,
+   * so the container's own scroll listener treats it as an auto-scroll echo
+   * rather than a deliberate user scroll — see `lastProgrammaticScroll`
+   * above. Callers: the panel's own `scrollToAnnotation` (covers returning
+   * to Following, browsing search results, and the consumer-facing
+   * `scrollToAnnotation` API — all programmatic transcript movement per
+   * docs/specs/transcript-reading-mode.md's Lifecycle section).
+   */
+  notifyProgrammaticScroll(): void {
+    this.lastProgrammaticScroll = Date.now();
   }
 
   /**

@@ -44,6 +44,8 @@ function createInitialContext(): SyncContext {
     annotations: [],
     priorityLockDuration: 1000,
     autoScrollEnabled: true,
+    scrollToSeekEnabled: true,
+    scrollSeekEpoch: 0,
   };
 }
 
@@ -65,6 +67,20 @@ function canSyncToVideo({ context }: { context: SyncContext }): boolean {
 
   // Allow if we already have scroll priority
   return syncPriority.direction === "scroll";
+}
+
+/**
+ * Guard: is scroll-to-seek currently allowed at all?
+ *
+ * Combines the panel's effective policy (`scrollToSeekEnabled` — the
+ * `scrollToSeek` prop AND NOT reading mode) with the existing priority-lock
+ * guard. Applied to every `TRANSCRIPT_SCROLL` transition, including the
+ * re-entrant one inside `scrollDriven`, so disabling the policy mid-flight
+ * blocks both the in-flight seek (via the epoch check inside
+ * `videoController`) and any further scroll from starting a new one.
+ */
+function canScrollSeek({ context }: { context: SyncContext }): boolean {
+  return context.scrollToSeekEnabled && canSyncToVideo({ context });
 }
 
 /**
@@ -113,6 +129,7 @@ export const syncMachine = setup({
   guards: {
     canSyncToVideo,
     annotationChanged,
+    canScrollSeek,
   },
   actions: {
     /**
@@ -245,6 +262,28 @@ export const syncMachine = setup({
         return context.autoScrollEnabled;
       },
     }),
+
+    /**
+     * Update the scroll-to-seek policy and bump its epoch. The epoch is
+     * bumped on every processed event regardless of direction — a
+     * conservative "any policy change invalidates whatever was queued
+     * before" rule that's simpler to reason about than only bumping on
+     * disable.
+     */
+    setScrollToSeekEnabled: assign({
+      scrollToSeekEnabled: ({ context, event }) => {
+        if (event.type === "SET_SCROLL_TO_SEEK_ENABLED") {
+          return event.enabled;
+        }
+        return context.scrollToSeekEnabled;
+      },
+      scrollSeekEpoch: ({ context, event }) => {
+        if (event.type === "SET_SCROLL_TO_SEEK_ENABLED") {
+          return context.scrollSeekEpoch + 1;
+        }
+        return context.scrollSeekEpoch;
+      },
+    }),
   },
 }).createMachine({
   id: "sync",
@@ -265,7 +304,7 @@ export const syncMachine = setup({
       on: {
         TRANSCRIPT_SCROLL: {
           target: "scrollDriven",
-          guard: "canSyncToVideo",
+          guard: "canScrollSeek",
           actions: [
             "updateScrollProgress",
             "calculateTargetTime",
@@ -284,6 +323,9 @@ export const syncMachine = setup({
         SET_AUTO_SCROLL_ENABLED: {
           actions: ["setAutoScrollEnabled"],
         },
+        SET_SCROLL_TO_SEEK_ENABLED: {
+          actions: ["setScrollToSeekEnabled"],
+        },
         RESET: {
           target: "idle",
           actions: ["clearSync"],
@@ -294,9 +336,14 @@ export const syncMachine = setup({
       invoke: {
         id: "videoController",
         src: "videoController",
-        input: ({ context }) => ({
+        input: ({ context, self }) => ({
           viewer: context.viewer!,
           targetTime: context.targetTime,
+          // Captured once, at invoke time; compared against the live value
+          // (read through the getter, not this snapshot) immediately before
+          // the seek's side effect inside videoController.
+          queuedEpoch: context.scrollSeekEpoch,
+          getCurrentEpoch: () => self.getSnapshot().context.scrollSeekEpoch,
         }),
         onDone: "ready",
         onError: "ready",
@@ -304,6 +351,7 @@ export const syncMachine = setup({
       on: {
         TRANSCRIPT_SCROLL: {
           target: "scrollDriven",
+          guard: "canScrollSeek",
           reenter: true,
           actions: [
             "updateScrollProgress",
@@ -313,6 +361,9 @@ export const syncMachine = setup({
         },
         SET_AUTO_SCROLL_ENABLED: {
           actions: ["setAutoScrollEnabled"],
+        },
+        SET_SCROLL_TO_SEEK_ENABLED: {
+          actions: ["setScrollToSeekEnabled"],
         },
         RESET: {
           target: "idle",
@@ -356,6 +407,9 @@ export const syncMachine = setup({
         },
         SET_AUTO_SCROLL_ENABLED: {
           actions: ["setAutoScrollEnabled"],
+        },
+        SET_SCROLL_TO_SEEK_ENABLED: {
+          actions: ["setScrollToSeekEnabled"],
         },
         RESET: {
           target: "idle",

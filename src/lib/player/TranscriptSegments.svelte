@@ -141,12 +141,24 @@
    * Scroll a specific annotation into view.
    * Returns true if the annotation was found, false otherwise.
    * Respects prefers-reduced-motion by default; pass options to override.
+   *
+   * Delegates to the transcript context's own `scrollToAnnotation` when
+   * available (the normal case — TranscriptSegments is used inside
+   * Transcript): that's the one that marks the scroll programmatic for
+   * SyncController, so a consumer calling this never feeds a spurious
+   * "deliberate user scroll" into scroll-to-seek (docs/specs/
+   * transcript-reading-mode.md, Lifecycle). Falls back to a local
+   * implementation when used standalone, outside Transcript.
    */
   export function scrollToAnnotation(
     annotationId: string,
     // eslint-disable-next-line no-undef
     options?: ScrollIntoViewOptions,
   ): boolean {
+    if (transcriptCtx) {
+      return transcriptCtx.actions.scrollToAnnotation(annotationId, options);
+    }
+
     if (!containerEl) return false;
     const el = containerEl.querySelector(
       `[data-annotation-id="${CSS.escape(annotationId)}"]`,

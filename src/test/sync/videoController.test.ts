@@ -17,6 +17,12 @@ function createMockViewer(
   };
 }
 
+// videoController's epoch-based scroll-to-seek policy check is exercised
+// directly by the "policy epoch check" describe block below; every other
+// test in this file wants the seek to proceed unaffected, hence a fixed,
+// matching queued/current epoch pair.
+const noPolicyChange = { queuedEpoch: 0, getCurrentEpoch: () => 0 };
+
 /** Wait for a promise actor to complete. */
 function waitForDone(
   actor: ReturnType<typeof createActor<typeof videoController>>,
@@ -32,7 +38,7 @@ describe("videoController actor", () => {
   it("seeks to target time when viewer is ready", async () => {
     const viewer = createMockViewer();
     const actor = createActor(videoController, {
-      input: { viewer, targetTime: 30 },
+      input: { viewer, targetTime: 30, ...noPolicyChange },
     });
 
     actor.start();
@@ -44,7 +50,7 @@ describe("videoController actor", () => {
   it("clamps target time to [0, duration]", async () => {
     const viewer = createMockViewer({ getDuration: vi.fn(() => 60) });
     const actor = createActor(videoController, {
-      input: { viewer, targetTime: 100 },
+      input: { viewer, targetTime: 100, ...noPolicyChange },
     });
 
     actor.start();
@@ -57,7 +63,7 @@ describe("videoController actor", () => {
   it("handles near-end seeks by backing off 1 second", async () => {
     const viewer = createMockViewer({ getDuration: vi.fn(() => 60) });
     const actor = createActor(videoController, {
-      input: { viewer, targetTime: 59.5 },
+      input: { viewer, targetTime: 59.5, ...noPolicyChange },
     });
 
     actor.start();
@@ -72,7 +78,7 @@ describe("videoController actor", () => {
     // yield -0.5 unless the lower bound is re-enforced after the adjustment.
     const viewer = createMockViewer({ getDuration: vi.fn(() => 0.5) });
     const actor = createActor(videoController, {
-      input: { viewer, targetTime: 0.25 },
+      input: { viewer, targetTime: 0.25, ...noPolicyChange },
     });
 
     actor.start();
@@ -87,7 +93,7 @@ describe("videoController actor", () => {
   it("seeks to 0 when duration is 0", async () => {
     const viewer = createMockViewer({ getDuration: vi.fn(() => 0) });
     const actor = createActor(videoController, {
-      input: { viewer, targetTime: 5 },
+      input: { viewer, targetTime: 5, ...noPolicyChange },
     });
 
     actor.start();
@@ -103,7 +109,7 @@ describe("videoController actor", () => {
           getDuration: vi.fn(() => duration),
         });
         const actor = createActor(videoController, {
-          input: { viewer, targetTime },
+          input: { viewer, targetTime, ...noPolicyChange },
         });
         actor.start();
         await waitForDone(actor);
@@ -132,7 +138,7 @@ describe("videoController actor", () => {
     });
 
     const actor = createActor(videoController, {
-      input: { viewer, targetTime: 10 },
+      input: { viewer, targetTime: 10, ...noPolicyChange },
     });
 
     actor.start();
@@ -150,7 +156,7 @@ describe("videoController actor", () => {
     vi.useFakeTimers();
 
     const actor = createActor(videoController, {
-      input: { viewer, targetTime: 10 },
+      input: { viewer, targetTime: 10, ...noPolicyChange },
     });
 
     actor.subscribe({
@@ -168,5 +174,44 @@ describe("videoController actor", () => {
     expect(actor.getSnapshot().status).toBe("error");
 
     vi.useRealTimers();
+  });
+
+  describe("policy epoch check", () => {
+    it("seeks when the current epoch still matches the queued one", async () => {
+      const viewer = createMockViewer();
+      const actor = createActor(videoController, {
+        input: {
+          viewer,
+          targetTime: 10,
+          queuedEpoch: 5,
+          getCurrentEpoch: () => 5,
+        },
+      });
+
+      actor.start();
+      await waitForDone(actor);
+
+      expect(viewer.seekTo).toHaveBeenCalledWith(10);
+    });
+
+    it("drops the seek silently when the epoch changed before readiness resolved", async () => {
+      const viewer = createMockViewer();
+      const actor = createActor(videoController, {
+        input: {
+          viewer,
+          targetTime: 10,
+          queuedEpoch: 5,
+          // The policy changed (e.g. scroll-to-seek was disabled) while
+          // this actor was awaiting readiness.
+          getCurrentEpoch: () => 6,
+        },
+      });
+
+      actor.start();
+      await waitForDone(actor);
+
+      expect(viewer.seekTo).not.toHaveBeenCalled();
+      expect(actor.getSnapshot().status).toBe("done");
+    });
   });
 });

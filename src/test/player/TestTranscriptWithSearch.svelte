@@ -16,18 +16,22 @@
   import type { PlayerContext } from "../../lib/player/context";
   import Transcript from "../../lib/player/Transcript.svelte";
   import TranscriptSearch from "../../lib/player/TranscriptSearch.svelte";
+  import TestTranscriptContextConsumer from "./TestTranscriptContextConsumer.svelte";
   import type { Annotation } from "../../lib/sync/types";
+  import type { TranscriptContext } from "../../lib/player/transcript-context";
 
   interface Props {
     context: PlayerContext;
     annotations?: Annotation[];
     searchSeekBehavior?: "change" | "activate";
+    onContextReady?: (ctx: TranscriptContext) => void;
   }
 
   let {
     context,
     annotations: initialAnnotations,
     searchSeekBehavior,
+    onContextReady,
   }: Props = $props();
 
   // svelte-ignore state_referenced_locally
@@ -45,5 +49,8 @@
   {...annotations ? { annotations } : {}}
   {...searchSeekBehavior ? { searchSeekBehavior } : {}}
 >
+  {#if onContextReady}
+    <TestTranscriptContextConsumer onResult={onContextReady} />
+  {/if}
   <TranscriptSearch />
 </Transcript>

@@ -158,24 +158,33 @@ describe("Transcript searchSeekBehavior", () => {
       const playerCtx = createMockPlayerContext({
         state: { currentTime: 30, isPlaying: true },
       });
+      let capturedCtx: TranscriptContext | null = null;
 
       const { container } = render(TestTranscriptWithSearch, {
         props: {
           context: playerCtx,
           annotations: mockAnnotations,
           searchSeekBehavior: "activate",
+          onContextReady: (c: TranscriptContext) => {
+            capturedCtx = c;
+          },
         },
       });
       flushSync();
+      expect(capturedCtx!.state.readingMode).toBe(false);
 
       const input = container.querySelector(
         'input[type="search"]',
       ) as HTMLInputElement;
       input.value = "Testing"; // matches a3, startTime 100
       input.dispatchEvent(new Event("input", { bubbles: true }));
+      flushSync();
 
-      // Synchronously, before debounce: no playback call yet.
+      // Synchronously, before debounce: no playback call yet, but Browsing
+      // is already entered (docs/specs/transcript-reading-mode.md,
+      // "Search" item 2 — "enters Browsing immediately on input").
       expect(playerCtx.actions.seekTo).not.toHaveBeenCalled();
+      expect(capturedCtx!.state.readingMode).toBe(true);
 
       await new Promise((r) => setTimeout(r, 200));
       flushSync();

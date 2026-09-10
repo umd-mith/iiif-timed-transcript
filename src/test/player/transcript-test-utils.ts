@@ -16,6 +16,7 @@ export function createMockTranscriptContext(
       highlightedIds: new Set<string>(),
       currentMatchId: null,
       searchSeekBehavior: "change",
+      readingMode: false,
       ...overrides.state,
     },
     actions: {
@@ -23,6 +24,8 @@ export function createMockTranscriptContext(
       handleMatchChange: vi.fn(),
       handleMatchActivate: vi.fn(),
       scrollToAnnotation: vi.fn().mockReturnValue(false),
+      enterBrowsing: vi.fn(),
+      returnToFollowing: vi.fn(),
       ...overrides.actions,
     },
   };

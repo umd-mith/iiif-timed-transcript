@@ -30,12 +30,15 @@ describe("transcript-context", () => {
         highlightedIds: new Set(),
         currentMatchId: null,
         searchSeekBehavior: "change",
+        readingMode: false,
       },
       actions: {
         handleAnnotationClick: vi.fn(),
         handleMatchChange: vi.fn(),
         handleMatchActivate: vi.fn(),
         scrollToAnnotation: vi.fn().mockReturnValue(false),
+        enterBrowsing: vi.fn(),
+        returnToFollowing: vi.fn(),
       },
     };
 
@@ -66,6 +69,7 @@ describe("transcript-context", () => {
       highlightedIds: new Set<string>(),
       currentMatchId: null,
       searchSeekBehavior: "change",
+      readingMode: false,
     };
 
     expect(state.annotations).toEqual([]);

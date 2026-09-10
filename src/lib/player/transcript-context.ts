@@ -15,6 +15,13 @@ export interface TranscriptState {
    * `handleMatchActivate` instead of `handleMatchChange`.
    */
   searchSeekBehavior: "change" | "activate";
+  /**
+   * `true` while this panel is Browsing — the reader has detached the
+   * transcript from playback (mirrors `Transcript`'s bindable
+   * `readingMode`). `false` is Following. Panel-local: two `Transcript`
+   * instances under the same player track this independently.
+   */
+  readingMode: boolean;
 }
 
 export interface TranscriptActions {
@@ -35,6 +42,19 @@ export interface TranscriptActions {
    * without every context needing to provide it yet.
    */
   handleQueryInput?: (value: string) => void;
+  /**
+   * Enters Browsing. Idempotent — safe to call when already Browsing. A
+   * custom (host-built) "Follow along" control calls this to turn the
+   * switch off.
+   */
+  enterBrowsing: () => void;
+  /**
+   * Returns to Following: scrolls the passage at the media's current time
+   * into view (never seeks) and exits Browsing. Same effect as turning
+   * "Follow along" back on — a custom "Jump to current" control calls this.
+   * Idempotent when already Following.
+   */
+  returnToFollowing: () => void;
   /**
    * Scroll a specific annotation into view within the transcript panel.
    * Returns true if the annotation was found, false otherwise.
