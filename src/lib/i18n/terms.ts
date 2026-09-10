@@ -24,6 +24,10 @@ export type TermKey =
   // Reserved for the a11y spec's A5 (transcript status announcements).
   | "transcript.loadedAnnouncement"
   | "transcript.unavailableAnnouncement"
+  // Reading-mode transitions (docs/specs/transcript-reading-mode.md,
+  // "Lifecycle and accessibility": announce mode changes politely).
+  | "transcript.followingAnnouncement"
+  | "transcript.browsingAnnouncement"
   | "player.errorLabel"
   | "player.controlsLabel"
   | "player.playButton.play"
@@ -63,6 +67,8 @@ export const EN_TERMS: Record<TermKey, string> = {
   "transcript.jumpToCurrent": "Jump to current",
   "transcript.loadedAnnouncement": "Transcript loaded, {count} segments",
   "transcript.unavailableAnnouncement": "Transcript unavailable",
+  "transcript.followingAnnouncement": "Following playback",
+  "transcript.browsingAnnouncement": "Browsing — playback continues",
   "player.errorLabel": "Error:",
   "player.controlsLabel": "Media controls",
   "player.playButton.play": "Play",

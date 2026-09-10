@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import { flushSync } from "svelte";
 import { render } from "vitest-browser-svelte";
 import Search from "../../lib/transcript/Search.svelte";
+import TestSearchResetSignalWrapper from "./TestSearchResetSignalWrapper.svelte";
 import type { Annotation } from "../../lib/sync/types";
 
 describe("Transcript.Search", () => {
@@ -447,6 +448,141 @@ describe("Transcript.Search", () => {
       expect(onmatchactivate).not.toHaveBeenCalled();
 
       input.dispatchEvent(new CompositionEvent("compositionend"));
+    });
+  });
+
+  describe("resetSignal (external query/selection reset — Finding 2)", () => {
+    it("does not clear an already-empty query on mount", () => {
+      ({ container } = render(TestSearchResetSignalWrapper, {
+        props: { annotations },
+      }));
+      flushSync();
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      expect(input.value).toBe("");
+    });
+
+    it("clears the query and resets selection to the first match when resetSignal changes", async () => {
+      const onmatchchange = vi.fn();
+      let wrapper!: { bumpResetSignal: () => void };
+      ({ container, component: wrapper } = render(
+        TestSearchResetSignalWrapper,
+        { props: { annotations, onmatchchange } },
+      ));
+      flushSync();
+
+      await typeQuery("world"); // a1, a2
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      expect(input.value).toBe("world");
+
+      onmatchchange.mockClear();
+      wrapper.bumpResetSignal();
+      flushSync();
+
+      expect(input.value).toBe("");
+      const counter = container.querySelector(".match-counter");
+      expect(counter?.textContent).toBe("");
+      // Clearing re-runs the existing matches effect — same "cleared" shape
+      // as typing an empty query.
+      const lastCall = onmatchchange.mock.calls.at(-1)!;
+      expect(lastCall[0]).toEqual([]);
+      expect(lastCall[1]).toBe(-1);
+    });
+
+    it("does not clear the query when resetSignal is not supplied (standalone use)", async () => {
+      ({ container } = render(Search, { props: { annotations } }));
+      flushSync();
+
+      await typeQuery("world");
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      expect(input.value).toBe("world");
+    });
+  });
+
+  describe("onmatchnavigate (scroll-on-navigate seam — Finding 4)", () => {
+    it("fires with the newly selected match on next, after currentIndex updates", async () => {
+      const onmatchnavigate = vi.fn();
+      ({ container } = render(Search, {
+        props: { annotations, onmatchnavigate },
+      }));
+      flushSync();
+
+      await typeQuery("world"); // a1, a2 — currentIndex 0
+      onmatchnavigate.mockClear();
+
+      const nextBtn = container.querySelector(
+        'button[aria-label="Next match"]',
+      ) as HTMLButtonElement;
+      nextBtn.click();
+      flushSync();
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(onmatchnavigate).toHaveBeenCalledWith(annotations[1], 1);
+    });
+
+    it("fires with the newly selected match on previous", async () => {
+      const onmatchnavigate = vi.fn();
+      ({ container } = render(Search, {
+        props: { annotations, onmatchnavigate },
+      }));
+      flushSync();
+
+      await typeQuery("world"); // a1, a2 — currentIndex 0
+      onmatchnavigate.mockClear();
+
+      const prevBtn = container.querySelector(
+        'button[aria-label="Previous match"]',
+      ) as HTMLButtonElement;
+      prevBtn.click(); // wraps to last match
+      flushSync();
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(onmatchnavigate).toHaveBeenCalledWith(annotations[1], 1);
+    });
+
+    it("does not fire while typing", async () => {
+      const onmatchnavigate = vi.fn();
+      ({ container } = render(Search, {
+        props: { annotations, onmatchnavigate },
+      }));
+      flushSync();
+
+      await typeQuery("world");
+
+      expect(onmatchnavigate).not.toHaveBeenCalled();
+    });
+
+    it("does not fire on activation", async () => {
+      const onmatchnavigate = vi.fn();
+      const onmatchactivate = vi.fn();
+      ({ container } = render(Search, {
+        props: {
+          annotations,
+          onmatchnavigate,
+          onmatchactivate,
+          showActivation: true,
+        },
+      }));
+      flushSync();
+
+      await typeQuery("world");
+      onmatchnavigate.mockClear();
+
+      const goBtn = container.querySelector(
+        'button[aria-label="Go to match"]',
+      ) as HTMLButtonElement;
+      goBtn.click();
+
+      expect(onmatchactivate).toHaveBeenCalled();
+      expect(onmatchnavigate).not.toHaveBeenCalled();
     });
   });
 });

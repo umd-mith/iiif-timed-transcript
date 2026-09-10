@@ -186,6 +186,12 @@
   let searchMatches = $state<Annotation[]>([]);
   let currentMatchIndex = $state(-1);
 
+  // Bumped on annotation replacement in "activate" mode or while reading
+  // mode is active — the external reset path TranscriptSearch forwards to
+  // Search's resetSignal prop (docs/specs/transcript-reading-mode.md,
+  // "Lifecycle": clear the query and selected result on canvas switch).
+  let queryResetSignal = $state(0);
+
   // Derive set of highlighted IDs (all search matches)
   const highlightedIds = $derived(new Set(searchMatches.map((m) => m.id)));
 
@@ -261,6 +267,29 @@
     return next ?? last;
   }
 
+  // Detects annotation replacement (e.g. a canvas switch swapping in a new
+  // annotations array) and, in "activate" mode or while reading mode is
+  // active, bumps queryResetSignal so Search clears its otherwise-private
+  // query and selection (docs/specs/transcript-reading-mode.md, "Lifecycle").
+  // In "change" mode with reading mode off, the query persists — the
+  // existing re-notification path through Search's own annotations-prop
+  // reactivity is untouched. `previousResolvedAnnotations` is a plain
+  // variable (not $state) captured once at setup, so the first run always
+  // sees `current === prev` and never bumps on mount.
+  // svelte-ignore state_referenced_locally
+  let previousResolvedAnnotations = resolvedAnnotations;
+  $effect(() => {
+    const current = resolvedAnnotations;
+    untrack(() => {
+      const prev = previousResolvedAnnotations;
+      previousResolvedAnnotations = current;
+      if (current === prev) return;
+      if (searchSeekBehavior === "activate" || readingMode) {
+        queryResetSignal++;
+      }
+    });
+  });
+
   // Provide TranscriptContext for compound children (TranscriptSearch, TranscriptSegments)
   setTranscriptContext({
     get state() {
@@ -273,6 +302,7 @@
         currentMatchId,
         searchSeekBehavior,
         readingMode,
+        queryResetSignal,
       };
     },
     actions: {
@@ -494,6 +524,24 @@
         announcementText = t("transcript.unavailableAnnouncement");
       }
       lastTranscriptStatus = status;
+    });
+  });
+
+  // Mode-change announcements (spec accessibility bullet: "Announce match
+  // counts and mode changes politely"). `previousReadingModeForAnnouncement`
+  // is a plain variable captured once at setup — same pattern as
+  // `previousReadingMode` above — so the first run always sees no change and
+  // never announces on mount.
+  let previousReadingModeForAnnouncement = readingMode;
+  $effect(() => {
+    const current = readingMode;
+    untrack(() => {
+      const was = previousReadingModeForAnnouncement;
+      previousReadingModeForAnnouncement = current;
+      if (was === current) return;
+      announcementText = current
+        ? t("transcript.browsingAnnouncement")
+        : t("transcript.followingAnnouncement");
     });
   });
 

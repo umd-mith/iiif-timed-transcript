@@ -31,6 +31,7 @@ describe("transcript-context", () => {
         currentMatchId: null,
         searchSeekBehavior: "change",
         readingMode: false,
+        queryResetSignal: 0,
       },
       actions: {
         handleAnnotationClick: vi.fn(),
@@ -70,6 +71,7 @@ describe("transcript-context", () => {
       currentMatchId: null,
       searchSeekBehavior: "change",
       readingMode: false,
+      queryResetSignal: 0,
     };
 
     expect(state.annotations).toEqual([]);

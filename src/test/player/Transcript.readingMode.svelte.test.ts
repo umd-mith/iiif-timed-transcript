@@ -382,4 +382,72 @@ describe("Transcript reading mode", () => {
       expect(ctx.actions.seekTo).toHaveBeenCalledWith(0);
     });
   });
+
+  describe("Mode-change announcement (Finding 5)", () => {
+    test("does not announce on mount", () => {
+      const ctx = createMockPlayerContext();
+      const { container } = render(TestTranscriptReadingMode, {
+        props: { context: ctx, annotations: mockAnnotations },
+      });
+      flushSync();
+
+      const liveRegion = container.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toBe("");
+    });
+
+    test("entering Browsing (Follow along off) announces the Browsing message", () => {
+      const ctx = createMockPlayerContext();
+      const { container } = render(TestTranscriptReadingMode, {
+        props: { context: ctx, annotations: mockAnnotations },
+      });
+      flushSync();
+
+      const followSwitch = container.querySelector(
+        ".follow-along-switch",
+      ) as HTMLButtonElement;
+      followSwitch.click();
+      flushSync();
+
+      const liveRegion = container.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toBe("Browsing — playback continues");
+    });
+
+    test("returning to Following (Jump to current) announces the Following message", () => {
+      const ctx = createMockPlayerContext();
+      const { container } = render(TestTranscriptReadingMode, {
+        props: {
+          context: ctx,
+          annotations: mockAnnotations,
+          readingMode: true,
+        },
+      });
+      flushSync();
+
+      const jumpButton = container.querySelector(
+        ".jump-to-current",
+      ) as HTMLButtonElement;
+      jumpButton.click();
+      flushSync();
+
+      const liveRegion = container.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toBe("Following playback");
+    });
+
+    test("a host property write that flips readingMode also announces", () => {
+      const ctx = createMockPlayerContext();
+      const { container, component: wrapper } = render(
+        TestTranscriptReadingMode,
+        { props: { context: ctx, annotations: mockAnnotations } },
+      );
+      flushSync();
+
+      (
+        wrapper as unknown as { setReadingMode: (v: boolean) => void }
+      ).setReadingMode(true);
+      flushSync();
+
+      const liveRegion = container.querySelector(".sr-only");
+      expect(liveRegion?.textContent).toBe("Browsing — playback continues");
+    });
+  });
 });

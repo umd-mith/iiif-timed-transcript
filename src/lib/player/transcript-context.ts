@@ -22,6 +22,16 @@ export interface TranscriptState {
    * instances under the same player track this independently.
    */
   readingMode: boolean;
+  /**
+   * Bumped (incremented) whenever `Transcript` clears the search query on
+   * annotation replacement — `activate` mode, or while reading mode is
+   * active (docs/specs/transcript-reading-mode.md, "Lifecycle"). `Search`'s
+   * query is otherwise private `$state`; this is the external reset path
+   * `TranscriptSearch` forwards to `Search`'s `resetSignal` prop. In `change`
+   * mode with reading mode off, this does not change on replacement — the
+   * query persists (legacy behavior).
+   */
+  queryResetSignal: number;
 }
 
 export interface TranscriptActions {

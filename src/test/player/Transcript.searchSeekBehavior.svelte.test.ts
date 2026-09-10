@@ -5,7 +5,7 @@
 // activate, clearing the query / zero results / replacing annotations, and
 // the two legacy change-mode regression rows. Reading-mode controls and the
 // sync concurrency fix are out of scope here (later steps).
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, vi } from "vitest";
 import { flushSync } from "svelte";
 import { render } from "vitest-browser-svelte";
 import TestContextHarness from "./TestContextHarness.svelte";
@@ -323,6 +323,80 @@ describe("Transcript searchSeekBehavior", () => {
       await new Promise((r) => setTimeout(r, 50));
       flushSync();
 
+      expect(playerCtx.actions.seekTo).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Canvas-switch query clearing (Finding 2)", () => {
+    test("'activate' mode: canvas switch clears the query and selection, no seek", async () => {
+      const playerCtx = createMockPlayerContext();
+
+      const { container, component: wrapper } = render(
+        TestTranscriptWithSearch,
+        {
+          props: {
+            context: playerCtx,
+            annotations: mockAnnotations,
+            searchSeekBehavior: "activate",
+          },
+        },
+      );
+      flushSync();
+
+      await typeQuery(container, "world"); // matches a1, a2
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      expect(input.value).toBe("world");
+
+      const replacement: Annotation[] = [
+        { id: "b1", startTime: 20, endTime: 25, text: "A brave new world" },
+      ];
+      wrapper.setAnnotations(replacement);
+      flushSync();
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(input.value).toBe("");
+      const counter = container.querySelector(".match-counter");
+      expect(counter?.textContent).toBe("");
+      expect(playerCtx.actions.seekTo).not.toHaveBeenCalled();
+    });
+
+    test("'change' mode while reading mode is active: canvas switch clears the query and selection, no seek", async () => {
+      const playerCtx = createMockPlayerContext();
+
+      const { container, component: wrapper } = render(
+        TestTranscriptWithSearch,
+        {
+          props: { context: playerCtx, annotations: mockAnnotations },
+        },
+      );
+      flushSync();
+
+      await typeQuery(container, "world"); // seeks once in legacy change mode
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      expect(input.value).toBe("world");
+      vi.mocked(playerCtx.actions.seekTo).mockClear();
+
+      const followSwitch = container.querySelector(
+        ".follow-along-switch",
+      ) as HTMLButtonElement;
+      followSwitch.click();
+      flushSync();
+      expect(followSwitch.getAttribute("aria-checked")).toBe("false");
+
+      const replacement: Annotation[] = [
+        { id: "b1", startTime: 20, endTime: 25, text: "A brave new world" },
+      ];
+      wrapper.setAnnotations(replacement);
+      flushSync();
+      await new Promise((r) => setTimeout(r, 50));
+      flushSync();
+
+      expect(input.value).toBe("");
       expect(playerCtx.actions.seekTo).not.toHaveBeenCalled();
     });
   });

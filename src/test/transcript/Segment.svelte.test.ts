@@ -165,4 +165,80 @@ describe("Transcript.Segment", () => {
     const custom = container.querySelector(".custom-text");
     expect(custom?.getAttribute("data-language")).toBe("fr");
   });
+
+  describe("text-selection suppresses click activation (Finding 3)", () => {
+    it("does not call onclick when a non-collapsed text selection exists at click time (drag-to-select)", () => {
+      const onclick = vi.fn();
+      const { container } = render(Segment, {
+        props: { annotation: mockAnnotation, onclick },
+      });
+      flushSync();
+
+      const segment = container.querySelector(
+        "[data-annotation-id]",
+      ) as HTMLElement;
+      const textEl = segment.querySelector(".text") as HTMLElement;
+
+      const range = document.createRange();
+      range.selectNodeContents(textEl);
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+      expect(selection.isCollapsed).toBe(false);
+
+      segment.click();
+
+      expect(onclick).not.toHaveBeenCalled();
+
+      selection.removeAllRanges();
+    });
+
+    it("still calls onclick on a plain click with a collapsed selection", () => {
+      const onclick = vi.fn();
+      const { container } = render(Segment, {
+        props: { annotation: mockAnnotation, onclick },
+      });
+      flushSync();
+
+      window.getSelection()?.removeAllRanges();
+
+      const segment = container.querySelector(
+        "[data-annotation-id]",
+      ) as HTMLElement;
+      segment.click();
+
+      expect(onclick).toHaveBeenCalledTimes(1);
+    });
+
+    it("still calls onclick on Enter even while a non-collapsed selection exists (keyboard activation is never a drag)", () => {
+      const onclick = vi.fn();
+      const { container } = render(Segment, {
+        props: { annotation: mockAnnotation, onclick },
+      });
+      flushSync();
+
+      const segment = container.querySelector(
+        "[data-annotation-id]",
+      ) as HTMLElement;
+      const textEl = segment.querySelector(".text") as HTMLElement;
+
+      const range = document.createRange();
+      range.selectNodeContents(textEl);
+      const selection = window.getSelection()!;
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      segment.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+
+      expect(onclick).toHaveBeenCalledTimes(1);
+
+      selection.removeAllRanges();
+    });
+  });
 });

@@ -17,6 +17,7 @@ export function createMockTranscriptContext(
       currentMatchId: null,
       searchSeekBehavior: "change",
       readingMode: false,
+      queryResetSignal: 0,
       ...overrides.state,
     },
     actions: {

@@ -37,6 +37,24 @@
       | ((annotation: Annotation, index: number) => void)
       | undefined;
     /**
+     * Fired only from explicit previous/next navigation, after `currentIndex`
+     * updates, with the newly-selected match — never from typing or
+     * activation. Lets a host (`TranscriptSearch`) scroll the browsed match
+     * into view without also auto-scrolling on every keystroke (spec: typing
+     * must not scroll).
+     */
+    onmatchnavigate?:
+      | ((annotation: Annotation, index: number) => void)
+      | undefined;
+    /**
+     * External reset signal (a context-level counter, typically). Any change
+     * from its previous value — not its initial value on mount — clears the
+     * query and resets selection to the first match. Lets a host clear the
+     * otherwise-private `query` state (e.g. on canvas switch) without a
+     * bindable query prop.
+     */
+    resetSignal?: number | undefined;
+    /**
      * Renders the "Go to match" activation control and enables Enter-to-
      * activate. Search stays agnostic about *why* — a host decides based on
      * its own seek-behavior/reading-mode policy.
@@ -54,6 +72,8 @@
     onmatchchange,
     onqueryinput,
     onmatchactivate,
+    onmatchnavigate,
+    resetSignal,
     showActivation = false,
     class: className = "",
   }: Props = $props();
@@ -66,6 +86,12 @@
   let currentIndex = $state(0);
   let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
   let isComposing = $state(false);
+  // The input is intentionally uncontrolled (no `value={query}`) so typing
+  // never fights the debounce — the DOM owns the displayed text between
+  // keystrokes. An external reset (resetSignal, below) is the one path that
+  // must also clear what's visibly in the box, so it writes to the element
+  // directly rather than relying on a value binding.
+  let inputEl: HTMLInputElement | null = $state(null);
 
   // Derived: filter annotations by search query
   const matches = $derived.by(() => {
@@ -96,6 +122,26 @@
   // Cleanup on component destroy
   onDestroy(() => {
     if (debounceTimeout) clearTimeout(debounceTimeout);
+  });
+
+  // External reset signal (canvas-switch query clearing — see the
+  // `resetSignal` prop doc). `previousResetSignal` is a plain variable
+  // (not $state), captured once at component setup, so the first run of the
+  // effect below always sees `current === previousResetSignal` and never
+  // fires on mount — same pattern as Transcript's `previousReadingMode`.
+  // svelte-ignore state_referenced_locally
+  let previousResetSignal = resetSignal;
+  $effect(() => {
+    const current = resetSignal;
+    if (current === previousResetSignal) return;
+    previousResetSignal = current;
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = null;
+    }
+    query = "";
+    currentIndex = 0;
+    if (inputEl) inputEl.value = "";
   });
 
   // Commits a query value immediately, cancelling any pending debounce.
@@ -162,15 +208,21 @@
     activate();
   }
 
-  // Navigation
+  // Navigation. Fires onmatchnavigate — distinct from the debounced
+  // onmatchchange — so a host can scroll the browsed match into view without
+  // also auto-scrolling on every keystroke (typing never scrolls).
   function navigatePrevious() {
     if (matches.length === 0) return;
     currentIndex = currentIndex <= 0 ? matches.length - 1 : currentIndex - 1;
+    const match = matches[currentIndex];
+    if (match) onmatchnavigate?.(match, currentIndex);
   }
 
   function navigateNext() {
     if (matches.length === 0) return;
     currentIndex = currentIndex >= matches.length - 1 ? 0 : currentIndex + 1;
+    const match = matches[currentIndex];
+    if (match) onmatchnavigate?.(match, currentIndex);
   }
 
   // Match count display
@@ -188,6 +240,7 @@
   <input
     type="search"
     {placeholder}
+    bind:this={inputEl}
     oninput={handleInput}
     onkeydown={handleKeydown}
     oncompositionstart={handleCompositionStart}
