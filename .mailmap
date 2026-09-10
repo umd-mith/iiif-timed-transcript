@@ -1,0 +1,3 @@
+# Canonicalize contributor names across commit-time spellings.
+# Format: <canonical name> <email>  — maps all commits from that email to the name.
+Raffaele Viglianti <raffaeleviglianti@gmail.com>

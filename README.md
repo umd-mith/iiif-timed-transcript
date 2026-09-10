@@ -888,6 +888,16 @@ For AI-assisted contributions, include commit trailers:
 Assisted-by: Claude <noreply@anthropic.com>
 ```
 
+## Credits
+
+Created and maintained by **Trevor Muñoz**, with contributions from **Raffaele
+Viglianti**. Developed at the [Maryland Institute for Technology in the
+Humanities](https://mith.umd.edu) (MITH), University of Maryland.
+
+Built with AI assistance from Anthropic's Claude, under human direction and
+review — see [AI Assistance](#ai-assistance) for details.
+
 ## License
 
-BSD 3-Clause Clear — see [LICENSE](LICENSE) for details.
+Copyright © 2026 University of Maryland. BSD 3-Clause Clear — see
+[LICENSE](LICENSE) for details.
