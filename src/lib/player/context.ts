@@ -103,6 +103,15 @@ export interface PlayerContext {
   readonly chapters: Chapter[];
   readonly activeChapterId: string | null;
   readonly tracks: TrackDefinition[];
+  /**
+   * The caption tracks actually rendered as `<track>` on the current canvas —
+   * Viewer's effective tracks (its `tracks` prop when set, else `tracks`
+   * above). Separate from `tracks` because `tracks` is also the transcript-
+   * selection source (Root's `selectTranscriptTrack`), which must stay
+   * manifest-only. IIIFPlayer.Captions reads this for visibility, and it drives
+   * the captions machine's TRACKS_CHANGED. Internal wiring — not on PlayerRef.
+   */
+  readonly captionTracks: TrackDefinition[];
   readonly canvasIndex: number;
   readonly canvasCount: number;
   readonly canvases: CanvasInfo[];
@@ -131,6 +140,14 @@ export interface PlayerContext {
    * on PlayerRef.
    */
   reportNativeCaptionChange: (mode: "showing" | "hidden") => void;
+  /**
+   * Viewer reports the caption tracks it actually rendered (its effective
+   * tracks). Root stores them as `captionTracks` and drives the captions
+   * machine's TRACKS_CHANGED from them, so captions supplied via Viewer's
+   * `tracks` prop — not just manifest-discovered ones — reach the CC button and
+   * the policy machine. Internal wiring — not on PlayerRef.
+   */
+  reportCaptionTracks: (tracks: TrackDefinition[]) => void;
   actions: PlayerActions;
 }
 

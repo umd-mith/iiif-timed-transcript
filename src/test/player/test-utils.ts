@@ -106,6 +106,10 @@ export function createMockPlayerContext(
     chapters: [],
     activeChapterId: null,
     tracks: [],
+    // Mirror `tracks` unless a test sets captionTracks explicitly, so existing
+    // callers that express "this canvas has caption tracks" via `tracks` still
+    // light the CC button (Captions reads captionTracks).
+    captionTracks: rest.captionTracks ?? rest.tracks ?? [],
     canvasIndex: 0,
     canvasCount: 1,
     canvases: [],
@@ -114,6 +118,7 @@ export function createMockPlayerContext(
     captionsState: "unavailable",
     toggleCaptions: vi.fn(),
     reportNativeCaptionChange: vi.fn(),
+    reportCaptionTracks: vi.fn(),
     actions: {
       play: vi.fn(),
       pause: vi.fn(),
