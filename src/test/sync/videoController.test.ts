@@ -67,6 +67,61 @@ describe("videoController actor", () => {
     expect(viewer.seekTo).toHaveBeenCalledWith(59);
   });
 
+  it("never seeks below 0 when duration is shorter than the end backoff", async () => {
+    // duration 0.5s: clamp gives 0.25, then end-backoff (duration-1) would
+    // yield -0.5 unless the lower bound is re-enforced after the adjustment.
+    const viewer = createMockViewer({ getDuration: vi.fn(() => 0.5) });
+    const actor = createActor(videoController, {
+      input: { viewer, targetTime: 0.25 },
+    });
+
+    actor.start();
+    await waitForDone(actor);
+
+    const seeked = (viewer.seekTo as ReturnType<typeof vi.fn>).mock
+      .calls[0]?.[0] as number;
+    expect(seeked).toBeGreaterThanOrEqual(0);
+    expect(seeked).toBeLessThanOrEqual(0.5);
+  });
+
+  it("seeks to 0 when duration is 0", async () => {
+    const viewer = createMockViewer({ getDuration: vi.fn(() => 0) });
+    const actor = createActor(videoController, {
+      input: { viewer, targetTime: 5 },
+    });
+
+    actor.start();
+    await waitForDone(actor);
+
+    expect(viewer.seekTo).toHaveBeenCalledWith(0);
+  });
+
+  it("keeps every seek within [0, duration] across a range of durations", async () => {
+    for (const duration of [0, 0.3, 0.99, 1, 2, 60]) {
+      for (const targetTime of [-10, 0, duration / 2, duration, 100]) {
+        const viewer = createMockViewer({
+          getDuration: vi.fn(() => duration),
+        });
+        const actor = createActor(videoController, {
+          input: { viewer, targetTime },
+        });
+        actor.start();
+        await waitForDone(actor);
+
+        const seeked = (viewer.seekTo as ReturnType<typeof vi.fn>).mock
+          .calls[0]?.[0] as number;
+        expect(
+          seeked,
+          `duration=${duration} target=${targetTime} -> ${seeked}`,
+        ).toBeGreaterThanOrEqual(0);
+        expect(
+          seeked,
+          `duration=${duration} target=${targetTime} -> ${seeked}`,
+        ).toBeLessThanOrEqual(duration);
+      }
+    }
+  });
+
   it("waits for viewer to become ready", async () => {
     let readyCount = 0;
     const viewer = createMockViewer({
