@@ -14,6 +14,7 @@ export type TermKey =
   | "transcript.searchNext"
   | "transcript.searchNoMatches"
   | "transcript.searchMatchCount"
+  | "transcript.searchActivate"
   | "transcript.segmentsLabel"
   // Reserved for the a11y spec's A3 (auto-scroll pause control).
   | "transcript.autoscrollPause"
@@ -54,6 +55,7 @@ export const EN_TERMS: Record<TermKey, string> = {
   "transcript.searchNext": "Next match",
   "transcript.searchNoMatches": "No matches",
   "transcript.searchMatchCount": "{current} of {total}",
+  "transcript.searchActivate": "Go to match",
   "transcript.segmentsLabel": "Transcript segments",
   "transcript.autoscrollPause": "Pause auto-scroll",
   "transcript.autoscrollResume": "Resume auto-scroll",

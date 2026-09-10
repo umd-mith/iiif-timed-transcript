@@ -15,11 +15,13 @@ export function createMockTranscriptContext(
       currentMatchIndex: -1,
       highlightedIds: new Set<string>(),
       currentMatchId: null,
+      searchSeekBehavior: "change",
       ...overrides.state,
     },
     actions: {
       handleAnnotationClick: vi.fn(),
       handleMatchChange: vi.fn(),
+      handleMatchActivate: vi.fn(),
       scrollToAnnotation: vi.fn().mockReturnValue(false),
       ...overrides.actions,
     },

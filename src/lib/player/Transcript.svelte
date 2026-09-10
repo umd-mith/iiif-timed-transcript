@@ -21,6 +21,17 @@
     syncSettleMs?: number;
     syncPriorityLockDuration?: number;
 
+    /**
+     * Controls how a selected search match reaches playback.
+     * - `"change"` (default): preserves legacy behavior — every match
+     *   selection (typing or previous/next) seeks immediately.
+     * - `"activate"`: typing and previous/next only update highlights;
+     *   seeking happens once, only through explicit activation (Enter or
+     *   "Go to match" in `TranscriptSearch`/`Search`).
+     * @default "change"
+     */
+    searchSeekBehavior?: "change" | "activate";
+
     // Accessibility
     ariaLabel?: string;
     announceActiveSegment?: boolean;
@@ -49,6 +60,7 @@
     syncDebounceMs = 150,
     syncSettleMs = 100,
     syncPriorityLockDuration = 1000,
+    searchSeekBehavior = "change",
     ariaLabel = "Media transcript",
     announceActiveSegment = true,
     onActiveAnnotationChange,
@@ -195,27 +207,38 @@
         currentMatchIndex,
         highlightedIds,
         currentMatchId,
+        searchSeekBehavior,
       };
     },
     actions: {
       handleAnnotationClick,
       handleMatchChange,
+      handleMatchActivate,
       scrollToAnnotation,
     },
   } satisfies TranscriptContext);
 
-  // Search handler - unified callback from Search component
+  // Search handler - unified callback from Search component. Updates
+  // highlight/selection state always; seeks only in legacy "change" mode —
+  // "activate" mode routes seeking exclusively through handleMatchActivate.
   function handleMatchChange(matches: Annotation[], index: number) {
     searchMatches = matches;
     currentMatchIndex = index;
 
-    // Scroll to and seek to current match
-    if (index >= 0 && matches[index]) {
+    if (searchSeekBehavior === "change" && index >= 0 && matches[index]) {
       const match = matches[index];
       lastInteractionWasUser = true;
-      // Seek media to match start time
       actions.seekTo(match.startTime);
     }
+  }
+
+  // Explicit search-result activation (Enter or "Go to match"). Seeks
+  // exactly once, regardless of searchSeekBehavior — this is the only seek
+  // path search takes in "activate" mode.
+  function handleMatchActivate(annotation: Annotation, index: number) {
+    currentMatchIndex = index;
+    lastInteractionWasUser = true;
+    actions.seekTo(annotation.startTime);
   }
 
   // Initialize and reinitialize SyncController when dependencies change

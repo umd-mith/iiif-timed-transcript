@@ -8,11 +8,33 @@ export interface TranscriptState {
   currentMatchIndex: number;
   highlightedIds: Set<string>;
   currentMatchId: string | null;
+  /**
+   * Configured search-seek behavior (`Transcript`'s `searchSeekBehavior`
+   * prop). `"activate"` is what makes `TranscriptSearch` show the "Go to
+   * match" activation control and route seeking through
+   * `handleMatchActivate` instead of `handleMatchChange`.
+   */
+  searchSeekBehavior: "change" | "activate";
 }
 
 export interface TranscriptActions {
   handleAnnotationClick: (annotation: Annotation) => void;
   handleMatchChange: (matches: Annotation[], index: number) => void;
+  /**
+   * Explicit search-result activation (Enter in the search input, or the
+   * "Go to match" button). Seeks once to the annotation's start time
+   * regardless of `searchSeekBehavior` — this is the only seek path when
+   * `searchSeekBehavior` is `"activate"`.
+   */
+  handleMatchActivate: (annotation: Annotation, index: number) => void;
+  /**
+   * Synchronous query-input intent, forwarded from `Search`'s
+   * `onqueryinput`. Reserved for the reading-mode step (entering Browsing
+   * on input while `searchSeekBehavior` is `"activate"`); optional until
+   * that step implements it, so `TranscriptSearch` can wire the seam now
+   * without every context needing to provide it yet.
+   */
+  handleQueryInput?: (value: string) => void;
   /**
    * Scroll a specific annotation into view within the transcript panel.
    * Returns true if the annotation was found, false otherwise.

@@ -21,6 +21,28 @@
     onmatchchange?:
       | ((matches: Annotation[], currentIndex: number) => void)
       | undefined;
+    /**
+     * Synchronous input-intent callback, fired on every keystroke from the
+     * raw input event — before the debounce that drives `onmatchchange`.
+     * Search never acts on this itself; it exists for a host (or
+     * `TranscriptSearch`) to react to typing before matches resolve.
+     */
+    onqueryinput?: ((value: string) => void) | undefined;
+    /**
+     * Fired when the selected match is explicitly activated: Enter in the
+     * search input, or the "Go to match" button (rendered only when
+     * `showActivation` is true).
+     */
+    onmatchactivate?:
+      | ((annotation: Annotation, index: number) => void)
+      | undefined;
+    /**
+     * Renders the "Go to match" activation control and enables Enter-to-
+     * activate. Search stays agnostic about *why* — a host decides based on
+     * its own seek-behavior/reading-mode policy.
+     * @default false
+     */
+    showActivation?: boolean;
     /** CSS class for the search container */
     class?: string;
   }
@@ -30,6 +52,9 @@
     placeholder: placeholderProp,
     debounceMs = 150,
     onmatchchange,
+    onqueryinput,
+    onmatchactivate,
+    showActivation = false,
     class: className = "",
   }: Props = $props();
 
@@ -40,6 +65,7 @@
   let query = $state("");
   let currentIndex = $state(0);
   let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
+  let isComposing = $state(false);
 
   // Derived: filter annotations by search query
   const matches = $derived.by(() => {
@@ -72,18 +98,68 @@
     if (debounceTimeout) clearTimeout(debounceTimeout);
   });
 
+  // Commits a query value immediately, cancelling any pending debounce.
+  // Resets the selection to the first match only when the query actually
+  // changes — an unchanged commit (e.g. Enter pressed with no pending edit)
+  // must not clobber a selection the reader navigated to via prev/next.
+  function commitQuery(value: string) {
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = null;
+    }
+    if (value !== query) {
+      query = value;
+      currentIndex = 0;
+    }
+  }
+
   // Debounced input handler
   function handleInput(event: Event) {
     const target = event.target as HTMLInputElement;
     const value = target.value;
 
+    // Synchronous intent signal — fires before debounce, on every keystroke.
+    onqueryinput?.(value);
+
     // Debounce search
     if (debounceTimeout) clearTimeout(debounceTimeout);
 
-    debounceTimeout = setTimeout(() => {
-      query = value;
-      currentIndex = 0;
-    }, debounceMs);
+    debounceTimeout = setTimeout(() => commitQuery(value), debounceMs);
+  }
+
+  function handleCompositionStart() {
+    isComposing = true;
+  }
+
+  function handleCompositionEnd() {
+    isComposing = false;
+  }
+
+  // Activates the currently selected match. Reads `matches`/`currentIndex`
+  // fresh (both may have just been recomputed by `commitQuery`) rather than
+  // trusting a value that predates a synchronous query commit.
+  function activate() {
+    if (matches.length === 0) return;
+    const idx = currentIndex >= matches.length ? 0 : currentIndex;
+    const match = matches[idx];
+    if (!match) return;
+    if (idx !== currentIndex) currentIndex = idx;
+    onmatchactivate?.(match, idx);
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key !== "Enter") return;
+    if (!showActivation) return;
+    // IME composition guard: the isComposing flag tracked via
+    // compositionstart/end is the source of truth; event.isComposing is
+    // checked too for browsers that report it on the confirming keydown.
+    if (isComposing || event.isComposing) return;
+
+    event.preventDefault();
+    // Evaluate the current input first — never activate against a query
+    // that's still waiting on debounce.
+    commitQuery((event.currentTarget as HTMLInputElement).value);
+    activate();
   }
 
   // Navigation
@@ -113,6 +189,9 @@
     type="search"
     {placeholder}
     oninput={handleInput}
+    onkeydown={handleKeydown}
+    oncompositionstart={handleCompositionStart}
+    oncompositionend={handleCompositionEnd}
     aria-label={t("transcript.searchLabel")}
     autocomplete="off"
     spellcheck="false"
@@ -138,6 +217,16 @@
     >
       ↓
     </button>
+
+    {#if showActivation}
+      <button
+        type="button"
+        onclick={activate}
+        aria-label={t("transcript.searchActivate")}
+      >
+        {t("transcript.searchActivate")}
+      </button>
+    {/if}
   {/if}
 </div>
 

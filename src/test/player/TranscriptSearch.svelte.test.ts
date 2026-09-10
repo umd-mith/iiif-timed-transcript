@@ -63,4 +63,164 @@ describe("TranscriptSearch", () => {
     expect(matches).toHaveLength(1);
     expect(matches[0].id).toBe("a1");
   });
+
+  describe("activation control (searchSeekBehavior='activate')", () => {
+    test("shows the Go to match control only when context searchSeekBehavior is activate", async () => {
+      const transcriptCtx = createMockTranscriptContext({
+        state: { annotations: mockAnnotations, searchSeekBehavior: "change" },
+      });
+
+      const { container } = render(TestTranscriptContextHarness, {
+        props: { context: transcriptCtx, component: TranscriptSearch },
+      });
+      flushSync();
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      input.value = "Hello";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 200));
+      flushSync();
+
+      expect(
+        container.querySelector('button[aria-label="Go to match"]'),
+      ).toBeNull();
+    });
+
+    test("default activation seeks through the context handleMatchActivate", async () => {
+      const handleMatchActivate = vi.fn();
+      const transcriptCtx = createMockTranscriptContext({
+        state: { annotations: mockAnnotations, searchSeekBehavior: "activate" },
+        actions: { handleMatchActivate },
+      });
+
+      const { container } = render(TestTranscriptContextHarness, {
+        props: { context: transcriptCtx, component: TranscriptSearch },
+      });
+      flushSync();
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      input.value = "Hello";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 200));
+      flushSync();
+
+      const goBtn = container.querySelector(
+        'button[aria-label="Go to match"]',
+      ) as HTMLButtonElement;
+      expect(goBtn).not.toBeNull();
+      goBtn.click();
+
+      expect(handleMatchActivate).toHaveBeenCalledWith(mockAnnotations[0], 0);
+    });
+
+    test("a supplied onmatchactivate prop overrides the context default", async () => {
+      const handleMatchActivate = vi.fn();
+      const onmatchactivate = vi.fn();
+      const transcriptCtx = createMockTranscriptContext({
+        state: { annotations: mockAnnotations, searchSeekBehavior: "activate" },
+        actions: { handleMatchActivate },
+      });
+
+      const { container } = render(TestTranscriptContextHarness, {
+        props: {
+          context: transcriptCtx,
+          component: TranscriptSearch,
+          props: { onmatchactivate },
+        },
+      });
+      flushSync();
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      input.value = "Hello";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 200));
+      flushSync();
+
+      const goBtn = container.querySelector(
+        'button[aria-label="Go to match"]',
+      ) as HTMLButtonElement;
+      goBtn.click();
+
+      expect(onmatchactivate).toHaveBeenCalledWith(mockAnnotations[0], 0);
+      expect(handleMatchActivate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("onqueryinput (query-input seam)", () => {
+    test("forwards Search's synchronous onqueryinput to the context handleQueryInput, before the debounced match update", () => {
+      const handleQueryInput = vi.fn();
+      const handleMatchChange = vi.fn();
+      const transcriptCtx = createMockTranscriptContext({
+        state: { annotations: mockAnnotations, searchSeekBehavior: "activate" },
+        actions: { handleQueryInput, handleMatchChange },
+      });
+
+      const { container } = render(TestTranscriptContextHarness, {
+        props: { context: transcriptCtx, component: TranscriptSearch },
+      });
+      flushSync();
+      const callsBefore = handleMatchChange.mock.calls.length;
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      input.value = "Hello";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+
+      expect(handleQueryInput).toHaveBeenCalledWith("Hello");
+      // Debounce hasn't elapsed yet — the match update hasn't fired.
+      expect(handleMatchChange.mock.calls.length).toBe(callsBefore);
+    });
+
+    test("does not throw when the context provides no handleQueryInput", () => {
+      const transcriptCtx = createMockTranscriptContext({
+        state: { annotations: mockAnnotations },
+      });
+
+      const { container } = render(TestTranscriptContextHarness, {
+        props: { context: transcriptCtx, component: TranscriptSearch },
+      });
+      flushSync();
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      input.value = "Hello";
+      expect(() =>
+        input.dispatchEvent(new Event("input", { bubbles: true })),
+      ).not.toThrow();
+    });
+
+    test("a supplied onqueryinput prop overrides the context default", () => {
+      const handleQueryInput = vi.fn();
+      const onqueryinput = vi.fn();
+      const transcriptCtx = createMockTranscriptContext({
+        actions: { handleQueryInput },
+      });
+
+      const { container } = render(TestTranscriptContextHarness, {
+        props: {
+          context: transcriptCtx,
+          component: TranscriptSearch,
+          props: { onqueryinput },
+        },
+      });
+      flushSync();
+
+      const input = container.querySelector(
+        'input[type="search"]',
+      ) as HTMLInputElement;
+      input.value = "Hello";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+
+      expect(onqueryinput).toHaveBeenCalledWith("Hello");
+      expect(handleQueryInput).not.toHaveBeenCalled();
+    });
+  });
 });

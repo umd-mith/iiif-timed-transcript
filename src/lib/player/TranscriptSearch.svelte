@@ -9,6 +9,17 @@
     placeholder?: string;
     debounceMs?: number;
     onmatchchange?: (matches: Annotation[], index: number) => void;
+    /**
+     * Fired on explicit activation (Enter or "Go to match"). Overrides the
+     * default, which seeks once through the transcript context.
+     */
+    onmatchactivate?: (annotation: Annotation, index: number) => void;
+    /**
+     * Fired synchronously from `Search`'s raw input event, before debounce.
+     * Overrides the default, which forwards the value to the transcript
+     * context's `handleQueryInput` seam.
+     */
+    onqueryinput?: (value: string) => void;
     class?: string;
   }
 
@@ -17,6 +28,8 @@
     placeholder: placeholderProp,
     debounceMs = 150,
     onmatchchange: onmatchchangeProp,
+    onmatchactivate: onmatchactivateProp,
+    onqueryinput: onqueryinputProp,
     class: className = "",
   }: Props = $props();
 
@@ -34,6 +47,21 @@
   const onmatchchange = $derived(
     onmatchchangeProp ?? transcriptCtx?.actions.handleMatchChange,
   );
+  const onmatchactivate = $derived(
+    onmatchactivateProp ?? transcriptCtx?.actions.handleMatchActivate,
+  );
+  // The context's handleQueryInput is optional (a seam the reading-mode step
+  // fills in) — read at call time rather than snapshotting a possibly-absent
+  // function into the default.
+  const onqueryinput = $derived(
+    onqueryinputProp ??
+      ((value: string) => transcriptCtx?.actions.handleQueryInput?.(value)),
+  );
+  // Only "activate" mode shows the activation control here; reading mode
+  // will OR into this once the transcript context exposes it.
+  const showActivation = $derived(
+    transcriptCtx?.state.searchSeekBehavior === "activate",
+  );
 </script>
 
 <div class="transcript-search-sticky">
@@ -42,6 +70,9 @@
     {placeholder}
     {debounceMs}
     {onmatchchange}
+    {onmatchactivate}
+    {onqueryinput}
+    {showActivation}
     class={className}
   />
 </div>
